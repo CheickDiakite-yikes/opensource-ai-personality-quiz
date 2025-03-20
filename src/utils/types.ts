@@ -1,14 +1,16 @@
 
 // Assessment Response Types
 export enum QuestionCategory {
-  PERSONALITY = "personality",
-  COGNITIVE = "cognitive",
-  EMOTIONAL = "emotional",
-  SOCIAL = "social",
-  MOTIVATION = "motivation",
-  VALUES = "values",
-  LEARNING = "learning",
-  STRENGTHS = "strengths"
+  PersonalityTraits = "personality",
+  EmotionalIntelligence = "emotional",
+  CognitivePatterns = "cognitive",
+  ValueSystems = "values",
+  Motivation = "motivation",
+  Resilience = "resilience",
+  SocialInteraction = "social",
+  DecisionMaking = "decision",
+  Creativity = "creativity",
+  Leadership = "leadership"
 }
 
 export interface AssessmentResponse {
@@ -19,22 +21,28 @@ export interface AssessmentResponse {
   timestamp: Date;
 }
 
-// Assessment Question Type (needed for error fixes)
+// Assessment Question Type
 export interface AssessmentQuestion {
   id: string;
-  text: string;
-  options: string[];
   category: QuestionCategory;
-  allowCustom?: boolean;
+  question: string;
+  options: string[];
+  allowCustomResponse?: boolean;
+  weight?: number;
 }
 
-// Notification Type (needed for error fixes)
+// Notification Type
 export interface MotivationalNotification {
   id: string;
   message: string;
   type: 'achievement' | 'reminder' | 'insight';
   date: Date;
   read: boolean;
+  // Additional properties needed by NotificationCenter
+  userId?: string;
+  suggestion?: string;
+  createdAt: Date;
+  relatedTraits?: string[];
 }
 
 // Intelligence Domain
@@ -71,8 +79,16 @@ export interface PersonalityAnalysis {
   intelligence: IntelligenceType;
   intelligenceScore: number;
   emotionalIntelligenceScore: number;
-  cognitiveStyle: string;
-  valueSystem: string[];
+  cognitiveStyle: string | { 
+    primary: string;
+    secondary: string;
+    description: string;
+  };
+  valueSystem: string[] | {
+    strengths: string[];
+    challenges: string[];
+    compatibleTypes: string[];
+  };
   motivators: string[];
   inhibitors: string[];
   weaknesses: string[];
@@ -88,6 +104,12 @@ export type AIAnalysis = PersonalityAnalysis;
 
 // Activity Types
 export enum ActivityCategory {
+  Kindness = "KINDNESS",
+  Mindfulness = "MINDFULNESS",
+  Learning = "LEARNING",
+  Health = "HEALTH",
+  Social = "SOCIAL",
+  Creativity = "CREATIVITY",
   COGNITIVE = "COGNITIVE",
   EMOTIONAL = "EMOTIONAL",
   SOCIAL = "SOCIAL",

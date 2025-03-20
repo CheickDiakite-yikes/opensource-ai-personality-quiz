@@ -1,11 +1,10 @@
-
 import { AssessmentQuestion, QuestionCategory } from "./types";
 
 // A comprehensive bank of 50 high-quality assessment questions
 export const questionBank: AssessmentQuestion[] = [
   // Personality Traits Category
   {
-    id: 1,
+    id: "1",
     category: QuestionCategory.PersonalityTraits,
     question: "When faced with a difficult decision, how do you typically approach it?",
     options: [
@@ -19,7 +18,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 2,
+    id: "2",
     category: QuestionCategory.PersonalityTraits,
     question: "How do you typically react when your plans are unexpectedly disrupted?",
     options: [
@@ -33,7 +32,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 3,
+    id: "3",
     category: QuestionCategory.PersonalityTraits,
     question: "In group settings, which role do you most naturally assume?",
     options: [
@@ -47,7 +46,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 4,
+    id: "4",
     category: QuestionCategory.PersonalityTraits,
     question: "How do you prefer to spend your free time when you have no obligations?",
     options: [
@@ -61,7 +60,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 5,
+    id: "5",
     category: QuestionCategory.PersonalityTraits,
     question: "When receiving criticism, what is your most typical initial reaction?",
     options: [
@@ -77,7 +76,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Emotional Intelligence Category
   {
-    id: 6,
+    id: "6",
     category: QuestionCategory.EmotionalIntelligence,
     question: "When you witness someone else's distress, how do you typically respond?",
     options: [
@@ -91,7 +90,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 7,
+    id: "7",
     category: QuestionCategory.EmotionalIntelligence,
     question: "How easily can you identify your own emotions as they arise?",
     options: [
@@ -105,7 +104,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 8,
+    id: "8",
     category: QuestionCategory.EmotionalIntelligence,
     question: "When you're feeling overwhelmed, what strategies do you typically employ?",
     options: [
@@ -119,7 +118,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 9,
+    id: "9",
     category: QuestionCategory.EmotionalIntelligence,
     question: "How do you typically handle situations where others hold strong opinions that differ from yours?",
     options: [
@@ -133,7 +132,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 10,
+    id: "10",
     category: QuestionCategory.EmotionalIntelligence,
     question: "When someone close to you is celebrating a success, what's your most natural reaction?",
     options: [
@@ -149,7 +148,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Cognitive Patterns Category
   {
-    id: 11,
+    id: "11",
     category: QuestionCategory.CognitivePatterns,
     question: "When learning something new, which approach do you find most effective?",
     options: [
@@ -163,7 +162,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 12,
+    id: "12",
     category: QuestionCategory.CognitivePatterns,
     question: "How do you typically approach complex problems?",
     options: [
@@ -177,7 +176,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 13,
+    id: "13",
     category: QuestionCategory.CognitivePatterns,
     question: "How comfortable are you with ambiguity and uncertainty?",
     options: [
@@ -191,7 +190,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 14,
+    id: "14",
     category: QuestionCategory.CognitivePatterns,
     question: "When forming opinions on complex issues, what influences you most?",
     options: [
@@ -205,7 +204,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 15,
+    id: "15",
     category: QuestionCategory.CognitivePatterns,
     question: "How often do you question your own assumptions and beliefs?",
     options: [
@@ -221,7 +220,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Value Systems Category
   {
-    id: 16,
+    id: "16",
     category: QuestionCategory.ValueSystems,
     question: "Which of these do you value most in your relationships with others?",
     options: [
@@ -235,7 +234,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 17,
+    id: "17",
     category: QuestionCategory.ValueSystems,
     question: "What do you consider most important when making significant life decisions?",
     options: [
@@ -249,7 +248,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 18,
+    id: "18",
     category: QuestionCategory.ValueSystems,
     question: "How important is it to you that your work contributes to something beyond yourself?",
     options: [
@@ -263,7 +262,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 19,
+    id: "19",
     category: QuestionCategory.ValueSystems,
     question: "Which of these qualities do you most admire in others?",
     options: [
@@ -277,7 +276,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.7
   },
   {
-    id: 20,
+    id: "20",
     category: QuestionCategory.ValueSystems,
     question: "What constitutes 'success' in your view?",
     options: [
@@ -293,7 +292,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Motivation Category
   {
-    id: 21,
+    id: "21",
     category: QuestionCategory.Motivation,
     question: "What most often drives you to take on new challenges?",
     options: [
@@ -307,7 +306,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 22,
+    id: "22",
     category: QuestionCategory.Motivation,
     question: "When you've achieved a goal, what typically motivates you next?",
     options: [
@@ -321,7 +320,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 23,
+    id: "23",
     category: QuestionCategory.Motivation,
     question: "What typically helps you persist through difficult or tedious tasks?",
     options: [
@@ -335,7 +334,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.7
   },
   {
-    id: 24,
+    id: "24",
     category: QuestionCategory.Motivation,
     question: "What tends to diminish your motivation most significantly?",
     options: [
@@ -349,7 +348,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 25,
+    id: "25",
     category: QuestionCategory.Motivation,
     question: "What environment helps you feel most motivated and productive?",
     options: [
@@ -365,7 +364,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Resilience Category
   {
-    id: 26,
+    id: "26",
     category: QuestionCategory.Resilience,
     question: "How do you typically respond to significant setbacks or failures?",
     options: [
@@ -379,7 +378,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 1.0
   },
   {
-    id: 27,
+    id: "27",
     category: QuestionCategory.Resilience,
     question: "What helps you cope with stress most effectively?",
     options: [
@@ -393,7 +392,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 28,
+    id: "28",
     category: QuestionCategory.Resilience,
     question: "When faced with significant life changes, how do you typically adapt?",
     options: [
@@ -407,7 +406,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 29,
+    id: "29",
     category: QuestionCategory.Resilience,
     question: "When a long-term project becomes difficult, what most helps you persevere?",
     options: [
@@ -421,7 +420,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 30,
+    id: "30",
     category: QuestionCategory.Resilience,
     question: "How have your past difficulties shaped your approach to new challenges?",
     options: [
@@ -437,7 +436,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Social Interaction Category
   {
-    id: 31,
+    id: "31",
     category: QuestionCategory.SocialInteraction,
     question: "In conversations, which are you more likely to do?",
     options: [
@@ -451,7 +450,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 32,
+    id: "32",
     category: QuestionCategory.SocialInteraction,
     question: "How do you typically navigate conflicts in relationships?",
     options: [
@@ -465,7 +464,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 33,
+    id: "33",
     category: QuestionCategory.SocialInteraction,
     question: "What role do social gatherings typically play in your life?",
     options: [
@@ -479,7 +478,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.7
   },
   {
-    id: 34,
+    id: "34",
     category: QuestionCategory.SocialInteraction,
     question: "How easily do you form deep connections with new people?",
     options: [
@@ -493,7 +492,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 35,
+    id: "35",
     category: QuestionCategory.SocialInteraction,
     question: "How important is it for you to be part of a community or group?",
     options: [
@@ -509,7 +508,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Decision Making Category
   {
-    id: 36,
+    id: "36",
     category: QuestionCategory.DecisionMaking,
     question: "When making decisions, how much do you rely on intuition versus analysis?",
     options: [
@@ -523,7 +522,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 37,
+    id: "37",
     category: QuestionCategory.DecisionMaking,
     question: "How comfortable are you making decisions with incomplete information?",
     options: [
@@ -537,7 +536,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 38,
+    id: "38",
     category: QuestionCategory.DecisionMaking,
     question: "After making an important decision, how often do you second-guess yourself?",
     options: [
@@ -551,7 +550,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.7
   },
   {
-    id: 39,
+    id: "39",
     category: QuestionCategory.DecisionMaking,
     question: "How do you typically approach decisions that affect others?",
     options: [
@@ -565,7 +564,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 40,
+    id: "40",
     category: QuestionCategory.DecisionMaking,
     question: "What tends to be your biggest challenge in decision-making?",
     options: [
@@ -581,7 +580,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Creativity Category
   {
-    id: 41,
+    id: "41",
     category: QuestionCategory.Creativity,
     question: "How do you typically generate new ideas or approaches?",
     options: [
@@ -595,7 +594,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 42,
+    id: "42",
     category: QuestionCategory.Creativity,
     question: "When do you feel most creative or innovative?",
     options: [
@@ -609,7 +608,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 43,
+    id: "43",
     category: QuestionCategory.Creativity,
     question: "How important is creative expression in your life?",
     options: [
@@ -623,7 +622,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.7
   },
   {
-    id: 44,
+    id: "44",
     category: QuestionCategory.Creativity,
     question: "How do you typically respond to unconventional or unusual ideas?",
     options: [
@@ -637,7 +636,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 45,
+    id: "45",
     category: QuestionCategory.Creativity,
     question: "What do you find most challenging about creative processes?",
     options: [
@@ -653,7 +652,7 @@ export const questionBank: AssessmentQuestion[] = [
   
   // Leadership Category
   {
-    id: 46,
+    id: "46",
     category: QuestionCategory.Leadership,
     question: "What do you believe is the most important quality of effective leadership?",
     options: [
@@ -667,7 +666,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 47,
+    id: "47",
     category: QuestionCategory.Leadership,
     question: "How do you typically influence others toward a goal or perspective?",
     options: [
@@ -681,7 +680,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 48,
+    id: "48",
     category: QuestionCategory.Leadership,
     question: "When in a leadership role, how do you handle disagreement or dissenting views?",
     options: [
@@ -695,7 +694,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.9
   },
   {
-    id: 49,
+    id: "49",
     category: QuestionCategory.Leadership,
     question: "How comfortable are you with taking charge in group situations?",
     options: [
@@ -709,7 +708,7 @@ export const questionBank: AssessmentQuestion[] = [
     weight: 0.8
   },
   {
-    id: 50,
+    id: "50",
     category: QuestionCategory.Leadership,
     question: "How do you typically respond when things go wrong under your leadership?",
     options: [

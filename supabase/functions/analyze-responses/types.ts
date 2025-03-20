@@ -1,14 +1,16 @@
 
 // Assessment Response Types
 export enum QuestionCategory {
-  PERSONALITY = "personality",
-  COGNITIVE = "cognitive",
-  EMOTIONAL = "emotional",
-  SOCIAL = "social",
-  MOTIVATION = "motivation",
-  VALUES = "values",
-  LEARNING = "learning",
-  STRENGTHS = "strengths"
+  PersonalityTraits = "personality",
+  EmotionalIntelligence = "emotional",
+  CognitivePatterns = "cognitive",
+  ValueSystems = "values",
+  Motivation = "motivation",
+  Resilience = "resilience",
+  SocialInteraction = "social",
+  DecisionMaking = "decision",
+  Creativity = "creativity",
+  Leadership = "leadership"
 }
 
 export interface AssessmentResponse {
@@ -17,6 +19,16 @@ export interface AssessmentResponse {
   customResponse?: string;
   category: QuestionCategory;
   timestamp: Date;
+}
+
+// Assessment Question Type
+export interface AssessmentQuestion {
+  id: string;
+  category: QuestionCategory;
+  question: string;
+  options: string[];
+  allowCustomResponse?: boolean;
+  weight?: number;
 }
 
 // Intelligence Domain
@@ -53,8 +65,16 @@ export interface PersonalityAnalysis {
   intelligence: IntelligenceType;
   intelligenceScore: number;
   emotionalIntelligenceScore: number;
-  cognitiveStyle: string;
-  valueSystem: string[];
+  cognitiveStyle: string | { 
+    primary: string;
+    secondary: string;
+    description: string;
+  };
+  valueSystem: string[] | {
+    strengths: string[];
+    challenges: string[];
+    compatibleTypes: string[];
+  };
   motivators: string[];
   inhibitors: string[];
   weaknesses: string[];
@@ -67,6 +87,12 @@ export interface PersonalityAnalysis {
 
 // Activity Types
 export enum ActivityCategory {
+  Kindness = "KINDNESS",
+  Mindfulness = "MINDFULNESS",
+  Learning = "LEARNING",
+  Health = "HEALTH",
+  Social = "SOCIAL",
+  Creativity = "CREATIVITY",
   COGNITIVE = "COGNITIVE",
   EMOTIONAL = "EMOTIONAL",
   SOCIAL = "SOCIAL",
@@ -87,4 +113,17 @@ export interface Activity {
   completedAt?: Date;
   steps?: string[];
   benefits?: string;
+}
+
+// Notification Type
+export interface MotivationalNotification {
+  id: string;
+  message: string;
+  type: 'achievement' | 'reminder' | 'insight';
+  date: Date;
+  read: boolean;
+  userId?: string;
+  suggestion?: string;
+  createdAt: Date;
+  relatedTraits?: string[];
 }
