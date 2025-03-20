@@ -1,116 +1,186 @@
-
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+import { useParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { PersonalityAnalysis, ValueSystemType, RelationshipPatterns } from "@/utils/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReportHeader from "./ReportHeader";
 import OverviewSection from "./sections/OverviewSection";
 import PersonalityTraitsSection from "./sections/PersonalityTraitsSection";
 import IntelligenceSection from "./sections/IntelligenceSection";
 import MotivationSection from "./sections/MotivationSection";
+import CoreValuesSection from "./sections/CoreValuesSection";
 import GrowthAreasSection from "./sections/GrowthAreasSection";
-import CareerValuesSection from "./sections/CareerValuesSection";
 import RelationshipLearningSection from "./sections/RelationshipLearningSection";
+import CareerValuesSection from "./sections/CareerValuesSection";
 import RoadmapSection from "./sections/RoadmapSection";
-import { RelationshipPatterns, ValueSystemType } from "@/utils/types";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+
+// Type guard to check if valueSystem is an object or array
+const isValueSystemObject = (valueSystem: ValueSystemType): valueSystem is {
+  strengths: string[];
+  challenges: string[];
+  compatibleTypes: string[];
+} => {
+  return typeof valueSystem === 'object' && !Array.isArray(valueSystem) && 'strengths' in valueSystem;
+};
+
+// Type guard to check if relationshipPatterns is an object or array
+const isRelationshipObject = (patterns: RelationshipPatterns | string[]): patterns is RelationshipPatterns => {
+  return typeof patterns === 'object' && !Array.isArray(patterns) && 'strengths' in patterns;
+};
 
 const ReportPage: React.FC = () => {
-  const { analysis } = useAIAnalysis();
-  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const { analyses, isLoading, error } = useAIAnalysis();
   
-  // Type guards
-  const isValueSystemArray = (value: ValueSystemType): value is string[] => {
-    return Array.isArray(value);
-  };
+  const analysisResult = analyses.find(a => a.id === id);
   
-  const isRelationshipPatternObject = (value: any): value is RelationshipPatterns => {
-    return !Array.isArray(value) && typeof value === 'object' && value !== null && 'compatibleTypes' in value;
-  };
-  
-  // If no analysis is available, redirect to assessment
-  React.useEffect(() => {
-    if (!analysis) {
-      navigate("/assessment");
-    }
-  }, [analysis, navigate]);
-  
-  if (!analysis) {
-    return (
-      <div className="container max-w-4xl py-8 px-4 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">No Analysis Available</h1>
-          <p className="text-muted-foreground mb-6">
-            Please complete the assessment to view your personalized report.
-          </p>
-          <button 
-            className="bg-primary text-primary-foreground px-4 py-2 rounded"
-            onClick={() => navigate("/assessment")}
-          >
-            Take Assessment
-          </button>
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <div className="container py-10">Loading analysis...</div>;
   }
   
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
+  if (error || !analysisResult) {
+    toast({
+      title: "Error loading analysis",
+      description: "We couldn't load the personality analysis. Please try again.",
+      variant: "destructive",
+    });
+    return <div className="container py-10">Error loading analysis. Please refresh the page.</div>;
+  }
+  
+  // Extract analysis sections with appropriate type handling
+  const {
+    overview,
+    traits,
+    intelligence,
+    intelligenceScore,
+    emotionalIntelligenceScore,
+    cognitiveStyle,
+    valueSystem,
+    motivators,
+    inhibitors,
+    weaknesses,
+    growthAreas,
+    relationshipPatterns,
+    careerSuggestions,
+    learningPathways,
+    roadmap,
+  } = analysisResult;
+  
+  // Convert valueSystem to the correct format for the CoreValuesSection
+  const processedValueSystem = isValueSystemObject(valueSystem) 
+    ? valueSystem 
+    : { strengths: valueSystem, challenges: [], compatibleTypes: [] };
+  
+  // Convert relationshipPatterns to the correct format
+  const processedRelationships = isRelationshipObject(relationshipPatterns)
+    ? relationshipPatterns
+    : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
   
   return (
-    <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
-      <ReportHeader />
+    <div className="container py-6 space-y-8">
+      <ReportHeader analysis={analysisResult} />
       
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
-        {/* Overview */}
-        <OverviewSection analysis={analysis} />
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="personality">Personality</TabsTrigger>
+          <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
+          <TabsTrigger value="motivation">Motivation</TabsTrigger>
+          <TabsTrigger value="values">Values</TabsTrigger>
+          <TabsTrigger value="growth">Growth Areas</TabsTrigger>
+          <TabsTrigger value="relationships">Relationships</TabsTrigger>
+          <TabsTrigger value="career">Career</TabsTrigger>
+          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+        </TabsList>
+
+        {/* Tab Content */}
+        <TabsContent value="overview" className="space-y-10 mt-6">
+          <OverviewSection 
+            overview={overview} 
+            cognitiveStyle={cognitiveStyle} 
+          />
+          
+          <PersonalityTraitsSection traits={traits} />
+          
+          <IntelligenceSection 
+            intelligence={intelligence}
+            intelligenceScore={intelligenceScore}
+            emotionalIntelligenceScore={emotionalIntelligenceScore}
+          />
+          
+          <MotivationSection 
+            motivators={motivators}
+            inhibitors={inhibitors}
+          />
+          
+          <CoreValuesSection valueSystem={processedValueSystem} />
+          
+          <GrowthAreasSection 
+            weaknesses={weaknesses}
+            growthAreas={growthAreas}
+          />
+          
+          <RelationshipLearningSection 
+            relationshipPatterns={processedRelationships}
+          />
+          
+          <CareerValuesSection 
+            careerSuggestions={careerSuggestions}
+            learningPathways={learningPathways}
+          />
+          
+          <RoadmapSection roadmap={roadmap} />
+        </TabsContent>
         
-        {/* Top Traits */}
-        <PersonalityTraitsSection traits={analysis.traits} />
+        <TabsContent value="personality" className="space-y-10 mt-6">
+          <PersonalityTraitsSection traits={traits} />
+        </TabsContent>
         
-        {/* Intelligence */}
-        <IntelligenceSection analysis={analysis} />
+        <TabsContent value="intelligence" className="space-y-10 mt-6">
+          <IntelligenceSection 
+            intelligence={intelligence}
+            intelligenceScore={intelligenceScore}
+            emotionalIntelligenceScore={emotionalIntelligenceScore}
+          />
+        </TabsContent>
         
-        {/* Motivators & Inhibitors */}
-        <MotivationSection 
-          motivators={analysis.motivators} 
-          inhibitors={analysis.inhibitors} 
-        />
+        <TabsContent value="motivation" className="space-y-10 mt-6">
+          <MotivationSection 
+            motivators={motivators}
+            inhibitors={inhibitors}
+          />
+        </TabsContent>
         
-        {/* Growth Areas */}
-        <GrowthAreasSection 
-          weaknesses={analysis.weaknesses} 
-          growthAreas={analysis.growthAreas} 
-        />
+        <TabsContent value="values" className="space-y-10 mt-6">
+          <CoreValuesSection valueSystem={processedValueSystem} />
+        </TabsContent>
         
-        {/* Careers and Values */}
-        <CareerValuesSection 
-          careerSuggestions={analysis.careerSuggestions} 
-          valueSystem={analysis.valueSystem} 
-        />
+        <TabsContent value="growth" className="space-y-10 mt-6">
+          <GrowthAreasSection 
+            weaknesses={weaknesses}
+            growthAreas={growthAreas}
+          />
+        </TabsContent>
         
-        {/* Relationship Patterns and Learning Pathways */}
-        <RelationshipLearningSection 
-          relationshipPatterns={isRelationshipPatternObject(analysis.relationshipPatterns) ? 
-                                analysis.relationshipPatterns : 
-                                { strengths: [], challenges: [], compatibleTypes: analysis.relationshipPatterns }}
-          learningPathways={analysis.learningPathways} 
-        />
+        <TabsContent value="relationships" className="space-y-10 mt-6">
+          <RelationshipLearningSection 
+            relationshipPatterns={processedRelationships}
+          />
+        </TabsContent>
         
-        {/* Roadmap */}
-        <RoadmapSection roadmap={analysis.roadmap} />
-      </motion.div>
+        <TabsContent value="career" className="space-y-10 mt-6">
+          <CareerValuesSection 
+            careerSuggestions={careerSuggestions}
+            learningPathways={learningPathways}
+          />
+        </TabsContent>
+        
+        <TabsContent value="roadmap" className="space-y-10 mt-6">
+          <RoadmapSection roadmap={roadmap} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

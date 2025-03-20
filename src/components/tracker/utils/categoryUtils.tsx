@@ -1,44 +1,44 @@
 
 import { ActivityCategory } from "@/utils/types";
-import { Heart, Brain, Users, BookOpen, Activity, Paintbrush, Star } from "lucide-react";
-import React from "react";
+import { Heart, Brain, BookOpen, Activity, Users, Paintbrush } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
-// Category icons mapping
-export const getCategoryIcon = (category: ActivityCategory) => {
+// Get icon for a category
+export const getCategoryIcon = (category: ActivityCategory): LucideIcon => {
   switch (category) {
-    case ActivityCategory.Kindness:
-      return <Heart className="h-5 w-5" />;
-    case ActivityCategory.Mindfulness:
-      return <Brain className="h-5 w-5" />;
-    case ActivityCategory.Learning:
-      return <BookOpen className="h-5 w-5" />;
-    case ActivityCategory.Health:
-      return <Activity className="h-5 w-5" />;
-    case ActivityCategory.Social:
-      return <Users className="h-5 w-5" />;
-    case ActivityCategory.Creativity:
-      return <Paintbrush className="h-5 w-5" />;
+    case ActivityCategory.KINDNESS:
+      return Heart;
+    case ActivityCategory.MINDFULNESS:
+      return Brain;
+    case ActivityCategory.LEARNING:
+      return BookOpen;
+    case ActivityCategory.HEALTH:
+      return Activity;
+    case ActivityCategory.SOCIAL:
+      return Users;
+    case ActivityCategory.CREATIVITY:
+      return Paintbrush;
     default:
-      return <Star className="h-5 w-5" />;
+      return Heart; // Default icon
   }
 };
 
-// Category color mapping
-export const getCategoryColor = (category: ActivityCategory) => {
+// Get color for a category
+export const getCategoryColor = (category: ActivityCategory): string => {
   switch (category) {
-    case ActivityCategory.Kindness:
-      return "bg-pink-500/10 text-pink-600";
-    case ActivityCategory.Mindfulness:
-      return "bg-purple-500/10 text-purple-600";
-    case ActivityCategory.Learning:
-      return "bg-blue-500/10 text-blue-600";
-    case ActivityCategory.Health:
-      return "bg-emerald-500/10 text-emerald-600";
-    case ActivityCategory.Social:
-      return "bg-amber-500/10 text-amber-600";
-    case ActivityCategory.Creativity:
-      return "bg-indigo-500/10 text-indigo-600";
+    case ActivityCategory.KINDNESS:
+      return "text-red-500";
+    case ActivityCategory.MINDFULNESS:
+      return "text-blue-500";
+    case ActivityCategory.LEARNING:
+      return "text-yellow-500";
+    case ActivityCategory.HEALTH:
+      return "text-green-500";
+    case ActivityCategory.SOCIAL:
+      return "text-purple-500";
+    case ActivityCategory.CREATIVITY:
+      return "text-pink-500";
     default:
-      return "bg-gray-500/10 text-gray-600";
+      return "text-gray-500";
   }
 };

@@ -86,14 +86,14 @@ const NotificationCenter: React.FC = () => {
       
       const newNotification: MotivationalNotification = {
         id: `notification-${Date.now()}`,
-        userId: 'current-user', // In a real app, this would be the actual user ID
         message: suggestion.message,
         suggestion: suggestion.suggestion,
         relatedTraits: suggestion.relatedTraits,
         createdAt: new Date(),
         type: 'insight', // Adding required type field
         date: new Date(), // Adding required date field
-        read: false
+        read: false,
+        userId: 'current-user', // In a real app, this would be the actual user ID
       };
       
       const updatedNotifications = [newNotification, ...notifications];

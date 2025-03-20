@@ -1,90 +1,102 @@
 
 import { ActivityCategory } from "@/utils/types";
 
-// Suggestions for each activity category
-export const activitySuggestions: Record<ActivityCategory, string[]> = {
+// Activity suggestions by category
+export const activitySuggestionsByCategory: Record<ActivityCategory, string[]> = {
   [ActivityCategory.KINDNESS]: [
-    "Write a thoughtful message to someone you appreciate",
-    "Volunteer for a local cause that matters to you",
-    "Perform a random act of kindness for a stranger",
-    "Help a neighbor with a task or errand",
-    "Donate items you no longer need to a charity"
+    "Write a thank-you note to someone who has helped you recently",
+    "Compliment three people today",
+    "Donate to a charity you believe in",
+    "Help a neighbor with a chore or task",
+    "Leave a positive review for a local business you appreciate",
+    "Make a care package for someone going through a hard time"
   ],
   [ActivityCategory.MINDFULNESS]: [
-    "Practice focused breathing for 10 minutes",
-    "Take a mindful walk without digital distractions",
-    "Journal about your thoughts and feelings",
-    "Practice a body scan meditation",
-    "Engage in one task with complete attention"
+    "Practice deep breathing for 5 minutes",
+    "Do a body scan meditation",
+    "Take a mindful walk, noticing your surroundings",
+    "Journal about your thoughts and feelings without judgment",
+    "Practice mindful eating during one meal today",
+    "Set aside 10 minutes for complete silence"
   ],
   [ActivityCategory.LEARNING]: [
-    "Read an article on a topic outside your expertise",
-    "Take a free online course in a new subject",
-    "Learn 5 new words in a language you're interested in",
-    "Watch an educational documentary",
-    "Listen to an informative podcast"
+    "Read an article on a topic you know little about",
+    "Watch a documentary on a new subject",
+    "Take a free online class in a new skill",
+    "Learn 5 words in a new language",
+    "Listen to an educational podcast",
+    "Visit a museum (virtual or in-person)"
   ],
   [ActivityCategory.HEALTH]: [
+    "Try a new form of exercise for 20 minutes",
+    "Drink water instead of sugary beverages all day",
+    "Get outside for at least 30 minutes today",
     "Try a new healthy recipe",
-    "Take a 30-minute walk outdoors",
-    "Practice a 15-minute stretching routine",
-    "Replace one unhealthy food choice with a nutritious alternative",
-    "Get 7-8 hours of quality sleep"
+    "Go to bed 30 minutes earlier than usual",
+    "Do a quick 7-minute workout"
   ],
   [ActivityCategory.SOCIAL]: [
-    "Reach out to a friend you haven't spoken to in a while",
+    "Call a friend or family member you haven't spoken to in a while",
     "Have a meaningful conversation with someone new",
-    "Practice active listening in your next interaction",
-    "Join a community group or club related to your interests",
-    "Organize a small gathering with friends or family"
+    "Attend a community event",
+    "Join an online forum or group related to your interests",
+    "Organize a small gathering with friends",
+    "Offer to help a colleague with a project"
   ],
   [ActivityCategory.CREATIVITY]: [
-    "Draw, paint, or sketch something from your imagination",
-    "Write a short story or poem",
-    "Try a new recipe or modify an existing one",
-    "Create something useful from items you already have",
-    "Take photographs of interesting perspectives around you"
+    "Doodle or draw for 15 minutes",
+    "Write a short poem or story",
+    "Take photos of things that inspire you today",
+    "Try a new recipe with creative modifications",
+    "Rearrange a room in your home",
+    "Create something with your hands (knit, build, craft)"
   ],
   [ActivityCategory.COGNITIVE]: [
     "Solve a puzzle or brain teaser",
-    "Learn a new mental math technique",
-    "Practice strategic thinking through a board game",
-    "Analyze a problem from multiple perspectives",
-    "Study a complex topic and explain it simply"
+    "Try using your non-dominant hand for routine tasks",
+    "Play a strategy game",
+    "Memorize a short poem or quote",
+    "Learn about a complex topic and explain it to someone else",
+    "Create a mind map for a project or idea"
   ],
   [ActivityCategory.EMOTIONAL]: [
+    "Write down three things you're grateful for",
+    "Practice self-compassion by writing a kind letter to yourself",
     "Identify and name your emotions throughout the day",
-    "Practice self-compassion when facing challenges",
-    "Express gratitude for three specific things",
-    "Explore the root cause of a negative emotion",
-    "Use art or writing to process complex feelings"
+    "Create a playlist that expresses your current emotional state",
+    "Practice saying 'no' to something that doesn't serve you",
+    "Reflect on a challenging situation from multiple perspectives"
   ],
   [ActivityCategory.PERSONALITY]: [
-    "Reflect on your core values and how they guide your actions",
-    "Step outside your comfort zone in a small but meaningful way",
-    "Ask for feedback from someone you trust",
-    "Practice a trait you'd like to strengthen",
-    "Challenge a limiting belief about yourself"
+    "Do something outside your comfort zone",
+    "Practice a trait you'd like to strengthen (e.g., patience, assertiveness)",
+    "Reflect on your core values and how you express them",
+    "Try an activity typically associated with a different personality type",
+    "Ask for feedback from someone you trust about your strengths",
+    "Set a small goal that aligns with your desired personal growth"
   ],
   [ActivityCategory.MOTIVATION]: [
-    "Set a SMART goal for something meaningful to you",
-    "Create a vision board for your aspirations",
-    "Break down a large goal into small, actionable steps",
-    "Identify your intrinsic motivators",
-    "Celebrate a small win or progress milestone"
+    "Set a clear intention for the day",
+    "Break down a large goal into small, manageable steps",
+    "Create a vision board for a goal you're working toward",
+    "Identify and address one thing that's been draining your motivation",
+    "Reward yourself for completing a challenging task",
+    "Find an accountability partner for a goal"
   ],
   [ActivityCategory.VALUES]: [
-    "Make a decision that aligns with your core values",
-    "Practice standing up for something you believe in",
-    "Evaluate how your daily actions reflect your values",
-    "Learn about ethical frameworks different from your own",
-    "Volunteer for a cause aligned with your values"
+    "Make one decision today that aligns with your core values",
+    "Write about a time when you stood up for something you believe in",
+    "Research an organization that aligns with your values",
+    "Have a conversation about values with someone close to you",
+    "Evaluate how your daily activities reflect your values",
+    "Practice saying 'yes' to things that align with your values"
   ],
   [ActivityCategory.STRENGTHS]: [
-    "Use one of your top strengths in a new way",
-    "Teach someone a skill you excel at",
-    "Reflect on when your strengths have helped you succeed",
-    "Combine two of your strengths to solve a problem",
-    "Seek out opportunities that leverage your natural talents"
+    "Use one of your top strengths in a new way today",
+    "Help someone by offering your unique skills",
+    "Reflect on a time when you used your strengths effectively",
+    "Take on a task that plays to your natural abilities",
+    "Learn about how to further develop one of your strengths",
+    "Ask others what they see as your key strengths"
   ]
 };

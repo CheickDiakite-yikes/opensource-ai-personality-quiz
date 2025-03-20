@@ -19,48 +19,48 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter, currentFilter })
         All
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Kindness} 
-        onClick={() => setFilter(ActivityCategory.Kindness)}
+        value={ActivityCategory.KINDNESS} 
+        onClick={() => setFilter(ActivityCategory.KINDNESS)}
         className="flex items-center"
       >
         <Heart className="h-4 w-4 mr-1 inline md:hidden" />
         <span className="hidden md:inline">Kindness</span>
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Mindfulness} 
-        onClick={() => setFilter(ActivityCategory.Mindfulness)}
+        value={ActivityCategory.MINDFULNESS} 
+        onClick={() => setFilter(ActivityCategory.MINDFULNESS)}
         className="flex items-center"
       >
         <Brain className="h-4 w-4 mr-1 inline md:hidden" />
         <span className="hidden md:inline">Mindfulness</span>
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Learning} 
-        onClick={() => setFilter(ActivityCategory.Learning)}
+        value={ActivityCategory.LEARNING} 
+        onClick={() => setFilter(ActivityCategory.LEARNING)}
         className="flex items-center"
       >
         <BookOpen className="h-4 w-4 mr-1 inline md:hidden" />
         <span className="hidden md:inline">Learning</span>
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Health} 
-        onClick={() => setFilter(ActivityCategory.Health)}
+        value={ActivityCategory.HEALTH} 
+        onClick={() => setFilter(ActivityCategory.HEALTH)}
         className="flex items-center"
       >
         <Activity className="h-4 w-4 mr-1 inline md:hidden" />
         <span className="hidden md:inline">Health</span>
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Social} 
-        onClick={() => setFilter(ActivityCategory.Social)}
+        value={ActivityCategory.SOCIAL} 
+        onClick={() => setFilter(ActivityCategory.SOCIAL)}
         className="flex items-center"
       >
         <Users className="h-4 w-4 mr-1 inline md:hidden" />
         <span className="hidden md:inline">Social</span>
       </TabsTrigger>
       <TabsTrigger 
-        value={ActivityCategory.Creativity} 
-        onClick={() => setFilter(ActivityCategory.Creativity)}
+        value={ActivityCategory.CREATIVITY} 
+        onClick={() => setFilter(ActivityCategory.CREATIVITY)}
         className="flex items-center"
       >
         <Paintbrush className="h-4 w-4 mr-1 inline md:hidden" />

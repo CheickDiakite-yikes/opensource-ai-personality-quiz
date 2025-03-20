@@ -1,72 +1,84 @@
 
 import React from "react";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Award, Brain, Heart, PieChart } from "lucide-react";
-import { AIAnalysis } from "@/utils/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { CognitiveStyleType } from "@/utils/types";
+import { Brain } from "lucide-react";
 
 interface OverviewSectionProps {
-  analysis: AIAnalysis;
+  overview: string;
+  cognitiveStyle: CognitiveStyleType;
 }
 
-const OverviewSection: React.FC<OverviewSectionProps> = ({ analysis }) => {
+// Type guard to check if cognitiveStyle is an object or string
+const isCognitiveStyleObject = (style: CognitiveStyleType): style is {
+  primary: string;
+  secondary: string;
+  description: string;
+} => {
+  return typeof style === 'object' && 'primary' in style;
+};
+
+const OverviewSection: React.FC<OverviewSectionProps> = ({ overview, cognitiveStyle }) => {
+  // Process the overview text into paragraphs
+  const paragraphs = overview.split('\n\n').filter(p => p.trim().length > 0);
+  
+  // Extract cognitive style information
+  let primaryStyle = '';
+  let secondaryStyle = '';
+  let styleDescription = '';
+  
+  if (isCognitiveStyleObject(cognitiveStyle)) {
+    primaryStyle = cognitiveStyle.primary;
+    secondaryStyle = cognitiveStyle.secondary;
+    styleDescription = cognitiveStyle.description;
+  } else {
+    // If it's just a string, use it as the primary style
+    primaryStyle = cognitiveStyle;
+  }
+  
   return (
-    <motion.div variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: 0.5,
-          ease: [0.22, 1, 0.36, 1]
-        }
-      }
-    }}>
-      <Card className="glass-panel overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 pb-4">
-          <CardTitle className="flex items-center">
-            <Award className="h-5 w-5 mr-2 text-primary" /> Overview
-          </CardTitle>
-          <CardDescription>Your personality at a glance</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <p className="text-lg leading-relaxed">{analysis.overview}</p>
-          
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card/30 p-4 rounded-lg border border-border/40">
-              <div className="flex items-center mb-2">
-                <Brain className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="text-sm font-medium">Intelligence Score</h3>
-              </div>
-              <div className="text-2xl font-bold">{analysis.intelligenceScore}/100</div>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold tracking-tight">Personality Overview</h2>
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="md:col-span-2">
+          <CardContent className="pt-6">
+            {paragraphs.map((paragraph, index) => (
+              <p key={index} className={index !== 0 ? "mt-4" : ""}>
+                {paragraph}
+              </p>
+            ))}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center mb-4">
+              <Brain className="w-5 h-5 mr-2 text-primary" />
+              <h3 className="font-semibold text-lg">Cognitive Style</h3>
             </div>
             
-            <div className="bg-card/30 p-4 rounded-lg border border-border/40">
-              <div className="flex items-center mb-2">
-                <Heart className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="text-sm font-medium">Emotional Intelligence</h3>
+            <div className="space-y-3">
+              <div>
+                <span className="text-sm text-muted-foreground">Primary</span>
+                <p className="font-medium">{primaryStyle}</p>
               </div>
-              <div className="text-2xl font-bold">{analysis.emotionalIntelligenceScore}/100</div>
+              
+              {secondaryStyle && (
+                <div>
+                  <span className="text-sm text-muted-foreground">Secondary</span>
+                  <p className="font-medium">{secondaryStyle}</p>
+                </div>
+              )}
+              
+              {styleDescription && (
+                <p className="text-sm mt-2">{styleDescription}</p>
+              )}
             </div>
-            
-            <div className="bg-card/30 p-4 rounded-lg border border-border/40">
-              <div className="flex items-center mb-2">
-                <PieChart className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="text-sm font-medium">Cognitive Style</h3>
-              </div>
-              <div className="text-md font-medium">{analysis.cognitiveStyle.primary}</div>
-              <div className="text-sm text-muted-foreground">{analysis.cognitiveStyle.secondary}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

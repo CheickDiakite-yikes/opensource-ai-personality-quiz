@@ -38,7 +38,7 @@ export interface MotivationalNotification {
   type: 'achievement' | 'reminder' | 'insight';
   date: Date;
   read: boolean;
-  // Additional properties needed by NotificationCenter
+  // Additional properties
   userId?: string;
   suggestion?: string;
   createdAt: Date;
