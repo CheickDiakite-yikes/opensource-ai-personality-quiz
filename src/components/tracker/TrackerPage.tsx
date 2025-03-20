@@ -34,7 +34,7 @@ import {
   Award,
   Star,
   Filter,
-  SortAscending,
+  ArrowUpDown,
   Calendar,
   CheckCircle2
 } from "lucide-react";
@@ -482,7 +482,7 @@ const TrackerPage: React.FC = () => {
                     prev === 'points' ? 'category' : prev === 'category' ? 'date' : 'points'
                   )}
                 >
-                  <SortAscending className="h-4 w-4" />
+                  <ArrowUpDown className="h-4 w-4" />
                   <span className="text-xs">
                     Sort: {sortBy === 'points' ? 'Points' : sortBy === 'category' ? 'Category' : 'Date'}
                   </span>
