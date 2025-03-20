@@ -7,6 +7,7 @@ import ReportHeader from "./ReportHeader";
 import ReportTabs from "./ReportTabs";
 import ReportTabContent from "./ReportTabContent";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+import ReportSkeleton from "./skeletons/ReportSkeleton";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +19,11 @@ const ReportPage: React.FC = () => {
   const analysisResult = analyses.find(a => a.id === id) || analysis;
   
   if (isLoading) {
-    return <div className="container py-10">Loading analysis...</div>;
+    return (
+      <div className="container py-10">
+        <ReportSkeleton />
+      </div>
+    );
   }
   
   if (!analysisResult) {
