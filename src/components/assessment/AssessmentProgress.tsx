@@ -45,10 +45,21 @@ const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
   const formatCategoryName = (category?: QuestionCategory): string => {
     if (!category) return "";
     
-    // Add spaces before capital letters and capitalize first letter
-    return category
-      .replace(/([A-Z])/g, ' $1')
-      .trim();
+    // Convert from enum value (like "personality") to display text
+    const displayNames: Record<QuestionCategory, string> = {
+      [QuestionCategory.PersonalityTraits]: "Personality Traits",
+      [QuestionCategory.EmotionalIntelligence]: "Emotional Intelligence",
+      [QuestionCategory.CognitivePatterns]: "Cognitive Patterns",
+      [QuestionCategory.ValueSystems]: "Value Systems",
+      [QuestionCategory.Motivation]: "Motivation",
+      [QuestionCategory.Resilience]: "Resilience",
+      [QuestionCategory.SocialInteraction]: "Social Interaction",
+      [QuestionCategory.DecisionMaking]: "Decision Making",
+      [QuestionCategory.Creativity]: "Creativity",
+      [QuestionCategory.Leadership]: "Leadership",
+    };
+    
+    return displayNames[category];
   };
   
   return (
