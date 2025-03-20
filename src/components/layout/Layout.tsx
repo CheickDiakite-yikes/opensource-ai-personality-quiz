@@ -14,7 +14,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
   SheetContent,
@@ -28,7 +28,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [showSidebar, setShowSidebar] = useState(false);
   
   const isActive = (path: string) => {
