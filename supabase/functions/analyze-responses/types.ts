@@ -64,3 +64,27 @@ export interface PersonalityAnalysis {
   learningPathways: string[];
   roadmap: string;
 }
+
+// Activity Types
+export enum ActivityCategory {
+  COGNITIVE = "COGNITIVE",
+  EMOTIONAL = "EMOTIONAL",
+  SOCIAL = "SOCIAL",
+  PERSONALITY = "PERSONALITY",
+  MOTIVATION = "MOTIVATION",
+  VALUES = "VALUES",
+  LEARNING = "LEARNING",
+  STRENGTHS = "STRENGTHS"
+}
+
+export interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  category: ActivityCategory;
+  completed: boolean;
+  completedAt?: Date;
+  steps?: string[];
+  benefits?: string;
+}

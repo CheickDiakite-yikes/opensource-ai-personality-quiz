@@ -60,7 +60,7 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
-// Generate AI analysis using OpenAI's gpt-4o-mini model with reasoning capabilities
+// Generate AI analysis using OpenAI's o3-mini model with reasoning capabilities
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string
@@ -140,7 +140,7 @@ async function generateAIAnalysis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'o3-mini',
         messages: [
           { 
             role: 'system', 
@@ -155,6 +155,7 @@ async function generateAIAnalysis(
         presence_penalty: 0,
         response_format: { type: "json_object" },
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
+        reasoning_effort: "medium",
       }),
     });
 

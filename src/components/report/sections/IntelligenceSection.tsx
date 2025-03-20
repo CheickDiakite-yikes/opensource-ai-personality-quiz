@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Brain, BarChart } from "lucide-react";
-import { AIAnalysis } from "@/utils/types";
+import { PersonalityAnalysis } from "@/utils/types";
 import IntelligenceDomainChart from "../IntelligenceDomainChart";
 
 interface IntelligenceSectionProps {
-  analysis: AIAnalysis;
+  analysis: PersonalityAnalysis;
 }
 
 const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({ analysis }) => {

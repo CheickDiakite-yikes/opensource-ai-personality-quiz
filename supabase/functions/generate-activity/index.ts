@@ -88,7 +88,7 @@ Return the activity in JSON format with these fields:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'o3-mini',
         messages: [
           { 
             role: 'system', 
@@ -102,6 +102,7 @@ Return the activity in JSON format with these fields:
         frequency_penalty: 0.2,
         presence_penalty: 0.4,
         response_format: { type: "json_object" },
+        reasoning_effort: "medium",
       }),
     });
 

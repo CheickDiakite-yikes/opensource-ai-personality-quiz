@@ -1,3 +1,4 @@
+
 // Assessment Response Types
 export enum QuestionCategory {
   PERSONALITY = "personality",
@@ -16,6 +17,24 @@ export interface AssessmentResponse {
   customResponse?: string;
   category: QuestionCategory;
   timestamp: Date;
+}
+
+// Assessment Question Type (needed for error fixes)
+export interface AssessmentQuestion {
+  id: string;
+  text: string;
+  options: string[];
+  category: QuestionCategory;
+  allowCustom?: boolean;
+}
+
+// Notification Type (needed for error fixes)
+export interface MotivationalNotification {
+  id: string;
+  message: string;
+  type: 'achievement' | 'reminder' | 'insight';
+  date: Date;
+  read: boolean;
 }
 
 // Intelligence Domain
@@ -64,6 +83,9 @@ export interface PersonalityAnalysis {
   roadmap: string;
 }
 
+// Alias type for backwards compatibility
+export type AIAnalysis = PersonalityAnalysis;
+
 // Activity Types
 export enum ActivityCategory {
   COGNITIVE = "COGNITIVE",
@@ -83,6 +105,7 @@ export interface Activity {
   points: number;
   category: ActivityCategory;
   completed: boolean;
+  completedAt?: Date; // Optional timestamp for when activity was completed
   steps?: string[];
   benefits?: string;
 }
