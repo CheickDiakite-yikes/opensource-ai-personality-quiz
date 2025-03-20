@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { useEffect } from "react";
 import PageTransition from "@/components/ui/PageTransition";
@@ -13,8 +12,48 @@ import NotFound from "./pages/NotFound";
 import AssessmentPage from "./components/assessment/AssessmentPage";
 import ReportPage from "./components/report/ReportPage";
 import TrackerPage from "./components/tracker/TrackerPage";
+import { AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
+
+// Add a wrapper component for route transitions
+const AppRoutes = () => {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Layout />}>
+          <Route index element={
+            <PageTransition>
+              <Index />
+            </PageTransition>
+          } />
+          <Route path="/assessment" element={
+            <PageTransition>
+              <AssessmentPage />
+            </PageTransition>
+          } />
+          <Route path="/report" element={
+            <PageTransition>
+              <ReportPage />
+            </PageTransition>
+          } />
+          <Route path="/tracker" element={
+            <PageTransition>
+              <TrackerPage />
+            </PageTransition>
+          } />
+          <Route path="*" element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          } />
+        </Route>
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => {
   // Add RGB values for primary color to root for animation purposes
@@ -66,15 +105,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Index />} />
-                <Route path="/assessment" element={<AssessmentPage />} />
-                <Route path="/report" element={<ReportPage />} />
-                <Route path="/tracker" element={<TrackerPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

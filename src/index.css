@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -108,7 +109,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
-    @apply font-medium;
+    @apply font-medium tracking-tight;
   }
 
   #root {
@@ -246,5 +247,88 @@
 
   .subtle-card {
     @apply bg-secondary/40 dark:bg-secondary/30 backdrop-blur-sm border border-primary/5 rounded-xl;
+  }
+  
+  /* New animation classes */
+  .nav-item {
+    @apply relative overflow-hidden;
+  }
+  
+  .nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: hsl(var(--primary));
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+  }
+  
+  .nav-item:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+  
+  .page-fade-in {
+    animation: page-fade-in 0.5s ease-out;
+  }
+  
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .hover-scale {
+    transition: transform 0.3s ease;
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+  
+  .content-appear {
+    animation: content-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  @keyframes content-appear {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .accent-glow {
+    box-shadow: 0 0 15px 2px hsla(var(--primary) / 0.2);
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .accent-glow:hover {
+    box-shadow: 0 0 20px 5px hsla(var(--primary) / 0.3);
+  }
+  
+  .ambient-float {
+    animation: ambient-float 6s ease-in-out infinite;
+  }
+  
+  @keyframes ambient-float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 }
