@@ -14,7 +14,24 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
-import { Download, ArrowRight, Award, Brain, Heart, Lightbulb, Zap } from "lucide-react";
+import {
+  Download,
+  ArrowRight,
+  Award,
+  Brain,
+  Heart,
+  Lightbulb,
+  Zap,
+  PieChart,
+  Briefcase,
+  BookOpen,
+  BarChart,
+} from "lucide-react";
+import PersonalityTraitCard from "./PersonalityTraitCard";
+import IntelligenceDomainChart from "./IntelligenceDomainChart";
+import CareerSuggestions from "./CareerSuggestions";
+import RelationshipPatterns from "./RelationshipPatterns";
+import LearningPathways from "./LearningPathways";
 
 const ReportPage: React.FC = () => {
   const { analysis } = useAIAnalysis();
@@ -67,7 +84,7 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className="container max-w-4xl py-6 md:py-10 px-4 min-h-screen">
+    <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
       <div className="flex justify-between items-start mb-8 flex-col md:flex-row">
         <div>
           <h1 className="text-3xl font-bold">Your Analysis Report</h1>
@@ -97,6 +114,33 @@ const ReportPage: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <p className="text-lg leading-relaxed">{analysis.overview}</p>
+              
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-card/30 p-4 rounded-lg border border-border/40">
+                  <div className="flex items-center mb-2">
+                    <Brain className="h-5 w-5 mr-2 text-primary" />
+                    <h3 className="text-sm font-medium">Intelligence Score</h3>
+                  </div>
+                  <div className="text-2xl font-bold">{analysis.intelligenceScore}/100</div>
+                </div>
+                
+                <div className="bg-card/30 p-4 rounded-lg border border-border/40">
+                  <div className="flex items-center mb-2">
+                    <Heart className="h-5 w-5 mr-2 text-primary" />
+                    <h3 className="text-sm font-medium">Emotional Intelligence</h3>
+                  </div>
+                  <div className="text-2xl font-bold">{analysis.emotionalIntelligenceScore}/100</div>
+                </div>
+                
+                <div className="bg-card/30 p-4 rounded-lg border border-border/40">
+                  <div className="flex items-center mb-2">
+                    <PieChart className="h-5 w-5 mr-2 text-primary" />
+                    <h3 className="text-sm font-medium">Cognitive Style</h3>
+                  </div>
+                  <div className="text-md font-medium">{analysis.cognitiveStyle.primary}</div>
+                  <div className="text-sm text-muted-foreground">{analysis.cognitiveStyle.secondary}</div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -111,29 +155,20 @@ const ReportPage: React.FC = () => {
               <CardDescription>Your most prominent characteristics</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="space-y-6">
-                {analysis.traits.map((trait, index) => (
-                  <div key={index}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center">
-                        <span className="text-2xl font-semibold mr-3">
-                          {index + 1}.
-                        </span>
-                        <div>
-                          <h3 className="font-medium text-lg">{trait.trait}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {trait.description}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="ml-2">
-                        {trait.score.toFixed(1)}/10
-                      </Badge>
-                    </div>
-                    <Progress value={trait.score * 10} className="h-2" />
-                    {index < analysis.traits.length - 1 && <Separator className="my-4" />}
-                  </div>
+              <div className="space-y-4">
+                {analysis.traits.slice(0, 5).map((trait, index) => (
+                  <PersonalityTraitCard key={index} trait={trait} index={index} />
                 ))}
+                
+                {analysis.traits.length > 5 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4"
+                    onClick={() => navigate("/traits")}
+                  >
+                    View All {analysis.traits.length} Traits
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -159,7 +194,14 @@ const ReportPage: React.FC = () => {
               
               <div className="mt-6">
                 <h3 className="font-medium text-lg mb-2">Type: {analysis.intelligence.type}</h3>
-                <p className="text-muted-foreground">{analysis.intelligence.description}</p>
+                <p className="text-muted-foreground mb-4">{analysis.intelligence.description}</p>
+                
+                <h4 className="font-medium text-md mb-3 flex items-center">
+                  <BarChart className="h-4 w-4 mr-2 text-primary" />
+                  Intelligence Domains
+                </h4>
+                
+                <IntelligenceDomainChart domains={analysis.intelligence.domains} />
               </div>
             </CardContent>
           </Card>
@@ -249,6 +291,41 @@ const ReportPage: React.FC = () => {
               </ul>
             </CardContent>
           </Card>
+        </motion.div>
+        
+        {/* Careers and Values */}
+        <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
+          <CareerSuggestions careers={analysis.careerSuggestions} />
+          
+          <Card className="glass-panel overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pb-4">
+              <CardTitle className="flex items-center">
+                <Award className="h-5 w-5 mr-2 text-primary" /> Your Core Values
+              </CardTitle>
+              <CardDescription>Principles that guide your decisions</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {analysis.valueSystem.map((value, index) => (
+                  <div
+                    key={index}
+                    className="border border-border/40 p-3 rounded-md flex items-center bg-card/30"
+                  >
+                    <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 flex-shrink-0">
+                      {index + 1}
+                    </span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        {/* Relationship Patterns and Learning Pathways */}
+        <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
+          <RelationshipPatterns relationshipPatterns={analysis.relationshipPatterns} />
+          <LearningPathways pathways={analysis.learningPathways} />
         </motion.div>
         
         {/* Roadmap */}
