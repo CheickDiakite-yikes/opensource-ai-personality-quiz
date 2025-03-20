@@ -39,6 +39,7 @@ const Index = () => {
     }
   };
   
+  // Fixing the animation variants to use proper typings for framer-motion
   const floatingIconsVariants = {
     initial: { y: 0 },
     animate: { 
@@ -46,7 +47,7 @@ const Index = () => {
       transition: {
         duration: 3,
         repeat: Infinity,
-        repeatType: "reverse",
+        repeatType: "mirror", // Changed from string to specific literal type
         ease: "easeInOut",
         delay: Math.random() * 2
       }

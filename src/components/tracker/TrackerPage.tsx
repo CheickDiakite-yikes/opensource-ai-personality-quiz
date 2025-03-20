@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/tabs";
 import { Activity, ActivityCategory } from "@/utils/types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { 
   Heart, 
   Brain, 

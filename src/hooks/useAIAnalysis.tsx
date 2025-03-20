@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // This is a mock implementation; in a real app, you would connect to OpenAI API
 export const useAIAnalysis = () => {

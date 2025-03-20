@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { AssessmentQuestion, AssessmentResponse } from "@/utils/types";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { ArrowLeft, ArrowRight, Send } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // Sample questions for the assessment
 const sampleQuestions: AssessmentQuestion[] = [
