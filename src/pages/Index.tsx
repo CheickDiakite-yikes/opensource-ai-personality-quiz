@@ -1,37 +1,44 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
 import HeroSection from "@/components/home/HeroSection";
 import FeatureSection from "@/components/home/FeatureSection";
 import TestimonialSection from "@/components/home/TestimonialSection";
 import CTASection from "@/components/home/CTASection";
 import BackgroundElements from "@/components/home/BackgroundElements";
+import PageTransition from "@/components/ui/PageTransition";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
-const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const HomePage: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   
-  const handleAuthSuccess = () => {
-    setIsAuthenticated(true);
-    setTimeout(() => {
+  const handleGetStarted = () => {
+    if (user) {
       navigate("/assessment");
-    }, 1000);
+    } else {
+      navigate("/auth");
+    }
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 overflow-hidden relative">
-        {/* Background and floating elements */}
+    <PageTransition>
+      <div className="relative overflow-hidden">
         <BackgroundElements />
         
-        {/* Main content sections */}
-        <HeroSection onAuthSuccess={handleAuthSuccess} />
+        <HeroSection onGetStarted={handleGetStarted} isAuthenticated={!!user} />
         <FeatureSection />
         <TestimonialSection />
-        <CTASection />
+        <CTASection 
+          title="Start Your Self-Discovery Journey Today"
+          description="Unlock insights about your personality, potential, and purpose"
+          buttonText={user ? "Take Assessment" : "Sign Up Now"}
+          onAction={handleGetStarted}
+        />
       </div>
-    </div>
+    </PageTransition>
   );
 };
 
-export default Index;
+export default HomePage;

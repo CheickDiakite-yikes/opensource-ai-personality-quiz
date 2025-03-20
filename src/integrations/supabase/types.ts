@@ -9,7 +9,164 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          category: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analyses: {
+        Row: {
+          assessment_id: string
+          career_suggestions: Json | null
+          cognitive_style: Json | null
+          created_at: string
+          emotional_intelligence_score: number | null
+          growth_areas: Json | null
+          id: string
+          inhibitors: Json | null
+          intelligence: Json | null
+          intelligence_score: number | null
+          learning_pathways: Json | null
+          motivators: Json | null
+          overview: string | null
+          relationship_patterns: Json | null
+          result: Json
+          roadmap: string | null
+          traits: Json | null
+          user_id: string
+          value_system: Json | null
+          weaknesses: Json | null
+        }
+        Insert: {
+          assessment_id: string
+          career_suggestions?: Json | null
+          cognitive_style?: Json | null
+          created_at?: string
+          emotional_intelligence_score?: number | null
+          growth_areas?: Json | null
+          id?: string
+          inhibitors?: Json | null
+          intelligence?: Json | null
+          intelligence_score?: number | null
+          learning_pathways?: Json | null
+          motivators?: Json | null
+          overview?: string | null
+          relationship_patterns?: Json | null
+          result: Json
+          roadmap?: string | null
+          traits?: Json | null
+          user_id: string
+          value_system?: Json | null
+          weaknesses?: Json | null
+        }
+        Update: {
+          assessment_id?: string
+          career_suggestions?: Json | null
+          cognitive_style?: Json | null
+          created_at?: string
+          emotional_intelligence_score?: number | null
+          growth_areas?: Json | null
+          id?: string
+          inhibitors?: Json | null
+          intelligence?: Json | null
+          intelligence_score?: number | null
+          learning_pathways?: Json | null
+          motivators?: Json | null
+          overview?: string | null
+          relationship_patterns?: Json | null
+          result?: Json
+          roadmap?: string | null
+          traits?: Json | null
+          user_id?: string
+          value_system?: Json | null
+          weaknesses?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyses_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          completed_at: string
+          id: string
+          responses: Json
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          responses: Json
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          responses?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

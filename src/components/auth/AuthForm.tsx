@@ -5,25 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { LockKeyholeIcon, MailIcon, UserIcon } from "lucide-react";
+import { LockKeyholeIcon, MailIcon, UserIcon, Loader2 } from "lucide-react";
 
 interface AuthFormProps {
-  onSuccess: () => void;
+  onAuth: (type: "login" | "register", data: { email: string; password: string; name?: string }) => void;
+  isLoading: boolean;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+const AuthForm: React.FC<AuthFormProps> = ({ onAuth, isLoading }) => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [name, setName] = useState<string>("");
   
-  // Mock authentication - in a real app, this would connect to your auth service
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      onSuccess();
-    }, 1500);
+    onAuth("login", { email, password });
+  };
+  
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAuth("register", { email, password, name });
   };
 
   const formVariants = {
@@ -60,7 +61,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           </TabsList>
           
           <TabsContent value="login">
-            <form onSubmit={handleAuth} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -70,7 +71,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     type="email" 
                     placeholder="hello@example.com" 
                     className="pl-10"
-                    required 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -91,18 +94,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     type="password" 
                     placeholder="••••••••" 
                     className="pl-10"
-                    required 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
           </TabsContent>
           
           <TabsContent value="register">
-            <form onSubmit={handleAuth} className="space-y-6">
+            <form onSubmit={handleRegister} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
@@ -112,7 +124,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     type="text" 
                     placeholder="John Doe" 
                     className="pl-10"
-                    required 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
               </div>
@@ -125,7 +138,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     type="email" 
                     placeholder="hello@example.com" 
                     className="pl-10"
-                    required 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -138,12 +153,21 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     type="password" 
                     placeholder="••••••••" 
                     className="pl-10"
-                    required 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create account"
+                )}
               </Button>
             </form>
           </TabsContent>

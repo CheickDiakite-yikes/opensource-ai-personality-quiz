@@ -22,13 +22,15 @@ import {
   SidebarRail,
   SidebarInset
 } from "@/components/ui/sidebar";
-import { Brain, BarChart, ClipboardList, User, Settings, MenuIcon, Home, ChevronLeft } from "lucide-react";
+import { Brain, BarChart, ClipboardList, User, Settings, MenuIcon, Home, ChevronLeft, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path);
@@ -40,11 +42,11 @@ const Layout: React.FC = () => {
 
   // Navigation items used in both sidebar and mobile menu
   const navigationItems = [
-    { name: "Assessment", path: "/", icon: Brain },
-    { name: "Report", path: "/report", icon: ClipboardList },
-    { name: "Tracker", path: "/tracker", icon: BarChart },
-    { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
+    { name: "Assessment", path: "/assessment", icon: Brain, requiresAuth: true },
+    { name: "Report", path: "/report", icon: ClipboardList, requiresAuth: true },
+    { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
+    { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
+    { name: "Settings", path: "/settings", icon: Settings, requiresAuth: true },
   ];
 
   return (
@@ -89,20 +91,59 @@ const Layout: React.FC = () => {
                     <div className="py-4">
                       <h2 className="text-lg font-semibold mb-4">Menu</h2>
                       <nav className="flex flex-col space-y-2">
-                        {navigationItems.map((item) => (
+                        <Link
+                          to="/"
+                          className={`flex items-center px-4 py-3 text-sm rounded-md transition-all duration-300 ease-in-out hover:scale-[1.02] ${
+                            isActive("/")
+                              ? "bg-primary text-primary-foreground shadow-md"
+                              : "hover:bg-accent hover:text-accent-foreground"
+                          }`}
+                        >
+                          <Home className="mr-3 h-5 w-5" />
+                          Home
+                        </Link>
+                        
+                        {!user && (
                           <Link
-                            key={item.name}
-                            to={item.path}
+                            to="/auth"
                             className={`flex items-center px-4 py-3 text-sm rounded-md transition-all duration-300 ease-in-out hover:scale-[1.02] ${
-                              isActive(item.path)
+                              isActive("/auth")
                                 ? "bg-primary text-primary-foreground shadow-md"
                                 : "hover:bg-accent hover:text-accent-foreground"
                             }`}
                           >
-                            <item.icon className="mr-3 h-5 w-5" />
-                            {item.name}
+                            <User className="mr-3 h-5 w-5" />
+                            Login / Register
                           </Link>
+                        )}
+                        
+                        {navigationItems.map((item) => (
+                          (!item.requiresAuth || user) && (
+                            <Link
+                              key={item.name}
+                              to={item.path}
+                              className={`flex items-center px-4 py-3 text-sm rounded-md transition-all duration-300 ease-in-out hover:scale-[1.02] ${
+                                isActive(item.path)
+                                  ? "bg-primary text-primary-foreground shadow-md"
+                                  : "hover:bg-accent hover:text-accent-foreground"
+                              }`}
+                            >
+                              <item.icon className="mr-3 h-5 w-5" />
+                              {item.name}
+                            </Link>
+                          )
                         ))}
+                        
+                        {user && (
+                          <Button
+                            variant="ghost"
+                            className="justify-start px-4 py-3 text-sm rounded-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
+                            onClick={signOut}
+                          >
+                            <LogOut className="mr-3 h-5 w-5" />
+                            Logout
+                          </Button>
+                        )}
                       </nav>
                     </div>
                   </SheetContent>
@@ -133,21 +174,52 @@ const Layout: React.FC = () => {
                   <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {navigationItems.map((item) => (
-                        <SidebarMenuItem key={item.name}>
+                      {!user && (
+                        <SidebarMenuItem>
                           <SidebarMenuButton 
                             asChild 
-                            isActive={isActive(item.path)}
-                            tooltip={item.name}
+                            isActive={isActive("/auth")}
+                            tooltip="Login / Register"
                             className="transition-all duration-300 ease-in-out hover:translate-x-1"
                           >
-                            <Link to={item.path}>
-                              <item.icon className="transition-transform" />
-                              <span>{item.name}</span>
+                            <Link to="/auth">
+                              <User className="transition-transform" />
+                              <span>Login / Register</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
+                      )}
+                      
+                      {navigationItems.map((item) => (
+                        (!item.requiresAuth || user) && (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild 
+                              isActive={isActive(item.path)}
+                              tooltip={item.name}
+                              className="transition-all duration-300 ease-in-out hover:translate-x-1"
+                            >
+                              <Link to={item.path}>
+                                <item.icon className="transition-transform" />
+                                <span>{item.name}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
                       ))}
+                      
+                      {user && (
+                        <SidebarMenuItem>
+                          <SidebarMenuButton 
+                            onClick={signOut}
+                            tooltip="Logout"
+                            className="transition-all duration-300 ease-in-out hover:translate-x-1"
+                          >
+                            <LogOut className="transition-transform" />
+                            <span>Logout</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      )}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
