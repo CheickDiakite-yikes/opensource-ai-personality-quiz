@@ -51,7 +51,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
             <ActivityCard 
               key={activity.id}
               activity={activity}
-              toggleActivityCompletion={toggleActivityCompletion}
+              onToggleComplete={toggleActivityCompletion}
             />
           ))
         )}

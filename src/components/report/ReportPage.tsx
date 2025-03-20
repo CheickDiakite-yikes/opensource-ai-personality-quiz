@@ -12,15 +12,24 @@ import GrowthAreasSection from "./sections/GrowthAreasSection";
 import CareerValuesSection from "./sections/CareerValuesSection";
 import RelationshipLearningSection from "./sections/RelationshipLearningSection";
 import RoadmapSection from "./sections/RoadmapSection";
+import { RelationshipPatterns, ValueSystemType } from "@/utils/types";
 
 const ReportPage: React.FC = () => {
   const { analysis } = useAIAnalysis();
   const navigate = useNavigate();
   
+  // Type guards
+  const isValueSystemArray = (value: ValueSystemType): value is string[] => {
+    return Array.isArray(value);
+  };
+  
+  const isRelationshipPatternObject = (value: any): value is RelationshipPatterns => {
+    return !Array.isArray(value) && typeof value === 'object' && value !== null && 'compatibleTypes' in value;
+  };
+  
   // If no analysis is available, redirect to assessment
   React.useEffect(() => {
     if (!analysis) {
-      // In a real app, you might check for saved analysis in localStorage or a database
       navigate("/assessment");
     }
   }, [analysis, navigate]);
@@ -93,7 +102,9 @@ const ReportPage: React.FC = () => {
         
         {/* Relationship Patterns and Learning Pathways */}
         <RelationshipLearningSection 
-          relationshipPatterns={analysis.relationshipPatterns} 
+          relationshipPatterns={isRelationshipPatternObject(analysis.relationshipPatterns) ? 
+                                analysis.relationshipPatterns : 
+                                { strengths: [], challenges: [], compatibleTypes: analysis.relationshipPatterns }}
           learningPathways={analysis.learningPathways} 
         />
         

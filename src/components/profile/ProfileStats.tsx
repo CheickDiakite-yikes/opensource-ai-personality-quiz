@@ -1,6 +1,6 @@
 
 import React from "react";
-import { PersonalityAnalysis } from "@/utils/types";
+import { PersonalityAnalysis, RelationshipPatterns, ValueSystemType, CognitiveStyleType } from "@/utils/types";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 
@@ -25,6 +25,19 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
   // Calculate the average score of all traits
   const avgTraitScore = analysis.traits.reduce((acc, trait) => acc + trait.score, 0) / analysis.traits.length;
   const traitRating = getCreditRating(avgTraitScore * 10);
+  
+  // Type guards
+  const isValueSystemArray = (value: ValueSystemType): value is string[] => {
+    return Array.isArray(value);
+  };
+  
+  const isCognitiveStyleObject = (value: CognitiveStyleType): value is { primary: string; secondary: string; description: string } => {
+    return typeof value === 'object' && value !== null;
+  };
+  
+  const isRelationshipPatternObject = (value: RelationshipPatterns | string[]): value is RelationshipPatterns => {
+    return !Array.isArray(value) && typeof value === 'object' && value !== null;
+  };
   
   return (
     <div className="space-y-6">
@@ -78,14 +91,25 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
       <div className="space-y-3">
         <h3 className="font-semibold">Your Value System</h3>
         <div className="flex flex-wrap gap-2">
-          {analysis.valueSystem.map((value, index) => (
-            <div 
-              key={index} 
-              className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
-            >
-              {value}
-            </div>
-          ))}
+          {isValueSystemArray(analysis.valueSystem) ? 
+            analysis.valueSystem.map((value, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+              >
+                {value}
+              </div>
+            )) : 
+            // If valueSystem is an object with strengths
+            analysis.valueSystem.strengths.map((value, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+              >
+                {value}
+              </div>
+            ))
+          }
         </div>
       </div>
       
@@ -97,15 +121,25 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <div className="text-sm text-muted-foreground">Primary</div>
-            <div className="font-medium">{analysis.cognitiveStyle.primary}</div>
+            <div className="font-medium">
+              {isCognitiveStyleObject(analysis.cognitiveStyle) ? 
+                analysis.cognitiveStyle.primary : 
+                analysis.cognitiveStyle}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="text-sm text-muted-foreground">Secondary</div>
-            <div className="font-medium">{analysis.cognitiveStyle.secondary}</div>
+            <div className="font-medium">
+              {isCognitiveStyleObject(analysis.cognitiveStyle) ? 
+                analysis.cognitiveStyle.secondary : 
+                'N/A'}
+            </div>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          {analysis.cognitiveStyle.description}
+          {isCognitiveStyleObject(analysis.cognitiveStyle) ? 
+            analysis.cognitiveStyle.description : 
+            ''}
         </p>
       </div>
       
@@ -115,14 +149,24 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
       <div className="space-y-3">
         <h3 className="font-semibold">Compatible With</h3>
         <div className="flex flex-wrap gap-2">
-          {analysis.relationshipPatterns.compatibleTypes.map((type, index) => (
-            <div 
-              key={index} 
-              className="px-3 py-1 bg-muted rounded-full text-sm"
-            >
-              {type}
-            </div>
-          ))}
+          {isRelationshipPatternObject(analysis.relationshipPatterns) ? 
+            analysis.relationshipPatterns.compatibleTypes.map((type, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1 bg-muted rounded-full text-sm"
+              >
+                {type}
+              </div>
+            )) :
+            analysis.relationshipPatterns.map((type, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1 bg-muted rounded-full text-sm"
+              >
+                {type}
+              </div>
+            ))
+          }
         </div>
       </div>
     </div>

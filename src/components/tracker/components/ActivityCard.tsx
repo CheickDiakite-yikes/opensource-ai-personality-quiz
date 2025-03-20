@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Activity } from "@/utils/types";
+import { Activity, ActivityCategory } from "@/utils/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ interface ActivityCardProps {
 
 const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const Icon = getCategoryIcon(activity.category);
+  const IconComponent = getCategoryIcon(activity.category);
   
   return (
     <motion.div
@@ -29,7 +29,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-primary" />
+                {IconComponent && <IconComponent className="h-4 w-4 text-primary" />}
                 <Badge variant="outline" className="font-normal">
                   {activity.category}
                 </Badge>

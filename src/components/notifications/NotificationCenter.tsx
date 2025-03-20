@@ -91,6 +91,8 @@ const NotificationCenter: React.FC = () => {
         suggestion: suggestion.suggestion,
         relatedTraits: suggestion.relatedTraits,
         createdAt: new Date(),
+        type: 'insight', // Adding required type field
+        date: new Date(), // Adding required date field
         read: false
       };
       

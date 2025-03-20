@@ -56,6 +56,27 @@ export interface PersonalityTrait {
   growthSuggestions: string[];
 }
 
+// Value System type to handle both string[] and object
+export type ValueSystemType = string[] | {
+  strengths: string[];
+  challenges: string[];
+  compatibleTypes: string[];
+};
+
+// Cognitive Style type to handle both string and object
+export type CognitiveStyleType = string | { 
+  primary: string;
+  secondary: string;
+  description: string;
+};
+
+// Relationship Patterns type
+export interface RelationshipPatterns {
+  strengths: string[];
+  challenges: string[];
+  compatibleTypes: string[];
+}
+
 // Personality Analysis
 export interface PersonalityAnalysis {
   id: string;
@@ -65,41 +86,33 @@ export interface PersonalityAnalysis {
   intelligence: IntelligenceType;
   intelligenceScore: number;
   emotionalIntelligenceScore: number;
-  cognitiveStyle: string | { 
-    primary: string;
-    secondary: string;
-    description: string;
-  };
-  valueSystem: string[] | {
-    strengths: string[];
-    challenges: string[];
-    compatibleTypes: string[];
-  };
+  cognitiveStyle: CognitiveStyleType;
+  valueSystem: ValueSystemType;
   motivators: string[];
   inhibitors: string[];
   weaknesses: string[];
   growthAreas: string[];
-  relationshipPatterns: string[];
+  relationshipPatterns: RelationshipPatterns | string[];
   careerSuggestions: string[];
   learningPathways: string[];
   roadmap: string;
+  userId?: string;
+  assessmentId?: string;
 }
 
 // Activity Types
 export enum ActivityCategory {
-  Kindness = "KINDNESS",
-  Mindfulness = "MINDFULNESS",
-  Learning = "LEARNING",
-  Health = "HEALTH",
-  Social = "SOCIAL",
-  Creativity = "CREATIVITY",
+  KINDNESS = "KINDNESS",
+  MINDFULNESS = "MINDFULNESS",
+  LEARNING = "LEARNING",
+  HEALTH = "HEALTH",
+  SOCIAL = "SOCIAL",
+  CREATIVITY = "CREATIVITY",
   COGNITIVE = "COGNITIVE",
   EMOTIONAL = "EMOTIONAL",
-  SOCIAL = "SOCIAL",
   PERSONALITY = "PERSONALITY",
   MOTIVATION = "MOTIVATION",
   VALUES = "VALUES",
-  LEARNING = "LEARNING",
   STRENGTHS = "STRENGTHS"
 }
 

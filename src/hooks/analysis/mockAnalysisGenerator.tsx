@@ -1,8 +1,9 @@
 
-import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "@/utils/types";
+import { AssessmentResponse, PersonalityAnalysis, QuestionCategory, RelationshipPatterns } from "@/utils/types";
 
 export const generateMockAnalysis = (assessmentId: string): PersonalityAnalysis => {
   const mockAnalysis: PersonalityAnalysis = {
+    id: `analysis-${Date.now()}`,
     userId: 'current-user', // In a real app, this would be the actual user ID
     assessmentId,
     overview: "You are a highly creative individual with strong analytical abilities and remarkable emotional intelligence. Your responses reveal a complex personality with a blend of intuitive and methodical approaches to challenges. You show a preference for meaningful connections over superficial interactions, and you're driven by a desire to make a lasting positive impact on the world around you.",
@@ -178,7 +179,7 @@ export const generateMockAnalysis = (assessmentId: string): PersonalityAnalysis 
         "The Thoughtful Activator",
         "The Steadfast Innovator"
       ]
-    },
+    } as RelationshipPatterns,
     careerSuggestions: [
       "Research and Development",
       "Strategic Consulting",
@@ -197,7 +198,7 @@ export const generateMockAnalysis = (assessmentId: string): PersonalityAnalysis 
       "Investigate mindfulness practices that work with your cognitive style",
       "Pursue interpersonal communication strategies that leverage your emotional intelligence"
     ],
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(), // Convert Date to string
   };
   
   return mockAnalysis;
