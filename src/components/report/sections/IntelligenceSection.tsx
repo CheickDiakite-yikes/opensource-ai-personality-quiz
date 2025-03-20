@@ -10,14 +10,20 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Brain, BarChart } from "lucide-react";
-import { PersonalityAnalysis } from "@/utils/types";
+import { IntelligenceType } from "@/utils/types";
 import IntelligenceDomainChart from "../IntelligenceDomainChart";
 
 interface IntelligenceSectionProps {
-  analysis: PersonalityAnalysis;
+  intelligence: IntelligenceType;
+  intelligenceScore: number;
+  emotionalIntelligenceScore: number;
 }
 
-const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({ analysis }) => {
+const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({ 
+  intelligence,
+  intelligenceScore,
+  emotionalIntelligenceScore
+}) => {
   return (
     <motion.div variants={{
       hidden: { opacity: 0, y: 20 },
@@ -41,21 +47,21 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({ analysis }) =
           <div className="mb-4">
             <div className="flex justify-between mb-1">
               <h3 className="font-medium">Intelligence Score</h3>
-              <span className="font-semibold">{analysis.intelligenceScore}/100</span>
+              <span className="font-semibold">{intelligenceScore}/100</span>
             </div>
-            <Progress value={analysis.intelligenceScore} className="h-2" />
+            <Progress value={intelligenceScore} className="h-2" />
           </div>
           
           <div className="mt-6">
-            <h3 className="font-medium text-lg mb-2">Type: {analysis.intelligence.type}</h3>
-            <p className="text-muted-foreground mb-4">{analysis.intelligence.description}</p>
+            <h3 className="font-medium text-lg mb-2">Type: {intelligence.type}</h3>
+            <p className="text-muted-foreground mb-4">{intelligence.description}</p>
             
             <h4 className="font-medium text-md mb-3 flex items-center">
               <BarChart className="h-4 w-4 mr-2 text-primary" />
               Intelligence Domains
             </h4>
             
-            <IntelligenceDomainChart domains={analysis.intelligence.domains} />
+            <IntelligenceDomainChart domains={intelligence.domains} />
           </div>
         </CardContent>
       </Card>

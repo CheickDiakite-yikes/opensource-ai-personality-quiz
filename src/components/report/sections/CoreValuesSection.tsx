@@ -9,12 +9,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Award } from "lucide-react";
+import { ValueSystemType } from "@/utils/types";
 
 interface CoreValuesSectionProps {
-  valueSystem: string[];
+  valueSystem: ValueSystemType;
 }
 
 const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) => {
+  // Type guard to check if valueSystem is an object
+  const isValueSystemObject = (system: ValueSystemType): system is {
+    strengths: string[];
+    challenges: string[];
+    compatibleTypes: string[];
+  } => {
+    return typeof system === 'object' && !Array.isArray(system) && 'strengths' in system;
+  };
+
+  // Extract values to display based on valueSystem type
+  const valuesToDisplay = isValueSystemObject(valueSystem) 
+    ? valueSystem.strengths 
+    : valueSystem;
+
   return (
     <Card className="glass-panel overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pb-4">
@@ -25,7 +40,7 @@ const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) =>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {valueSystem.map((value, index) => (
+          {valuesToDisplay.map((value, index) => (
             <div
               key={index}
               className="border border-border/40 p-3 rounded-md flex items-center bg-card/30"

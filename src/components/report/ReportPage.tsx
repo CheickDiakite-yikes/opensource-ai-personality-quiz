@@ -42,7 +42,7 @@ const isCognitiveStyleObject = (style: CognitiveStyleType): style is {
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { analysis, isLoading, error, getAnalysisHistory } = useAIAnalysis();
+  const { analysis, isLoading, analyzeResponses, getAnalysisHistory } = useAIAnalysis();
   
   // Get all analyses and find the one that matches the ID
   const analyses = getAnalysisHistory();
@@ -52,7 +52,7 @@ const ReportPage: React.FC = () => {
     return <div className="container py-10">Loading analysis...</div>;
   }
   
-  if (error || !analysisResult) {
+  if (!analysisResult) {
     toast({
       title: "Error loading analysis",
       description: "We couldn't load the personality analysis. Please try again.",
@@ -127,7 +127,7 @@ const ReportPage: React.FC = () => {
             inhibitors={inhibitors}
           />
           
-          <CoreValuesSection valueSystem={processedValueSystem} />
+          <CoreValuesSection valueSystem={valueSystem} />
           
           <GrowthAreasSection 
             weaknesses={weaknesses}
@@ -141,7 +141,7 @@ const ReportPage: React.FC = () => {
           
           <CareerValuesSection 
             careerSuggestions={careerSuggestions}
-            learningPathways={learningPathways}
+            valueSystem={valueSystem}
           />
           
           <RoadmapSection roadmap={roadmap} />
@@ -167,7 +167,7 @@ const ReportPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="values" className="space-y-10 mt-6">
-          <CoreValuesSection valueSystem={processedValueSystem} />
+          <CoreValuesSection valueSystem={valueSystem} />
         </TabsContent>
         
         <TabsContent value="growth" className="space-y-10 mt-6">
@@ -187,7 +187,7 @@ const ReportPage: React.FC = () => {
         <TabsContent value="career" className="space-y-10 mt-6">
           <CareerValuesSection 
             careerSuggestions={careerSuggestions}
-            learningPathways={learningPathways}
+            valueSystem={valueSystem}
           />
         </TabsContent>
         
