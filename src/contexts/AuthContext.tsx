@@ -5,11 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+type UserMetadata = {
+  age?: number;
+  city?: string;
+  state?: string;
+  gender?: string;
+};
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string, metadata?: UserMetadata) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -45,16 +52,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  const signUp = async (email: string, password: string, name?: string, metadata?: UserMetadata) => {
     try {
       setIsLoading(true);
+      
+      // Prepare user metadata
+      const userData = {
+        name: name || email.split('@')[0],
+        ...metadata
+      };
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name: name || email.split('@')[0],
-          },
+          data: userData,
         },
       });
 
@@ -62,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      toast.success("Account created successfully! Please check your email for verification.");
+      toast.success("Welcome to your self-discovery journey! Please check your email for verification.");
       navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Error creating account");
@@ -84,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      toast.success("Logged in successfully!");
+      toast.success("Welcome back to your self-discovery journey!");
       navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Error logging in");
