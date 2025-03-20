@@ -6,16 +6,20 @@ import { Heart, Brain, BookOpen, Activity, Users, Paintbrush } from "lucide-reac
 
 interface CategoryTabsProps {
   setFilter: (filter: ActivityCategory | "all") => void;
+  currentFilter: ActivityCategory | "all";
 }
 
-const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
+const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter, currentFilter }) => {
   return (
     <TabsList className="grid grid-cols-7 mb-6">
-      <TabsTrigger value="all" onClick={() => setFilter("all")}>
+      <TabsTrigger 
+        value="all" 
+        onClick={() => setFilter("all")}
+      >
         All
       </TabsTrigger>
       <TabsTrigger 
-        value="kindness" 
+        value={ActivityCategory.Kindness} 
         onClick={() => setFilter(ActivityCategory.Kindness)}
         className="flex items-center"
       >
@@ -23,7 +27,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
         <span className="hidden md:inline">Kindness</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="mindfulness" 
+        value={ActivityCategory.Mindfulness} 
         onClick={() => setFilter(ActivityCategory.Mindfulness)}
         className="flex items-center"
       >
@@ -31,7 +35,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
         <span className="hidden md:inline">Mindfulness</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="learning" 
+        value={ActivityCategory.Learning} 
         onClick={() => setFilter(ActivityCategory.Learning)}
         className="flex items-center"
       >
@@ -39,7 +43,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
         <span className="hidden md:inline">Learning</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="health" 
+        value={ActivityCategory.Health} 
         onClick={() => setFilter(ActivityCategory.Health)}
         className="flex items-center"
       >
@@ -47,7 +51,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
         <span className="hidden md:inline">Health</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="social" 
+        value={ActivityCategory.Social} 
         onClick={() => setFilter(ActivityCategory.Social)}
         className="flex items-center"
       >
@@ -55,7 +59,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({ setFilter }) => {
         <span className="hidden md:inline">Social</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="creativity" 
+        value={ActivityCategory.Creativity} 
         onClick={() => setFilter(ActivityCategory.Creativity)}
         className="flex items-center"
       >
