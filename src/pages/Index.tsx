@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -15,6 +14,7 @@ import {
   Lightbulb 
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import AnimatedTestimonials from "@/components/testimonials/AnimatedTestimonials";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -88,22 +88,25 @@ const Index = () => {
     }
   ];
 
-  // Testimonials
+  // Enhanced testimonials with images
   const testimonials = [
     {
-      quote: "This app helped me understand why I react to situations the way I do. Game-changing!",
-      author: "Sarah K.",
-      role: "Marketing Director"
+      quote: "This app helped me understand why I react to situations the way I do. It's been genuinely transformative for my personal growth journey.",
+      name: "Sarah K.",
+      designation: "Marketing Director",
+      imageSrc: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80"
     },
     {
-      quote: "The personalized growth plan is exactly what I needed to make meaningful changes.",
-      author: "Michael T.",
-      role: "Software Engineer"
+      quote: "The personalized growth plan is exactly what I needed to make meaningful changes. Now I can see clear progress in areas I've struggled with for years.",
+      name: "Michael T.",
+      designation: "Software Engineer",
+      imageSrc: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80"
     },
     {
-      quote: "The assessment was so accurate! I finally feel like I understand myself better.",
-      author: "Jessica L.",
-      role: "Teacher"
+      quote: "The assessment was incredibly accurate! I finally feel like I understand myself better and can focus on the right growth areas.",
+      name: "Jessica L.",
+      designation: "Teacher",
+      imageSrc: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80"
     }
   ];
   
@@ -322,7 +325,7 @@ const Index = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true, margin: "-100px" }}
-              className="text-center mb-16"
+              className="text-center mb-8"
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-4">What Others Say</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -330,29 +333,11 @@ const Index = () => {
               </p>
             </motion.div>
             
-            <div className="grid md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
-                <motion.div
-                  key={testimonial.author}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  className="bg-background rounded-xl p-6 shadow-lg border border-border"
-                >
-                  <div className="flex gap-2 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-lg mb-6 italic">"{testimonial.quote}"</p>
-                  <div>
-                    <p className="font-semibold">{testimonial.author}</p>
-                    <p className="text-muted-foreground text-sm">{testimonial.role}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <AnimatedTestimonials 
+              testimonials={testimonials} 
+              autoplay={true}
+              className="mt-8"
+            />
           </div>
         </div>
         

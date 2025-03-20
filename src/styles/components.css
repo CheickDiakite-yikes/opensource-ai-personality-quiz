@@ -65,4 +65,37 @@
     transform: scaleX(1);
     transform-origin: bottom left;
   }
+  
+  .testimonial-image {
+    @apply transition-all duration-500;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  .testimonial-card {
+    @apply elegant-card p-6 h-full backdrop-blur-xl flex flex-col;
+    transform-style: preserve-3d;
+  }
+  
+  .testimonial-quote {
+    position: relative;
+    @apply italic text-lg leading-relaxed;
+  }
+  
+  .testimonial-quote::before,
+  .testimonial-quote::after {
+    @apply text-primary/40 text-2xl font-serif absolute;
+  }
+  
+  .testimonial-quote::before {
+    content: """;
+    left: -1.5rem;
+    top: -0.5rem;
+  }
+  
+  .testimonial-quote::after {
+    content: """;
+    right: -1.5rem;
+    bottom: -1.5rem;
+  }
 }
