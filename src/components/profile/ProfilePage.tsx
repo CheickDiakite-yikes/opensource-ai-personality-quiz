@@ -6,32 +6,44 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   User, 
   Award, 
-  Share, 
   ChartBar, 
   ArrowLeft, 
   Brain, 
   Lightbulb,
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import TopTraitsTable from "./TopTraitsTable";
 import ProfileStats from "./ProfileStats";
 import ShareProfile from "./ShareProfile";
 
 const ProfilePage: React.FC = () => {
-  const { analysis } = useAIAnalysis();
+  const { analysis, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
+  
+  if (isLoading) {
+    return (
+      <div className="container max-w-4xl py-8 px-4 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Loading Profile</h1>
+          <p className="text-muted-foreground">
+            Please wait while we load your personalized profile data...
+          </p>
+        </div>
+      </div>
+    );
+  }
   
   // If no analysis is available, redirect to assessment
   React.useEffect(() => {
-    if (!analysis) {
-      // In a real app, you might check for saved analysis in localStorage or a database
+    if (!analysis && !isLoading) {
       navigate("/assessment");
     }
-  }, [analysis, navigate]);
+  }, [analysis, navigate, isLoading]);
   
   if (!analysis) {
     return (
@@ -95,12 +107,14 @@ const ProfilePage: React.FC = () => {
           className="flex flex-col md:flex-row justify-between items-center gap-6 py-4"
         >
           <div className="flex items-center gap-4">
-            <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-lg">
-              <AvatarImage src="/placeholder.svg" alt="Profile" />
-              <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary/40 text-2xl font-semibold text-primary-foreground">
-                <User className="h-12 w-12" />
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-lg avatar-glow">
+                <AvatarImage src="/placeholder.svg" alt="Profile" />
+                <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary/40 text-2xl font-semibold text-primary-foreground">
+                  <User className="h-12 w-12" />
+                </AvatarFallback>
+              </Avatar>
+            </div>
             <div>
               <h1 className="text-3xl font-bold">Your Profile</h1>
               <p className="text-muted-foreground">Based on your assessment from {analysis.createdAt ? new Date(analysis.createdAt).toLocaleDateString() : 'recently'}</p>

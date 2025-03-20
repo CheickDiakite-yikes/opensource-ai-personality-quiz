@@ -7,9 +7,11 @@ import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
 export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load analysis history from localStorage on component mount
   useEffect(() => {
+    setIsLoading(true);
     const history = loadAnalysisHistory();
     setAnalysisHistory(history);
     
@@ -17,6 +19,7 @@ export const useAIAnalysis = () => {
     if (history.length > 0) {
       setAnalysis(history[0]);
     }
+    setIsLoading(false);
   }, []);
 
   // Function to save analysis to history
@@ -46,6 +49,7 @@ export const useAIAnalysis = () => {
 
   return {
     isAnalyzing,
+    isLoading,
     analysis,
     analyzeResponses,
     getAnalysisHistory,
