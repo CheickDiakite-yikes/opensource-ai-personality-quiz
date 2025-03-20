@@ -8,7 +8,6 @@ import { CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { getCategoryIcon } from "../utils/categoryUtils";
 import { motion } from "framer-motion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { LucideIcon } from "lucide-react";
 
 interface ActivityCardProps {
   activity: Activity;
@@ -30,7 +29,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                {IconComponent && React.createElement(IconComponent, { className: "h-4 w-4 text-primary" })}
+                {React.createElement(IconComponent, { className: "h-4 w-4 text-primary" })}
                 <Badge variant="outline" className="font-normal">
                   {activity.category}
                 </Badge>

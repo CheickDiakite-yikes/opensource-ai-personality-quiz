@@ -1,7 +1,8 @@
+
 import React from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { PersonalityAnalysis, ValueSystemType, RelationshipPatterns } from "@/utils/types";
+import { PersonalityAnalysis, ValueSystemType, RelationshipPatterns, CognitiveStyleType } from "@/utils/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReportHeader from "./ReportHeader";
 import OverviewSection from "./sections/OverviewSection";
@@ -29,12 +30,23 @@ const isRelationshipObject = (patterns: RelationshipPatterns | string[]): patter
   return typeof patterns === 'object' && !Array.isArray(patterns) && 'strengths' in patterns;
 };
 
+// Type guard for cognitive style
+const isCognitiveStyleObject = (style: CognitiveStyleType): style is {
+  primary: string;
+  secondary: string;
+  description: string;
+} => {
+  return typeof style === 'object' && 'primary' in style;
+};
+
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { analyses, isLoading, error } = useAIAnalysis();
+  const { analysis, isLoading, error, getAnalysisHistory } = useAIAnalysis();
   
-  const analysisResult = analyses.find(a => a.id === id);
+  // Get all analyses and find the one that matches the ID
+  const analyses = getAnalysisHistory();
+  const analysisResult = analyses.find(a => a.id === id) || analysis;
   
   if (isLoading) {
     return <div className="container py-10">Loading analysis...</div>;
@@ -124,6 +136,7 @@ const ReportPage: React.FC = () => {
           
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
+            learningPathways={learningPathways}
           />
           
           <CareerValuesSection 
@@ -167,6 +180,7 @@ const ReportPage: React.FC = () => {
         <TabsContent value="relationships" className="space-y-10 mt-6">
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
+            learningPathways={learningPathways}
           />
         </TabsContent>
         
