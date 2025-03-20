@@ -1,97 +1,108 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { Activity } from "@/utils/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Activity, ActivityCategory } from "@/utils/types";
-import { Trophy, Calendar } from "lucide-react";
-import { getCategoryIcon, getCategoryColor } from "../utils/categoryUtils";
+import { CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { getCategoryIcon } from "../utils/categoryUtils";
+import { motion } from "framer-motion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ActivityCardProps {
   activity: Activity;
-  toggleActivityCompletion: (activityId: string) => void;
+  onToggleComplete: (id: string) => void;
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({
-  activity,
-  toggleActivityCompletion,
-}) => {
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: [0.22, 1, 0.36, 1]
-      }
-    }
-  };
-
+const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const Icon = getCategoryIcon(activity.category);
+  
   return (
-    <motion.div 
-      key={activity.id} 
-      variants={itemVariants}
-      layout
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className={`glass-panel transition-all duration-300 ${activity.completed ? 'bg-secondary/30' : ''}`}>
-        <CardHeader className="pb-2 pt-4">
-          <div className="flex justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-1">
-                <Checkbox
-                  checked={activity.completed}
-                  onCheckedChange={() => toggleActivityCompletion(activity.id)}
-                  className="h-5 w-5"
-                />
+      <Card className={`overflow-hidden ${activity.completed ? 'bg-muted/50' : ''}`}>
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 text-primary" />
+                <Badge variant="outline" className="font-normal">
+                  {activity.category}
+                </Badge>
+                <Badge className="bg-amber-500/80 hover:bg-amber-500">
+                  {activity.points} pts
+                </Badge>
               </div>
-              <div>
-                <CardTitle className={`text-lg ${activity.completed ? 'line-through opacity-70' : ''}`}>
-                  {activity.title}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {activity.description}
-                </CardDescription>
-              </div>
+              <CardTitle className={`mt-2 text-lg ${activity.completed ? 'line-through text-muted-foreground' : ''}`}>
+                {activity.title}
+              </CardTitle>
             </div>
-            <Badge 
-              variant="outline" 
-              className={`ml-3 flex items-center gap-1 ${getCategoryColor(activity.category)}`}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`rounded-full ${activity.completed ? 'text-green-500' : 'text-muted-foreground'}`}
+              onClick={() => onToggleComplete(activity.id)}
             >
-              {getCategoryIcon(activity.category)}
-              <span className="hidden md:inline">{activity.category}</span>
-            </Badge>
+              {activity.completed ? (
+                <CheckCircle className="h-6 w-6" />
+              ) : (
+                <XCircle className="h-6 w-6" />
+              )}
+            </Button>
           </div>
         </CardHeader>
-        <CardFooter className="pt-2 pb-4 flex flex-wrap justify-between items-center">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Trophy className="h-4 w-4 mr-1" /> {activity.points} points
-            
-            {activity.completed && activity.completedAt && (
-              <span className="ml-4 flex items-center">
-                <Calendar className="h-3 w-3 mr-1" />
-                {activity.completedAt.toLocaleDateString()}
-              </span>
-            )}
-          </div>
+        
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CardContent className="pb-2">
+            <CardDescription className={activity.completed ? 'text-muted-foreground/70' : ''}>
+              {activity.description}
+            </CardDescription>
+          </CardContent>
           
-          {!activity.completed && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-              onClick={() => toggleActivityCompletion(activity.id)}
-            >
-              Mark Complete
-            </Button>
+          {(activity.steps?.length > 0 || activity.benefits) && (
+            <>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-0">
+                  {isOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  {activity.steps?.length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-sm font-medium mb-2">Steps:</h4>
+                      <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
+                        {activity.steps.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                  
+                  {activity.benefits && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium mb-1">Benefits:</h4>
+                      <p className="text-sm text-muted-foreground">{activity.benefits}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </>
           )}
-        </CardFooter>
+          
+          <CardFooter className="py-2 text-xs text-muted-foreground">
+            Added {new Date(parseInt(activity.id.split('-')[1])).toLocaleDateString()}
+          </CardFooter>
+        </Collapsible>
       </Card>
     </motion.div>
   );

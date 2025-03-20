@@ -1,55 +1,61 @@
 
 import { useState } from "react";
-import { Activity, ActivityCategory } from "@/utils/types";
+import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { activitySuggestionsByCategory } from "../utils/activitySuggestions";
+import { supabase } from "@/integrations/supabase/client";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 
 export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStateAction<Activity[]>>) => {
   const [isGeneratingActivity, setIsGeneratingActivity] = useState(false);
+  const { analysis } = useAIAnalysis();
   
   // Generate a new activity based on user's profile
-  const generateActivity = async () => {
+  const generateActivity = async (category?: ActivityCategory) => {
     setIsGeneratingActivity(true);
     
     try {
       toast.info("Generating a personalized activity for you...");
       
-      // In a real implementation, we would retrieve the user's latest analysis
-      // from the database and pass relevant information to the OpenAI API
+      if (!analysis) {
+        throw new Error("No personality analysis available. Complete the assessment first.");
+      }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log("Generating activity with AI...");
       
-      // Mock categories and points for variety
-      const categories = Object.values(ActivityCategory);
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      const randomPoints = Math.floor(Math.random() * 30) + 10; // 10-40 points
+      // Call the Supabase Edge Function for AI activity generation
+      const { data, error } = await supabase.functions.invoke("generate-activity", {
+        body: { 
+          analysis,
+          userCategory: category 
+        }
+      });
       
-      // Select random activity from the appropriate category
-      const suggestions = activitySuggestionsByCategory[randomCategory];
-      const randomActivity = suggestions[Math.floor(Math.random() * suggestions.length)];
+      if (error) {
+        console.error("Error calling generate-activity function:", error);
+        throw new Error(`Activity generation failed: ${error.message}`);
+      }
       
-      // Create new activity
-      const newActivity: Activity = {
-        id: `activity-${Date.now()}`,
-        title: randomActivity,
-        description: `This activity will help you develop your ${randomCategory.toLowerCase()} skills and earn you points toward your next level.`,
-        points: randomPoints,
-        category: randomCategory,
-        completed: false
-      };
+      if (!data || !data.activity) {
+        throw new Error("Invalid response from activity generation function");
+      }
+      
+      console.log("Received AI-generated activity:", data.activity);
       
       // Add the new activity to the list
-      setActivities(prev => [newActivity, ...prev]);
+      setActivities(prev => [data.activity, ...prev]);
       
       toast.success("New activity created!", {
-        description: `${randomActivity} (${randomPoints} points)`,
+        description: `${data.activity.title} (${data.activity.points} points)`,
         duration: 5000
       });
       
     } catch (error) {
       console.error("Error generating activity:", error);
-      toast.error("Failed to generate activity. Please try again.");
+      toast.error("Failed to generate AI activity. Using fallback activity.");
+      
+      // Fallback to local activity generation if the API fails
+      generateFallbackActivity(category, setActivities);
     } finally {
       setIsGeneratingActivity(false);
     }
@@ -60,3 +66,36 @@ export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStat
     isGeneratingActivity
   };
 };
+
+// Fallback function to generate an activity locally if the API fails
+function generateFallbackActivity(
+  userCategory: ActivityCategory | undefined, 
+  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>
+) {
+  // Mock categories and points for variety
+  const categories = Object.values(ActivityCategory);
+  const category = userCategory || categories[Math.floor(Math.random() * categories.length)];
+  const randomPoints = Math.floor(Math.random() * 30) + 10; // 10-40 points
+  
+  // Select random activity from the appropriate category
+  const suggestions = activitySuggestionsByCategory[category];
+  const randomActivity = suggestions[Math.floor(Math.random() * suggestions.length)];
+  
+  // Create new activity
+  const newActivity: Activity = {
+    id: `activity-${Date.now()}`,
+    title: randomActivity,
+    description: `This activity will help you develop your ${category.toLowerCase()} skills and earn you points toward your next level.`,
+    points: randomPoints,
+    category: category,
+    completed: false
+  };
+  
+  // Add the new activity to the list
+  setActivities(prev => [newActivity, ...prev]);
+  
+  toast.success("New activity created!", {
+    description: `${randomActivity} (${randomPoints} points)`,
+    duration: 5000
+  });
+}

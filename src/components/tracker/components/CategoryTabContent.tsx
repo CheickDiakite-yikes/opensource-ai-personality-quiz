@@ -4,6 +4,8 @@ import { TabsContent } from "@/components/ui/tabs";
 import ActivityFilters from "./ActivityFilters";
 import ActivityList from "./ActivityList";
 import { ActivityCategory } from "@/utils/types";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 interface CategoryTabContentProps {
   filter: ActivityCategory | "all";
@@ -14,7 +16,7 @@ interface CategoryTabContentProps {
   filteredActivities: any[];
   toggleActivityCompletion: (activityId: string) => void;
   isGeneratingActivity: boolean;
-  generateActivity: () => void;
+  generateActivity: (category?: ActivityCategory) => void;
   categoryValue: ActivityCategory | "all";
 }
 
@@ -30,16 +32,38 @@ const CategoryTabContent: React.FC<CategoryTabContentProps> = ({
   generateActivity,
   categoryValue
 }) => {
+  const handleGenerateForCategory = () => {
+    if (categoryValue !== "all") {
+      generateActivity(categoryValue as ActivityCategory);
+    } else {
+      generateActivity();
+    }
+  };
+
   return (
-    <TabsContent value={categoryValue} className="mt-0">
+    <TabsContent value={categoryValue} className="mt-0 space-y-4">
       <ActivityFilters
         filter={filter}
         showCompleted={showCompleted}
         setShowCompleted={setShowCompleted}
         sortBy={sortBy}
         setSortBy={setSortBy}
-        onAddActivity={generateActivity}
+        onAddActivity={() => generateActivity()}
       />
+      
+      {categoryValue !== "all" && (
+        <div className="flex justify-center mb-4">
+          <Button 
+            variant="outline" 
+            onClick={handleGenerateForCategory}
+            disabled={isGeneratingActivity}
+            className="w-full max-w-md flex items-center gap-2 group"
+          >
+            <Sparkles className="h-4 w-4 text-primary group-hover:animate-pulse" />
+            Generate {categoryValue} Activity
+          </Button>
+        </div>
+      )}
       
       <ActivityList
         filteredActivities={filteredActivities}
