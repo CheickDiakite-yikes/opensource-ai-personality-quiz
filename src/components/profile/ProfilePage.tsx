@@ -17,16 +17,16 @@ const ProfilePage: React.FC = () => {
   const { analysis, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
   
-  if (isLoading) {
-    return <LoadingProfile />;
-  }
-  
-  // If no analysis is available, redirect to assessment
+  // Hook must be outside of any conditional to avoid "more hooks than previous render" error
   React.useEffect(() => {
     if (!analysis && !isLoading) {
       navigate("/assessment");
     }
   }, [analysis, navigate, isLoading]);
+  
+  if (isLoading) {
+    return <LoadingProfile />;
+  }
   
   if (!analysis) {
     return <NoAnalysisFound />;
