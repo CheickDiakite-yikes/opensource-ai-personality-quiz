@@ -20,6 +20,8 @@ const TrackerPage: React.FC = () => {
     currentLevel,
     totalPoints,
     levelProgress,
+    pointsTillNextLevel,
+    consistencyScore,
     toggleActivityCompletion,
     filteredActivities,
     generateActivity,
@@ -42,6 +44,8 @@ const TrackerPage: React.FC = () => {
         currentLevel={currentLevel}
         totalPoints={totalPoints}
         levelProgress={levelProgress}
+        pointsTillNextLevel={pointsTillNextLevel}
+        consistencyScore={consistencyScore}
       />
       
       <ProgressCard

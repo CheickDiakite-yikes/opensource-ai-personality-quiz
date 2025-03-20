@@ -15,7 +15,9 @@ export const useActivityState = () => {
     totalPoints, 
     currentLevel, 
     nextLevelPoints, 
-    levelProgress 
+    levelProgress,
+    pointsTillNextLevel,
+    consistencyScore
   } = useLevelProgress(activities);
   
   const {
@@ -44,6 +46,8 @@ export const useActivityState = () => {
     nextLevelPoints,
     totalPoints,
     levelProgress,
+    pointsTillNextLevel,
+    consistencyScore,
     toggleActivityCompletion,
     filteredActivities,
     generateActivity,
