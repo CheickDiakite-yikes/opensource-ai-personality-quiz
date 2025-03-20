@@ -1,0 +1,68 @@
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 dark:bg-black/60 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg;
+  }
+
+  .glass-panel {
+    @apply bg-white/80 dark:bg-black/70 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl;
+  }
+
+  .glass-button {
+    @apply bg-white/30 dark:bg-white/10 backdrop-blur-md hover:bg-white/50 dark:hover:bg-white/20 transition-all duration-300 border border-white/20 dark:border-white/5;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-500;
+  }
+
+  .warm-gradient {
+    @apply bg-gradient-to-r from-amber-100 to-orange-100;
+  }
+
+  .warm-gradient-subtle {
+    @apply bg-gradient-to-r from-amber-50 to-orange-50;
+  }
+
+  .elegant-shadow {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .elegant-card {
+    @apply bg-white/90 dark:bg-black/80 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-xl elegant-shadow;
+  }
+
+  .elegant-input {
+    @apply bg-white/50 dark:bg-white/5 border-white/20 dark:border-white/10 backdrop-blur-sm focus:ring-1 focus:ring-primary/30;
+  }
+
+  .warm-button {
+    @apply bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all duration-300;
+  }
+
+  .subtle-card {
+    @apply bg-secondary/40 dark:bg-secondary/30 backdrop-blur-sm border border-primary/5 rounded-xl;
+  }
+  
+  .nav-item {
+    @apply relative overflow-hidden;
+  }
+  
+  .nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: hsl(var(--primary));
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+  }
+  
+  .nav-item:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+}
