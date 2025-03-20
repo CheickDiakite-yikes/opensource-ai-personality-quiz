@@ -12,13 +12,30 @@ export interface AssessmentQuestion {
   id: number;
   question: string;
   options: string[];
+  category: QuestionCategory;
   allowCustomResponse: boolean;
+  weight: number; // Question importance weight for analysis
+}
+
+export enum QuestionCategory {
+  PersonalityTraits = "PersonalityTraits",
+  EmotionalIntelligence = "EmotionalIntelligence",
+  CognitivePatterns = "CognitivePatterns",
+  ValueSystems = "ValueSystems",
+  Motivation = "Motivation",
+  Resilience = "Resilience",
+  SocialInteraction = "SocialInteraction",
+  DecisionMaking = "DecisionMaking",
+  Creativity = "Creativity",
+  Leadership = "Leadership"
 }
 
 export interface AssessmentResponse {
   questionId: number;
   selectedOption?: string;
   customResponse?: string;
+  category?: QuestionCategory;
+  timestamp?: Date;
 }
 
 export interface Assessment {
@@ -32,11 +49,15 @@ export interface PersonalityTrait {
   trait: string;
   score: number;
   description: string;
+  strengths: string[];
+  challenges: string[];
+  growthSuggestions: string[];
 }
 
 export interface AnalysisSection {
   title: string;
   content: string;
+  subSections?: AnalysisSection[];
 }
 
 export interface PersonalityAnalysis {
@@ -46,13 +67,32 @@ export interface PersonalityAnalysis {
     type: string;
     score: number;
     description: string;
+    domains: Array<{
+      name: string;
+      score: number;
+      description: string;
+    }>;
   };
+  cognitiveStyle: {
+    primary: string;
+    secondary: string;
+    description: string;
+  };
+  valueSystem: string[];
   motivators: string[];
   inhibitors: string[];
   weaknesses: string[];
   growthAreas: string[];
+  relationshipPatterns: {
+    strengths: string[];
+    challenges: string[];
+    compatibleTypes: string[];
+  };
+  careerSuggestions: string[];
   intelligenceScore: number;
+  emotionalIntelligenceScore: number;
   roadmap: string;
+  learningPathways: string[];
   createdAt: Date;
 }
 
