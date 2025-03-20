@@ -10,6 +10,7 @@ interface ActivityFiltersProps {
   setShowCompleted: (value: boolean) => void;
   sortBy: 'points' | 'category' | 'date';
   setSortBy: React.Dispatch<React.SetStateAction<'points' | 'category' | 'date'>>;
+  onAddActivity: () => void;
 }
 
 const ActivityFilters: React.FC<ActivityFiltersProps> = ({
@@ -18,6 +19,7 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   setShowCompleted,
   sortBy,
   setSortBy,
+  onAddActivity,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -53,7 +55,11 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
           </Button>
         </div>
         
-        <Button variant="outline" className="flex items-center h-9" onClick={() => console.log("Add new activity")}>
+        <Button 
+          variant="outline" 
+          className="flex items-center h-9" 
+          onClick={onAddActivity}
+        >
           <Plus className="h-4 w-4 mr-1" /> Add
         </Button>
       </div>

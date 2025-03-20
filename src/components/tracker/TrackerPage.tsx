@@ -21,7 +21,9 @@ const TrackerPage: React.FC = () => {
     totalPoints,
     levelProgress,
     toggleActivityCompletion,
-    filteredActivities
+    filteredActivities,
+    generateActivity,
+    isGeneratingActivity
   } = useActivityState();
   
   return (
@@ -55,11 +57,13 @@ const TrackerPage: React.FC = () => {
             setShowCompleted={setShowCompleted}
             sortBy={sortBy}
             setSortBy={setSortBy}
+            onAddActivity={generateActivity}
           />
           
           <ActivityList
             filteredActivities={filteredActivities}
             toggleActivityCompletion={toggleActivityCompletion}
+            isGeneratingActivity={isGeneratingActivity}
           />
         </TabsContent>
       </Tabs>
