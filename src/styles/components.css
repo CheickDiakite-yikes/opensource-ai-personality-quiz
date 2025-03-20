@@ -1,15 +1,15 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 dark:bg-black/60 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg;
+    @apply bg-black/60 backdrop-blur-md border border-white/10 shadow-lg;
   }
 
   .glass-panel {
-    @apply bg-white/80 dark:bg-black/70 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl;
+    @apply bg-black/70 backdrop-blur-xl border border-white/10 shadow-xl;
   }
 
   .glass-button {
-    @apply bg-white/30 dark:bg-white/10 backdrop-blur-md hover:bg-white/50 dark:hover:bg-white/20 transition-all duration-300 border border-white/20 dark:border-white/5;
+    @apply bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all duration-300 border border-white/5;
   }
 
   .text-gradient {
@@ -17,23 +17,23 @@
   }
 
   .warm-gradient {
-    @apply bg-gradient-to-r from-amber-100 to-orange-100;
+    @apply bg-gradient-to-r from-amber-800/20 to-orange-800/20;
   }
 
   .warm-gradient-subtle {
-    @apply bg-gradient-to-r from-amber-50 to-orange-50;
+    @apply bg-gradient-to-r from-amber-900/10 to-orange-900/10;
   }
 
   .elegant-shadow {
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.2);
   }
 
   .elegant-card {
-    @apply bg-white/90 dark:bg-black/80 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-xl elegant-shadow;
+    @apply bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl elegant-shadow;
   }
 
   .elegant-input {
-    @apply bg-white/50 dark:bg-white/5 border-white/20 dark:border-white/10 backdrop-blur-sm focus:ring-1 focus:ring-primary/30;
+    @apply bg-white/5 border-white/10 backdrop-blur-sm focus:ring-1 focus:ring-primary/30;
   }
 
   .warm-button {
@@ -41,7 +41,7 @@
   }
 
   .subtle-card {
-    @apply bg-secondary/40 dark:bg-secondary/30 backdrop-blur-sm border border-primary/5 rounded-xl;
+    @apply bg-secondary/30 backdrop-blur-sm border border-primary/5 rounded-xl;
   }
   
   .nav-item {
