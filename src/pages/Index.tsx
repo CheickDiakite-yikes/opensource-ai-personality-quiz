@@ -47,7 +47,7 @@ const Index = () => {
       transition: {
         duration: 3,
         repeat: Infinity,
-        repeatType: "mirror", // Changed from string to specific literal type
+        repeatType: "mirror" as "mirror", // Explicitly casting to literal type
         ease: "easeInOut",
         delay: Math.random() * 2
       }
