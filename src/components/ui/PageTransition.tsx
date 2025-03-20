@@ -16,16 +16,27 @@ const PageTransition = ({ children, className }: PageTransitionProps) => {
     <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
+        exit={{ opacity: 0, y: 10 }}
         transition={{ 
-          duration: 0.4, 
+          duration: 0.5, 
           ease: [0.22, 1, 0.36, 1] 
         }}
         className={cn("h-full w-full", className)}
       >
-        {children}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.6,
+            delay: 0.1,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="h-full w-full"
+        >
+          {children}
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );

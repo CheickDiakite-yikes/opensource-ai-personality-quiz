@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +12,8 @@ import {
   X, 
   Settings, 
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -98,10 +100,10 @@ const Layout = ({ children }: LayoutProps) => {
             to={item.path}
             onClick={() => isMobile && setShowSidebar(false)}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors relative w-full group",
+              "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 relative w-full group",
               isActive(item.path)
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
             )}
           >
             <item.icon className="h-5 w-5" />
@@ -121,7 +123,15 @@ const Layout = ({ children }: LayoutProps) => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-background overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-background overflow-hidden warm-gradient-subtle">
+      {/* Decorative Elements */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-20">
+          <div className="absolute top-10 right-1/4 w-[600px] h-[600px] rounded-full bg-amber-200/20 blur-3xl animate-pulse-subtle" />
+          <div className="absolute bottom-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-orange-200/20 blur-3xl animate-soft-bounce" />
+        </div>
+      </div>
+      
       {/* Desktop Sidebar */}
       {!isMobile && (
         <div className="fixed top-0 left-0 h-full z-40">
@@ -132,7 +142,10 @@ const Layout = ({ children }: LayoutProps) => {
             className="bg-card/95 backdrop-blur-sm border-r border-border shadow-lg h-full w-64 overflow-hidden flex flex-col"
           >
             <div className="p-4 border-b border-border flex justify-between items-center">
-              <div className="text-xl font-bold text-gradient">Who Am I?</div>
+              <div className="flex items-center">
+                <Sparkles className="h-5 w-5 text-primary mr-2" />
+                <span className="text-xl font-serif font-medium text-gradient">Who Am I?</span>
+              </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -165,10 +178,10 @@ const Layout = ({ children }: LayoutProps) => {
               className="absolute top-1/2 -translate-y-1/2 -right-7 z-50"
             >
               <Button 
-                variant="secondary" 
+                variant="elegant" 
                 size="icon" 
                 onClick={() => setShowSidebar(true)}
-                className="rounded-full shadow-lg h-14 w-14"
+                className="rounded-full shadow-elegant h-14 w-14"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
@@ -187,16 +200,22 @@ const Layout = ({ children }: LayoutProps) => {
             className="sticky top-0 z-30 w-full border-b border-border bg-background/70 backdrop-blur-lg"
           >
             <div className="flex items-center justify-between h-14 px-4">
-              <div className="text-xl font-bold text-gradient">Who Am I?</div>
+              <div className="flex items-center">
+                <Sparkles className="h-5 w-5 text-primary mr-2" />
+                <span className="text-xl font-serif font-medium text-gradient">Who Am I?</span>
+              </div>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0">
+                <SheetContent side="left" className="p-0 bg-card/95 backdrop-blur-md">
                   <div className="p-4 border-b border-border">
-                    <div className="text-xl font-bold text-gradient">Who Am I?</div>
+                    <div className="flex items-center">
+                      <Sparkles className="h-5 w-5 text-primary mr-2" />
+                      <span className="text-xl font-serif font-medium text-gradient">Who Am I?</span>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1 p-3">
                     {navItems.map((item) => (
@@ -207,7 +226,7 @@ const Layout = ({ children }: LayoutProps) => {
                           "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors relative",
                           isActive(item.path)
                             ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                         )}
                       >
                         <item.icon className="h-5 w-5" />
@@ -234,7 +253,7 @@ const Layout = ({ children }: LayoutProps) => {
         
           {/* Mobile Bottom Nav */}
           <motion.div 
-            className="fixed bottom-0 left-0 right-0 bg-background/70 dark:bg-background/70 backdrop-blur-xl border-t border-border z-50"
+            className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border z-50"
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             transition={{ delay: 0.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -245,7 +264,7 @@ const Layout = ({ children }: LayoutProps) => {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-lg px-2 py-1.5 text-sm font-medium transition-colors",
+                    "flex flex-col items-center justify-center rounded-lg px-2 py-1.5 text-sm font-medium transition-all duration-300",
                     isActive(item.path)
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
@@ -267,7 +286,7 @@ const Layout = ({ children }: LayoutProps) => {
       )}
       
       <main className={cn(
-        "flex-1 flex flex-col overflow-hidden transition-all duration-300",
+        "flex-1 flex flex-col overflow-hidden transition-all duration-300 z-10",
         !isMobile && showSidebar ? "ml-64" : "ml-0"
       )}>
         <div className="flex-1 overflow-auto">

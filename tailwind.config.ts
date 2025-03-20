@@ -62,7 +62,35 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				amber: {
+					50: '#fffbeb',
+					100: '#fef3c7',
+					200: '#fde68a',
+					300: '#fcd34d',
+					400: '#fbbf24',
+					500: '#f59e0b',
+					600: '#d97706',
+					700: '#b45309',
+					800: '#92400e',
+					900: '#78350f',
+				},
+				orange: {
+					50: '#fff7ed',
+					100: '#ffedd5',
+					200: '#fed7aa',
+					300: '#fdba74',
+					400: '#fb923c',
+					500: '#f97316',
+					600: '#ea580c',
+					700: '#c2410c',
+					800: '#9a3412',
+					900: '#7c2d12',
+				},
+			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				serif: ['Playfair Display', 'serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -105,7 +133,15 @@ export default {
 				'rotate-glow': {
 					'0%': { transform: 'rotate(0deg)' },
 					'100%': { transform: 'rotate(360deg)' }
-				}
+				},
+				'shimmer': {
+                    '0%': { backgroundPosition: '-200% 0' },
+                    '100%': { backgroundPosition: '200% 0' },
+                },
+                'soft-bounce': {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-5px)' },
+                },
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -116,12 +152,27 @@ export default {
 				'scale-out': 'scale-out 0.4s ease-out',
 				'float': 'float 6s ease-in-out infinite',
 				'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
-				'rotate-glow': 'rotate-glow 20s linear infinite'
+				'rotate-glow': 'rotate-glow 20s linear infinite',
+				'shimmer': 'shimmer 3s ease-in-out infinite',
+                'soft-bounce': 'soft-bounce 4s ease-in-out infinite',
 			},
 			typography: {
 				DEFAULT: {
 					css: {
 						maxWidth: '100%',
+						color: 'hsl(var(--foreground))',
+						h1: {
+                            color: 'hsl(var(--foreground))',
+                            fontFamily: 'Playfair Display, serif',
+                        },
+                        h2: {
+                            color: 'hsl(var(--foreground))',
+                            fontFamily: 'Playfair Display, serif',
+                        },
+                        h3: {
+                            color: 'hsl(var(--foreground))',
+                            fontFamily: 'Playfair Display, serif',
+                        },
 					},
 				},
 			},
@@ -129,6 +180,16 @@ export default {
 				'none': 'none',
 				'blur': 'blur(20px)',
 			},
+			boxShadow: {
+                'elegant': '0 10px 30px -5px rgba(0, 0, 0, 0.1)',
+                'elegant-lg': '0 20px 40px -5px rgba(0, 0, 0, 0.1)',
+                'inner-elegant': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+            },
+            backgroundImage: {
+                'warm-gradient': 'linear-gradient(to right, hsla(30, 100%, 92%, 0.8), hsla(20, 100%, 92%, 0.8))',
+                'warm-gradient-soft': 'linear-gradient(to right, hsla(30, 100%, 98%, 0.9), hsla(20, 100%, 98%, 0.9))',
+                'primary-gradient': 'linear-gradient(to right, hsl(var(--primary)), hsl(calc(var(--primary) - 10), 95%, 45%))',
+            },
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
