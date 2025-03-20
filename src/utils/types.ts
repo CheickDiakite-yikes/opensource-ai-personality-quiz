@@ -96,6 +96,9 @@ export interface PersonalityAnalysis {
   createdAt: Date;
 }
 
+// Export AIAnalysis as an alias for PersonalityAnalysis to maintain compatibility
+export type AIAnalysis = PersonalityAnalysis;
+
 // Activity-related types
 export interface Activity {
   id: string;
