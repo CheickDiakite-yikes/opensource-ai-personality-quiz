@@ -2,20 +2,12 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CognitiveStyleType } from "@/utils/types";
+import { isCognitiveStyleObject } from "../utils/typeGuards";
 
 interface OverviewSectionProps {
   overview: string;
   cognitiveStyle: CognitiveStyleType;
 }
-
-// Type guard to check if cognitiveStyle is an object
-const isCognitiveStyleObject = (style: CognitiveStyleType): style is {
-  primary: string;
-  secondary: string;
-  description: string;
-} => {
-  return typeof style === 'object' && 'primary' in style;
-};
 
 const OverviewSection: React.FC<OverviewSectionProps> = ({
   overview,

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Briefcase, Award } from "lucide-react";
 import { ValueSystemType } from "@/utils/types";
+import { isValueSystemObject } from "../utils/typeGuards";
 
 interface CareerValuesSectionProps {
   careerSuggestions: string[];
@@ -14,15 +15,6 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({
   careerSuggestions,
   valueSystem 
 }) => {
-  // Type guard to check if valueSystem is an object
-  const isValueSystemObject = (system: ValueSystemType): system is {
-    strengths: string[];
-    challenges: string[];
-    compatibleTypes: string[];
-  } => {
-    return typeof system === 'object' && !Array.isArray(system) && 'strengths' in system;
-  };
-
   // Extract values to display based on valueSystem type
   const valuesToDisplay = isValueSystemObject(valueSystem) 
     ? valueSystem.strengths 
