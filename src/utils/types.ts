@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name?: string;
   createdAt: Date;
+  notificationsEnabled?: boolean; // Added for notification opt-in
 }
 
 // Assessment-related types
@@ -39,6 +40,7 @@ export interface AssessmentResponse {
 }
 
 export interface Assessment {
+  id?: string; // Added for storing multiple assessments
   userId: string;
   responses: AssessmentResponse[];
   completedAt: Date;
@@ -61,6 +63,9 @@ export interface AnalysisSection {
 }
 
 export interface PersonalityAnalysis {
+  id?: string; // Added for storing multiple analyses
+  userId?: string; // Added to associate with a user
+  assessmentId?: string; // Added to link to the assessment
   overview: string;
   traits: PersonalityTrait[];
   intelligence: {
@@ -117,4 +122,24 @@ export enum ActivityCategory {
   Health = "Health",
   Social = "Social",
   Creativity = "Creativity"
+}
+
+// Notification-related types
+export interface MotivationalNotification {
+  id: string;
+  userId: string;
+  message: string;
+  suggestion: string;
+  relatedTraits?: string[];
+  createdAt: Date;
+  read: boolean;
+}
+
+// Report history types
+export interface ReportHistoryItem {
+  id: string;
+  userId: string;
+  analysisId: string;
+  assessmentId: string;
+  createdAt: Date;
 }

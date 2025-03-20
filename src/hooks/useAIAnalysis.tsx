@@ -1,12 +1,58 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "@/utils/types";
 import { toast } from "sonner";
 
-// This is a mock implementation; in a real app, you would connect to an AI API
+// This is a mock implementation; in a real app, you would connect to an API
 export const useAIAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
+
+  // Load analysis history from localStorage on component mount
+  useEffect(() => {
+    const loadHistory = () => {
+      try {
+        const savedHistory = localStorage.getItem('analysisHistory');
+        if (savedHistory) {
+          const parsedHistory = JSON.parse(savedHistory);
+          setAnalysisHistory(parsedHistory);
+          
+          // If there's a current analysis in history, set it as the current one
+          if (parsedHistory.length > 0) {
+            setAnalysis(parsedHistory[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading analysis history:", error);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
+    try {
+      // Generate a unique ID for this analysis
+      const analysisWithId = {
+        ...newAnalysis,
+        id: `analysis-${Date.now()}`,
+        createdAt: new Date()
+      };
+      
+      // Add to local state
+      const updatedHistory = [analysisWithId, ...analysisHistory];
+      setAnalysisHistory(updatedHistory);
+      
+      // Save to localStorage
+      localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory.slice(0, 10))); // Keep only the last 10 analyses
+      
+      return analysisWithId;
+    } catch (error) {
+      console.error("Error saving analysis to history:", error);
+      return newAnalysis;
+    }
+  };
 
   const analyzeResponses = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     setIsAnalyzing(true);
@@ -16,6 +62,21 @@ export const useAIAnalysis = () => {
       // In a real implementation, you would send the responses to an AI API
       // and process the results
       console.log("Analyzing responses:", responses);
+      
+      // Save responses to localStorage
+      const assessmentId = `assessment-${Date.now()}`;
+      const assessment = {
+        id: assessmentId,
+        userId: 'current-user', // In a real app, this would be the actual user ID
+        responses,
+        completedAt: new Date()
+      };
+      
+      // Save the assessment
+      const savedAssessments = localStorage.getItem('assessments') || '[]';
+      const assessments = JSON.parse(savedAssessments);
+      assessments.unshift(assessment);
+      localStorage.setItem('assessments', JSON.stringify(assessments.slice(0, 10))); // Keep only the last 10 assessments
       
       // Categorize responses
       const categorizedResponses = responses.reduce((acc, response) => {
@@ -35,6 +96,8 @@ export const useAIAnalysis = () => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       const mockAnalysis: PersonalityAnalysis = {
+        userId: 'current-user', // In a real app, this would be the actual user ID
+        assessmentId,
         overview: "You are a highly creative individual with strong analytical abilities and remarkable emotional intelligence. Your responses reveal a complex personality with a blend of intuitive and methodical approaches to challenges. You show a preference for meaningful connections over superficial interactions, and you're driven by a desire to make a lasting positive impact on the world around you.",
         traits: [
           {
@@ -230,9 +293,12 @@ export const useAIAnalysis = () => {
         createdAt: new Date(),
       };
       
-      setAnalysis(mockAnalysis);
+      // Save to history and update the current analysis
+      const savedAnalysis = saveToHistory(mockAnalysis);
+      setAnalysis(savedAnalysis);
+      
       toast.success("Analysis complete!");
-      return mockAnalysis;
+      return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
       toast.error("Failed to analyze responses. Please try again.");
@@ -242,9 +308,24 @@ export const useAIAnalysis = () => {
     }
   };
 
+  const getAnalysisHistory = () => {
+    return analysisHistory;
+  };
+
+  const setCurrentAnalysis = (analysisId: string) => {
+    const selected = analysisHistory.find(item => item.id === analysisId);
+    if (selected) {
+      setAnalysis(selected);
+      return true;
+    }
+    return false;
+  };
+
   return {
     isAnalyzing,
     analysis,
-    analyzeResponses
+    analyzeResponses,
+    getAnalysisHistory,
+    setCurrentAnalysis
   };
 };
