@@ -1,12 +1,11 @@
 
 import React from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import { useActivityState } from "./hooks/useActivityState";
 import LevelProgress from "./components/LevelProgress";
 import ProgressCard from "./components/ProgressCard";
 import CategoryTabs from "./components/CategoryTabs";
-import ActivityFilters from "./components/ActivityFilters";
-import ActivityList from "./components/ActivityList";
+import CategoryTabContent from "./components/CategoryTabContent";
 import { ActivityCategory } from "@/utils/types";
 
 const TrackerPage: React.FC = () => {
@@ -26,6 +25,9 @@ const TrackerPage: React.FC = () => {
     generateActivity,
     isGeneratingActivity
   } = useActivityState();
+  
+  // Define the categories including "all" for cleaner iteration
+  const categories = ["all", ...Object.values(ActivityCategory)];
   
   return (
     <div className="container max-w-4xl py-6 md:py-10 px-4 min-h-screen">
@@ -51,124 +53,21 @@ const TrackerPage: React.FC = () => {
       <Tabs defaultValue="all" value={filter} className="mb-6">
         <CategoryTabs setFilter={setFilter} currentFilter={filter} />
         
-        <TabsContent value="all" className="mt-0">
-          <ActivityFilters
+        {categories.map((category) => (
+          <CategoryTabContent
+            key={category}
             filter={filter}
             showCompleted={showCompleted}
             setShowCompleted={setShowCompleted}
             sortBy={sortBy}
             setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
             filteredActivities={filteredActivities}
             toggleActivityCompletion={toggleActivityCompletion}
             isGeneratingActivity={isGeneratingActivity}
+            generateActivity={generateActivity}
+            categoryValue={category as ActivityCategory | "all"}
           />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Kindness} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Kindness}
-          />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Mindfulness} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Mindfulness}
-          />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Learning} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Learning}
-          />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Health} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Health}
-          />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Social} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Social}
-          />
-        </TabsContent>
-        
-        <TabsContent value={ActivityCategory.Creativity} className="mt-0">
-          <ActivityFilters
-            filter={filter}
-            showCompleted={showCompleted}
-            setShowCompleted={setShowCompleted}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            onAddActivity={generateActivity}
-          />
-          
-          <ActivityList
-            filteredActivities={filteredActivities}
-            toggleActivityCompletion={toggleActivityCompletion}
-            isGeneratingActivity={isGeneratingActivity && filter === ActivityCategory.Creativity}
-          />
-        </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
