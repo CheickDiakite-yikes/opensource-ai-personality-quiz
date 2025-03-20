@@ -11,11 +11,19 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { PersonalityAnalysis } from "@/utils/types";
 
-const ReportHeader: React.FC = () => {
-  const { analysis, getAnalysisHistory, setCurrentAnalysis } = useAIAnalysis();
+interface ReportHeaderProps {
+  analysis?: PersonalityAnalysis;
+}
+
+const ReportHeader: React.FC<ReportHeaderProps> = ({ analysis: propAnalysis }) => {
+  const { analysis: hookAnalysis, getAnalysisHistory, setCurrentAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
+  
+  // Use the analysis from props if provided, otherwise use the one from the hook
+  const analysis = propAnalysis || hookAnalysis;
   
   const handleDownload = () => {
     if (!analysis) return;
