@@ -66,17 +66,15 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Layout>
-              <PageTransition>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/assessment" element={<AssessmentPage />} />
-                  <Route path="/report" element={<ReportPage />} />
-                  <Route path="/tracker" element={<TrackerPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </PageTransition>
-            </Layout>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Index />} />
+                <Route path="/assessment" element={<AssessmentPage />} />
+                <Route path="/report" element={<ReportPage />} />
+                <Route path="/tracker" element={<TrackerPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
