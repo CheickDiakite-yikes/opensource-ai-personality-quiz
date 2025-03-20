@@ -1,2 +1,11 @@
 
-@import './styles/index.css';
+@import "./styles/base.css";
+@import "./styles/theme.css";
+@import "./styles/components.css";
+@import "./styles/animations.css";
+@import "./styles/transitions.css";
+@import "./styles/profile.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

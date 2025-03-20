@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import AssessmentPage from "./components/assessment/AssessmentPage";
 import ReportPage from "./components/report/ReportPage";
 import TrackerPage from "./components/tracker/TrackerPage";
+import ProfilePage from "./components/profile/ProfilePage";
 import { AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,11 @@ const AppRoutes = () => {
           <Route path="/tracker" element={
             <PageTransition>
               <TrackerPage />
+            </PageTransition>
+          } />
+          <Route path="/profile" element={
+            <PageTransition>
+              <ProfilePage />
             </PageTransition>
           } />
           <Route path="*" element={

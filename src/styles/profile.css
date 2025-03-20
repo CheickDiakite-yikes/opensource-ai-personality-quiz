@@ -1,0 +1,108 @@
+
+/* Profile page specific styles */
+.avatar-glow {
+  position: relative;
+}
+
+.avatar-glow::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: linear-gradient(45deg, 
+    hsla(var(--primary) / 0.7) 0%, 
+    hsla(var(--primary) / 0.3) 30%, 
+    hsla(var(--primary) / 0.1) 50%, 
+    hsla(var(--primary) / 0.3) 70%, 
+    hsla(var(--primary) / 0.7) 100%
+  );
+  border-radius: 100%;
+  z-index: -1;
+  animation: rotate-glow 10s linear infinite, pulse-subtle 5s ease-in-out infinite;
+}
+
+/* Stat cards hover effect */
+.stat-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Trait bubble animations */
+.trait-bubble {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  transition: all 0.3s ease;
+  animation: float 3s ease-in-out infinite;
+  animation-delay: calc(var(--index) * 0.1s);
+}
+
+.trait-bubble:hover {
+  background-color: hsl(var(--primary) / 0.2);
+  transform: scale(1.05);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Table row hover styles */
+.hover-row {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.hover-row:hover {
+  background-color: hsl(var(--primary) / 0.05);
+  transform: scale(1.01);
+}
+
+/* Progress bar animations */
+.animated-progress .progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-progress .progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-image: linear-gradient(
+    -45deg,
+    hsla(var(--primary) / 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    hsla(var(--primary) / 0.2) 50%,
+    hsla(var(--primary) / 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-animation 1s linear infinite;
+}
+
+@keyframes progress-animation {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 1rem 0;
+  }
+}
