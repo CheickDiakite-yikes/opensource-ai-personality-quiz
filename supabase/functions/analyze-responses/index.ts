@@ -3,6 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "./types.ts";
 
+// Get OpenAI API key from environment variables
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
@@ -30,6 +31,7 @@ serve(async (req) => {
     const responsesByCategory = categorizeResponses(responses);
     
     // Generate the AI analysis using OpenAI's reasoning capabilities
+    // IMPORTANT: We exclusively use the o3-mini model for all AI analysis
     const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
     
     console.log("Analysis completed successfully");
@@ -61,6 +63,7 @@ function categorizeResponses(responses: AssessmentResponse[]) {
 }
 
 // Generate AI analysis using OpenAI's o3-mini model with reasoning capabilities
+// IMPORTANT: We exclusively use o3-mini model for all OpenAI API calls
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string
@@ -131,8 +134,9 @@ async function generateAIAnalysis(
   Ensure the analysis is detailed, personalized, and actionable.`;
 
   try {
-    console.log("Sending request to OpenAI API");
+    console.log("Sending request to OpenAI API using o3-mini model");
     
+    // IMPORTANT: We are exclusively using the o3-mini model for all OpenAI API calls
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -140,7 +144,7 @@ async function generateAIAnalysis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini',
+        model: 'o3-mini', // IMPORTANT: We exclusively use the o3-mini model
         messages: [
           { 
             role: 'system', 
@@ -155,7 +159,7 @@ async function generateAIAnalysis(
         presence_penalty: 0,
         response_format: { type: "json_object" },
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
-        reasoning_effort: "medium",
+        reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
       }),
     });
 
@@ -166,7 +170,7 @@ async function generateAIAnalysis(
     }
 
     const data = await response.json();
-    console.log("Received response from OpenAI");
+    console.log("Received response from OpenAI o3-mini model");
     
     try {
       const analysisJson = JSON.parse(data.choices[0].message.content);

@@ -4,6 +4,8 @@ import { PersonalityAnalysis } from "@/utils/types";
 import { loadAnalysisHistory, saveAnalysisToHistory } from "./analysis/useLocalStorage";
 import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
 
+// Main hook for accessing AI analysis functionality
+// IMPORTANT: All AI analysis is performed using OpenAI's o3-mini model exclusively
 export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
@@ -31,6 +33,7 @@ export const useAIAnalysis = () => {
   };
 
   // Use the analyze responses hook with the saveToHistory function
+  // This uses OpenAI's o3-mini model via Supabase Edge Functions
   const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, setAnalysis);
 
   // Utility functions for history management

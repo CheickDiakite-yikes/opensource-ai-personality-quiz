@@ -21,9 +21,10 @@ export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStat
         throw new Error("No personality analysis available. Complete the assessment first.");
       }
       
-      console.log("Generating activity with AI...");
+      console.log("Generating activity with AI using o3-mini model...");
       
       // Call the Supabase Edge Function for AI activity generation
+      // IMPORTANT: This function uses the o3-mini model from OpenAI API
       const { data, error } = await supabase.functions.invoke("generate-activity", {
         body: { 
           analysis,
@@ -40,7 +41,7 @@ export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStat
         throw new Error("Invalid response from activity generation function");
       }
       
-      console.log("Received AI-generated activity:", data.activity);
+      console.log("Received AI-generated activity from o3-mini model:", data.activity);
       
       // Add the new activity to the list
       setActivities(prev => [data.activity, ...prev]);

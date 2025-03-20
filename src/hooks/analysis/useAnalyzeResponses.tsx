@@ -19,9 +19,10 @@ export const useAnalyzeResponses = (
       // Save responses to localStorage and get assessment ID
       const assessmentId = saveAssessmentToStorage(responses);
       
-      console.log("Sending responses to AI for analysis...", responses);
+      console.log("Sending responses to AI for analysis using o3-mini model...", responses);
       
       // Call the Supabase Edge Function for AI analysis
+      // IMPORTANT: This function uses the o3-mini model from OpenAI API
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
@@ -38,7 +39,7 @@ export const useAnalyzeResponses = (
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis:", data.analysis);
+      console.log("Received AI analysis from o3-mini model:", data.analysis);
       
       // Save to history and update the current analysis
       const savedAnalysis = saveToHistory(data.analysis);

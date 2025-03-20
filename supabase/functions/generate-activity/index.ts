@@ -2,6 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Get OpenAI API key from environment variables
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
@@ -26,6 +27,7 @@ serve(async (req) => {
     console.log(`Generating personalized activity${userCategory ? ` for category: ${userCategory}` : ''}`);
     
     // Generate the activity using the OpenAI API
+    // IMPORTANT: We exclusively use the o3-mini model for all AI generation
     const activity = await generateActivity(analysis, userCategory);
     
     console.log("Activity generated successfully");
@@ -42,6 +44,7 @@ serve(async (req) => {
   }
 });
 
+// Generate activity using OpenAI's o3-mini model
 async function generateActivity(analysis: any, userCategory?: string) {
   // Create a system prompt that instructs the model to generate a personalized activity
   const analysisOverview = `
@@ -79,8 +82,9 @@ Return the activity in JSON format with these fields:
 `;
 
   try {
-    console.log("Sending request to OpenAI API for activity generation");
+    console.log("Sending request to OpenAI API using o3-mini model for activity generation");
     
+    // IMPORTANT: We are exclusively using the o3-mini model for all OpenAI API calls
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -88,7 +92,7 @@ Return the activity in JSON format with these fields:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini',
+        model: 'o3-mini', // IMPORTANT: We exclusively use the o3-mini model
         messages: [
           { 
             role: 'system', 
@@ -102,7 +106,7 @@ Return the activity in JSON format with these fields:
         frequency_penalty: 0.2,
         presence_penalty: 0.4,
         response_format: { type: "json_object" },
-        reasoning_effort: "medium",
+        reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
       }),
     });
 
@@ -113,7 +117,7 @@ Return the activity in JSON format with these fields:
     }
 
     const data = await response.json();
-    console.log("Received response from OpenAI");
+    console.log("Received response from OpenAI o3-mini model");
     
     try {
       // Parse the activity from the OpenAI response
