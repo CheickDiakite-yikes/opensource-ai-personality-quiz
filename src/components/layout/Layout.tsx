@@ -22,7 +22,7 @@ import {
   SidebarRail,
   SidebarInset
 } from "@/components/ui/sidebar";
-import { Brain, BarChart, ClipboardList, User, Settings, MenuIcon, Home, ChevronLeft, LogOut } from "lucide-react";
+import { Brain, BarChart, ClipboardList, User, Home, ChevronLeft, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,13 +40,12 @@ const Layout: React.FC = () => {
     navigate(-1);
   };
 
-  // Navigation items used in both sidebar and mobile menu
+  // Navigation items used in both sidebar and mobile menu - Settings removed
   const navigationItems = [
     { name: "Assessment", path: "/assessment", icon: Brain, requiresAuth: true },
     { name: "Report", path: "/report", icon: ClipboardList, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
-    { name: "Settings", path: "/settings", icon: Settings, requiresAuth: true },
   ];
 
   return (
