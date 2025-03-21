@@ -38,23 +38,11 @@ const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => {
 };
 
 // Main hook for accessing AI analysis functionality
-export const useAIAnalysis = (currentUser?: any) => {
+export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Use passed user or check session directly - this prevents circular dependencies
-  const getUser = async () => {
-    if (currentUser) return currentUser;
-    
-    try {
-      const { data } = await supabase.auth.getSession();
-      return data.session?.user || null;
-    } catch (error) {
-      console.error("Error getting session:", error);
-      return null;
-    }
-  };
+  const { user } = useAuth();
 
   // Load analysis from Supabase if user is logged in, otherwise from localStorage
   useEffect(() => {
@@ -62,8 +50,6 @@ export const useAIAnalysis = (currentUser?: any) => {
       setIsLoading(true);
       
       try {
-        const user = await getUser();
-        
         if (user) {
           console.log("Fetching analysis from Supabase for user:", user.id);
           
@@ -77,6 +63,7 @@ export const useAIAnalysis = (currentUser?: any) => {
             
           if (error) {
             console.error("Error fetching analysis from Supabase:", error);
+            toast.error("Failed to load your analysis data");
             
             // Fallback to localStorage
             const history = loadAnalysisHistory();
@@ -139,7 +126,7 @@ export const useAIAnalysis = (currentUser?: any) => {
     };
     
     fetchAnalysis();
-  }, [currentUser]);
+  }, [user]);
 
   // Function to save analysis to history
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {

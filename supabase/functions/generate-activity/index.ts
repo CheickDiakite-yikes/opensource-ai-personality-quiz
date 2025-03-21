@@ -5,19 +5,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Get OpenAI API key from environment variables
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-// Enhanced security headers for CORS
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://api.openai.com;",
-  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
 };
-
-// Rate limiting cache - would use Redis in production
-const rateLimits = new Map<string, { count: number, timestamp: number }>();
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -27,26 +18,10 @@ serve(async (req) => {
 
   try {
     console.log("Received request to generate-activity");
+    const { analysis, userCategory } = await req.json();
     
-    // Validate request method
-    if (req.method !== 'POST') {
-      throw new Error("Method not allowed. Only POST requests are supported.");
-    }
-    
-    // Validate request content type
-    const contentType = req.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error("Invalid content type. Expected application/json.");
-    }
-    
-    const { analysis, userCategory, userId } = await req.json();
-    
-    // Simple rate limiting - would use Redis in production
-    if (userId) {
-      const requestsPerHour = await checkRateLimit(userId);
-      if (requestsPerHour > 20) { // Allow 20 activities per hour
-        throw new Error("Rate limit exceeded. Please try again later.");
-      }
+    if (!analysis) {
+      throw new Error("Missing analysis data");
     }
     
     console.log(`Generating personalized activity${userCategory ? ` for category: ${userCategory}` : ''}`);
@@ -68,31 +43,6 @@ serve(async (req) => {
     });
   }
 });
-
-// Simple rate limiting function
-async function checkRateLimit(id: string): Promise<number> {
-  const now = Date.now();
-  const oneHour = 60 * 60 * 1000;
-  
-  // Clean up old entries
-  for (const [key, data] of rateLimits.entries()) {
-    if (now - data.timestamp > oneHour) {
-      rateLimits.delete(key);
-    }
-  }
-  
-  const existing = rateLimits.get(id) || { count: 0, timestamp: now };
-  if (now - existing.timestamp > oneHour) {
-    // Reset if more than an hour has passed
-    rateLimits.set(id, { count: 1, timestamp: now });
-    return 1;
-  } else {
-    // Increment count
-    const newCount = existing.count + 1;
-    rateLimits.set(id, { count: newCount, timestamp: existing.timestamp });
-    return newCount;
-  }
-}
 
 // Generate activity using OpenAI's o3-mini model
 async function generateActivity(analysis: any, userCategory?: string) {
@@ -136,70 +86,59 @@ Return the activity in JSON format with these fields:
   try {
     console.log("Sending request to OpenAI API using o3-mini model for activity generation");
     
-    // Add timeout for OpenAI request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+    // Using the correct parameters for o3-mini
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'o3-mini', 
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a personal development coach specialized in creating custom activities that help people grow based on their personality assessment. Always provide activities that are practical, specific, and tailored to the individual.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        // Removed unsupported temperature parameter
+        max_completion_tokens: 4000, // Using max_completion_tokens for reasoning models
+        response_format: { type: "json_object" },
+        reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("OpenAI API error:", errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    console.log("Received response from OpenAI o3-mini model");
     
     try {
-      // Using the correct parameters for o3-mini
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'o3-mini', 
-          messages: [
-            { 
-              role: 'system', 
-              content: 'You are a personal development coach specialized in creating custom activities that help people grow based on their personality assessment. Always provide activities that are practical, specific, and tailored to the individual.'
-            },
-            { role: 'user', content: prompt }
-          ],
-          // Removed unsupported temperature parameter
-          max_completion_tokens: 4000, // Using max_completion_tokens for reasoning models
-          response_format: { type: "json_object" },
-          reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
-        }),
-        signal: controller.signal,
-      });
+      // Parse the activity from the OpenAI response
+      const activityData = JSON.parse(data.choices[0].message.content);
       
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
-      console.log("Received response from OpenAI o3-mini model");
+      // Generate a unique ID for the activity
+      const uniqueId = `activity-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       
-      try {
-        // Parse the activity from the OpenAI response
-        const activityData = JSON.parse(data.choices[0].message.content);
-        
-        // Generate a unique ID for the activity
-        const uniqueId = `activity-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        
-        // Add the ID and completed status
-        return {
-          id: uniqueId,
-          title: activityData.title,
-          description: activityData.description,
-          category: activityData.category,
-          points: activityData.points || Math.floor(Math.random() * 30) + 10,
-          steps: activityData.steps || [],
-          benefits: activityData.benefits || "",
-          completed: false
-        };
-      } catch (error) {
-        console.error("Error parsing OpenAI response:", error);
-        throw new Error("Failed to parse activity generation results");
-      }
-    } finally {
-      clearTimeout(timeoutId);
+      // Add the ID and completed status
+      return {
+        id: uniqueId,
+        title: activityData.title,
+        description: activityData.description,
+        category: activityData.category,
+        points: activityData.points || Math.floor(Math.random() * 30) + 10,
+        steps: activityData.steps || [],
+        benefits: activityData.benefits || "",
+        completed: false
+      };
+    } catch (error) {
+      console.error("Error parsing OpenAI response:", error);
+      throw new Error("Failed to parse activity generation results");
     }
   } catch (error) {
     console.error("Error generating activity:", error);

@@ -10,8 +10,7 @@ interface ActivityListProps {
   isGeneratingActivity: boolean;
 }
 
-// Use React.memo to prevent unnecessary re-renders
-const ActivityList: React.FC<ActivityListProps> = React.memo(({
+const ActivityList: React.FC<ActivityListProps> = ({
   filteredActivities,
   toggleActivityCompletion,
   isGeneratingActivity,
@@ -47,9 +46,6 @@ const ActivityList: React.FC<ActivityListProps> = React.memo(({
       ))}
     </div>
   );
-});
-
-// Add display name for debugging
-ActivityList.displayName = 'ActivityList';
+};
 
 export default ActivityList;

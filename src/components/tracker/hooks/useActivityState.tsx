@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
+import { Activity, ActivityCategory, PersonalityAnalysis, Json } from "@/utils/types";
 import { sampleActivities } from "../data/sampleActivities";
 import { useActivityFilters } from "./useActivityFilters";
 import { useLevelProgress } from "./useLevelProgress";
@@ -53,52 +53,48 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         
         console.log("Fetching activities for user:", user.id);
         
-        try {
-          const { data, error } = await supabase
-            .from('activities')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          if (error) {
-            console.error("Error fetching activities:", error);
-            setActivities(sampleActivities);
-            return;
-          }
-          
-          console.log("Raw data from Supabase:", data);
-          
-          // Check if we got any data back
-          if (!data || data.length === 0) {
-            console.log("No activities found for user, creating initial set");
-            const initialActivities = await createInitialActivities(user.id);
-            setActivities(initialActivities);
-            setIsLoading(false);
-            return;
-          }
-          
-          // Transform the data from Supabase format to our Activity type
-          const formattedActivities: Activity[] = data.map(item => {
-            return {
-              id: item.id,
-              title: item.title,
-              description: item.description || "",
-              points: item.points,
-              category: item.category as ActivityCategory,
-              completed: item.completed,
-              completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-              createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-              steps: formatSteps(item.steps),
-              benefits: item.benefits || "",
-              user_id: item.user_id
-            };
-          });
-          
-          console.log("Formatted activities:", formattedActivities);
-          setActivities(formattedActivities);
-        } catch (dbError) {
-          console.error("Database error:", dbError);
+        const { data, error } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error("Error fetching activities:", error);
+          toast.error("Failed to load your activities");
           setActivities(sampleActivities);
+          return;
         }
+        
+        console.log("Raw data from Supabase:", data);
+        
+        // Check if we got any data back
+        if (!data || data.length === 0) {
+          console.log("No activities found for user, creating initial set");
+          const initialActivities = await createInitialActivities(user.id);
+          setActivities(initialActivities);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Transform the data from Supabase format to our Activity type
+        const formattedActivities: Activity[] = data.map(item => {
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description || "",
+            points: item.points,
+            category: item.category as ActivityCategory,
+            completed: item.completed,
+            completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+            steps: formatSteps(item.steps),
+            benefits: item.benefits || "",
+            user_id: item.user_id
+          };
+        });
+        
+        console.log("Formatted activities:", formattedActivities);
+        setActivities(formattedActivities);
       } catch (error) {
         console.error("Unexpected error fetching activities:", error);
         toast.error("Failed to load your activities");
@@ -129,37 +125,33 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       }));
       
       // Insert them into Supabase
-      try {
-        const { data, error } = await supabase
-          .from('activities')
-          .insert(initialActivitiesData)
-          .select();
-        
-        if (error) {
-          console.error("Error creating initial activities:", error);
-          return sampleActivities;
-        }
-        
-        console.log("Created initial activities:", data);
-        
-        // Transform the returned data to our Activity type
-        return data.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description || "",
-          points: item.points,
-          category: item.category as ActivityCategory,
-          completed: item.completed,
-          completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-          createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-          steps: formatSteps(item.steps),
-          benefits: item.benefits || "",
-          user_id: item.user_id
-        }));
-      } catch (err) {
-        console.error("Error inserting activities:", err);
+      const { data, error } = await supabase
+        .from('activities')
+        .insert(initialActivitiesData)
+        .select();
+      
+      if (error) {
+        console.error("Error creating initial activities:", error);
+        toast.error("Failed to create initial activities");
         return sampleActivities;
       }
+      
+      console.log("Created initial activities:", data);
+      
+      // Transform the returned data to our Activity type
+      return data.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || "",
+        points: item.points,
+        category: item.category as ActivityCategory,
+        completed: item.completed,
+        completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+        createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+        steps: formatSteps(item.steps),
+        benefits: item.benefits || "",
+        user_id: item.user_id
+      }));
     } catch (error) {
       console.error("Error creating initial activities:", error);
       return sampleActivities;

@@ -14,11 +14,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const TrackerPage: React.FC = () => {
+  const { analysis } = useAIAnalysis();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // Pass the user to useAIAnalysis to prevent circular dependency
-  const { analysis } = useAIAnalysis(user);
   
   const {
     activities,
