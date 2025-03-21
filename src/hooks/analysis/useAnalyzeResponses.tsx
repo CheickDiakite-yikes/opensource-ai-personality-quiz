@@ -13,34 +13,44 @@ export const useAnalyzeResponses = (
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { user } = useAuth();
 
-  const analyzeResponses = async (
-    responses: AssessmentResponse[], 
-    assessmentId?: string
-  ): Promise<PersonalityAnalysis> => {
+  const analyzeResponses = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     setIsAnalyzing(true);
-    toast.info("Analyzing your responses with AI...", {
-      id: "analyzing-toast",
-      duration: 5000
-    });
+    toast.info("Analyzing your responses with AI...");
 
     try {
-      // If no assessmentId is provided, generate one
-      const finalAssessmentId = assessmentId || `assessment-${Date.now()}`;
+      // Save responses to localStorage and get assessment ID
+      const assessmentId = saveAssessmentToStorage(responses);
       
-      // Save responses to localStorage
-      saveAssessmentToStorage(responses, finalAssessmentId);
+      console.log("Sending responses to AI for analysis using o3-mini model...", responses);
       
-      console.log("Starting AI analysis for responses:", responses.length);
-      console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
-      console.log("Using assessment ID:", finalAssessmentId);
+      // Store assessment responses in Supabase if user is logged in
+      if (user) {
+        try {
+          // We need to convert AssessmentResponse[] to a JSON-compatible format
+          // by using JSON.stringify and then parsing it back to handle Date objects
+          const jsonResponses = JSON.parse(JSON.stringify(responses));
+          
+          const { error: assessmentError } = await supabase
+            .from('assessments')
+            .insert({
+              id: assessmentId,
+              user_id: user.id,
+              responses: jsonResponses
+            });
+            
+          if (assessmentError) {
+            console.error("Error saving assessment to Supabase:", assessmentError);
+          }
+        } catch (err) {
+          console.error("Error saving assessment:", err);
+        }
+      }
       
       // Call the Supabase Edge Function for AI analysis
-      console.log("Calling analyze-responses edge function with assessment ID:", finalAssessmentId);
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
-          assessmentId: finalAssessmentId,
-          userId: user?.id || null 
+          assessmentId 
         }
       });
       
@@ -50,143 +60,71 @@ export const useAnalyzeResponses = (
       }
       
       if (!data || !data.analysis) {
-        console.error("Invalid response from analysis function:", data);
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis:", data.analysis.id);
+      console.log("Received AI analysis from o3-mini model:", data.analysis);
       
-      // Add user ID and assessment ID to the analysis if user is logged in
-      let analysisWithUser = {
-        ...data.analysis,
-        assessmentId: finalAssessmentId
-      };
-      
+      // Add user ID to the analysis if user is logged in
+      let analysisWithUser = data.analysis;
       if (user) {
-        analysisWithUser.userId = user.id;
-        
-        // Ensure we have a record in assessments table
-        try {
-          // Check if assessment already exists
-          const { data: existingAssessment } = await supabase
-            .from('assessments')
-            .select('id')
-            .eq('id', finalAssessmentId)
-            .single();
-            
-          if (!existingAssessment) {
-            console.log("Saving assessment to Supabase:", finalAssessmentId);
-            
-            // Ensure responses are properly formatted for JSON storage
-            const cleanedResponses = responses.map(response => ({
-              ...response,
-              timestamp: response.timestamp instanceof Date ? response.timestamp.toISOString() : response.timestamp
-            }));
-            
-            // Save assessment to Supabase
-            await supabase
-              .from('assessments')
-              .insert({
-                id: finalAssessmentId,
-                user_id: user.id,
-                responses: cleanedResponses
-              });
-          }
-        } catch (err) {
-          console.error("Error saving assessment:", err);
-        }
+        analysisWithUser = {
+          ...data.analysis,
+          userId: user.id,
+          assessmentId: assessmentId
+        };
         
         // Save analysis to Supabase
         try {
-          console.log("Saving analysis to Supabase for user:", user.id);
+          // Convert all JSON fields to their string representation to ensure compatibility
+          const jsonAnalysis = JSON.parse(JSON.stringify(data.analysis));
           
-          // Ensure the analysis data has the right format for Supabase
-          const formattedData = {
-            id: data.analysis.id,
-            user_id: user.id,
-            assessment_id: finalAssessmentId,
-            result: data.analysis,
-            overview: data.analysis.overview || '',
-            traits: Array.isArray(data.analysis.traits) ? data.analysis.traits : [],
-            intelligence: data.analysis.intelligence || { type: '', score: 0, description: '', domains: [] },
-            intelligence_score: typeof data.analysis.intelligenceScore === 'number' ? data.analysis.intelligenceScore : 0,
-            emotional_intelligence_score: typeof data.analysis.emotionalIntelligenceScore === 'number' ? data.analysis.emotionalIntelligenceScore : 0,
-            cognitive_style: data.analysis.cognitiveStyle || '',
-            value_system: Array.isArray(data.analysis.valueSystem) ? data.analysis.valueSystem : [],
-            motivators: Array.isArray(data.analysis.motivators) ? data.analysis.motivators : [],
-            inhibitors: Array.isArray(data.analysis.inhibitors) ? data.analysis.inhibitors : [],
-            weaknesses: Array.isArray(data.analysis.weaknesses) ? data.analysis.weaknesses : [],
-            growth_areas: Array.isArray(data.analysis.growthAreas) ? data.analysis.growthAreas : [],
-            relationship_patterns: Array.isArray(data.analysis.relationshipPatterns) ? data.analysis.relationshipPatterns : 
-              typeof data.analysis.relationshipPatterns === 'object' ? data.analysis.relationshipPatterns : [],
-            career_suggestions: Array.isArray(data.analysis.careerSuggestions) ? data.analysis.careerSuggestions : [],
-            learning_pathways: Array.isArray(data.analysis.learningPathways) ? data.analysis.learningPathways : [],
-            roadmap: data.analysis.roadmap || ''
-          };
-
-          // Check if analysis already exists, then update or insert
-          const { data: existingAnalysis } = await supabase
+          const { error: analysisError } = await supabase
             .from('analyses')
-            .select('id')
-            .eq('id', data.analysis.id)
-            .single();
-            
-          let analysisError;
-          
-          if (existingAnalysis) {
-            // Update existing analysis
-            const { error: updateError } = await supabase
-              .from('analyses')
-              .update(formattedData)
-              .eq('id', data.analysis.id);
-              
-            analysisError = updateError;
-          } else {
-            // Insert new analysis
-            const { error: insertError } = await supabase
-              .from('analyses')
-              .insert(formattedData);
-              
-            analysisError = insertError;
-          }
+            .insert({
+              id: data.analysis.id,
+              user_id: user.id,
+              assessment_id: assessmentId,
+              result: jsonAnalysis,
+              overview: data.analysis.overview,
+              traits: jsonAnalysis.traits,
+              intelligence: jsonAnalysis.intelligence,
+              intelligence_score: data.analysis.intelligenceScore,
+              emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
+              cognitive_style: jsonAnalysis.cognitiveStyle,
+              value_system: jsonAnalysis.valueSystem,
+              motivators: jsonAnalysis.motivators,
+              inhibitors: jsonAnalysis.inhibitors,
+              weaknesses: jsonAnalysis.weaknesses,
+              growth_areas: jsonAnalysis.growthAreas,
+              relationship_patterns: jsonAnalysis.relationshipPatterns,
+              career_suggestions: jsonAnalysis.careerSuggestions,
+              learning_pathways: jsonAnalysis.learningPathways,
+              roadmap: data.analysis.roadmap
+            });
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
-            toast.error("Could not save your analysis data to your profile, but we've saved it locally", {
-              description: analysisError.message,
-              duration: 5000
-            });
-          } else {
-            console.log("Successfully saved analysis to Supabase with ID:", data.analysis.id);
-            toast.success("Analysis saved to your profile");
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
         }
-      } else {
-        console.log("User not logged in, analysis will only be stored locally");
       }
       
       // Save to history and update the current analysis
       const savedAnalysis = saveToHistory(analysisWithUser);
       setAnalysis(savedAnalysis);
       
-      toast.success("AI Analysis complete!", {
-        id: "analyzing-toast",
-        duration: 3000
-      });
+      toast.success("AI Analysis complete!");
       return savedAnalysis;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error analyzing responses:", error);
-      toast.error("Failed to analyze responses. Using fallback analysis.", {
-        id: "analyzing-toast",
-        duration: 3000
-      });
+      toast.error("Failed to analyze responses. Using fallback analysis.");
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
-        const generatedAssessmentId = assessmentId || `assessment-${Date.now()}`;
-        return module.generateMockAnalysis(generatedAssessmentId);
+        const assessmentId = saveAssessmentToStorage(responses);
+        return module.generateMockAnalysis(assessmentId);
       });
       
       const savedAnalysis = saveToHistory(fallbackAnalysis);

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { useActivityState } from "./hooks/useActivityState";
 import LevelProgress from "./components/LevelProgress";
@@ -12,21 +12,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 
 const TrackerPage: React.FC = () => {
-  const { analysis, refreshAnalysis, isLoading: analysisLoading } = useAIAnalysis();
+  const { analysis } = useAIAnalysis();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // Automatically refresh analysis data when component mounts if user is logged in
-  useEffect(() => {
-    if (user) {
-      console.log("TrackerPage: User is logged in, refreshing data");
-      refreshAnalysis();
-    }
-  }, [user, refreshAnalysis]);
   
   const {
     activities,
@@ -52,7 +42,7 @@ const TrackerPage: React.FC = () => {
   const categories = ["all", ...Object.values(ActivityCategory)];
   
   // Loading skeleton
-  if (isLoading || analysisLoading) {
+  if (isLoading) {
     return (
       <div className="container max-w-4xl py-6 md:py-10 px-4">
         <div className="mb-8">
@@ -75,12 +65,6 @@ const TrackerPage: React.FC = () => {
       </div>
     );
   }
-  
-  const handleRefresh = async () => {
-    toast.info("Refreshing your data...");
-    await refreshAnalysis();
-    toast.success("Data refreshed successfully");
-  };
   
   // If not authenticated, show login prompt
   if (!user) {
@@ -131,20 +115,12 @@ const TrackerPage: React.FC = () => {
   
   return (
     <div className="container max-w-4xl py-6 md:py-10 px-4 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold">Growth Tracker</h1>
-        <Button 
-          variant="outline" 
-          onClick={handleRefresh}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </Button>
+        <p className="text-muted-foreground mt-2">
+          Track your progress and earn points through self-improvement activities
+        </p>
       </div>
-      
-      <p className="text-muted-foreground mb-8">
-        Track your progress and earn points through self-improvement activities
-      </p>
       
       <LevelProgress
         currentLevel={currentLevel}

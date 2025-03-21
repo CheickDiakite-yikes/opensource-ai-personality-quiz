@@ -6,59 +6,9 @@ import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "./typ
 // Get OpenAI API key from environment variables
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-// Enhanced security headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Content-Security-Policy': "default-src 'self'",
-};
-
-// Basic request validation
-const validateResponses = (responses: any[]): boolean => {
-  if (!responses || !Array.isArray(responses) || responses.length === 0) {
-    return false;
-  }
-  
-  // Check each response for required fields
-  return responses.every(r => 
-    r.questionId !== undefined && 
-    r.category !== undefined &&
-    (r.selectedOption !== undefined || r.customResponse !== undefined)
-  );
-};
-
-// Simple rate limiting (can be enhanced further)
-const requestCounts = new Map<string, { count: number, timestamp: number }>();
-const RATE_LIMIT = 5; // analysis is more resource-intensive, so lower limit
-const RATE_WINDOW = 60 * 1000; // 1 minute in milliseconds
-
-const checkRateLimit = (clientIP: string) => {
-  const now = Date.now();
-  const clientData = requestCounts.get(clientIP);
-  
-  if (!clientData) {
-    requestCounts.set(clientIP, { count: 1, timestamp: now });
-    return true;
-  }
-  
-  if (now - clientData.timestamp > RATE_WINDOW) {
-    // Reset if window has passed
-    requestCounts.set(clientIP, { count: 1, timestamp: now });
-    return true;
-  }
-  
-  if (clientData.count >= RATE_LIMIT) {
-    return false; // Rate limit exceeded
-  }
-  
-  // Increment count
-  requestCounts.set(clientIP, { 
-    count: clientData.count + 1, 
-    timestamp: clientData.timestamp 
-  });
-  return true;
 };
 
 serve(async (req) => {
@@ -69,28 +19,16 @@ serve(async (req) => {
 
   try {
     console.log("Received request to analyze-responses");
+    const { responses, assessmentId } = await req.json();
     
-    // Get client IP for rate limiting (simplified for demo)
-    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    // Check rate limit
-    if (!checkRateLimit(clientIP)) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    const { responses, assessmentId, userId } = await req.json();
-    
-    if (!validateResponses(responses)) {
+    if (!responses || !Array.isArray(responses) || responses.length === 0) {
       throw new Error("Invalid or missing responses data");
     }
 
-    console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}, User ID: ${userId || 'anonymous'}`);
+    console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}`);
     
     // Clean and serialize responses for analysis
-    const cleanedResponses = responses.map((r: any) => ({
+    const cleanedResponses = responses.map(r => ({
       ...r,
       timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString()
     }));
@@ -98,24 +36,18 @@ serve(async (req) => {
     // Group responses by category for analysis
     const responsesByCategory = categorizeResponses(cleanedResponses);
     
-    // Add request timeout to prevent hanging requests
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Request timeout")), 30000); // 30 seconds timeout
-    });
+    // Generate the AI analysis using OpenAI's API
+    const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
     
-    // Generate the AI analysis with timeout
-    const analysisPromise = generateAIAnalysis(responsesByCategory, assessmentId, userId);
-    const analysis = await Promise.race([analysisPromise, timeoutPromise]);
-    
-    console.log("Analysis completed successfully for user:", userId || 'anonymous');
+    console.log("Analysis completed successfully");
     
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in analyze-responses function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: error.status || 500,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -135,11 +67,10 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
-// Generate AI analysis using OpenAI's o3-mini model with enhanced security
+// Generate AI analysis using OpenAI's o3-mini model
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
-  assessmentId: string,
-  userId?: string | null
+  assessmentId: string
 ): Promise<PersonalityAnalysis> {
   const categorySummaries = Object.entries(responsesByCategory).map(([category, responses]) => {
     const summary = responses.map(r => 
@@ -166,7 +97,7 @@ async function generateAIAnalysis(
   
   {
     "id": "${assessmentId}",
-    "createdAt": "${new Date().toISOString()}",
+    "createdAt": "current timestamp",
     "overview": "summary paragraph about the personality profile",
     "traits": [
       {
@@ -201,9 +132,7 @@ async function generateAIAnalysis(
     "relationshipPatterns": ["list", "of", "relationship patterns"],
     "careerSuggestions": ["list", "of", "career suggestions"],
     "learningPathways": ["list", "of", "learning pathways"],
-    "roadmap": "personalized development roadmap paragraph",
-    ${userId ? `"userId": "${userId}",` : ''}
-    "assessmentId": "${assessmentId}"
+    "roadmap": "personalized development roadmap paragraph"
   }
   
   Ensure the analysis is detailed, personalized, and actionable.`;
@@ -211,73 +140,48 @@ async function generateAIAnalysis(
   try {
     console.log("Sending request to OpenAI API using o3-mini model");
     
-    if (!openAIApiKey) {
-      throw new Error("OpenAI API key not configured");
+    // Use the correct parameters supported by the o3-mini model
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a psychological assessment expert specialized in personality analysis. Focus on providing insightful, accurate, and helpful analysis.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("OpenAI API error:", errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
-    
-    // Add timeout for fetch call
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
+    const data = await response.json();
+    console.log("Received response from OpenAI gpt-4o-mini model");
     
     try {
-      // Use the correct parameters supported by the gpt-4o-mini model
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { 
-              role: 'system', 
-              content: 'You are a psychological assessment expert specialized in personality analysis. Focus on providing insightful, accurate, and helpful analysis.'
-            },
-            { role: 'user', content: prompt }
-          ],
-          response_format: { type: "json_object" },
-          seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
-        }),
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const analysisJson = JSON.parse(data.choices[0].message.content);
+      // Make sure createdAt is set correctly
+      if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
+        analysisJson.createdAt = new Date().toISOString();
       }
-
-      const data = await response.json();
-      console.log("Received response from OpenAI gpt-4o-mini model");
-      
-      try {
-        const analysisJson = JSON.parse(data.choices[0].message.content);
-        // Make sure createdAt is set correctly
-        if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
-          analysisJson.createdAt = new Date().toISOString();
-        }
-        
-        // Add userId if it was provided
-        if (userId && !analysisJson.userId) {
-          analysisJson.userId = userId;
-        }
-        
-        return analysisJson as PersonalityAnalysis;
-      } catch (error) {
-        console.error("Error parsing OpenAI response:", error);
-        throw new Error("Failed to parse AI analysis results");
-      }
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error("OpenAI API request timed out");
-      }
-      throw error;
+      return analysisJson as PersonalityAnalysis;
+    } catch (error) {
+      console.error("Error parsing OpenAI response:", error);
+      throw new Error("Failed to parse AI analysis results");
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error generating AI analysis:", error);
     throw new Error(`Failed to generate AI analysis: ${error.message}`);
   }

@@ -21,11 +21,10 @@ import {
   SidebarRail,
   SidebarInset
 } from "@/components/ui/sidebar";
-import { Brain, BarChart, ClipboardList, User, ChevronLeft, LogOut, Menu } from "lucide-react";
+import { Brain, BarChart, ClipboardList, User, Home, ChevronLeft, LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import Logo from "@/components/ui/Logo";
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -72,7 +71,9 @@ const Layout: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Logo size="medium" />
+                  <Link to="/" className="text-xl font-bold hover:text-primary transition-colors">
+                    Who Am I?
+                  </Link>
                 </motion.div>
               </div>
               <div className="flex items-center space-x-3">
@@ -96,10 +97,9 @@ const Layout: React.FC = () => {
                               : "hover:bg-accent hover:text-accent-foreground"
                           }`}
                         >
-                          <Logo size="small" showText={false} asLink={false} />
-                          <span className="ml-2">Home</span>
+                          <Home className="mr-3 h-5 w-5" />
+                          Home
                         </Link>
-                        
                         
                         {!user && (
                           <Link
@@ -161,11 +161,13 @@ const Layout: React.FC = () => {
                   transition={{ duration: 0.5 }}
                   className="p-3"
                 >
-                  <Logo size="large" />
+                  <Link to="/" className="text-xl font-bold hover:text-primary transition-colors flex items-center">
+                    <Home className="mr-2 h-5 w-5" />
+                    Who Am I?
+                  </Link>
                 </motion.div>
               </SidebarHeader>
               <SidebarContent>
-                
                 <SidebarGroup>
                   <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                   <SidebarGroupContent>

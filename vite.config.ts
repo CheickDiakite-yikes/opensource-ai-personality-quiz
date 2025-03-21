@@ -24,8 +24,6 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Explicitly tell Vite how to handle directory imports
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
   },
   optimizeDeps: {
     esbuildOptions: {
@@ -39,7 +37,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
-          ui: ['@/components/ui/index.ts'], // Updated to point to index file instead of directory
+          ui: ['@/components/ui'],
         }
       }
     }

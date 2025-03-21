@@ -1,111 +1,98 @@
+
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 
-const ASSESSMENT_RESPONSES_KEY = "assessment_responses";
-const ANALYSIS_HISTORY_KEY = "analysis_history";
-
-// Save assessment responses to localStorage
-export const saveAssessmentToStorage = (
-  responses: AssessmentResponse[],
-  assessmentId: string = `assessment-${Date.now()}`
-): string => {
-  // Clean the responses for storage by converting Date objects to strings
-  const cleanedResponses = responses.map(response => ({
-    ...response,
-    timestamp: response.timestamp instanceof Date 
-      ? response.timestamp.toISOString() 
-      : response.timestamp
-  }));
-  
-  // Store the responses with the assessmentId
-  const assessmentData = {
-    id: assessmentId,
-    responses: cleanedResponses,
-    createdAt: new Date().toISOString()
-  };
-  
+// Function to save assessment responses to localStorage
+export const saveAssessmentToStorage = (responses: AssessmentResponse[]): string => {
   try {
-    // Get existing stored assessments or initialize empty array
-    const storedAssessmentsString = localStorage.getItem(ASSESSMENT_RESPONSES_KEY);
-    const storedAssessments = storedAssessmentsString ? JSON.parse(storedAssessmentsString) : [];
+    // Generate a unique ID for this assessment
+    const assessmentId = `assessment-${Date.now()}`;
     
-    // Add the new assessment, keeping only the most recent 5
-    const updatedAssessments = [assessmentData, ...storedAssessments.slice(0, 4)];
-    localStorage.setItem(ASSESSMENT_RESPONSES_KEY, JSON.stringify(updatedAssessments));
+    // Save responses to localStorage
+    const savedAssessments = localStorage.getItem('assessment-responses') || '{}';
+    const assessments = JSON.parse(savedAssessments);
     
-    console.log(`Assessment saved to localStorage with ID: ${assessmentId}`);
+    assessments[assessmentId] = {
+      responses,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('assessment-responses', JSON.stringify(assessments));
     return assessmentId;
   } catch (error) {
-    console.error("Error saving assessment to localStorage:", error);
-    return assessmentId;
+    console.error("Error saving assessment to storage:", error);
+    return `error-${Date.now()}`;
   }
 };
 
-// Get assessment responses from localStorage by ID
-export const getAssessmentFromStorage = (assessmentId: string): AssessmentResponse[] | null => {
+// Function to load analysis history from localStorage
+export const loadAnalysisHistory = (): PersonalityAnalysis[] => {
   try {
-    const storedAssessmentsString = localStorage.getItem(ASSESSMENT_RESPONSES_KEY);
-    if (!storedAssessmentsString) return null;
-    
-    const storedAssessments = JSON.parse(storedAssessmentsString);
-    const assessment = storedAssessments.find((a: any) => a.id === assessmentId);
-    
-    return assessment ? assessment.responses : null;
-  } catch (error) {
-    console.error("Error getting assessment from localStorage:", error);
-    return null;
-  }
-};
-
-// Save analysis to localStorage history
-export const saveAnalysisToHistory = (analysis: PersonalityAnalysis): PersonalityAnalysis => {
-  try {
-    // Get existing stored analyses or initialize empty array
-    const storedAnalysesString = localStorage.getItem(ANALYSIS_HISTORY_KEY);
-    const storedAnalyses = storedAnalysesString ? JSON.parse(storedAnalysesString) : [];
-    
-    // Check if analysis with same ID already exists
-    const existingIndex = storedAnalyses.findIndex((a: PersonalityAnalysis) => a.id === analysis.id);
-    
-    let updatedAnalyses;
-    if (existingIndex >= 0) {
-      // Replace existing analysis
-      updatedAnalyses = [...storedAnalyses];
-      updatedAnalyses[existingIndex] = analysis;
-    } else {
-      // Add new analysis, keeping only the most recent 5
-      updatedAnalyses = [analysis, ...storedAnalyses.slice(0, 4)];
+    const savedData = localStorage.getItem('analysis-history');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      return Array.isArray(parsedData) ? parsedData : [];
     }
-    
-    localStorage.setItem(ANALYSIS_HISTORY_KEY, JSON.stringify(updatedAnalyses));
-    console.log(`Analysis saved to localStorage history with ID: ${analysis.id}`);
-    return analysis;
   } catch (error) {
-    console.error("Error saving analysis to localStorage:", error);
-    return analysis;
+    console.error("Error loading analysis history:", error);
   }
+  return [];
 };
 
-// Get all analyses from localStorage history
-export const getAnalysisHistory = (): PersonalityAnalysis[] => {
+// Function to save a new analysis to history
+export const saveAnalysisToHistory = (
+  analysis: PersonalityAnalysis, 
+  existingHistory: PersonalityAnalysis[] = []
+): PersonalityAnalysis => {
   try {
-    const storedAnalysesString = localStorage.getItem(ANALYSIS_HISTORY_KEY);
-    return storedAnalysesString ? JSON.parse(storedAnalysesString) : [];
+    // Ensure the analysis has all required fields and correct types
+    const formattedAnalysis: PersonalityAnalysis = {
+      ...analysis,
+      createdAt: typeof analysis.createdAt === 'string' 
+        ? analysis.createdAt 
+        : new Date().toISOString() // Convert Date to string if needed
+    };
+    
+    // Add to history (either update existing or add new)
+    const updatedHistory = [
+      formattedAnalysis,
+      ...existingHistory.filter(item => item.id !== formattedAnalysis.id)
+    ].slice(0, 10); // Keep only the 10 most recent analyses
+    
+    // Save to localStorage
+    localStorage.setItem('analysis-history', JSON.stringify(updatedHistory));
+    
+    return formattedAnalysis;
   } catch (error) {
-    console.error("Error getting analysis history from localStorage:", error);
-    return [];
+    console.error("Error saving analysis to history:", error);
+    return analysis;
   }
 };
 
-// Get specific analysis from localStorage history by ID
+// Function to get a specific analysis by ID
 export const getAnalysisById = (analysisId: string): PersonalityAnalysis | null => {
   try {
-    const storedAnalysesString = localStorage.getItem(ANALYSIS_HISTORY_KEY);
-    if (!storedAnalysesString) return null;
-    
-    const storedAnalyses = JSON.parse(storedAnalysesString);
-    return storedAnalyses.find((a: PersonalityAnalysis) => a.id === analysisId) || null;
+    const history = loadAnalysisHistory();
+    return history.find(item => item.id === analysisId) || null;
   } catch (error) {
-    console.error(`Error getting analysis with ID ${analysisId} from localStorage:`, error);
+    console.error("Error getting analysis by ID:", error);
     return null;
+  }
+};
+
+// Function to delete an analysis from history
+export const deleteAnalysisFromHistory = (analysisId: string): boolean => {
+  try {
+    const history = loadAnalysisHistory();
+    const updatedHistory = history.filter(item => item.id !== analysisId);
+    
+    if (updatedHistory.length === history.length) {
+      return false; // Nothing was deleted
+    }
+    
+    localStorage.setItem('analysis-history', JSON.stringify(updatedHistory));
+    return true;
+  } catch (error) {
+    console.error("Error deleting analysis from history:", error);
+    return false;
   }
 };

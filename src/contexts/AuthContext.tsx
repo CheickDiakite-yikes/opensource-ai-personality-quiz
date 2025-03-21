@@ -37,29 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Setting up auth state listener...");
-    
-    // Set up the auth state listener FIRST
+    // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed:", event, newSession?.user?.id);
-        if (event === 'SIGNED_OUT') {
-          // Clear user and session data on sign out
-          setSession(null);
-          setUser(null);
-        } else {
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
-        }
+      (event, session) => {
+        console.log("Auth state changed:", event);
+        setSession(session);
+        setUser(session?.user ?? null);
         setIsLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      console.log("Got existing session:", existingSession?.user?.id);
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
@@ -135,10 +126,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Explicitly set the user and session data
-      setUser(data.user);
-      setSession(data.session);
-
       toast.success("Welcome back to your self-discovery journey!");
       navigate("/");
     } catch (error: any) {
@@ -157,10 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         throw error;
       }
-
-      // Explicitly clear user and session
-      setUser(null);
-      setSession(null);
 
       navigate("/auth");
       toast.success("Logged out successfully");

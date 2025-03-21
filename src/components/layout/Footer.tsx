@@ -2,7 +2,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
-import Logo from "@/components/ui/Logo";
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -12,7 +11,7 @@ const Footer: React.FC = () => {
       <div className="container max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
-            <Logo size="medium" />
+            <div className="text-lg font-bold text-gradient">Who Am I?</div>
             <p className="text-sm text-muted-foreground mt-1">
               Discover your true self through AI-powered insights
             </p>
