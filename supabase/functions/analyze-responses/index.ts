@@ -134,7 +134,7 @@ async function generateAIAnalysis(
   try {
     console.log("Sending request to OpenAI API using o3-mini model");
     
-    // Use the current OpenAI API format for o3-mini
+    // Use the current OpenAI API format for o3-mini with the correct parameters
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -151,7 +151,8 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 3000,
+        // Updated parameter name from max_tokens to max_completion_tokens for o3-mini
+        max_completion_tokens: 3000,
         response_format: { type: "json_object" },
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
       }),
