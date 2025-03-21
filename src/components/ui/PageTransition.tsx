@@ -17,10 +17,10 @@ const PageTransition = memo(({ children, className }: PageTransitionProps) => {
   return (
     <motion.div
       key={location.pathname}
-      initial={{ opacity: 0.99 }}
+      initial={{ opacity: 0.98 }}
       animate={{ opacity: 1 }}
       transition={{ 
-        duration: 0.05,
+        duration: 0.1,
         ease: "linear"
       }}
       className={cn("h-full w-full", className)}

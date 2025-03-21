@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => ({
       // Allow for proper HMR in more environments
       clientPort: 443,
       host: 'localhost'
-    }
+    },
+    // Enable history API fallback for SPA routing
+    historyApiFallback: true
   },
   plugins: [
     react(),
