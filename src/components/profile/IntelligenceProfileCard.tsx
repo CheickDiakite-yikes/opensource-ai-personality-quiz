@@ -13,11 +13,11 @@ interface IntelligenceProfileCardProps {
 const IntelligenceProfileCard: React.FC<IntelligenceProfileCardProps> = ({ analysis, itemVariants }) => (
   <motion.div variants={itemVariants}>
     <Card className="overflow-hidden gradient-border">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
-        <CardTitle className="flex items-center">
+      <CardHeader className="bg-gradient-to-r from-primary/20 to-secondary/20 pb-4">
+        <CardTitle className="flex items-center text-foreground">
           <Brain className="h-5 w-5 mr-2 text-primary" /> Intelligence Profile
         </CardTitle>
-        <CardDescription>Your cognitive strengths and intelligence type</CardDescription>
+        <CardDescription className="text-foreground/80">Your cognitive strengths and intelligence type</CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="flex flex-col md:flex-row gap-6 items-center">

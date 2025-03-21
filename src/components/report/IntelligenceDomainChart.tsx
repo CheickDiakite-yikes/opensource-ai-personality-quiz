@@ -36,16 +36,10 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
     originalScore: domain.score, // Keep original score for tooltip
   })) || [];
 
-  // Custom gradient colors
+  // Custom gradient colors based on primary color
   const getBarColor = (index: number) => {
-    const colors = [
-      "hsl(var(--primary))",
-      "hsl(var(--primary) / 0.9)",
-      "hsl(var(--primary) / 0.8)",
-      "hsl(var(--primary) / 0.7)",
-      "hsl(var(--primary) / 0.6)",
-    ];
-    return colors[index % colors.length];
+    // Using a fixed color to avoid animation warnings with rgba variables
+    return "#f97316"; // Using orange-500 from Tailwind which matches the screenshot
   };
 
   // Fallback if no domains data
@@ -58,11 +52,11 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
   }
 
   return (
-    <div className="w-full h-64 mt-4">
+    <div className="w-full h-80 mt-4">
       <ChartContainer
         config={{
-          domain: { label: "Intelligence Domain", color: "hsl(var(--primary))" },
-          score: { label: "Score", color: "hsl(var(--primary))" },
+          domain: { label: "Intelligence Domain", color: "#f97316" },
+          score: { label: "Score", color: "#f97316" },
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -75,14 +69,15 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
               type="number" 
               domain={[0, 100]} 
               tickFormatter={(value) => `${(value / 10).toFixed(1)}`}
+              stroke="#888"
             />
             <YAxis 
               type="category" 
               dataKey="name" 
-              width={120} 
+              width={150} 
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: "#f5f5f5" }}
             />
             <ChartTooltip
               content={
@@ -105,7 +100,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                 dataKey="originalScore" 
                 position="right" 
                 formatter={(value: number) => value.toFixed(1)} 
-                style={{ fill: 'hsl(var(--foreground))', fontSize: '12px' }}
+                style={{ fill: '#f5f5f5', fontSize: '12px', fontWeight: 'bold' }}
               />
             </Bar>
           </BarChart>
