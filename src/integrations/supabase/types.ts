@@ -81,7 +81,7 @@ export type Database = {
           created_at?: string
           emotional_intelligence_score?: number | null
           growth_areas?: Json | null
-          id?: string
+          id: string
           inhibitors?: Json | null
           intelligence?: Json | null
           intelligence_score?: number | null
@@ -118,15 +118,7 @@ export type Database = {
           value_system?: Json | null
           weaknesses?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "analyses_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "assessments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       assessments: {
         Row: {

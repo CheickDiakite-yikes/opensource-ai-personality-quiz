@@ -10,7 +10,7 @@ export const useAssessmentSubmission = (
   responses: AssessmentResponse[],
   saveCurrentResponse: () => void
 ) => {
-  const { analyzeResponses, isAnalyzing } = useAIAnalysis();
+  const { analyzeResponses, isAnalyzing, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   
   const handleSubmitAssessment = async () => {
@@ -27,6 +27,9 @@ export const useAssessmentSubmission = (
       
       // Clear saved progress after successful submission
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
+      
+      // Refresh the analysis data to ensure we have the latest from Supabase
+      await refreshAnalysis();
       
       // Navigate to the report page with the ID to ensure it can be loaded in the future
       navigate(`/report/${analysis.id}`);

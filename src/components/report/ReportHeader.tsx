@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Calendar, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { PersonalityAnalysis } from "@/utils/types";
 import { formatAnalysisForDownload } from "@/utils/reportUtils";
@@ -22,9 +22,15 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ analysis: propAnalysis }) =
   const { analysis: hookAnalysis, getAnalysisHistory, setCurrentAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<PersonalityAnalysis[]>([]);
   
   // Use the analysis from props if provided, otherwise use the one from the hook
   const analysis = propAnalysis || hookAnalysis;
+  
+  // Update history items when the component mounts or when getAnalysisHistory changes
+  useEffect(() => {
+    setHistoryItems(getAnalysisHistory());
+  }, [getAnalysisHistory]);
   
   const handleDownload = () => {
     if (!analysis) return;
@@ -798,15 +804,29 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ analysis: propAnalysis }) =
   };
   
   const handleSelectHistory = (analysisId: string) => {
+    console.log("Selecting history item:", analysisId);
+    
     if (setCurrentAnalysis(analysisId)) {
       toast.success("Loaded report from history");
       setHistoryOpen(false);
+      
+      // Update the URL to include the analysis ID
+      navigate(`/report/${analysisId}`);
     } else {
       toast.error("Failed to load report");
     }
   };
   
-  const historyItems = getAnalysisHistory();
+  // Format the date for display
+  const formatDate = (dateString: string) => {
+    try {
+      if (!dateString) return "Unknown date";
+      return format(parseISO(dateString), 'MMMM do, yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", dateString, error);
+      return "Invalid date";
+    }
+  };
   
   return (
     <div className="flex justify-between items-start mb-8 flex-col md:flex-row">
@@ -823,28 +843,35 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ analysis: propAnalysis }) =
               <History className="h-4 w-4 mr-2" /> History
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
+          <PopoverContent className="w-80" align="end">
             <div className="space-y-2">
               <h3 className="font-medium">Previous Analyses</h3>
               {historyItems.length > 0 ? (
                 <div className="max-h-60 overflow-y-auto">
-                  {historyItems.map((item, index) => (
-                    <button
-                      key={item.id || index}
-                      onClick={() => handleSelectHistory(item.id || '')}
-                      className="w-full text-left p-2 hover:bg-muted rounded flex items-center justify-between group"
-                    >
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>
-                          {item.createdAt && format(new Date(item.createdAt), 'PPP')}
+                  {historyItems.map((item, index) => {
+                    // Skip rendering the currently selected analysis
+                    if (analysis && item.id === analysis.id) {
+                      return null;
+                    }
+                    
+                    return (
+                      <button
+                        key={item.id || index}
+                        onClick={() => handleSelectHistory(item.id || '')}
+                        className="w-full text-left p-2 hover:bg-muted rounded flex items-center justify-between group"
+                      >
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>
+                            {item.createdAt ? formatDate(item.createdAt) : "Unknown date"}
+                          </span>
+                        </div>
+                        <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity text-sm">
+                          View
                         </span>
-                      </div>
-                      <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity text-sm">
-                        View
-                      </span>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
