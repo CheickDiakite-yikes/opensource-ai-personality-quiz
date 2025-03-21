@@ -94,6 +94,9 @@ const ReportPage: React.FC = () => {
     navigate(`/report/${analysisId}`);
   };
   
+  // Make sure analyses has something in it
+  console.log("ReportPage: Available analyses:", analyses?.length || 0);
+  
   return (
     <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       <ReportHeader 
