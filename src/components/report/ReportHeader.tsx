@@ -27,7 +27,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   onAnalysisChange
 }) => {
   const isMobile = useIsMobile();
-  const [showHistoryTooltip, setShowHistoryTooltip] = useState(false);
   
   // Check if we have multiple analyses to show in history
   const hasMultipleAnalyses = analysisHistory.length > 1;
@@ -52,58 +51,53 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   return (
     <div className="flex flex-col gap-4 sm:gap-1">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Your Personality Analysis</h1>
-            <div className="flex items-center text-muted-foreground mt-1">
-              <Calendar className="h-4 w-4 mr-1" />
-              {renderDate()}
-            </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Your Personality Analysis</h1>
+          <div className="flex items-center text-muted-foreground mt-1">
+            <Calendar className="h-4 w-4 mr-1" />
+            {renderDate()}
           </div>
-          
-          {/* Past Reports Button - Always visible when there are multiple analyses */}
-          {hasMultipleAnalyses && (
-            <div className="relative mt-2 sm:mt-0 sm:ml-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="secondary" 
-                    size={isMobile ? "sm" : "default"}
-                    className="font-medium"
-                  >
-                    <History className="h-4 w-4 mr-2" /> Past Reports
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {analysisHistory.map((item) => {
-                    // Skip the current analysis
-                    if (item.id === analysis.id) return null;
-                    
-                    let dateLabel = "Unknown date";
-                    try {
-                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                    } catch (e) {
-                      console.error("Invalid date format", e);
-                    }
-                    
-                    return (
-                      <DropdownMenuItem 
-                        key={item.id}
-                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                      >
-                        {dateLabel}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
+          {/* Past Reports Button - Always positioned next to Share button */}
+          {hasMultipleAnalyses && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size={isMobile ? "sm" : "default"}
+                >
+                  <History className="h-4 w-4 mr-2" /> Past Reports
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {analysisHistory.map((item) => {
+                  // Skip the current analysis
+                  if (item.id === analysis.id) return null;
+                  
+                  let dateLabel = "Unknown date";
+                  try {
+                    dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                  } catch (e) {
+                    console.error("Invalid date format", e);
+                  }
+                  
+                  return (
+                    <DropdownMenuItem 
+                      key={item.id}
+                      onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                    >
+                      {dateLabel}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <Button
             onClick={handleCopyLink}
             size={isMobile ? "sm" : "default"}
