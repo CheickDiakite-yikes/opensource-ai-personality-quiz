@@ -65,17 +65,17 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className={`overflow-hidden ${activity.completed ? 'bg-muted/30' : 'bg-black/80'} backdrop-blur-sm border-white/10`}>
-        <CardHeader className="pb-2">
+      <Card className={`h-full overflow-hidden ${activity.completed ? 'bg-muted/30' : 'bg-black/80'} backdrop-blur-sm border-white/10`}>
+        <CardHeader className="pb-2 pt-5">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-2">
               {React.createElement(IconComponent, { 
                 className: "h-5 w-5 text-amber-500" 
               })}
-              <span className="text-sm font-medium text-amber-500/90">
+              <span className="text-sm font-medium uppercase tracking-wide text-amber-500/90">
                 {activity.category}
               </span>
-              <Badge className="bg-amber-500/80 hover:bg-amber-500 ml-2 text-black font-semibold">
+              <Badge className="bg-amber-500/80 hover:bg-amber-500 ml-1 text-black font-semibold">
                 {activity.points} pts
               </Badge>
             </div>
@@ -93,14 +93,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
             </Button>
           </div>
           
-          <CardTitle className={`mt-3 text-xl font-serif ${activity.completed ? 'line-through text-muted-foreground' : 'text-white'}`}>
+          <CardTitle className={`mt-4 text-2xl font-serif ${activity.completed ? 'line-through text-muted-foreground' : 'text-white'}`}>
             {activity.title}
           </CardTitle>
         </CardHeader>
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CardContent className="pt-0 pb-2">
-            <p className={`text-sm ${activity.completed ? 'text-muted-foreground/70' : 'text-gray-300'}`}>
+            <p className={`text-base leading-relaxed ${activity.completed ? 'text-muted-foreground/70' : 'text-gray-300'}`}>
               {activity.description}
             </p>
           </CardContent>
@@ -108,7 +108,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
           {shouldShowCollapseButton() && (
             <>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-0 text-muted-foreground">
+                <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-1 my-1 text-muted-foreground">
                   {isOpen ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
@@ -118,22 +118,22 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 pb-4">
                   {Array.isArray(activity.steps) && activity.steps.length > 0 && (
-                    <div className="mt-2">
+                    <div className="mt-3">
                       <h4 className="text-sm font-medium mb-2 text-amber-500/90">Steps:</h4>
-                      <ol className="list-decimal list-inside text-sm text-gray-300 space-y-1">
+                      <ol className="list-decimal list-inside text-sm text-gray-300 space-y-2 pl-1">
                         {activity.steps.map((step, index) => (
-                          <li key={index}>{String(step)}</li>
+                          <li key={index} className="leading-relaxed">{String(step)}</li>
                         ))}
                       </ol>
                     </div>
                   )}
                   
                   {activity.benefits && (
-                    <div className="mt-3">
-                      <h4 className="text-sm font-medium mb-1 text-amber-500/90">Benefits:</h4>
-                      <p className="text-sm text-gray-300">{activity.benefits}</p>
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2 text-amber-500/90">Benefits:</h4>
+                      <p className="text-sm text-gray-300 leading-relaxed">{activity.benefits}</p>
                     </div>
                   )}
                 </CardContent>
@@ -141,7 +141,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
             </>
           )}
           
-          <CardFooter className="py-2 text-xs text-muted-foreground">
+          <CardFooter className="py-3 text-xs text-muted-foreground border-t border-white/5 mt-2">
             {getDateDisplay()}
           </CardFooter>
         </Collapsible>

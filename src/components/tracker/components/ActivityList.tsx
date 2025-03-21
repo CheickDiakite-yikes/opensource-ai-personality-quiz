@@ -28,7 +28,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-1 pb-6">
       {/* Show loading skeleton if generating activity */}
       {isGeneratingActivity && (
         <div className="col-span-1">
