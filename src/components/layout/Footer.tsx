@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -10,11 +11,7 @@ const Footer: React.FC = () => {
       <div className="container max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0 flex items-center">
-            <img 
-              src="/lovable-uploads/51176333-6542-4e09-980a-53189b514c92.png" 
-              alt="Who Am I Logo" 
-              className="h-10 w-auto mr-3" 
-            />
+            <Heart className="h-10 w-10 text-red-500 mr-3" />
             <div>
               <div className="text-lg font-bold text-gradient">Who Am I?</div>
               <p className="text-sm text-muted-foreground mt-1">
@@ -42,7 +39,7 @@ const Footer: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <div>© {currentYear} Who Am I? All rights reserved.</div>
           <div className="mt-2 md:mt-0 flex items-center">
-            Made with <img src="/lovable-uploads/51176333-6542-4e09-980a-53189b514c92.png" alt="Brain Logo" className="h-3 w-auto mx-1" /> for self-discovery
+            Made with <Heart className="h-3 w-3 mx-1 text-red-500" /> for self-discovery
           </div>
         </div>
       </div>
