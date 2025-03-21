@@ -18,6 +18,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
   const [isOpen, setIsOpen] = React.useState(false);
   const IconComponent = getCategoryIcon(activity.category);
   
+  // Helper function to safely determine if we need to show the collapse trigger
+  const shouldShowCollapseButton = () => {
+    return (
+      (Array.isArray(activity.steps) && activity.steps.length > 0) || 
+      (typeof activity.benefits === 'string' && activity.benefits.trim() !== '')
+    );
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -63,7 +71,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
             </CardDescription>
           </CardContent>
           
-          {(activity.steps?.length > 0 || activity.benefits) && (
+          {shouldShowCollapseButton() && (
             <>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-0">
@@ -77,7 +85,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
               
               <CollapsibleContent>
                 <CardContent className="pt-0">
-                  {activity.steps?.length > 0 && (
+                  {Array.isArray(activity.steps) && activity.steps.length > 0 && (
                     <div className="mt-2">
                       <h4 className="text-sm font-medium mb-2">Steps:</h4>
                       <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
@@ -100,7 +108,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
           )}
           
           <CardFooter className="py-2 text-xs text-muted-foreground">
-            Added {new Date(parseInt(activity.id.split('-')[1])).toLocaleDateString()}
+            {activity.id.includes('-') ? 
+              `Added ${new Date(parseInt(activity.id.split('-')[1] || Date.now())).toLocaleDateString()}` :
+              `Added ${new Date().toLocaleDateString()}`
+            }
           </CardFooter>
         </Collapsible>
       </Card>

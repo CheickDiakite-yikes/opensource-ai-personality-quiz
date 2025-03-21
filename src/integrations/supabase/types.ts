@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
+          benefits: string | null
           category: string
           completed: boolean
           completed_at: string | null
@@ -18,10 +19,12 @@ export type Database = {
           description: string | null
           id: string
           points: number
+          steps: Json | null
           title: string
           user_id: string
         }
         Insert: {
+          benefits?: string | null
           category: string
           completed?: boolean
           completed_at?: string | null
@@ -29,10 +32,12 @@ export type Database = {
           description?: string | null
           id?: string
           points?: number
+          steps?: Json | null
           title: string
           user_id: string
         }
         Update: {
+          benefits?: string | null
           category?: string
           completed?: boolean
           completed_at?: string | null
@@ -40,6 +45,7 @@ export type Database = {
           description?: string | null
           id?: string
           points?: number
+          steps?: Json | null
           title?: string
           user_id?: string
         }

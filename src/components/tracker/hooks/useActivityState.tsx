@@ -50,7 +50,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             category: item.category as ActivityCategory,
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-            // Access steps and benefits with fallbacks (these might be stored in the description)
+            // Access steps with fallback to empty array if null or undefined
             steps: Array.isArray(item.steps) ? item.steps : [],
             benefits: item.benefits || ""
           };
@@ -96,8 +96,8 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
           category: activity.category,
           completed: false,
           user_id: userId,
-          steps: activity.steps,
-          benefits: activity.benefits
+          steps: activity.steps || [],
+          benefits: activity.benefits || ""
         })))
         .select();
       
@@ -115,8 +115,8 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         category: item.category as ActivityCategory,
         completed: item.completed,
         completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-        steps: [],
-        benefits: ""
+        steps: Array.isArray(item.steps) ? item.steps : [],
+        benefits: item.benefits || ""
       }));
     } catch (error) {
       console.error("Error creating initial activities:", error);
