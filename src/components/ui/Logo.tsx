@@ -30,7 +30,7 @@ const Logo: React.FC<LogoProps> = ({
 
   const logoImage = (
     <img 
-      src="/lovable-uploads/fb4f3a82-b5b0-4c70-ad79-93103077f48b.png" 
+      src="/lovable-uploads/306ed828-b24c-4839-b992-4f1ac906fd6b.png" 
       alt="Who Am I? Logo" 
       className={cn(sizeClasses[size], "transition-transform duration-300 hover:scale-105")}
     />
