@@ -54,13 +54,13 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                 <h3 className="font-medium text-foreground">Intelligence Score</h3>
                 <span className="font-semibold text-foreground">{intelligenceScore}/100</span>
               </div>
-              <Progress value={intelligenceScore} className="h-2 bg-foreground/20" indicatorClassName="bg-orange-500" />
+              <Progress value={intelligenceScore} className="h-2 bg-foreground/20" />
               
               <div className="mt-4 flex justify-between mb-1">
                 <h3 className="font-medium text-foreground">Emotional Intelligence</h3>
                 <span className="font-semibold text-foreground">{emotionalIntelligenceScore}/100</span>
               </div>
-              <Progress value={emotionalIntelligenceScore} className="h-2 bg-foreground/20" indicatorClassName="bg-orange-500" />
+              <Progress value={emotionalIntelligenceScore} className="h-2 bg-foreground/20" />
             </div>
           ) : (
             <div className="p-4 mb-4 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-2">
