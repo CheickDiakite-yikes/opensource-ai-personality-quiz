@@ -13,7 +13,12 @@ const createSingletonClient = () => {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      storage: localStorage
+      storage: typeof window !== 'undefined' ? localStorage : undefined
+    },
+    global: {
+      headers: {
+        'x-client-info': `sowai@1.0.0`
+      }
     },
     realtime: {
       params: {

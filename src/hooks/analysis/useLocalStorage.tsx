@@ -40,10 +40,12 @@ export const loadAnalysisHistory = (): PersonalityAnalysis[] => {
 
 // Function to save a new analysis to history
 export const saveAnalysisToHistory = (
-  analysis: PersonalityAnalysis, 
-  existingHistory: PersonalityAnalysis[] = []
+  analysis: PersonalityAnalysis
 ): PersonalityAnalysis => {
   try {
+    // Load existing history
+    const existingHistory = loadAnalysisHistory();
+    
     // Ensure the analysis has all required fields and correct types
     const formattedAnalysis: PersonalityAnalysis = {
       ...analysis,

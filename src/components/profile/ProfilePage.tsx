@@ -31,7 +31,12 @@ const ProfilePage: React.FC = () => {
   const handleRefresh = async () => {
     toast.info("Refreshing your profile data...");
     await refreshAnalysis();
-    toast.success("Profile data refreshed");
+    
+    if (user && !analysis) {
+      toast.warning("No analysis found. Please take an assessment first.");
+    } else {
+      toast.success("Profile data refreshed");
+    }
   };
   
   if (isLoading) {

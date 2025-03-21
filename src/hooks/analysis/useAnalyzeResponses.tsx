@@ -25,6 +25,7 @@ export const useAnalyzeResponses = (
       
       // Store assessment responses in Supabase if user is logged in
       if (user) {
+        console.log("User is logged in, saving assessment to Supabase for user:", user.id);
         try {
           // We need to convert AssessmentResponse[] to a JSON-compatible format
           // by using JSON.stringify and then parsing it back to handle Date objects
@@ -40,6 +41,9 @@ export const useAnalyzeResponses = (
             
           if (assessmentError) {
             console.error("Error saving assessment to Supabase:", assessmentError);
+            toast.error("Could not save your assessment data, but continuing with analysis");
+          } else {
+            console.log("Successfully saved assessment to Supabase");
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
@@ -50,7 +54,8 @@ export const useAnalyzeResponses = (
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
-          assessmentId 
+          assessmentId,
+          userId: user?.id || null 
         }
       });
       
@@ -76,6 +81,7 @@ export const useAnalyzeResponses = (
         
         // Save analysis to Supabase
         try {
+          console.log("Saving analysis to Supabase for user:", user.id);
           // Convert all JSON fields to their string representation to ensure compatibility
           const jsonAnalysis = JSON.parse(JSON.stringify(data.analysis));
           
@@ -105,6 +111,9 @@ export const useAnalyzeResponses = (
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
+            toast.error("Could not save your analysis data to your profile, but we've saved it locally");
+          } else {
+            console.log("Successfully saved analysis to Supabase");
           }
         } catch (err) {
           console.error("Error saving analysis:", err);

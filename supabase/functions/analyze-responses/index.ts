@@ -81,16 +81,16 @@ serve(async (req) => {
       });
     }
     
-    const { responses, assessmentId } = await req.json();
+    const { responses, assessmentId, userId } = await req.json();
     
     if (!validateResponses(responses)) {
       throw new Error("Invalid or missing responses data");
     }
 
-    console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}`);
+    console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}, User ID: ${userId || 'anonymous'}`);
     
     // Clean and serialize responses for analysis
-    const cleanedResponses = responses.map(r => ({
+    const cleanedResponses = responses.map((r: any) => ({
       ...r,
       timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString()
     }));
@@ -104,15 +104,15 @@ serve(async (req) => {
     });
     
     // Generate the AI analysis with timeout
-    const analysisPromise = generateAIAnalysis(responsesByCategory, assessmentId);
+    const analysisPromise = generateAIAnalysis(responsesByCategory, assessmentId, userId);
     const analysis = await Promise.race([analysisPromise, timeoutPromise]);
     
-    console.log("Analysis completed successfully");
+    console.log("Analysis completed successfully for user:", userId || 'anonymous');
     
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in analyze-responses function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: error.status || 500,
@@ -138,7 +138,8 @@ function categorizeResponses(responses: AssessmentResponse[]) {
 // Generate AI analysis using OpenAI's o3-mini model with enhanced security
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
-  assessmentId: string
+  assessmentId: string,
+  userId?: string | null
 ): Promise<PersonalityAnalysis> {
   const categorySummaries = Object.entries(responsesByCategory).map(([category, responses]) => {
     const summary = responses.map(r => 
@@ -165,7 +166,7 @@ async function generateAIAnalysis(
   
   {
     "id": "${assessmentId}",
-    "createdAt": "current timestamp",
+    "createdAt": "${new Date().toISOString()}",
     "overview": "summary paragraph about the personality profile",
     "traits": [
       {
@@ -200,7 +201,9 @@ async function generateAIAnalysis(
     "relationshipPatterns": ["list", "of", "relationship patterns"],
     "careerSuggestions": ["list", "of", "career suggestions"],
     "learningPathways": ["list", "of", "learning pathways"],
-    "roadmap": "personalized development roadmap paragraph"
+    "roadmap": "personalized development roadmap paragraph",
+    ${userId ? `"userId": "${userId}",` : ''}
+    "assessmentId": "${assessmentId}"
   }
   
   Ensure the analysis is detailed, personalized, and actionable.`;
@@ -256,19 +259,25 @@ async function generateAIAnalysis(
         if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
           analysisJson.createdAt = new Date().toISOString();
         }
+        
+        // Add userId if it was provided
+        if (userId && !analysisJson.userId) {
+          analysisJson.userId = userId;
+        }
+        
         return analysisJson as PersonalityAnalysis;
       } catch (error) {
         console.error("Error parsing OpenAI response:", error);
         throw new Error("Failed to parse AI analysis results");
       }
-    } catch (error) {
+    } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error("OpenAI API request timed out");
       }
       throw error;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating AI analysis:", error);
     throw new Error(`Failed to generate AI analysis: ${error.message}`);
   }
