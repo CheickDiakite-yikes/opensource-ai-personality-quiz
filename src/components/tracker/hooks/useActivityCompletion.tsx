@@ -32,8 +32,8 @@ export const useActivityCompletion = (
       return act;
     }));
     
-    // If user is logged in, update in Supabase
-    if (user) {
+    // If user is logged in and the activity has a valid Supabase ID (not a local ID), update in Supabase
+    if (user && !activityId.startsWith('local-')) {
       try {
         console.log("Updating activity completion in Supabase:", activityId, newCompleted);
         

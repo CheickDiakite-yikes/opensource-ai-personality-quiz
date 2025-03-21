@@ -42,9 +42,6 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         
         // Transform the data from Supabase format to our Activity type
         const formattedActivities: Activity[] = data.map(item => {
-          // Type assertion to access potential custom fields that might not be in the type definition
-          const activityData = item as any;
-          
           return {
             id: item.id,
             title: item.title,
@@ -53,17 +50,18 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             category: item.category as ActivityCategory,
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-            // Access steps and benefits with fallbacks
-            steps: Array.isArray(activityData.steps) ? activityData.steps : [],
-            benefits: activityData.benefits || ""
+            // Access steps and benefits with fallbacks (these might be stored in the description)
+            steps: Array.isArray(item.steps) ? item.steps : [],
+            benefits: item.benefits || ""
           };
         });
         
         console.log("Fetched activities:", formattedActivities);
         
-        // If user has no activities yet, provide sample activities
+        // If user has no activities yet, create initial activities for them
         if (formattedActivities.length === 0) {
-          setActivities(sampleActivities);
+          const initialActivities = await createInitialActivities(user.id);
+          setActivities(initialActivities);
         } else {
           setActivities(formattedActivities);
         }
@@ -79,6 +77,53 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
     fetchActivities();
   }, [user]);
   
+  // Function to create initial activities for new users
+  const createInitialActivities = async (userId: string) => {
+    try {
+      // Use the first 3 sample activities as a starting point
+      const initialActivities = sampleActivities.slice(0, 3).map(activity => ({
+        ...activity,
+        user_id: userId
+      }));
+      
+      // Insert them into Supabase
+      const { data, error } = await supabase
+        .from('activities')
+        .insert(initialActivities.map(activity => ({
+          title: activity.title,
+          description: activity.description,
+          points: activity.points,
+          category: activity.category,
+          completed: false,
+          user_id: userId,
+          steps: activity.steps,
+          benefits: activity.benefits
+        })))
+        .select();
+      
+      if (error) {
+        console.error("Error creating initial activities:", error);
+        return sampleActivities;
+      }
+      
+      // Transform the returned data to our Activity type
+      return data.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || "",
+        points: item.points,
+        category: item.category as ActivityCategory,
+        completed: item.completed,
+        completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+        steps: [],
+        benefits: ""
+      }));
+    } catch (error) {
+      console.error("Error creating initial activities:", error);
+      return sampleActivities;
+    }
+  };
+
   // Use the extracted hooks
   const { 
     totalPoints, 
