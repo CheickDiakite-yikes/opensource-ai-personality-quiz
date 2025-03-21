@@ -55,7 +55,7 @@ const PersonalityTraitsSection: React.FC<PersonalityTraitsSectionProps> = ({ tra
             {remainingCount > 0 && (
               <Button 
                 variant="outline" 
-                className="w-full mt-4 py-3 text-base sticky bottom-2"
+                className="w-full mt-4 py-3 text-base sticky bottom-2 z-10"
                 onClick={() => navigate("/traits")}
               >
                 View All {traits.length} Traits

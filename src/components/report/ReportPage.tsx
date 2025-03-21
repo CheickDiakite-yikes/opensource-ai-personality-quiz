@@ -38,7 +38,7 @@ const ReportPage: React.FC = () => {
   }
   
   return (
-    <div className={`container py-4 md:py-6 space-y-6 md:space-y-8 px-3 md:px-6 ${isMobile ? 'max-w-full' : ''}`}>
+    <div className={`container py-4 md:py-6 space-y-6 md:space-y-8 ${isMobile ? 'px-2 max-w-full' : 'px-6'}`}>
       <ReportHeader analysis={analysisResult} />
       
       <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">

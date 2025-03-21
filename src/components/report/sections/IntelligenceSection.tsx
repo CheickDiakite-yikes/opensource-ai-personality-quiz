@@ -50,7 +50,7 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
           </CardTitle>
           <CardDescription className="text-foreground/80">Your cognitive strengths and style</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className={`pt-6 ${isMobile ? 'px-2' : 'px-6'}`}>
           {hasScores ? (
             <div className="mb-4">
               <div className="flex justify-between mb-1">
@@ -82,7 +82,7 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                 Intelligence Domains
               </h4>
               
-              <div className={isMobile ? "overflow-x-auto pb-6" : ""}>
+              <div className={isMobile ? "overflow-x-auto pb-6 -mx-2" : ""}>
                 <IntelligenceDomainChart domains={intelligence.domains} />
               </div>
             </div>

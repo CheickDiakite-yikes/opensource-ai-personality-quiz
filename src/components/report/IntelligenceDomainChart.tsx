@@ -42,6 +42,9 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
   // Using fixed orange color for all bars to match the screenshot
   const barColor = "#f97316"; // orange-500
 
+  // Custom formatter function for label
+  const formatLabel = (value: number) => value.toFixed(1);
+
   // Fallback if no domains data
   if (!domains || domains.length === 0) {
     return (
@@ -53,7 +56,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
 
   return (
     <div className="w-full mt-4">
-      <div className={isMobile ? "h-[400px]" : "h-80"}>
+      <div className={isMobile ? "h-[500px]" : "h-80"}>
         <ChartContainer
           config={{
             domain: { label: "Intelligence Domain", color: "#f97316" },
@@ -111,7 +114,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                 <LabelList 
                   dataKey="originalScore" 
                   position="right" 
-                  formatter={(value: number) => value.toFixed(1)} 
+                  formatter={formatLabel}
                   style={{ 
                     fill: '#f5f5f5', 
                     fontSize: isMobile ? '10px' : '12px', 
