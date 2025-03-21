@@ -84,7 +84,7 @@ Return the activity in JSON format with these fields:
   try {
     console.log("Sending request to OpenAI API using o3-mini model for activity generation");
     
-    // IMPORTANT: We are exclusively using the o3-mini model for all OpenAI API calls
+    // Using parameters that are supported for o3-mini
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,7 +92,7 @@ Return the activity in JSON format with these fields:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini', // IMPORTANT: We exclusively use the o3-mini model
+        model: 'o3-mini', 
         messages: [
           { 
             role: 'system', 
@@ -100,12 +100,8 @@ Return the activity in JSON format with these fields:
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.8,
-        // Updated parameter name from max_tokens to max_completion_tokens for o3-mini
-        // Increased to 90000 tokens (close to the maximum allowed limit of 100000)
-        max_completion_tokens: 90000,
-        frequency_penalty: 0.2,
-        presence_penalty: 0.4,
+        // Removed unsupported temperature parameter
+        max_tokens: 4000, // Use max_tokens instead of max_completion_tokens
         response_format: { type: "json_object" },
         reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
       }),
