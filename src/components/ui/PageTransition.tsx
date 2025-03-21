@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,26 +9,30 @@ interface PageTransitionProps {
   className?: string;
 }
 
-// Using React.memo to prevent unnecessary re-renders
-const PageTransition = React.memo(({ children, className }: PageTransitionProps) => {
+// Create a stable component with minimal animations to reduce blinking
+const PageTransition = memo(({ children, className }: PageTransitionProps) => {
   const location = useLocation();
   const prevPathRef = useRef<string>(location.pathname);
+  const isInitialMount = useRef(true);
   
-  // Only animate when the path actually changes
+  // Only animate when the path actually changes and not on initial mount
   useEffect(() => {
-    prevPathRef.current = location.pathname;
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      prevPathRef.current = location.pathname;
+    }
   }, [location.pathname]);
   
-  // Simpler, more stable animation
+  // Even simpler, more stable animation with no exit animation
   return (
     <motion.div
       key={location.pathname}
-      initial={{ opacity: 0 }}
+      initial={isInitialMount.current ? { opacity: 1 } : { opacity: 0.95 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       transition={{ 
-        duration: 0.2, // Shorter duration
-        ease: "easeOut" // Simpler easing function
+        duration: 0.15, // Even shorter duration
+        ease: "linear" // Linear easing to reduce perceived blinking
       }}
       className={cn("h-full w-full", className)}
     >

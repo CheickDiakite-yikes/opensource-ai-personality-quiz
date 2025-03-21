@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -13,17 +13,30 @@ import TraitsCard from "./TraitsCard";
 import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { PersonalityAnalysis } from "@/utils/types";
 
 const ProfilePage: React.FC = () => {
   const { analysis, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   
-  if (isLoading) {
+  // Only update the analysis once when it's available to prevent blinking
+  useEffect(() => {
+    if (analysis && !stableAnalysis) {
+      setStableAnalysis(analysis);
+    }
+  }, [analysis, stableAnalysis]);
+  
+  // Render loading state only on initial load
+  if (isLoading && !stableAnalysis) {
     return <LoadingProfile />;
   }
   
-  if (!analysis) {
+  // Use stableAnalysis if available, otherwise use analysis from the hook
+  const displayAnalysis = stableAnalysis || analysis;
+  
+  if (!displayAnalysis) {
     return <NoAnalysisFound />;
   }
   
@@ -32,19 +45,19 @@ const ProfilePage: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05 // Reduce stagger time for more stable appearance
       }
     }
   };
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 }, // Reduced y offset for subtle animation
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.5,
-        ease: [0.22, 1, 0.36, 1]
+        duration: 0.3, // Shorter duration
+        ease: "easeOut" // Simpler easing
       }
     }
   };
@@ -61,8 +74,9 @@ const ProfilePage: React.FC = () => {
       
       {user && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0.9 }} // Start almost fully visible
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className="mb-6 p-4 bg-secondary/10 rounded-lg"
         >
           <p className="text-sm text-muted-foreground">
@@ -78,11 +92,11 @@ const ProfilePage: React.FC = () => {
         animate="visible"
         className="space-y-8"
       >
-        <ProfileHeader analysis={analysis} itemVariants={itemVariants} />
-        <IntelligenceProfileCard analysis={analysis} itemVariants={itemVariants} />
-        <TraitsCard analysis={analysis} itemVariants={itemVariants} />
-        <InsightsCard analysis={analysis} itemVariants={itemVariants} />
-        <GrowthPathwayCard analysis={analysis} itemVariants={itemVariants} />
+        <ProfileHeader analysis={displayAnalysis} itemVariants={itemVariants} />
+        <IntelligenceProfileCard analysis={displayAnalysis} itemVariants={itemVariants} />
+        <TraitsCard analysis={displayAnalysis} itemVariants={itemVariants} />
+        <InsightsCard analysis={displayAnalysis} itemVariants={itemVariants} />
+        <GrowthPathwayCard analysis={displayAnalysis} itemVariants={itemVariants} />
       </motion.div>
     </div>
   );
