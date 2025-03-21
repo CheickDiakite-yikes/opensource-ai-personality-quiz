@@ -86,4 +86,28 @@
     mask-composite: exclude;
     pointer-events: none;
   }
+  
+  /* Lamp effect */
+  .lamp-glow {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .lamp-glow::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, hsla(var(--primary) / 0.4) 0%, transparent 70%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  
+  .lamp-glow:hover::before {
+    opacity: 1;
+  }
 }
