@@ -9,18 +9,19 @@ interface PageTransitionProps {
   className?: string;
 }
 
-// Create a stable component with minimal animations
+// Simplified transition that prioritizes stability over aesthetics
 const PageTransition = memo(({ children, className }: PageTransitionProps) => {
   const location = useLocation();
   
-  // Simple fade transition that doesn't cause flickering
   return (
     <motion.div
       key={location.pathname}
-      initial={{ opacity: 0.99 }}
+      initial={{ opacity: 0.95 }}
       animate={{ opacity: 1 }}
+      exit={{ opacity: 0.95 }}
       transition={{ 
-        duration: 0.05
+        duration: 0.1,
+        ease: "linear" 
       }}
       className={cn("h-full w-full", className)}
     >

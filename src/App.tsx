@@ -1,31 +1,91 @@
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 // Lazy load pages for better initial load performance
 const HomePage = lazy(() => import("@/pages/Index"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Auth = lazy(() => import("@/pages/Auth"));
-const AssessmentPage = lazy(() => import("@/components/assessment/AssessmentPage"));
-const ReportPage = lazy(() => import("@/components/report/ReportPage"));
-const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
-const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
-const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 
-// Loading fallback component
+// More granular code splitting with retry logic for better reliability
+const AssessmentPage = lazy(() => 
+  import("@/components/assessment/AssessmentPage")
+    .catch(err => {
+      console.error("Failed to load AssessmentPage:", err);
+      return import("@/pages/NotFound"); // Fallback to NotFound
+    })
+);
+
+const ReportPage = lazy(() => 
+  import("@/components/report/ReportPage")
+    .catch(err => {
+      console.error("Failed to load ReportPage:", err);
+      return import("@/pages/NotFound"); // Fallback to NotFound
+    })
+);
+
+const TrackerPage = lazy(() => 
+  import("@/components/tracker/TrackerPage")
+    .catch(err => {
+      console.error("Failed to load TrackerPage:", err);
+      return import("@/pages/NotFound"); // Fallback to NotFound
+    })
+);
+
+const ProfilePage = lazy(() => 
+  import("@/components/profile/ProfilePage")
+    .catch(err => {
+      console.error("Failed to load ProfilePage:", err);
+      return import("@/pages/NotFound"); // Fallback to NotFound
+    })
+);
+
+const TraitsPage = lazy(() => 
+  import("@/components/traits/TraitsPage")
+    .catch(err => {
+      console.error("Failed to load TraitsPage:", err);
+      return import("@/pages/NotFound"); // Fallback to NotFound
+    })
+);
+
+// Loading fallback component with better visibility
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-pulse flex space-x-2">
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="text-center space-y-4">
+      <div className="animate-pulse flex space-x-2 justify-center">
+        <div className="h-4 w-4 bg-primary rounded-full"></div>
+        <div className="h-4 w-4 bg-primary rounded-full"></div>
+        <div className="h-4 w-4 bg-primary rounded-full"></div>
+      </div>
+      <p className="text-sm text-muted-foreground">Loading page...</p>
     </div>
   </div>
 );
 
-// Private route component
+// Improved error fallback component
+const ErrorFallback = ({ error, resetErrorBoundary }) => {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="max-w-md p-6 bg-card rounded-lg shadow-lg">
+        <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
+        <p className="text-muted-foreground mb-4">
+          {error.message || "An error occurred while loading this page."}
+        </p>
+        <button 
+          onClick={resetErrorBoundary}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Private route component with improved error handling
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
@@ -37,13 +97,32 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
   
-  return <>{children}</>;
+  return <ErrorBoundary FallbackComponent={ErrorFallback}>{children}</ErrorBoundary>;
+};
+
+// Improved suspense wrapper
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <Suspense fallback={<PageLoader />}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
 };
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
-  if (isLoading) {
+  // Effect to handle initial load state
+  useEffect(() => {
+    if (!isLoading) {
+      setIsInitialLoad(false);
+    }
+  }, [isLoading]);
+  
+  if (isInitialLoad) {
     return <PageLoader />;
   }
   
@@ -51,67 +130,67 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={
-          <Suspense fallback={<PageLoader />}>
+          <SuspenseWrapper>
             <HomePage />
-          </Suspense>
+          </SuspenseWrapper>
         } />
         <Route path="auth" element={
           user ? (
             <Navigate to="/" replace />
           ) : (
-            <Suspense fallback={<PageLoader />}>
+            <SuspenseWrapper>
               <Auth />
-            </Suspense>
+            </SuspenseWrapper>
           )
         } />
         <Route path="assessment" element={
           <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
+            <SuspenseWrapper>
               <AssessmentPage />
-            </Suspense>
+            </SuspenseWrapper>
           </PrivateRoute>
         } />
         <Route path="report">
           <Route index element={
             <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
+              <SuspenseWrapper>
                 <ReportPage />
-              </Suspense>
+              </SuspenseWrapper>
             </PrivateRoute>
           } />
           <Route path=":id" element={
             <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
+              <SuspenseWrapper>
                 <ReportPage />
-              </Suspense>
+              </SuspenseWrapper>
             </PrivateRoute>
           } />
         </Route>
         <Route path="tracker" element={
           <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
+            <SuspenseWrapper>
               <TrackerPage />
-            </Suspense>
+            </SuspenseWrapper>
           </PrivateRoute>
         } />
         <Route path="profile" element={
           <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
+            <SuspenseWrapper>
               <ProfilePage />
-            </Suspense>
+            </SuspenseWrapper>
           </PrivateRoute>
         } />
         <Route path="traits" element={
           <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
+            <SuspenseWrapper>
               <TraitsPage />
-            </Suspense>
+            </SuspenseWrapper>
           </PrivateRoute>
         } />
         <Route path="*" element={
-          <Suspense fallback={<PageLoader />}>
+          <SuspenseWrapper>
             <NotFound />
-          </Suspense>
+          </SuspenseWrapper>
         } />
       </Route>
     </Routes>

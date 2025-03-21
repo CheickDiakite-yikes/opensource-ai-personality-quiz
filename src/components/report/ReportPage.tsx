@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
@@ -25,6 +25,7 @@ const ReportPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -33,11 +34,25 @@ const ReportPage: React.FC = () => {
   
   // Force a data refresh when the component mounts
   useEffect(() => {
-    refreshAnalysis(true);
-  }, [refreshAnalysis]);
+    if (!refreshAttempted) {
+      refreshAnalysis(true).catch(err => {
+        console.error("Error refreshing analysis:", err);
+      }).finally(() => {
+        setRefreshAttempted(true);
+      });
+    }
+  }, [refreshAnalysis, refreshAttempted]);
+  
+  // Define a stable navigate function that doesn't change on re-renders
+  const stableNavigate = useCallback((path: string, options = {}) => {
+    navigate(path, options);
+  }, [navigate]);
   
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
+    // Only run this effect once the initial refresh has been attempted
+    if (!refreshAttempted) return;
+    
     if (!isLoading) {
       if (id) {
         // If we have an ID in the URL, try to load that specific analysis
@@ -47,20 +62,20 @@ const ReportPage: React.FC = () => {
           // If we can't find that ID and don't have a stable analysis yet
           if (analysisHistory && analysisHistory.length > 0) {
             // If there's any analysis available, redirect to the latest one
-            navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+            stableNavigate(`/report/${analysisHistory[0].id}`, { replace: true });
           } else {
             // If no analysis is available at all, show error and redirect to assessment
             toast.error("Could not find the requested analysis", {
-              description: "Please try taking the assessment again or log in to access your saved analyses",
+              description: "Please try taking the assessment again",
               duration: 5000
             });
             
-            navigate("/assessment");
+            stableNavigate("/assessment");
           }
         }
       } else if (analysisHistory && analysisHistory.length > 0) {
         // If no ID is provided but we have analysis history, redirect to the latest analysis
-        navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+        stableNavigate(`/report/${analysisHistory[0].id}`, { replace: true });
       } else if (!stableAnalysis && !initialLoadComplete) {
         // If we have no analysis history and no stable analysis, show error
         toast.error("No analysis found", {
@@ -68,12 +83,12 @@ const ReportPage: React.FC = () => {
           duration: 5000
         });
         
-        navigate("/assessment");
+        stableNavigate("/assessment");
       }
       
       setInitialLoadComplete(true);
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, stableAnalysis, analysisHistory, initialLoadComplete]);
+  }, [id, isLoading, setCurrentAnalysis, stableNavigate, stableAnalysis, analysisHistory, initialLoadComplete, refreshAttempted]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {

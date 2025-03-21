@@ -14,12 +14,13 @@ export default defineConfig(({ mode }) => ({
       clientPort: 443,
       host: 'localhost'
     },
-    // Add this section for SPA fallback during development
-    // This makes refreshing routes work correctly
+    // Add proper SPA fallback during development
     proxy: {},
     fs: {
       strict: true,
     },
+    // Enable SPA history mode API fallback
+    middlewareMode: 'html',
   },
   plugins: [
     react(),
@@ -35,15 +36,25 @@ export default defineConfig(({ mode }) => ({
     esbuildOptions: {
       target: 'es2020',
     },
+    // Ensure these components are pre-bundled
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom', 
+      'framer-motion',
+      '@tanstack/react-query'
+    ],
   },
   build: {
     target: 'es2020',
-    // Implement chunk size limits to prevent large bundle sizes on mobile
+    // Improve chunk loading reliability
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
           ui: ['@/components/ui'],
+          // Ensure report components are in their own chunk
+          report: ['@/components/report']
         }
       }
     }
