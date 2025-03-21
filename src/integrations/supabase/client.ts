@@ -9,7 +9,7 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Create Supabase client with realtime enabled for analyses table
+// Create Supabase client with enhanced realtime configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
@@ -18,17 +18,70 @@ export const supabase = createClient<Database>(
       params: {
         eventsPerSecond: 10
       }
+    },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   }
 );
 
-// Enable realtime subscription for the analyses table
-supabase.channel('analyses-changes')
-  .on('postgres_changes', { 
-    event: '*', 
-    schema: 'public', 
-    table: 'analyses' 
-  }, payload => {
-    console.log('Realtime update from analyses table:', payload);
-  })
-  .subscribe();
+// Set up realtime subscriptions for the main tables
+const setupRealtimeSubscriptions = () => {
+  // Subscribe to analyses table changes
+  const analysesChannel = supabase.channel('analyses-realtime')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'analyses' 
+    }, payload => {
+      console.log('Realtime update from analyses table:', payload);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to analyses table changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Failed to subscribe to analyses table changes');
+      }
+    });
+
+  // Subscribe to activities table changes
+  const activitiesChannel = supabase.channel('activities-realtime')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'activities' 
+    }, payload => {
+      console.log('Realtime update from activities table:', payload);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to activities table changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Failed to subscribe to activities table changes');
+      }
+    });
+
+  // Subscribe to assessments table changes
+  const assessmentsChannel = supabase.channel('assessments-realtime')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'assessments' 
+    }, payload => {
+      console.log('Realtime update from assessments table:', payload);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to assessments table changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Failed to subscribe to assessments table changes');
+      }
+    });
+
+  return [analysesChannel, activitiesChannel, assessmentsChannel];
+};
+
+// Initialize realtime subscriptions
+setupRealtimeSubscriptions();
