@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,9 +14,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarGroup,
   SidebarTrigger,
   SidebarRail,
   SidebarInset
@@ -33,18 +32,14 @@ const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
   
   const isActive = (path: string) => {
-    // Updated to handle both exact matches and nested routes
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-    return location.pathname.startsWith(path);
+    return location.pathname === path || location.pathname.startsWith(path);
   };
 
   const handleBack = () => {
     navigate(-1);
   };
 
-  // Navigation items used in both sidebar and mobile menu
+  // Navigation items used in both sidebar and mobile menu - Settings removed
   const navigationItems = [
     { name: "Assessment", path: "/assessment", icon: Brain, requiresAuth: true },
     { name: "Report", path: "/report", icon: ClipboardList, requiresAuth: true },

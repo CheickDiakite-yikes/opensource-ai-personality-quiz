@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { useActivityState } from "./hooks/useActivityState";
 import LevelProgress from "./components/LevelProgress";
@@ -14,16 +14,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const TrackerPage: React.FC = () => {
-  const { analysis, refreshAnalysis } = useAIAnalysis();
+  const { analysis } = useAIAnalysis();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // Force refresh analysis when component mounts
-  useEffect(() => {
-    if (user) {
-      refreshAnalysis(true);
-    }
-  }, [user, refreshAnalysis]);
   
   const {
     activities,

@@ -68,15 +68,15 @@ export const useAIAnalysis = () => {
   const refreshInProgress = useRef(false);
 
   // Function to refresh analysis data from database with debounce and locking
-  const refreshAnalysis = useCallback(async (forceRefresh = false) => {
+  const refreshAnalysis = useCallback(async () => {
     // Prevent concurrent refresh operations
-    if (refreshInProgress.current && !forceRefresh) return;
+    if (refreshInProgress.current) return;
     
-    // Only refresh if it's been at least 5 seconds since the last refresh or forceRefresh is true
+    // Only refresh if it's been at least 5 seconds since the last refresh
     const now = new Date();
     const timeSinceLastRefresh = now.getTime() - lastRefresh.getTime();
     
-    if (timeSinceLastRefresh < 5000 && analysisHistory.length > 0 && !forceRefresh) {
+    if (timeSinceLastRefresh < 5000 && analysisHistory.length > 0) {
       // Skip refresh if it's been less than 5 seconds and we have data
       return;
     }
@@ -172,13 +172,6 @@ export const useAIAnalysis = () => {
   useEffect(() => {
     refreshAnalysis();
   }, [refreshAnalysis]);
-  
-  // Also refresh when the user changes
-  useEffect(() => {
-    if (user) {
-      refreshAnalysis(true);
-    }
-  }, [user, refreshAnalysis]);
 
   // Function to save analysis to history
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
