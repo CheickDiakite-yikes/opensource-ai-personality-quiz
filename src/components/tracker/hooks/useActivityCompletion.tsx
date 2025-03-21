@@ -15,10 +15,15 @@ export const useActivityCompletion = (
   const toggleActivityCompletion = async (activityId: string) => {
     // Find the activity to toggle
     const activity = activities.find(a => a.id === activityId);
-    if (!activity) return;
+    if (!activity) {
+      console.error("Activity not found:", activityId);
+      return;
+    }
     
     const now = new Date();
     const newCompleted = !activity.completed;
+    
+    console.log(`Toggling activity completion: ${activityId} to ${newCompleted}`);
     
     // Update local state first for immediate UI feedback
     setActivities(activities.map(act => {
@@ -57,6 +62,8 @@ export const useActivityCompletion = (
           ));
           return;
         }
+        
+        console.log("Successfully updated activity completion in Supabase");
       } catch (error) {
         console.error("Unexpected error updating activity:", error);
         toast.error("Failed to save your progress");
@@ -67,6 +74,52 @@ export const useActivityCompletion = (
             ? { ...a, completed: activity.completed, completedAt: activity.completedAt } 
             : a
         ));
+        return;
+      }
+    } else if (user && activityId.startsWith('local-')) {
+      // Handle local activities for logged-in users by creating a permanent record
+      try {
+        console.log("Converting local activity to permanent record:", activity);
+        
+        const { data, error } = await supabase
+          .from('activities')
+          .insert({
+            title: activity.title,
+            description: activity.description,
+            points: activity.points,
+            category: activity.category,
+            completed: newCompleted,
+            completed_at: newCompleted ? now.toISOString() : null,
+            user_id: user.id,
+            steps: activity.steps || [],
+            benefits: activity.benefits || ""
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Error creating permanent activity record:", error);
+          toast.error("Failed to save your progress");
+          return;
+        }
+        
+        console.log("Successfully created permanent activity record:", data);
+        
+        // Update activities list with the new permanent record and remove the local one
+        setActivities(activities.map(a => {
+          if (a.id === activityId) {
+            return {
+              ...a,
+              id: data.id, // Replace with the permanent ID
+              completed: newCompleted,
+              completedAt: newCompleted ? now : undefined,
+            };
+          }
+          return a;
+        }));
+      } catch (error) {
+        console.error("Unexpected error creating permanent activity record:", error);
+        toast.error("Failed to save your progress");
         return;
       }
     }

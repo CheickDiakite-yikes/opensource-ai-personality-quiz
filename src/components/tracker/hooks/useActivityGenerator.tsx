@@ -24,7 +24,7 @@ export const useActivityGenerator = (
       let newActivity: Activity;
       
       try {
-        console.log("Generating activity with AI...");
+        console.log("Generating activity with AI...", { category, userAnalysis: !!userAnalysis });
         
         const { data, error } = await supabase.functions.invoke("generate-activity", {
           body: { 
@@ -34,6 +34,7 @@ export const useActivityGenerator = (
         });
         
         if (error || !data || !data.activity) {
+          console.error("Error from generate-activity function:", error);
           throw new Error(error?.message || "Failed to generate activity");
         }
         
@@ -84,8 +85,11 @@ export const useActivityGenerator = (
               category: savedData.category as ActivityCategory,
               completed: savedData.completed,
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
-              steps: [],
-              benefits: ""
+              createdAt: savedData.created_at ? new Date(savedData.created_at) : new Date(),
+              steps: Array.isArray(savedData.steps) 
+                ? savedData.steps.map(step => typeof step === 'string' ? step : String(step))
+                : [],
+              benefits: savedData.benefits || ""
             };
             
             setActivities(prev => [savedActivity, ...prev]);
@@ -141,6 +145,7 @@ export const useActivityGenerator = (
       points,
       category: selectedCategory,
       completed: false,
+      createdAt: new Date(),
       steps: [],
       benefits: `Improve your ${selectedCategory.toLowerCase()} abilities.`
     };

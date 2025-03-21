@@ -26,25 +26,35 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
     );
   };
   
-  // Helper to safely parse date from ID or use current date as fallback
-  const getDateFromId = () => {
-    if (!activity.id.includes('-')) {
-      return new Date().toLocaleDateString();
+  // Helper to safely parse date from ID or use activity's completion date
+  const getDateDisplay = () => {
+    // If the activity has a completedAt date, show that for completed activities
+    if (activity.completed && activity.completedAt) {
+      return `Completed ${activity.completedAt.toLocaleDateString()}`;
     }
     
-    try {
-      const timestampPart = activity.id.split('-')[1];
-      if (!timestampPart) return new Date().toLocaleDateString();
-      
-      // Convert the string to a number safely
-      const timestamp = Number(timestampPart);
-      if (isNaN(timestamp)) return new Date().toLocaleDateString();
-      
-      return new Date(timestamp).toLocaleDateString();
-    } catch (error) {
-      console.error("Error parsing date from ID:", error);
-      return new Date().toLocaleDateString();
+    // Try to extract timestamp from ID for Supabase-generated IDs
+    if (activity.id.includes('-')) {
+      try {
+        const timestampPart = activity.id.split('-')[1];
+        if (timestampPart && !isNaN(Number(timestampPart))) {
+          return `Added ${new Date(Number(timestampPart)).toLocaleDateString()}`;
+        }
+      } catch (error) {
+        console.error("Error parsing date from ID:", error);
+      }
     }
+    
+    // For created_at timestamps from Supabase
+    if (activity.createdAt) {
+      const createdDate = typeof activity.createdAt === 'string' 
+        ? new Date(activity.createdAt)
+        : activity.createdAt;
+      return `Added ${createdDate.toLocaleDateString()}`;
+    }
+    
+    // Fallback
+    return `Added ${new Date().toLocaleDateString()}`;
   };
   
   return (
@@ -129,7 +139,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
           )}
           
           <CardFooter className="py-2 text-xs text-muted-foreground">
-            Added {getDateFromId()}
+            {getDateDisplay()}
           </CardFooter>
         </Collapsible>
       </Card>

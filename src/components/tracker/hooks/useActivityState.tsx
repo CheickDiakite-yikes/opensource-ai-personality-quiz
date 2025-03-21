@@ -40,6 +40,17 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
           return;
         }
         
+        console.log("Raw data from Supabase:", data);
+        
+        // Check if we got any data back
+        if (!data || data.length === 0) {
+          console.log("No activities found for user, creating initial set");
+          const initialActivities = await createInitialActivities(user.id);
+          setActivities(initialActivities);
+          setIsLoading(false);
+          return;
+        }
+        
         // Transform the data from Supabase format to our Activity type
         const formattedActivities: Activity[] = data.map(item => {
           // Convert steps from JSON to string array
@@ -66,15 +77,8 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
           };
         });
         
-        console.log("Fetched activities:", formattedActivities);
-        
-        // If user has no activities yet, create initial activities for them
-        if (formattedActivities.length === 0) {
-          const initialActivities = await createInitialActivities(user.id);
-          setActivities(initialActivities);
-        } else {
-          setActivities(formattedActivities);
-        }
+        console.log("Formatted activities:", formattedActivities);
+        setActivities(formattedActivities);
       } catch (error) {
         console.error("Unexpected error fetching activities:", error);
         toast.error("Failed to load your activities");
@@ -90,6 +94,8 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
   // Function to create initial activities for new users
   const createInitialActivities = async (userId: string) => {
     try {
+      console.log("Creating initial activities for user:", userId);
+      
       // Use the first 3 sample activities as a starting point
       const initialActivities = sampleActivities.slice(0, 3).map(activity => ({
         ...activity,
@@ -113,8 +119,11 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       
       if (error) {
         console.error("Error creating initial activities:", error);
+        toast.error("Failed to create initial activities");
         return sampleActivities;
       }
+      
+      console.log("Created initial activities:", data);
       
       // Transform the returned data to our Activity type
       return data.map(item => {
