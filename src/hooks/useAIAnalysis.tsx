@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
-import { loadAnalysisHistory, saveAnalysisToHistory } from "./analysis/useLocalStorage";
+import { loadAnalysisHistory, saveAnalysisToHistory, getAnalysisById } from "./analysis/useLocalStorage";
 import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -220,12 +220,28 @@ export const useAIAnalysis = () => {
 
   const setCurrentAnalysis = (analysisId: string) => {
     console.log("Setting current analysis to:", analysisId);
-    const selected = analysisHistory.find(item => item.id === analysisId);
-    if (selected) {
-      console.log("Found matching analysis:", selected.id);
-      setAnalysis(selected);
+    
+    // First check in state
+    const selectedFromState = analysisHistory.find(item => item.id === analysisId);
+    if (selectedFromState) {
+      console.log("Found matching analysis in state:", selectedFromState.id);
+      setAnalysis(selectedFromState);
       return true;
     }
+    
+    // If not found in state, try localStorage
+    const selectedFromStorage = getAnalysisById(analysisId);
+    if (selectedFromStorage) {
+      console.log("Found matching analysis in localStorage:", selectedFromStorage.id);
+      setAnalysis(selectedFromStorage);
+      // Update state with the found analysis
+      setAnalysisHistory(prev => [
+        selectedFromStorage, 
+        ...prev.filter(a => a.id !== selectedFromStorage.id)
+      ]);
+      return true;
+    }
+    
     console.log("No matching analysis found for id:", analysisId);
     return false;
   };

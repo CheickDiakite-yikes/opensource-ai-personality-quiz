@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
@@ -13,8 +13,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { analysis, isLoading, getAnalysisHistory, setCurrentAnalysis } = useAIAnalysis();
+  const { analysis, isLoading, error, getAnalysisHistory, setCurrentAnalysis, refreshAnalysis } = useAIAnalysis();
   const isMobile = useIsMobile();
+  const [loadAttempts, setLoadAttempts] = useState(0);
   
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
@@ -24,6 +25,15 @@ const ReportPage: React.FC = () => {
       
       if (!success && !analysis) {
         console.log("Could not find analysis with ID:", id);
+        
+        // Try refreshing data from Supabase if this is the first attempt
+        if (loadAttempts < 1) {
+          console.log("Attempting to refresh analysis data from Supabase");
+          refreshAnalysis();
+          setLoadAttempts(prev => prev + 1);
+          return;
+        }
+        
         toast.error("Could not find the requested analysis", {
           description: "Please try taking the assessment again or log in to access your saved analyses",
           duration: 5000
@@ -34,13 +44,31 @@ const ReportPage: React.FC = () => {
         console.log("Successfully set analysis from ID param:", id);
       }
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, refreshAnalysis, loadAttempts]);
   
   if (isLoading) {
     console.log("Report page is in loading state");
     return (
       <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
         <ReportSkeleton />
+      </div>
+    );
+  }
+  
+  if (error) {
+    console.error("Error in report page:", error);
+    return (
+      <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
+        <div className="p-6 bg-destructive/10 rounded-lg text-center">
+          <h2 className="text-xl font-bold mb-2">Error Loading Report</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <button 
+            className="px-4 py-2 bg-primary text-white rounded-md"
+            onClick={() => refreshAnalysis()}
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

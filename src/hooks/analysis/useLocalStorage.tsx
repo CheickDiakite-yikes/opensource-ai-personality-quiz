@@ -31,9 +31,15 @@ export const loadAnalysisHistory = (): PersonalityAnalysis[] => {
     console.log("Loading analysis history from localStorage");
     const savedData = localStorage.getItem('analysis-history');
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      console.log("Loaded analysis history:", Array.isArray(parsedData) ? parsedData.length : 0, "items");
-      return Array.isArray(parsedData) ? parsedData : [];
+      try {
+        const parsedData = JSON.parse(savedData);
+        const validData = Array.isArray(parsedData) ? parsedData : [];
+        console.log("Loaded analysis history:", validData.length, "items");
+        return validData;
+      } catch (parseError) {
+        console.error("Error parsing analysis history:", parseError);
+        return [];
+      }
     }
   } catch (error) {
     console.error("Error loading analysis history:", error);

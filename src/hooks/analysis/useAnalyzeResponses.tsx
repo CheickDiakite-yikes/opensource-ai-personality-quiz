@@ -15,13 +15,16 @@ export const useAnalyzeResponses = (
 
   const analyzeResponses = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     setIsAnalyzing(true);
-    toast.info("Analyzing your responses with AI...");
+    toast.info("Analyzing your responses with AI...", {
+      id: "analyzing-toast",
+      duration: 5000
+    });
 
     try {
       // Save responses to localStorage and get assessment ID
       const assessmentId = saveAssessmentToStorage(responses);
       
-      console.log("Sending responses to AI for analysis using o3-mini model...", responses);
+      console.log("Sending responses to AI for analysis using o3-mini model...");
       console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
       
       // Store assessment responses in Supabase if user is logged in
@@ -43,7 +46,8 @@ export const useAnalyzeResponses = (
           if (assessmentError) {
             console.error("Error saving assessment to Supabase:", assessmentError);
             toast.error("Could not save your assessment data, but continuing with analysis", {
-              description: assessmentError.message
+              description: assessmentError.message,
+              duration: 5000
             });
           } else {
             console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
@@ -73,7 +77,7 @@ export const useAnalyzeResponses = (
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis from o3-mini model:", data.analysis);
+      console.log("Received AI analysis from o3-mini model");
       
       // Add user ID to the analysis if user is logged in
       let analysisWithUser = data.analysis;
@@ -117,10 +121,12 @@ export const useAnalyzeResponses = (
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
             toast.error("Could not save your analysis data to your profile, but we've saved it locally", {
-              description: analysisError.message
+              description: analysisError.message,
+              duration: 5000
             });
           } else {
             console.log("Successfully saved analysis to Supabase with ID:", data.analysis.id);
+            toast.success("Analysis saved to your profile");
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
@@ -131,11 +137,17 @@ export const useAnalyzeResponses = (
       const savedAnalysis = saveToHistory(analysisWithUser);
       setAnalysis(savedAnalysis);
       
-      toast.success("AI Analysis complete!");
+      toast.success("AI Analysis complete!", {
+        id: "analyzing-toast",
+        duration: 3000
+      });
       return savedAnalysis;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing responses:", error);
-      toast.error("Failed to analyze responses. Using fallback analysis.");
+      toast.error("Failed to analyze responses. Using fallback analysis.", {
+        id: "analyzing-toast",
+        duration: 3000
+      });
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {

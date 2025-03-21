@@ -13,7 +13,7 @@ const createSingletonClient = () => {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? localStorage : undefined
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined
     },
     global: {
       headers: {
@@ -37,10 +37,15 @@ export const supabase = createSingletonClient();
 
 // Add a function to check if the session is valid
 export const getSession = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error("Error getting session:", error);
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+      return null;
+    }
+    return data.session;
+  } catch (err) {
+    console.error("Unexpected error checking session:", err);
     return null;
   }
-  return data.session;
 };
