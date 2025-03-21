@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Button } from "@/components/ui/button";
@@ -22,26 +21,34 @@ const ProfilePage: React.FC = () => {
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   
-  // Fetch the latest analysis when the component mounts
+  // Fetch the latest analysis when the component mounts, but only once
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchLatestAnalysis = async () => {
+      if (!isMounted) return;
+      
       // Get the analysis history (should be sorted with newest first)
       const history = getAnalysisHistory();
       
       if (history && history.length > 0) {
-        // Set the most recent analysis (first item in the array)
+        // Only set the most recent analysis once
         setStableAnalysis(history[0]);
       } else {
-        setStableAnalysis(null);
+        if (isMounted) setStableAnalysis(null);
       }
       
-      setProfileLoading(false);
+      if (isMounted) setProfileLoading(false);
     };
     
-    // Only fetch data when loading is complete
+    // Only fetch data once when loading is complete
     if (!isLoading) {
       fetchLatestAnalysis();
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [getAnalysisHistory, isLoading]);
   
   // Render loading state during initial load
@@ -54,26 +61,13 @@ const ProfilePage: React.FC = () => {
     return <NoAnalysisFound />;
   }
   
+  // Very simplified animation variants to prevent blinking
   const containerVariants = {
-    hidden: { opacity: 0.95 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.15,
-        ease: "linear"
-      }
-    }
+    visible: { opacity: 1 }
   };
   
   const itemVariants = {
-    hidden: { opacity: 0.95 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.15,
-        ease: "linear"
-      }
-    }
+    visible: { opacity: 1 }
   };
   
   return (
@@ -95,18 +89,13 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
       
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
+      <div className="space-y-8">
         <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
         <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
         <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />
         <InsightsCard analysis={stableAnalysis} itemVariants={itemVariants} />
         <GrowthPathwayCard analysis={stableAnalysis} itemVariants={itemVariants} />
-      </motion.div>
+      </div>
     </div>
   );
 };

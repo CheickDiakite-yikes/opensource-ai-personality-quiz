@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { loadAnalysisHistory, saveAnalysisToHistory } from "./analysis/useLocalStorage";
 import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
@@ -64,9 +65,13 @@ export const useAIAnalysis = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const { user } = useAuth();
+  const refreshInProgress = useRef(false);
 
-  // Function to refresh analysis data from database with debounce
+  // Function to refresh analysis data from database with debounce and locking
   const refreshAnalysis = useCallback(async () => {
+    // Prevent concurrent refresh operations
+    if (refreshInProgress.current) return;
+    
     // Only refresh if it's been at least 5 seconds since the last refresh
     const now = new Date();
     const timeSinceLastRefresh = now.getTime() - lastRefresh.getTime();
@@ -76,6 +81,7 @@ export const useAIAnalysis = () => {
       return;
     }
     
+    refreshInProgress.current = true;
     setIsLoading(true);
     setLastRefresh(now);
     
@@ -92,13 +98,15 @@ export const useAIAnalysis = () => {
         if (error) {
           console.error("Error fetching analysis from Supabase:", error);
           
-          // Fallback to localStorage
-          const history = loadAnalysisHistory();
-          const sortedHistory = sortAnalysesByDate(history);
-          setAnalysisHistory(sortedHistory);
-          
-          if (sortedHistory.length > 0 && !analysis) {
-            setAnalysis(sortedHistory[0]);
+          // Fallback to localStorage without updating state if we already have data
+          if (analysisHistory.length === 0) {
+            const history = loadAnalysisHistory();
+            const sortedHistory = sortAnalysesByDate(history);
+            setAnalysisHistory(sortedHistory);
+            
+            if (sortedHistory.length > 0 && !analysis) {
+              setAnalysis(sortedHistory[0]);
+            }
           }
         } else if (data && data.length > 0) {
           // Transform the data into our PersonalityAnalysis type
@@ -107,20 +115,22 @@ export const useAIAnalysis = () => {
           // Ensure analyses are sorted by date (newest first)
           const sortedAnalyses = sortAnalysesByDate(analyses);
           
-          // Save to history state
-          setAnalysisHistory(sortedAnalyses);
+          // Save to history state if changed
+          if (JSON.stringify(sortedAnalyses) !== JSON.stringify(analysisHistory)) {
+            setAnalysisHistory(sortedAnalyses);
           
-          // Set the most recent as current if no current selection
-          if (!analysis) {
-            setAnalysis(sortedAnalyses[0]);
+            // Set the most recent as current if no current selection
+            if (!analysis) {
+              setAnalysis(sortedAnalyses[0]);
+            }
+          
+            // Also update localStorage for offline access
+            sortedAnalyses.forEach(analysis => {
+              saveAnalysisToHistory(analysis, sortedAnalyses);
+            });
           }
-          
-          // Also update localStorage for offline access
-          sortedAnalyses.forEach(analysis => {
-            saveAnalysisToHistory(analysis, analysisHistory);
-          });
-        } else {
-          // Fallback to localStorage
+        } else if (analysisHistory.length === 0) {
+          // Fallback to localStorage only if we don't have data yet
           const history = loadAnalysisHistory();
           const sortedHistory = sortAnalysesByDate(history);
           setAnalysisHistory(sortedHistory);
@@ -129,8 +139,8 @@ export const useAIAnalysis = () => {
             setAnalysis(sortedHistory[0]);
           }
         }
-      } else {
-        // No user, just use localStorage
+      } else if (analysisHistory.length === 0) {
+        // No user and no data, use localStorage
         const history = loadAnalysisHistory();
         const sortedHistory = sortAnalysesByDate(history);
         setAnalysisHistory(sortedHistory);
@@ -142,20 +152,23 @@ export const useAIAnalysis = () => {
     } catch (error) {
       console.error("Error in refreshAnalysis:", error);
       
-      // Fallback to localStorage
-      const history = loadAnalysisHistory();
-      const sortedHistory = sortAnalysesByDate(history);
-      setAnalysisHistory(sortedHistory);
-      
-      if (sortedHistory.length > 0 && !analysis) {
-        setAnalysis(sortedHistory[0]);
+      // Fallback to localStorage only if we don't have data yet
+      if (analysisHistory.length === 0) {
+        const history = loadAnalysisHistory();
+        const sortedHistory = sortAnalysesByDate(history);
+        setAnalysisHistory(sortedHistory);
+        
+        if (sortedHistory.length > 0 && !analysis) {
+          setAnalysis(sortedHistory[0]);
+        }
       }
     } finally {
       setIsLoading(false);
+      refreshInProgress.current = false;
     }
   }, [user, analysis, analysisHistory, lastRefresh]);
 
-  // Load analysis from Supabase or localStorage once on mount
+  // Load analysis once on mount
   useEffect(() => {
     refreshAnalysis();
   }, [refreshAnalysis]);

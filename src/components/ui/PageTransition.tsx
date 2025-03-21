@@ -1,5 +1,5 @@
 
-import React, { useRef, memo } from "react";
+import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,18 +9,18 @@ interface PageTransitionProps {
   className?: string;
 }
 
-// Create a stable component with minimal animations to reduce blinking
+// Create a stable component with minimal animations to prevent blinking
 const PageTransition = memo(({ children, className }: PageTransitionProps) => {
   const location = useLocation();
   
-  // Simplified transition to eliminate blinking
+  // Extremely simplified transition to eliminate blinking entirely
   return (
     <motion.div
       key={location.pathname}
-      initial={{ opacity: 0.98 }}
+      initial={{ opacity: 0.99 }}
       animate={{ opacity: 1 }}
       transition={{ 
-        duration: 0.1,
+        duration: 0.05,
         ease: "linear"
       }}
       className={cn("h-full w-full", className)}
