@@ -16,6 +16,7 @@ import {
   ChartTooltipContent 
 } from "@/components/ui/chart";
 import { Brain } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface IntelligenceDomain {
   name: string;
@@ -27,7 +28,12 @@ interface IntelligenceDomainChartProps {
   domains: IntelligenceDomain[];
 }
 
+// Formatter function for score labels
+const formatScore = (value: number) => value.toFixed(1);
+
 const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domains }) => {
+  const isMobile = useIsMobile();
+  
   // Prepare data for chart
   const chartData = domains?.map((domain) => ({
     name: domain.name,
@@ -49,32 +55,36 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
   }
 
   return (
-    <div className="w-full h-80 mt-4">
+    <div className="w-full h-auto min-h-[320px] md:h-80 mt-4">
       <ChartContainer
         config={{
           domain: { label: "Intelligence Domain", color: "#f97316" },
           score: { label: "Score", color: "#f97316" },
         }}
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={isMobile ? 400 : 320}>
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={isMobile ? 
+              { top: 5, right: 50, left: 5, bottom: 5 } : 
+              { top: 5, right: 30, left: 20, bottom: 5 }
+            }
           >
             <XAxis 
               type="number" 
               domain={[0, 100]} 
               tickFormatter={(value) => `${(value / 10).toFixed(1)}`}
               stroke="#888"
+              fontSize={isMobile ? 10 : 12}
             />
             <YAxis 
               type="category" 
               dataKey="name" 
-              width={150} 
+              width={isMobile ? 100 : 150} 
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 12, fill: "#f5f5f5" }}
+              tick={{ fontSize: isMobile ? 10 : 12, fill: "#f5f5f5" }}
             />
             <ChartTooltip
               content={
@@ -96,8 +106,8 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
               <LabelList 
                 dataKey="originalScore" 
                 position="right" 
-                formatter={(value: number) => value.toFixed(1)} 
-                style={{ fill: '#f5f5f5', fontSize: '12px', fontWeight: 'bold' }}
+                formatter={formatScore}
+                style={{ fill: '#f5f5f5', fontSize: isMobile ? '10px' : '12px', fontWeight: 'bold' }}
               />
             </Bar>
           </BarChart>

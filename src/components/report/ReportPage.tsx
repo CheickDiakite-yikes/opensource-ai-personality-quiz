@@ -8,11 +8,13 @@ import ReportTabs from "./ReportTabs";
 import ReportTabContent from "./ReportTabContent";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { analysis, isLoading, getAnalysisHistory } = useAIAnalysis();
+  const isMobile = useIsMobile();
   
   // Get all analyses and find the one that matches the ID
   const analyses = getAnalysisHistory();
@@ -20,7 +22,7 @@ const ReportPage: React.FC = () => {
   
   if (isLoading) {
     return (
-      <div className="container py-10">
+      <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
         <ReportSkeleton />
       </div>
     );
@@ -32,14 +34,14 @@ const ReportPage: React.FC = () => {
       description: "We couldn't load the personality analysis. Please try again.",
       variant: "destructive",
     });
-    return <div className="container py-10">Error loading analysis. Please refresh the page.</div>;
+    return <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>Error loading analysis. Please refresh the page.</div>;
   }
   
   return (
-    <div className="container py-6 space-y-8">
+    <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       <ReportHeader analysis={analysisResult} />
       
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
         <ReportTabs />
         <ReportTabContent analysis={analysisResult} />
       </Tabs>
