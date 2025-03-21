@@ -1,5 +1,7 @@
 
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -12,10 +14,16 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-// Handle SPA routing - this ensures the app loads correctly on direct URL access
-// or page refresh
+// Render app with proper provider hierarchy to ensure
+// authentication context is always available
 const renderApp = () => {
-  root.render(<App />);
+  root.render(
+    <Router>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </Router>
+  );
 };
 
 // Render the app

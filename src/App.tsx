@@ -1,8 +1,8 @@
 
 import { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Lazy load pages for better initial load performance
 const HomePage = lazy(() => import("@/pages/Index"));
@@ -40,7 +40,7 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-function AppRoutes() {
+function App() {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
@@ -106,16 +106,6 @@ function AppRoutes() {
         } />
       </Route>
     </Routes>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
   );
 }
 

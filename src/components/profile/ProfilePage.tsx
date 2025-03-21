@@ -15,44 +15,51 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
 
 const ProfilePage: React.FC = () => {
-  const { getAnalysisHistory, isLoading } = useAIAnalysis();
+  const { user, isLoading: authLoading } = useAuth();
+  const { getAnalysisHistory, isLoading: analysisLoading, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   
-  // Fetch the latest analysis when the component mounts, but only once
+  // Refresh analysis data when component mounts or auth state changes
   useEffect(() => {
     let isMounted = true;
     
-    const fetchLatestAnalysis = async () => {
+    const loadAnalysisData = async () => {
       if (!isMounted) return;
       
-      // Get the analysis history (should be sorted with newest first)
-      const history = getAnalysisHistory();
-      
-      if (history && history.length > 0) {
-        // Only set the most recent analysis once
-        setStableAnalysis(history[0]);
-      } else {
+      try {
+        // Force a refresh of analysis data to ensure we have the latest
+        await refreshAnalysis();
+        
+        // Get the analysis history (should be sorted with newest first)
+        const history = getAnalysisHistory();
+        
+        if (history && history.length > 0) {
+          setStableAnalysis(history[0]);
+        } else {
+          if (isMounted) setStableAnalysis(null);
+        }
+      } catch (error) {
+        console.error('Error loading analysis data:', error);
         if (isMounted) setStableAnalysis(null);
+      } finally {
+        if (isMounted) setProfileLoading(false);
       }
-      
-      if (isMounted) setProfileLoading(false);
     };
     
-    // Only fetch data once when loading is complete
-    if (!isLoading) {
-      fetchLatestAnalysis();
+    // Only fetch data once auth is complete
+    if (!authLoading) {
+      loadAnalysisData();
     }
     
     return () => {
       isMounted = false;
     };
-  }, [getAnalysisHistory, isLoading]);
+  }, [getAnalysisHistory, refreshAnalysis, authLoading, user]);
   
   // Render loading state during initial load
-  if (isLoading || profileLoading) {
+  if (authLoading || analysisLoading || profileLoading) {
     return <LoadingProfile />;
   }
   
