@@ -10,6 +10,7 @@ export const sampleActivities: Activity[] = [
     points: 20,
     category: ActivityCategory.KINDNESS,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "2",
@@ -18,6 +19,7 @@ export const sampleActivities: Activity[] = [
     points: 15,
     category: ActivityCategory.MINDFULNESS,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "3",
@@ -26,6 +28,7 @@ export const sampleActivities: Activity[] = [
     points: 25,
     category: ActivityCategory.LEARNING,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "4",
@@ -34,6 +37,7 @@ export const sampleActivities: Activity[] = [
     points: 20,
     category: ActivityCategory.HEALTH,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "5",
@@ -42,6 +46,7 @@ export const sampleActivities: Activity[] = [
     points: 15,
     category: ActivityCategory.SOCIAL,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "6",
@@ -50,6 +55,7 @@ export const sampleActivities: Activity[] = [
     points: 10,
     category: ActivityCategory.KINDNESS,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "7",
@@ -58,6 +64,7 @@ export const sampleActivities: Activity[] = [
     points: 20,
     category: ActivityCategory.CREATIVITY,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "8",
@@ -66,6 +73,7 @@ export const sampleActivities: Activity[] = [
     points: 30,
     category: ActivityCategory.KINDNESS,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "9",
@@ -74,6 +82,7 @@ export const sampleActivities: Activity[] = [
     points: 15,
     category: ActivityCategory.SOCIAL,
     completed: false,
+    createdAt: new Date(),
   },
   {
     id: "10",
@@ -82,5 +91,6 @@ export const sampleActivities: Activity[] = [
     points: 20,
     category: ActivityCategory.HEALTH,
     completed: false,
+    createdAt: new Date(),
   },
 ];
