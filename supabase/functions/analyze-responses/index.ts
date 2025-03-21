@@ -134,7 +134,7 @@ async function generateAIAnalysis(
   try {
     console.log("Sending request to OpenAI API using o3-mini model");
     
-    // Use the parameters supported by the o3-mini model
+    // Use the correct parameters supported by the o3-mini model
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -153,7 +153,7 @@ async function generateAIAnalysis(
         // Note: temperature parameter is removed as it's not supported by o3-mini
         response_format: { type: "json_object" },
         reasoning_effort: "medium", // Add supported reasoning_effort parameter
-        max_tokens: 90000, // Use max_tokens instead of max_completion_tokens
+        max_completion_tokens: 90000, // Using max_completion_tokens for reasoning models
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
       }),
     });
