@@ -26,12 +26,16 @@ export const useAnalyzeResponses = (
       // Store assessment responses in Supabase if user is logged in
       if (user) {
         try {
+          // We need to convert AssessmentResponse[] to a JSON-compatible format
+          // by using JSON.stringify and then parsing it back to handle Date objects
+          const jsonResponses = JSON.parse(JSON.stringify(responses));
+          
           const { error: assessmentError } = await supabase
             .from('assessments')
             .insert({
               id: assessmentId,
               user_id: user.id,
-              responses: responses
+              responses: jsonResponses
             });
             
           if (assessmentError) {
@@ -72,27 +76,30 @@ export const useAnalyzeResponses = (
         
         // Save analysis to Supabase
         try {
+          // Convert all JSON fields to their string representation to ensure compatibility
+          const jsonAnalysis = JSON.parse(JSON.stringify(data.analysis));
+          
           const { error: analysisError } = await supabase
             .from('analyses')
             .insert({
               id: data.analysis.id,
               user_id: user.id,
               assessment_id: assessmentId,
-              result: data.analysis,
+              result: jsonAnalysis,
               overview: data.analysis.overview,
-              traits: data.analysis.traits,
-              intelligence: data.analysis.intelligence,
+              traits: jsonAnalysis.traits,
+              intelligence: jsonAnalysis.intelligence,
               intelligence_score: data.analysis.intelligenceScore,
               emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
-              cognitive_style: data.analysis.cognitiveStyle,
-              value_system: data.analysis.valueSystem,
-              motivators: data.analysis.motivators,
-              inhibitors: data.analysis.inhibitors,
-              weaknesses: data.analysis.weaknesses,
-              growth_areas: data.analysis.growthAreas,
-              relationship_patterns: data.analysis.relationshipPatterns,
-              career_suggestions: data.analysis.careerSuggestions,
-              learning_pathways: data.analysis.learningPathways,
+              cognitive_style: jsonAnalysis.cognitiveStyle,
+              value_system: jsonAnalysis.valueSystem,
+              motivators: jsonAnalysis.motivators,
+              inhibitors: jsonAnalysis.inhibitors,
+              weaknesses: jsonAnalysis.weaknesses,
+              growth_areas: jsonAnalysis.growthAreas,
+              relationship_patterns: jsonAnalysis.relationshipPatterns,
+              career_suggestions: jsonAnalysis.careerSuggestions,
+              learning_pathways: jsonAnalysis.learningPathways,
               roadmap: data.analysis.roadmap
             });
             

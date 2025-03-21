@@ -12,10 +12,12 @@ import IntelligenceProfileCard from "./IntelligenceProfileCard";
 import TraitsCard from "./TraitsCard";
 import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfilePage: React.FC = () => {
   const { analysis, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   if (isLoading) {
     return <LoadingProfile />;
@@ -56,6 +58,19 @@ const ProfilePage: React.FC = () => {
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
+      
+      {user && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-secondary/10 rounded-lg"
+        >
+          <p className="text-sm text-muted-foreground">
+            {user ? "Your analysis is saved to your account and will be available whenever you log in." : 
+            "Sign in to save your personality analysis results to your account."}
+          </p>
+        </motion.div>
+      )}
       
       <motion.div
         variants={containerVariants}

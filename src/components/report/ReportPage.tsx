@@ -23,7 +23,7 @@ const ReportPage: React.FC = () => {
       
       if (!success && !analysis) {
         toast.error("Could not find the requested analysis", {
-          description: "Please try taking the assessment again",
+          description: "Please try taking the assessment again or log in to access your saved analyses",
           duration: 5000
         });
         

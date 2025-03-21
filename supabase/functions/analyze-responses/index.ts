@@ -27,8 +27,14 @@ serve(async (req) => {
 
     console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}`);
     
+    // Clean and serialize responses for analysis
+    const cleanedResponses = responses.map(r => ({
+      ...r,
+      timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString()
+    }));
+    
     // Group responses by category for analysis
-    const responsesByCategory = categorizeResponses(responses);
+    const responsesByCategory = categorizeResponses(cleanedResponses);
     
     // Generate the AI analysis using OpenAI's API
     const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
@@ -142,7 +148,7 @@ async function generateAIAnalysis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini',
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
@@ -150,10 +156,7 @@ async function generateAIAnalysis(
           },
           { role: 'user', content: prompt }
         ],
-        // Note: temperature parameter is removed as it's not supported by o3-mini
         response_format: { type: "json_object" },
-        reasoning_effort: "medium", // Add supported reasoning_effort parameter
-        max_completion_tokens: 90000, // Using max_completion_tokens for reasoning models
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
       }),
     });
@@ -165,10 +168,14 @@ async function generateAIAnalysis(
     }
 
     const data = await response.json();
-    console.log("Received response from OpenAI o3-mini model");
+    console.log("Received response from OpenAI gpt-4o-mini model");
     
     try {
       const analysisJson = JSON.parse(data.choices[0].message.content);
+      // Make sure createdAt is set correctly
+      if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
+        analysisJson.createdAt = new Date().toISOString();
+      }
       return analysisJson as PersonalityAnalysis;
     } catch (error) {
       console.error("Error parsing OpenAI response:", error);
