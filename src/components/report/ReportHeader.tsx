@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Share, Copy, Calendar, History } from "lucide-react";
@@ -60,7 +60,15 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Past Reports Button - Always positioned next to Share button */}
+          <Button
+            onClick={handleCopyLink}
+            size={isMobile ? "sm" : "default"}
+            variant="outline"
+          >
+            <Copy className="h-4 w-4 mr-2" /> Copy Link
+          </Button>
+          
+          {/* Past Reports Button - Always visible as long as there are multiple analyses */}
           {hasMultipleAnalyses && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -97,14 +105,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          <Button
-            onClick={handleCopyLink}
-            size={isMobile ? "sm" : "default"}
-            variant="outline"
-          >
-            <Copy className="h-4 w-4 mr-2" /> Copy Link
-          </Button>
 
           <Button size={isMobile ? "sm" : "default"}>
             <Share className="h-4 w-4 mr-2" /> Share
