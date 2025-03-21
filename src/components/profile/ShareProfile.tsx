@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,8 +12,8 @@ interface ShareProfileProps {
 const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
   
-  // Generate a unique share URL - in a real app this would create a shareable link
-  const shareUrl = `${window.location.origin}/shared-profile/${analysis.id || 'demo'}`;
+  // Generate a unique share URL using the new domain
+  const shareUrl = `https://www.sowei.io/shared-profile/${analysis.id || 'demo'}`;
   
   // Handle copy to clipboard
   const handleCopy = () => {
@@ -29,7 +28,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0].trait}`;
-    const imageUrl = `${window.location.origin}/lovable-uploads/61e4bbf7-cf7f-4318-b3d4-b684924014a5.png`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/61e4bbf7-cf7f-4318-b3d4-b684924014a5.png`;
     
     switch (platform) {
       case 'twitter':
