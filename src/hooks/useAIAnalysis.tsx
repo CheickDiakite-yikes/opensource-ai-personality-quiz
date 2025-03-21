@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { loadAnalysisHistory, saveAnalysisToHistory } from "./analysis/useLocalStorage";
@@ -44,6 +43,20 @@ const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => {
   };
 };
 
+// Helper to sort analyses by creation date (newest first)
+const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
+  return [...analyses].sort((a, b) => {
+    // Try to parse dates and compare them
+    try {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Sort newest first
+    } catch (e) {
+      return 0; // Keep order if dates can't be parsed
+    }
+  });
+};
+
 // Main hook for accessing AI analysis functionality
 export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
@@ -75,11 +88,12 @@ export const useAIAnalysis = () => {
           // Fallback to localStorage
           const history = loadAnalysisHistory();
           console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
-          setAnalysisHistory(history);
+          const sortedHistory = sortAnalysesByDate(history);
+          setAnalysisHistory(sortedHistory);
           
-          if (history.length > 0 && !analysis) {
-            console.log("useAIAnalysis: Setting first analysis from history:", history[0].id);
-            setAnalysis(history[0]);
+          if (sortedHistory.length > 0 && !analysis) {
+            console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
+            setAnalysis(sortedHistory[0]);
           }
         } else if (data && data.length > 0) {
           console.log("useAIAnalysis: Fetched analyses from Supabase:", data.length);
@@ -88,17 +102,20 @@ export const useAIAnalysis = () => {
           const analyses: PersonalityAnalysis[] = data.map(item => convertToPersonalityAnalysis(item));
           console.log("useAIAnalysis: Converted analyses:", analyses.map(a => a.id));
           
+          // Ensure analyses are sorted by date (newest first)
+          const sortedAnalyses = sortAnalysesByDate(analyses);
+          
           // Save to history state
-          setAnalysisHistory(analyses);
+          setAnalysisHistory(sortedAnalyses);
           
           // Set the most recent as current if no current selection
           if (!analysis) {
-            console.log("useAIAnalysis: Setting first analysis:", analyses[0].id);
-            setAnalysis(analyses[0]);
+            console.log("useAIAnalysis: Setting first analysis:", sortedAnalyses[0].id);
+            setAnalysis(sortedAnalyses[0]);
           }
           
           // Also update localStorage for offline access
-          analyses.forEach(analysis => {
+          sortedAnalyses.forEach(analysis => {
             saveAnalysisToHistory(analysis, analysisHistory);
           });
         } else {
@@ -107,11 +124,12 @@ export const useAIAnalysis = () => {
           // Fallback to localStorage
           const history = loadAnalysisHistory();
           console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
-          setAnalysisHistory(history);
+          const sortedHistory = sortAnalysesByDate(history);
+          setAnalysisHistory(sortedHistory);
           
-          if (history.length > 0 && !analysis) {
-            console.log("useAIAnalysis: Setting first analysis from history:", history[0].id);
-            setAnalysis(history[0]);
+          if (sortedHistory.length > 0 && !analysis) {
+            console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
+            setAnalysis(sortedHistory[0]);
           }
         }
       } else {
@@ -119,11 +137,12 @@ export const useAIAnalysis = () => {
         console.log("useAIAnalysis: No user, using localStorage");
         const history = loadAnalysisHistory();
         console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
-        setAnalysisHistory(history);
+        const sortedHistory = sortAnalysesByDate(history);
+        setAnalysisHistory(sortedHistory);
         
-        if (history.length > 0 && !analysis) {
-          console.log("useAIAnalysis: Setting first analysis from history:", history[0].id);
-          setAnalysis(history[0]);
+        if (sortedHistory.length > 0 && !analysis) {
+          console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
+          setAnalysis(sortedHistory[0]);
         }
       }
     } catch (error) {
@@ -132,11 +151,12 @@ export const useAIAnalysis = () => {
       // Fallback to localStorage
       const history = loadAnalysisHistory();
       console.log("useAIAnalysis: Loaded history from localStorage due to error:", history.length);
-      setAnalysisHistory(history);
+      const sortedHistory = sortAnalysesByDate(history);
+      setAnalysisHistory(sortedHistory);
       
-      if (history.length > 0 && !analysis) {
-        console.log("useAIAnalysis: Setting first analysis from history after error:", history[0].id);
-        setAnalysis(history[0]);
+      if (sortedHistory.length > 0 && !analysis) {
+        console.log("useAIAnalysis: Setting first analysis from history after error:", sortedHistory[0].id);
+        setAnalysis(sortedHistory[0]);
       }
     } finally {
       setIsLoading(false);
@@ -152,8 +172,8 @@ export const useAIAnalysis = () => {
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
     console.log("useAIAnalysis: Saving analysis to history:", newAnalysis.id);
     const savedAnalysis = saveAnalysisToHistory(newAnalysis, analysisHistory);
-    // Update the history state
-    setAnalysisHistory(prev => [savedAnalysis, ...prev.filter(a => a.id !== savedAnalysis.id)].slice(0, 10));
+    // Update the history state - always keep sorted by date
+    setAnalysisHistory(prev => sortAnalysesByDate([savedAnalysis, ...prev.filter(a => a.id !== savedAnalysis.id)]));
     return savedAnalysis;
   };
 

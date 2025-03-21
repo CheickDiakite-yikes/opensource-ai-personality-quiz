@@ -59,9 +59,13 @@ const ReportPage: React.FC = () => {
           
           navigate("/assessment");
         }
+      } else if (analysisHistory && analysisHistory.length > 0) {
+        // If no ID is provided, redirect to the latest analysis
+        console.log("ReportPage: No ID provided, redirecting to latest analysis");
+        navigate(`/report/${analysisHistory[0].id}`);
       }
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, initialLoadComplete]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, initialLoadComplete, analysisHistory]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {

@@ -14,29 +14,56 @@ import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
+import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
-  const { analysis, isLoading } = useAIAnalysis();
+  const { getAnalysisHistory, isLoading, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [loadingLatest, setLoadingLatest] = useState(true);
   
-  // Only update the analysis once when it's available to prevent blinking
+  // Fetch the latest analysis when the component mounts
   useEffect(() => {
-    if (analysis && !stableAnalysis) {
-      setStableAnalysis(analysis);
-    }
-  }, [analysis, stableAnalysis]);
+    const fetchLatestAnalysis = async () => {
+      setLoadingLatest(true);
+      console.log("ProfilePage: Refreshing analysis data to get latest");
+      
+      try {
+        // Refresh analyses to ensure we have the latest data
+        await refreshAnalysis();
+        
+        // Get the analysis history (should be sorted with newest first)
+        const history = getAnalysisHistory();
+        console.log("ProfilePage: Got analysis history with", history?.length || 0, "items");
+        
+        if (history && history.length > 0) {
+          // Set the most recent analysis (first item in the array)
+          const latestAnalysis = history[0];
+          console.log("ProfilePage: Setting latest analysis:", latestAnalysis.id);
+          setStableAnalysis(latestAnalysis);
+        } else {
+          console.log("ProfilePage: No analysis history found");
+          setStableAnalysis(null);
+        }
+      } catch (error) {
+        console.error("Error fetching latest analysis:", error);
+        toast.error("Failed to load your latest analysis data");
+      } finally {
+        setLoadingLatest(false);
+      }
+    };
+    
+    fetchLatestAnalysis();
+  }, [refreshAnalysis, getAnalysisHistory]);
   
-  // Render loading state only on initial load
-  if (isLoading && !stableAnalysis) {
+  // Render loading state during initial load
+  if (isLoading || loadingLatest) {
     return <LoadingProfile />;
   }
   
-  // Use stableAnalysis if available, otherwise use analysis from the hook
-  const displayAnalysis = stableAnalysis || analysis;
-  
-  if (!displayAnalysis) {
+  // If there's no analysis after loading, show the NoAnalysisFound component
+  if (!stableAnalysis) {
     return <NoAnalysisFound />;
   }
   
@@ -92,11 +119,11 @@ const ProfilePage: React.FC = () => {
         animate="visible"
         className="space-y-8"
       >
-        <ProfileHeader analysis={displayAnalysis} itemVariants={itemVariants} />
-        <IntelligenceProfileCard analysis={displayAnalysis} itemVariants={itemVariants} />
-        <TraitsCard analysis={displayAnalysis} itemVariants={itemVariants} />
-        <InsightsCard analysis={displayAnalysis} itemVariants={itemVariants} />
-        <GrowthPathwayCard analysis={displayAnalysis} itemVariants={itemVariants} />
+        <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
+        <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
+        <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />
+        <InsightsCard analysis={stableAnalysis} itemVariants={itemVariants} />
+        <GrowthPathwayCard analysis={stableAnalysis} itemVariants={itemVariants} />
       </motion.div>
     </div>
   );
