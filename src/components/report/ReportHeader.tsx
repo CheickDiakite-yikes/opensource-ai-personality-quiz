@@ -1,4 +1,3 @@
-
 import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/94f8c274-1a06-4bde-8383-3a46aea85f20.png`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
     
     switch (platform) {
       case 'twitter':

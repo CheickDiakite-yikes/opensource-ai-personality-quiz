@@ -34,9 +34,15 @@ const MobileHeader: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
+            className="flex items-center"
           >
-            <Link to="/" className="text-xl font-bold hover:text-primary transition-colors">
-              Who Am I?
+            <Link to="/" className="flex items-center hover:text-primary transition-colors">
+              <img 
+                src="/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png" 
+                alt="Who Am I Logo" 
+                className="h-8 w-auto mr-2" 
+              />
+              <span className="text-xl font-bold">Who Am I?</span>
             </Link>
           </motion.div>
         </div>

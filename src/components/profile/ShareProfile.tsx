@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -29,7 +28,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0].trait}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/94f8c274-1a06-4bde-8383-3a46aea85f20.png`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
     
     switch (platform) {
       case 'twitter':

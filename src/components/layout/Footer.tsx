@@ -10,11 +10,18 @@ const Footer: React.FC = () => {
     <footer className="border-t border-border py-6 px-4 bg-background/80 backdrop-blur-sm">
       <div className="container max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-            <div className="text-lg font-bold text-gradient">Who Am I?</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Discover your true self through AI-powered insights
-            </p>
+          <div className="mb-4 md:mb-0 flex items-center">
+            <img 
+              src="/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png" 
+              alt="Who Am I Logo" 
+              className="h-10 w-auto mr-3" 
+            />
+            <div>
+              <div className="text-lg font-bold text-gradient">Who Am I?</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Discover your true self through AI-powered insights
+              </p>
+            </div>
           </div>
           
           <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center">

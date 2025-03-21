@@ -33,7 +33,11 @@ const DesktopSidebar: React.FC = () => {
           className="p-3"
         >
           <Link to="/" className="text-xl font-bold hover:text-primary transition-colors flex items-center">
-            <Home className="mr-2 h-5 w-5" />
+            <img 
+              src="/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png" 
+              alt="Who Am I Logo" 
+              className="h-8 w-auto mr-2" 
+            />
             Who Am I?
           </Link>
         </motion.div>
