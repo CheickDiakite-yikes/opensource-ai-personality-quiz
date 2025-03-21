@@ -38,7 +38,7 @@ const MobileHeader: React.FC = () => {
           >
             <Link to="/" className="flex items-center hover:text-primary transition-colors">
               <img 
-                src="/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png" 
+                src="/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png" 
                 alt="Who Am I Logo" 
                 className="h-8 w-auto mr-2" 
               />
