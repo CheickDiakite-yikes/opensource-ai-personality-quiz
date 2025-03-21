@@ -25,8 +25,12 @@ const ReportPage: React.FC = () => {
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
-  // Extract stable analyses list to prevent unnecessary re-renders
-  const analyses = useMemo(() => getAnalysisHistory(), [getAnalysisHistory]);
+  // Extract the analysis history and ensure it's a stable reference
+  const analysisHistory = useMemo(() => {
+    const history = getAnalysisHistory();
+    console.log("ReportPage: Available analyses:", history?.length || 0);
+    return history;
+  }, [getAnalysisHistory]);
   
   // Refresh analyses only once when the component mounts
   useEffect(() => {
@@ -94,14 +98,11 @@ const ReportPage: React.FC = () => {
     navigate(`/report/${analysisId}`);
   };
   
-  // Make sure analyses has something in it
-  console.log("ReportPage: Available analyses:", analyses?.length || 0);
-  
   return (
     <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       <ReportHeader 
         analysis={displayAnalysis} 
-        analysisHistory={analyses}
+        analysisHistory={analysisHistory}
         onAnalysisChange={handleAnalysisChange}
       />
       

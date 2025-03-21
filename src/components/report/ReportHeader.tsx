@@ -52,7 +52,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   return (
     <div className="flex flex-col gap-4 sm:gap-1">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Your Personality Analysis</h1>
             <div className="flex items-center text-muted-foreground mt-1">
@@ -61,21 +61,21 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             </div>
           </div>
           
-          {/* History Dropdown - Placed next to the title for better visibility */}
+          {/* Past Reports Button - Always visible when there are multiple analyses */}
           {hasMultipleAnalyses && (
-            <div className="relative" onMouseEnter={() => setShowHistoryTooltip(true)} onMouseLeave={() => setShowHistoryTooltip(false)}>
+            <div className="relative mt-2 sm:mt-0 sm:ml-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="secondary" 
                     size={isMobile ? "sm" : "default"}
-                    className="ml-2 mt-0 sm:mt-1"
+                    className="font-medium"
                   >
                     <History className="h-4 w-4 mr-2" /> Past Reports
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuLabel>Your Past Reports</DropdownMenuLabel>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {analysisHistory.map((item) => {
                     // Skip the current analysis
@@ -99,13 +99,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                   })}
                 </DropdownMenuContent>
               </DropdownMenu>
-              
-              {/* Optional tooltip that appears on hover */}
-              {showHistoryTooltip && (
-                <div className="absolute z-50 bg-popover text-popover-foreground rounded-md shadow-md p-2 text-xs -bottom-8 left-0 whitespace-nowrap">
-                  View your previous assessments
-                </div>
-              )}
             </div>
           )}
         </div>
