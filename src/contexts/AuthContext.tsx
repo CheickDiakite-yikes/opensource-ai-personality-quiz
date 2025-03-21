@@ -4,6 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { uploadAvatar } from "@/utils/avatarUtils";
 
 type UserMetadata = {
   age?: number;
@@ -16,7 +17,13 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, name?: string, metadata?: UserMetadata) => Promise<void>;
+  signUp: (
+    email: string, 
+    password: string, 
+    name?: string, 
+    metadata?: UserMetadata,
+    avatarFile?: File | null
+  ) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -52,7 +59,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string, name?: string, metadata?: UserMetadata) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    name?: string, 
+    metadata?: UserMetadata,
+    avatarFile?: File | null
+  ) => {
     try {
       setIsLoading(true);
       
@@ -72,6 +85,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         throw error;
+      }
+
+      // If user was created and they provided an avatar, upload it
+      if (data.user && avatarFile) {
+        const avatarUrl = await uploadAvatar(avatarFile, data.user.id);
+        
+        if (avatarUrl) {
+          // Update the profile with the avatar URL
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: avatarUrl })
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error("Error updating profile with avatar:", updateError);
+          }
+        }
       }
 
       toast.success("Welcome to your self-discovery journey! Please check your email for verification.");

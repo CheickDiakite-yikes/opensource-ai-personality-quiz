@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import AvatarUpload from "./AvatarUpload";
 
 interface AuthFormProps {
   onAuth: (type: "login" | "register", data: { 
@@ -28,6 +28,7 @@ interface AuthFormProps {
     city?: string;
     state?: string;
     gender?: string;
+    avatarFile?: File | null;
   }) => void;
   isLoading: boolean;
 }
@@ -40,6 +41,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth, isLoading }) => {
   const [city, setCity] = useState<string>("");
   const [state, setState] = useState<string>("");
   const [gender, setGender] = useState<string>("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   
   // For multi-step form
   const [registerStep, setRegisterStep] = useState<number>(1);
@@ -59,9 +62,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth, isLoading }) => {
       age: age ? parseInt(age) : undefined,
       city,
       state,
-      gender
+      gender,
+      avatarFile
     });
   };
+
+  const handleAvatarChange = useCallback((file: File | null) => {
+    setAvatarFile(file);
+    
+    // Create object URL for preview
+    if (file) {
+      const objectUrl = URL.createObjectURL(file);
+      setAvatarPreview(objectUrl);
+    } else {
+      setAvatarPreview(null);
+    }
+  }, []);
 
   const nextStep = () => {
     if (registerStep < totalRegisterSteps) {
@@ -175,6 +191,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth, isLoading }) => {
                 Help us personalize your experience
               </p>
             </div>
+            
+            <div className="flex flex-col items-center space-y-4">
+              <AvatarUpload 
+                onImageChange={handleAvatarChange} 
+                previewUrl={avatarPreview} 
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">

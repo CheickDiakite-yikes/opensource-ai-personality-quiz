@@ -18,6 +18,7 @@ const Auth: React.FC = () => {
       city?: string;
       state?: string;
       gender?: string;
+      avatarFile?: File | null;
     }
   ) => {
     if (type === "login") {
@@ -38,7 +39,8 @@ const Auth: React.FC = () => {
           city: formData.city,
           state: formData.state,
           gender: formData.gender,
-        }
+        },
+        formData.avatarFile
       );
     }
   };
