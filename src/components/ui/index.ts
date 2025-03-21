@@ -40,18 +40,21 @@ export * from "./sheet";
 export * from "./sidebar";
 export * from "./skeleton";
 export * from "./slider";
-export * from "./sonner";
 export * from "./switch";
 export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./toast";
-export * from "./toaster";
+// Rename the toaster import to avoid name conflict with Sonner's Toaster
+export { Toaster as ToastViewportProvider } from "./toaster";
 export * from "./toggle-group";
 export * from "./toggle";
 export * from "./tooltip";
 export * from "./use-toast";
+
+// Export Sonner's Toaster explicitly
+export { Toaster } from "./sonner";
 
 // Non-standard exports
 export { default as PageTransition } from "./PageTransition";
