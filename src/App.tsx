@@ -7,6 +7,7 @@ import ReportPage from "@/components/report/ReportPage";
 import TrackerPage from "@/components/tracker/TrackerPage";
 import AssessmentPage from "@/components/assessment/AssessmentPage";
 import ProfilePage from "@/components/profile/ProfilePage";
+import TraitsPage from "@/components/traits/TraitsPage";
 import Auth from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
@@ -38,9 +39,10 @@ function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route path="assessment" element={<PrivateRoute><AssessmentPage /></PrivateRoute>} />
-        <Route path="report" element={<PrivateRoute><ReportPage /></PrivateRoute>} />
+        <Route path="report/:id?" element={<PrivateRoute><ReportPage /></PrivateRoute>} />
         <Route path="tracker" element={<PrivateRoute><TrackerPage /></PrivateRoute>} />
         <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="traits" element={<PrivateRoute><TraitsPage /></PrivateRoute>} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

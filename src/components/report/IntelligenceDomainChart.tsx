@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  LabelList,
 } from "recharts";
 import { 
   ChartContainer, 
@@ -28,11 +29,12 @@ interface IntelligenceDomainChartProps {
 
 const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domains }) => {
   // Prepare data for chart
-  const chartData = domains.map((domain) => ({
+  const chartData = domains?.map((domain) => ({
     name: domain.name,
     score: domain.score * 10, // Scale to 0-100 for better visualization
     description: domain.description,
-  }));
+    originalScore: domain.score, // Keep original score for tooltip
+  })) || [];
 
   // Custom gradient colors
   const getBarColor = (index: number) => {
@@ -45,6 +47,15 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
     ];
     return colors[index % colors.length];
   };
+
+  // Fallback if no domains data
+  if (!domains || domains.length === 0) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center border border-dashed rounded-md">
+        <p className="text-muted-foreground">No intelligence domains data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-64 mt-4">
@@ -60,7 +71,11 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
             layout="vertical"
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
-            <XAxis type="number" domain={[0, 100]} />
+            <XAxis 
+              type="number" 
+              domain={[0, 100]} 
+              tickFormatter={(value) => `${(value / 10).toFixed(1)}`}
+            />
             <YAxis 
               type="category" 
               dataKey="name" 
@@ -76,7 +91,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                     <div>
                       <p className="font-medium">{props.payload.name}</p>
                       <p className="text-muted-foreground text-xs mt-1">{props.payload.description}</p>
-                      <p className="font-medium mt-2">{(Number(value) / 10).toFixed(1)}/10</p>
+                      <p className="font-medium mt-2">{(props.payload.originalScore || 0).toFixed(1)}/10</p>
                     </div>
                   )}
                 />
@@ -86,6 +101,12 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={getBarColor(index)} />
               ))}
+              <LabelList 
+                dataKey="originalScore" 
+                position="right" 
+                formatter={(value: number) => value.toFixed(1)} 
+                style={{ fill: 'hsl(var(--foreground))', fontSize: '12px' }}
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
