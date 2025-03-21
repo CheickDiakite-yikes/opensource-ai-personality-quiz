@@ -8,27 +8,27 @@ import { Button } from "@/components/ui/button";
 const FeatureSection: React.FC = () => {
   const navigate = useNavigate();
   
-  // Features for the landing page
+  // Features for the landing page with enhanced SEO content
   const features = [
     {
       icon: Brain,
-      title: "Personality Insights",
-      description: "Discover your unique traits and how they shape your behavior"
+      title: "Advanced Personality Insights",
+      description: "Our AI analyzes your unique traits and behaviors to deliver a comprehensive personality profile that truly understands you"
     },
     {
       icon: PieChart,
-      title: "Detailed Analysis",
-      description: "Get a comprehensive breakdown of your strengths and growth areas"
+      title: "Detailed Intelligence Analysis",
+      description: "Discover your cognitive strengths and multiple intelligence types with in-depth breakdowns of your mental capabilities"
     },
     {
       icon: Lightbulb,
-      title: "Growth Roadmap",
-      description: "Follow a personalized path to become your best self"
+      title: "Personalized Growth Roadmap",
+      description: "Follow a tailored development path based on your assessment results to become your authentic best self"
     },
     {
       icon: Zap,
-      title: "Activity Tracker",
-      description: "Track your progress with gamified self-improvement tasks"
+      title: "Interactive Progress Tracker",
+      description: "Monitor your personal growth journey with engaging self-improvement activities designed for your personality type"
     }
   ];
 
@@ -42,15 +42,15 @@ const FeatureSection: React.FC = () => {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">How Our Personality Test Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our AI-powered platform analyzes your responses to provide deep insights about your personality and tailored growth opportunities.
+            Our sophisticated AI platform analyzes your responses to provide deeply personalized insights about your personality traits and tailored growth opportunities that truly understand you.
           </p>
         </motion.div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <motion.div
+            <motion.article
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -59,11 +59,11 @@ const FeatureSection: React.FC = () => {
               className="bg-background rounded-xl p-6 shadow-lg border border-border hover:shadow-xl transition-shadow"
             >
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <feature.icon className="h-6 w-6 text-primary" />
+                <feature.icon className="h-6 w-6 text-primary" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
               <p className="text-muted-foreground">{feature.description}</p>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
         
@@ -78,8 +78,9 @@ const FeatureSection: React.FC = () => {
               size="lg" 
               className="px-8 rounded-full"
               onClick={() => navigate("/assessment")}
+              aria-label="Start personality assessment"
             >
-              Start Your Journey <ArrowRight className="ml-2 h-4 w-4" />
+              Start Your Self-Discovery Journey <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
           </motion.div>
         </div>

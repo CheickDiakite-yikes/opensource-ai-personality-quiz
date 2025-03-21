@@ -22,7 +22,7 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
         <div className="flex justify-center mb-6">
           <motion.img 
             src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
-            alt="Who Am I Logo" 
+            alt="Who Am I Logo - AI Personality Assessment" 
             className="h-24 w-auto" 
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -33,7 +33,7 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
         <div className="inline-block mb-4">
           <div className="flex items-center bg-primary/10 px-3 py-1 rounded-full text-sm text-primary">
             <Sparkles className="h-4 w-4 mr-2" />
-            <span>AI-Powered Personality Insights</span>
+            <span>AI-Powered Personality Test That Truly Understands You</span>
           </div>
         </div>
         
@@ -42,7 +42,7 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
         </h1>
         
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Gain deep insights into your personality, strengths, and potential with our advanced AI personality assessment.
+          Our advanced AI personality assessment delivers deep insights into your unique traits, cognitive patterns, and emotional intelligence. Understand yourself better than ever before.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -50,6 +50,7 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
             size="lg" 
             onClick={onGetStarted} 
             className="group"
+            aria-label="Start personality assessment"
           >
             {isAuthenticated ? "Take Assessment" : "Get Started"}
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -64,6 +65,7 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
                 featuresElement.scrollIntoView({ behavior: "smooth" });
               }
             }}
+            aria-label="Learn more about our personality test"
           >
             Learn More
           </Button>
