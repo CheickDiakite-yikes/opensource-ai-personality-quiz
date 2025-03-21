@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +21,7 @@ import {
   SidebarRail,
   SidebarInset
 } from "@/components/ui/sidebar";
-import { Brain, BarChart, ClipboardList, User, Home, ChevronLeft, LogOut } from "lucide-react";
+import { Brain, BarChart, ClipboardList, User, Home, ChevronLeft, LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,7 +81,7 @@ const Layout: React.FC = () => {
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="icon" className="hover:bg-accent/50 transition-colors">
-                      <MenuIcon className="h-5 w-5" />
+                      <Menu className="h-5 w-5" />
                       <span className="sr-only">Toggle menu</span>
                     </Button>
                   </SheetTrigger>
