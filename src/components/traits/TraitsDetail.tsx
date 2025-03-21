@@ -16,82 +16,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 interface TraitsDetailProps {
   traits: PersonalityTrait[];
 }
 
 const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return (
-      <div className="space-y-4">
-        {traits.map((trait, index) => (
-          <Card key={index} className="overflow-hidden">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary">
-                  {index + 1}
-                </span>
-                <Badge variant="outline">{trait.score.toFixed(1)}/10</Badge>
-              </div>
-              
-              <h3 className="font-semibold text-base mb-1">{trait.trait}</h3>
-              <p className="text-sm text-muted-foreground mb-2">{trait.description}</p>
-              <Progress value={trait.score * 10} className="h-1.5 mb-3" />
-              
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value={`trait-${index}`} className="border-b-0">
-                  <AccordionTrigger className="py-2 text-sm">View Details</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4 pt-2">
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-xs text-primary">Strengths</h4>
-                        <ul className="space-y-1 text-xs">
-                          {trait.strengths.map((strength, i) => (
-                            <li key={i} className="text-muted-foreground">
-                              • {strength}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-xs text-primary">Challenges</h4>
-                        <ul className="space-y-1 text-xs">
-                          {trait.challenges.map((challenge, i) => (
-                            <li key={i} className="text-muted-foreground">
-                              • {challenge}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-xs text-primary">Growth Suggestions</h4>
-                        <ul className="space-y-1 text-xs">
-                          {trait.growthSuggestions.map((suggestion, i) => (
-                            <li key={i} className="text-muted-foreground">
-                              • {suggestion}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <Table>

@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PersonalityTrait } from "@/utils/types";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PersonalityTraitCardProps {
   trait: PersonalityTrait;
@@ -21,7 +20,6 @@ interface PersonalityTraitCardProps {
 
 const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, index }) => {
   const [expanded, setExpanded] = React.useState(false);
-  const isMobile = useIsMobile();
 
   return (
     <motion.div
@@ -32,20 +30,20 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
     >
       <Card className="hover:shadow-md transition-all duration-300 overflow-hidden">
         <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-center">
             <div className="flex items-start">
-              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-7 w-7 text-sm text-primary mr-2 flex-shrink-0">
+              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-7 w-7 text-sm text-primary mr-3 flex-shrink-0">
                 {index + 1}
               </span>
               <div>
-                <CardTitle className={isMobile ? "text-base" : "text-lg"}>{trait.trait}</CardTitle>
-                <CardDescription className="line-clamp-2 text-sm">
+                <CardTitle className="text-lg">{trait.trait}</CardTitle>
+                <CardDescription className="line-clamp-2">
                   {trait.description}
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center ml-2 flex-shrink-0">
-              <Badge variant="outline" className={isMobile ? "text-xs mr-2" : "mr-3"}>
+            <div className="flex items-center">
+              <Badge variant="outline" className="mr-3">
                 {trait.score.toFixed(1)}/10
               </Badge>
               {expanded ? (
@@ -60,7 +58,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
         
         {expanded && (
           <CardContent className="pt-2 pb-4 animate-fade-in">
-            <div className={`grid gap-4 mt-2 ${isMobile ? "grid-cols-1" : "md:grid-cols-3"}`}>
+            <div className="grid md:grid-cols-3 gap-4 mt-2">
               <div>
                 <h4 className="font-medium mb-2 text-sm text-primary">Strengths</h4>
                 <ul className="space-y-1 text-sm">
