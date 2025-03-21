@@ -28,7 +28,8 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   // Handle social sharing
   const handleShare = (platform: string) => {
     let shareLink = '';
-    const text = `Check out my personality analysis on PsychInsight! My top trait is ${analysis.traits[0].trait}`;
+    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0].trait}`;
+    const imageUrl = `${window.location.origin}/lovable-uploads/61e4bbf7-cf7f-4318-b3d4-b684924014a5.png`;
     
     switch (platform) {
       case 'twitter':

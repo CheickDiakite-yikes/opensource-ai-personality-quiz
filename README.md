@@ -51,9 +51,8 @@ npm run dev
 
 ## Deployment
 
-The project can be easily deployed through Lovable's publishing feature or connected to a custom domain for professional use.
+The project can be easily deployed to any modern hosting provider and connected to a custom domain for professional use.
 
 ## Learn More
 
 For detailed documentation on the components and features, please visit the [project documentation](https://docs.whoami.app).
-
