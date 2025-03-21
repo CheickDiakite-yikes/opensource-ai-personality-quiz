@@ -11,7 +11,8 @@ import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { PersonalityAnalysis } from "@/utils/types";
+import { PersonalityAnalysis, Json } from "@/utils/types";
+import { convertToPersonalityAnalysis } from "@/components/report/utils/dataConverters";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,30 +42,8 @@ const ReportPage: React.FC = () => {
       
       if (data) {
         console.log("Successfully fetched analysis directly from Supabase:", data.id);
-        // Convert to PersonalityAnalysis type
-        const convertedAnalysis: PersonalityAnalysis = {
-          id: data.id,
-          createdAt: data.created_at || new Date().toISOString(),
-          userId: data.user_id,
-          assessmentId: data.assessment_id,
-          overview: data.overview || '',
-          traits: data.traits || [],
-          intelligence: data.intelligence || { type: '', score: 0, description: '', domains: [] },
-          intelligenceScore: data.intelligence_score || 0,
-          emotionalIntelligenceScore: data.emotional_intelligence_score || 0,
-          cognitiveStyle: data.cognitive_style || '',
-          valueSystem: data.value_system || [],
-          motivators: data.motivators || [],
-          inhibitors: data.inhibitors || [],
-          weaknesses: data.weaknesses || [],
-          growthAreas: data.growth_areas || [],
-          relationshipPatterns: data.relationship_patterns || [],
-          careerSuggestions: data.career_suggestions || [],
-          learningPathways: data.learning_pathways || [],
-          roadmap: data.roadmap || ''
-        };
-        
-        return convertedAnalysis;
+        // Convert to PersonalityAnalysis type using the utility function
+        return convertToPersonalityAnalysis(data);
       }
       
       return null;

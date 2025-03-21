@@ -61,30 +61,35 @@ export const useAnalyzeResponses = (
         // Save analysis to Supabase
         try {
           console.log("Saving analysis to Supabase for user:", user.id);
-          // Prepare analysis for insertion
+          
+          // Ensure the analysis data has the right format for Supabase
+          const formattedData = {
+            id: data.analysis.id,
+            user_id: user.id,
+            assessment_id: assessmentId,
+            result: data.analysis,
+            overview: data.analysis.overview || '',
+            traits: Array.isArray(data.analysis.traits) ? data.analysis.traits : [],
+            intelligence: data.analysis.intelligence || { type: '', score: 0, description: '', domains: [] },
+            intelligence_score: typeof data.analysis.intelligenceScore === 'number' ? data.analysis.intelligenceScore : 0,
+            emotional_intelligence_score: typeof data.analysis.emotionalIntelligenceScore === 'number' ? data.analysis.emotionalIntelligenceScore : 0,
+            cognitive_style: data.analysis.cognitiveStyle || '',
+            value_system: Array.isArray(data.analysis.valueSystem) ? data.analysis.valueSystem : [],
+            motivators: Array.isArray(data.analysis.motivators) ? data.analysis.motivators : [],
+            inhibitors: Array.isArray(data.analysis.inhibitors) ? data.analysis.inhibitors : [],
+            weaknesses: Array.isArray(data.analysis.weaknesses) ? data.analysis.weaknesses : [],
+            growth_areas: Array.isArray(data.analysis.growthAreas) ? data.analysis.growthAreas : [],
+            relationship_patterns: Array.isArray(data.analysis.relationshipPatterns) ? data.analysis.relationshipPatterns : 
+              typeof data.analysis.relationshipPatterns === 'object' ? data.analysis.relationshipPatterns : [],
+            career_suggestions: Array.isArray(data.analysis.careerSuggestions) ? data.analysis.careerSuggestions : [],
+            learning_pathways: Array.isArray(data.analysis.learningPathways) ? data.analysis.learningPathways : [],
+            roadmap: data.analysis.roadmap || ''
+          };
+
+          // Insert the formatted data
           const { error: analysisError } = await supabase
             .from('analyses')
-            .insert({
-              id: data.analysis.id,
-              user_id: user.id,
-              assessment_id: assessmentId,
-              result: data.analysis,
-              overview: data.analysis.overview,
-              traits: data.analysis.traits,
-              intelligence: data.analysis.intelligence,
-              intelligence_score: data.analysis.intelligenceScore,
-              emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
-              cognitive_style: data.analysis.cognitiveStyle,
-              value_system: data.analysis.valueSystem,
-              motivators: data.analysis.motivators,
-              inhibitors: data.analysis.inhibitors,
-              weaknesses: data.analysis.weaknesses,
-              growth_areas: data.analysis.growthAreas,
-              relationship_patterns: data.analysis.relationshipPatterns,
-              career_suggestions: data.analysis.careerSuggestions,
-              learning_pathways: data.analysis.learningPathways,
-              roadmap: data.analysis.roadmap
-            });
+            .insert(formattedData);
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);

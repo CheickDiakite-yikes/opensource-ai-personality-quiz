@@ -35,15 +35,18 @@ export const useAssessmentSubmission = (
       if (user) {
         console.log("User is logged in, saving assessment to Supabase for user:", user.id);
         try {
-          // Convert AssessmentResponse[] to a JSON-compatible format
-          const jsonResponses = JSON.parse(JSON.stringify(responses));
+          // Ensure responses are properly formatted for JSON storage
+          const cleanedResponses = responses.map(response => ({
+            ...response,
+            timestamp: response.timestamp instanceof Date ? response.timestamp.toISOString() : response.timestamp
+          }));
           
           const { error } = await supabase
             .from('assessments')
             .insert({
               id: assessmentId,
               user_id: user.id,
-              responses: jsonResponses
+              responses: cleanedResponses
             });
             
           if (error) {
