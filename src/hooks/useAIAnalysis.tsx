@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
 import { saveAnalysisToHistory, getAnalysisById, getAnalysisHistory } from "./analysis/useLocalStorage";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading state
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { user, session } = useAuth();
   
@@ -19,21 +19,6 @@ export const useAIAnalysis = () => {
     saveAnalysisToHistory,
     setAnalysis
   );
-  
-  // Automatically fetch analysis data from Supabase when component mounts or user changes
-  useEffect(() => {
-    if (user && session) {
-      console.log("User is logged in, automatically fetching analysis data from Supabase");
-      refreshAnalysis();
-    } else {
-      // Not logged in, check local storage
-      const analyses = getAnalysisHistory();
-      if (analyses.length > 0) {
-        setAnalysis(analyses[0]);
-      }
-      setIsLoading(false);
-    }
-  }, [user, session]);
   
   // Wrapper function to analyze responses
   const analyzeResponses = (
@@ -59,7 +44,7 @@ export const useAIAnalysis = () => {
           .from('analyses')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error("Error fetching analysis from Supabase:", error);
@@ -98,7 +83,7 @@ export const useAIAnalysis = () => {
             .from('analyses')
             .select('*')
             .eq('id', idOrAnalysis)
-            .single();
+            .maybeSingle();
             
           if (error) {
             console.error("Error fetching analysis from Supabase:", error);
@@ -125,8 +110,8 @@ export const useAIAnalysis = () => {
     }
   };
   
-  // Refresh analysis data from Supabase
-  const refreshAnalysis = async (): Promise<void> => {
+  // Refresh analysis data from Supabase - using useCallback to prevent recreation
+  const refreshAnalysis = useCallback(async (): Promise<void> => {
     if (!user) {
       // If user is not logged in, just load from local storage
       const analyses = getAnalysisHistory();
@@ -171,6 +156,9 @@ export const useAIAnalysis = () => {
         const localAnalyses = getAnalysisHistory();
         if (localAnalyses.length > 0) {
           setAnalysis(localAnalyses[0]);
+        } else {
+          // If there are no analyses in storage, set analysis to null
+          setAnalysis(null);
         }
       }
     } catch (err: any) {
@@ -180,7 +168,25 @@ export const useAIAnalysis = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+  
+  // Automatically fetch analysis data from Supabase when component mounts or user changes
+  useEffect(() => {
+    if (user && session) {
+      console.log("User is logged in, automatically fetching analysis data from Supabase");
+      refreshAnalysis();
+    } else {
+      // Not logged in, check local storage
+      const analyses = getAnalysisHistory();
+      if (analyses.length > 0) {
+        setAnalysis(analyses[0]);
+      } else {
+        // If there are no analyses in storage, set analysis to null
+        setAnalysis(null);
+      }
+      setIsLoading(false);
+    }
+  }, [user, session, refreshAnalysis]);
   
   return {
     analysis,

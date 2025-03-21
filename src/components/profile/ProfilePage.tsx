@@ -20,10 +20,10 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Always refresh data when component mounts if user is logged in
+  // Fetch data once when component mounts if user is logged in
   useEffect(() => {
     if (user) {
-      console.log("ProfilePage: User is logged in, refreshing data");
+      console.log("ProfilePage: User is logged in, fetching data");
       refreshAnalysis();
     }
   }, [user, refreshAnalysis]);
@@ -38,6 +38,10 @@ const ProfilePage: React.FC = () => {
       toast.success("Profile data refreshed");
     }
   };
+  
+  console.log("ProfilePage rendering with analysis:", analysis ? "found" : "not found");
+  console.log("ProfilePage isLoading:", isLoading);
+  console.log("ProfilePage error:", error);
   
   if (isLoading) {
     return <LoadingProfile />;
