@@ -74,7 +74,7 @@ const Layout: React.FC = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <Link to="/" className="text-xl font-bold hover:text-primary transition-colors">
-                    PsychInsight
+                    Who Am I?
                   </Link>
                 </motion.div>
               </div>
@@ -165,7 +165,7 @@ const Layout: React.FC = () => {
                 >
                   <Link to="/" className="text-xl font-bold hover:text-primary transition-colors flex items-center">
                     <Home className="mr-2 h-5 w-5" />
-                    PsychInsight
+                    Who Am I?
                   </Link>
                 </motion.div>
               </SidebarHeader>
@@ -226,7 +226,7 @@ const Layout: React.FC = () => {
               </SidebarContent>
               <SidebarFooter>
                 <div className="p-3 flex items-center">
-                  <span className="text-xs text-muted-foreground">© PsychInsight 2023</span>
+                  <span className="text-xs text-muted-foreground">© Who Am I? {new Date().getFullYear()}</span>
                 </div>
               </SidebarFooter>
               <SidebarRail />

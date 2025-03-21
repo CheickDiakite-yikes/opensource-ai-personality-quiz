@@ -1,69 +1,59 @@
-# Welcome to your Lovable project
 
-## Project info
+# Who Am I? - AI-Powered Personality Assessment
 
-**URL**: https://lovable.dev/projects/e2525226-ebe1-4314-8099-956374981523
+## Project Overview
 
-## How can I edit this code?
+**Who Am I?** is an advanced AI-powered personality assessment platform designed to help users discover their true selves through deep personality insights. The application analyzes users' responses to thoughtfully crafted questions and provides comprehensive reports on personality traits, emotional intelligence, cognitive styles, and more.
 
-There are several ways of editing your application.
+## Key Features
 
-**Use Lovable**
+- **Comprehensive Self-Assessment**: Answer questions designed to reveal your personality traits, values, and cognitive styles
+- **Detailed Personality Reports**: Receive AI-generated insights about your personality type, strengths, and growth areas
+- **Intelligence Profile**: Explore your cognitive strengths and intelligence types
+- **Personal Growth Tracker**: Track your progress and complete suggested activities for personal development
+- **Responsive Design**: Enjoy a seamless experience across all devices
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e2525226-ebe1-4314-8099-956374981523) and start prompting.
+## Technologies Used
 
-Changes made via Lovable will be committed automatically to this repo.
+This project is built with:
 
-**Use your preferred IDE**
+- React + TypeScript
+- Tailwind CSS for styling
+- shadcn-ui component library
+- Framer Motion for animations
+- Recharts for data visualization
+- Supabase for backend functionality
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## SEO Optimization
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+The application is optimized for search engines with:
+- Descriptive meta tags for personality assessments, emotional intelligence tests, and cognitive assessments
+- Open Graph and Twitter card meta tags for better social media sharing
+- Strategic keywords targeting personality quizzes and self-discovery tools
+- Responsive design for all devices (mobile-first approach)
+- Fast loading times and optimized performance
 
-Follow these steps:
+## Running the Project Locally
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd who-am-i
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The project can be easily deployed through Lovable's publishing feature or connected to a custom domain for professional use.
 
-**Use GitHub Codespaces**
+## Learn More
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+For detailed documentation on the components and features, please visit the [project documentation](https://docs.whoami.app).
 
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e2525226-ebe1-4314-8099-956374981523) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

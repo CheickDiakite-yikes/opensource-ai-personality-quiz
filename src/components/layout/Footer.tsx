@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <div>© {currentYear} Who Am I? All rights reserved.</div>
           <div className="mt-2 md:mt-0 flex items-center">
-            Made with <Heart className="h-3 w-3 mx-1 text-red-500" /> by AI Enthusiasts
+            Made with <Heart className="h-3 w-3 mx-1 text-red-500" /> for self-discovery
           </div>
         </div>
       </div>
