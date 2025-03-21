@@ -6,29 +6,39 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://fhmvdprcmhkolyzuecrr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZobXZkcHJjbWhrb2x5enVlY3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MDg5NDIsImV4cCI6MjA1ODA4NDk0Mn0._KsKBT6nK77grg8QEXe4uQbaChgso0qvdSXfQ7OG09o";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Create a singleton instance to prevent multiple client instances
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-  global: {
-    // Enable request batching for improved performance
-    fetch: (url, options) => {
-      const headers = options?.headers || {};
-      return fetch(url, {
-        ...options,
-        headers: {
-          ...headers,
-          'Cache-Control': 'no-cache',
+export const getSupabaseClient = () => {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        storage: localStorage, // Explicitly set storage
+      },
+      global: {
+        // Enable request batching for improved performance
+        fetch: (url, options) => {
+          const headers = options?.headers || {};
+          return fetch(url, {
+            ...options,
+            headers: {
+              ...headers,
+              'Cache-Control': 'no-cache',
+            },
+          });
         },
-      });
-    },
-  },
-  // Add database pooling for improved performance
-  db: {
-    schema: 'public',
-  },
-});
+      },
+      // Add database pooling for improved performance
+      db: {
+        schema: 'public',
+      },
+    });
+  }
+  
+  return supabaseInstance;
+};
+
+// Export a singleton supabase client
+export const supabase = getSupabaseClient();
