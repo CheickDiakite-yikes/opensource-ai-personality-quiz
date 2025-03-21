@@ -3,7 +3,7 @@ import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Share, Copy, Calendar } from "lucide-react";
-import { isMobileDevice } from "@/utils/reportUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   analysisHistory = [],
   onAnalysisChange
 }) => {
-  const isMobile = isMobileDevice();
+  const isMobile = useIsMobile();
   
   const handleCopyLink = () => {
     const url = `${window.location.origin}/report/${analysis.id}`;
