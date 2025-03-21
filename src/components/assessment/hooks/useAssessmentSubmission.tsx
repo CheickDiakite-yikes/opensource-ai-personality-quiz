@@ -41,6 +41,7 @@ export const useAssessmentSubmission = (
             timestamp: response.timestamp instanceof Date ? response.timestamp.toISOString() : response.timestamp
           }));
           
+          // Save responses to the assessments table
           const { error } = await supabase
             .from('assessments')
             .insert({
@@ -57,6 +58,7 @@ export const useAssessmentSubmission = (
             });
           } else {
             console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
+            toast.success("Assessment saved to your profile");
           }
         } catch (err) {
           console.error("Unexpected error saving assessment:", err);
@@ -66,7 +68,7 @@ export const useAssessmentSubmission = (
       }
       
       // Send responses to the analyze function, which will store analysis in Supabase if user is logged in
-      const analysis = await analyzeResponses(responses);
+      const analysis = await analyzeResponses(responses, assessmentId);
       
       // Clear saved progress after successful submission
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);

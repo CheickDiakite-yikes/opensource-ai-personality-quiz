@@ -13,7 +13,10 @@ export const useAnalyzeResponses = (
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { user } = useAuth();
 
-  const analyzeResponses = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
+  const analyzeResponses = async (
+    responses: AssessmentResponse[], 
+    assessmentId?: string
+  ): Promise<PersonalityAnalysis> => {
     setIsAnalyzing(true);
     toast.info("Analyzing your responses with AI...", {
       id: "analyzing-toast",
@@ -21,18 +24,22 @@ export const useAnalyzeResponses = (
     });
 
     try {
-      // Save responses to localStorage and get assessment ID
-      const assessmentId = saveAssessmentToStorage(responses);
+      // If no assessmentId is provided, generate one
+      const finalAssessmentId = assessmentId || `assessment-${Date.now()}`;
+      
+      // Save responses to localStorage
+      saveAssessmentToStorage(responses, finalAssessmentId);
       
       console.log("Starting AI analysis for responses:", responses.length);
       console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
+      console.log("Using assessment ID:", finalAssessmentId);
       
       // Call the Supabase Edge Function for AI analysis
-      console.log("Calling analyze-responses edge function with assessment ID:", assessmentId);
+      console.log("Calling analyze-responses edge function with assessment ID:", finalAssessmentId);
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
-          assessmentId,
+          assessmentId: finalAssessmentId,
           userId: user?.id || null 
         }
       });
@@ -49,14 +56,14 @@ export const useAnalyzeResponses = (
       
       console.log("Received AI analysis:", data.analysis.id);
       
-      // Add user ID to the analysis if user is logged in
-      let analysisWithUser = data.analysis;
+      // Add user ID and assessment ID to the analysis if user is logged in
+      let analysisWithUser = {
+        ...data.analysis,
+        assessmentId: finalAssessmentId
+      };
+      
       if (user) {
-        analysisWithUser = {
-          ...data.analysis,
-          userId: user.id,
-          assessmentId: assessmentId
-        };
+        analysisWithUser.userId = user.id;
         
         // Save analysis to Supabase
         try {
@@ -66,7 +73,7 @@ export const useAnalyzeResponses = (
           const formattedData = {
             id: data.analysis.id,
             user_id: user.id,
-            assessment_id: assessmentId,
+            assessment_id: finalAssessmentId,
             result: data.analysis,
             overview: data.analysis.overview || '',
             traits: Array.isArray(data.analysis.traits) ? data.analysis.traits : [],
@@ -126,8 +133,8 @@ export const useAnalyzeResponses = (
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
-        const assessmentId = saveAssessmentToStorage(responses);
-        return module.generateMockAnalysis(assessmentId);
+        const generatedAssessmentId = assessmentId || `assessment-${Date.now()}`;
+        return module.generateMockAnalysis(generatedAssessmentId);
       });
       
       const savedAnalysis = saveToHistory(fallbackAnalysis);
