@@ -59,9 +59,9 @@ const TraitsPage: React.FC = () => {
         className="space-y-8"
       >
         <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
-            <CardTitle>All Personality Traits</CardTitle>
-            <CardDescription>Detailed view of all your personality traits from the assessment</CardDescription>
+          <CardHeader className="bg-gradient-to-r from-primary/20 to-secondary/20 pb-4">
+            <CardTitle className="text-foreground">All Personality Traits</CardTitle>
+            <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <TraitsDetail traits={analysis.traits} />

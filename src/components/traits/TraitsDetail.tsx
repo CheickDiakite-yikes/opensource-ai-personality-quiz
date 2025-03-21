@@ -63,7 +63,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                           <h4 className="font-medium text-sm">Strengths</h4>
                           <div className="flex flex-wrap gap-2">
                             {trait.strengths.map((strength, i) => (
-                              <Badge key={i} variant="outline" className="bg-green-50">
+                              <Badge key={i} variant="outline" className="bg-green-50 text-green-900 border-green-200">
                                 {strength}
                               </Badge>
                             ))}
@@ -74,7 +74,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                           <h4 className="font-medium text-sm">Challenges</h4>
                           <div className="flex flex-wrap gap-2">
                             {trait.challenges.map((challenge, i) => (
-                              <Badge key={i} variant="outline" className="bg-amber-50">
+                              <Badge key={i} variant="outline" className="bg-amber-50 text-amber-900 border-amber-200">
                                 {challenge}
                               </Badge>
                             ))}
