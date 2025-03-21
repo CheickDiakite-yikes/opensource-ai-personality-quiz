@@ -2,7 +2,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Heart } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import NotificationCenter from "../../notifications/NotificationCenter";
 
@@ -30,6 +30,7 @@ const DesktopHeader: React.FC = () => {
               <span className="sr-only">Go back</span>
             </Button>
           )}
+          <Heart className="h-5 w-5 text-red-500" />
         </div>
         <div>
           <NotificationCenter />

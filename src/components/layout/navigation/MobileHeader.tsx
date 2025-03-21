@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Heart } from "lucide-react";
 import NotificationCenter from "../../notifications/NotificationCenter";
 import MobileMenu from "./MobileMenu";
 
@@ -37,11 +37,7 @@ const MobileHeader: React.FC = () => {
             className="flex items-center"
           >
             <Link to="/" className="flex items-center hover:text-primary transition-colors">
-              <img 
-                src="/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png" 
-                alt="Who Am I Logo" 
-                className="h-8 w-auto mr-2" 
-              />
+              <Heart className="h-8 w-8 text-red-500 mr-2" />
               <span className="text-xl font-bold">Who Am I?</span>
             </Link>
           </motion.div>

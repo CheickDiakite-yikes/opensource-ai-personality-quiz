@@ -29,7 +29,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0].trait}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/9c15c55d-2498-4c6b-868b-51fecd3b2f3c.png`;
     
     switch (platform) {
       case 'twitter':

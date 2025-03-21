@@ -11,11 +11,7 @@ const Footer: React.FC = () => {
       <div className="container max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0 flex items-center">
-            <img 
-              src="/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png" 
-              alt="Who Am I Logo" 
-              className="h-10 w-auto mr-3" 
-            />
+            <Heart className="h-10 w-10 text-red-500 mr-3" />
             <div>
               <div className="text-lg font-bold text-gradient">Who Am I?</div>
               <p className="text-sm text-muted-foreground mt-1">
