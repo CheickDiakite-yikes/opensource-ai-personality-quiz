@@ -28,9 +28,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
-  // Check if we have multiple analyses to show in history
-  const hasMultipleAnalyses = analysisHistory.length > 1;
-  
   const handleCopyLink = () => {
     const url = `${window.location.origin}/report/${analysis.id}`;
     navigator.clipboard.writeText(url);
@@ -68,21 +65,24 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             <Copy className="h-4 w-4 mr-2" /> Copy Link
           </Button>
           
-          {/* Past Reports Button - Always visible as long as there are multiple analyses */}
-          {hasMultipleAnalyses && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={isMobile ? "sm" : "default"}
-                >
-                  <History className="h-4 w-4 mr-2" /> Past Reports
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {analysisHistory.map((item) => {
+          {/* Past Reports Button - ALWAYS visible right next to Share button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+                disabled={analysisHistory.length <= 1}
+              >
+                <History className="h-4 w-4 mr-2" /> Past Reports
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {analysisHistory.length <= 1 ? (
+                <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+              ) : (
+                analysisHistory.map((item) => {
                   // Skip the current analysis
                   if (item.id === analysis.id) return null;
                   
@@ -101,10 +101,10 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                       {dateLabel}
                     </DropdownMenuItem>
                   );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                })
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button size={isMobile ? "sm" : "default"}>
             <Share className="h-4 w-4 mr-2" /> Share

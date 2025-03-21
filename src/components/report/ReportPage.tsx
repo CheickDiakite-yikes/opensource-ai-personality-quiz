@@ -71,6 +71,11 @@ const ReportPage: React.FC = () => {
     }
   }, [analysis, stableAnalysis]);
   
+  // Add additional logging for debugging
+  useEffect(() => {
+    console.log("ReportPage: Analysis history updated:", analysisHistory?.length || 0);
+  }, [analysisHistory]);
+  
   // Show loading state only on initial load
   if (isLoading && !stableAnalysis) {
     return (
@@ -102,7 +107,7 @@ const ReportPage: React.FC = () => {
     <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       <ReportHeader 
         analysis={displayAnalysis} 
-        analysisHistory={analysisHistory}
+        analysisHistory={analysisHistory || []}
         onAnalysisChange={handleAnalysisChange}
       />
       
