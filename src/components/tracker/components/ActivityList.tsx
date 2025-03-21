@@ -28,11 +28,11 @@ const ActivityList: React.FC<ActivityListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {/* Show loading skeleton if generating activity */}
       {isGeneratingActivity && (
         <div className="col-span-1">
-          <Skeleton className="h-[200px] w-full rounded-md" />
+          <Skeleton className="h-[200px] w-full rounded-xl bg-black/40 border border-white/10" />
         </div>
       )}
 

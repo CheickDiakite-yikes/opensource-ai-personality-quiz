@@ -144,8 +144,8 @@ export interface Activity {
   category: ActivityCategory;
   completed: boolean;
   completedAt?: Date;
+  createdAt: Date;
   steps?: string[] | Json[];  // Updated to accept both string[] and Json[]
   benefits?: string;
-  createdAt: Date;
   user_id?: string;
 }

@@ -65,22 +65,19 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className={`overflow-hidden ${activity.completed ? 'bg-muted/50' : ''}`}>
+      <Card className={`overflow-hidden ${activity.completed ? 'bg-muted/30' : 'bg-black/80'} backdrop-blur-sm border-white/10`}>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                {React.createElement(IconComponent, { className: "h-4 w-4 text-primary" })}
-                <Badge variant="outline" className="font-normal">
-                  {activity.category}
-                </Badge>
-                <Badge className="bg-amber-500/80 hover:bg-amber-500">
-                  {activity.points} pts
-                </Badge>
-              </div>
-              <CardTitle className={`mt-2 text-lg ${activity.completed ? 'line-through text-muted-foreground' : ''}`}>
-                {activity.title}
-              </CardTitle>
+            <div className="flex items-center gap-2">
+              {React.createElement(IconComponent, { 
+                className: "h-5 w-5 text-amber-500" 
+              })}
+              <span className="text-sm font-medium text-amber-500/90">
+                {activity.category}
+              </span>
+              <Badge className="bg-amber-500/80 hover:bg-amber-500 ml-2 text-black font-semibold">
+                {activity.points} pts
+              </Badge>
             </div>
             <Button
               variant="ghost"
@@ -95,19 +92,23 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
               )}
             </Button>
           </div>
+          
+          <CardTitle className={`mt-3 text-xl font-serif ${activity.completed ? 'line-through text-muted-foreground' : 'text-white'}`}>
+            {activity.title}
+          </CardTitle>
         </CardHeader>
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CardContent className="pb-2">
-            <CardDescription className={activity.completed ? 'text-muted-foreground/70' : ''}>
+          <CardContent className="pt-0 pb-2">
+            <p className={`text-sm ${activity.completed ? 'text-muted-foreground/70' : 'text-gray-300'}`}>
               {activity.description}
-            </CardDescription>
+            </p>
           </CardContent>
           
           {shouldShowCollapseButton() && (
             <>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-0">
+                <Button variant="ghost" size="sm" className="w-full flex items-center justify-center py-0 text-muted-foreground">
                   {isOpen ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
@@ -120,10 +121,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
                 <CardContent className="pt-0">
                   {Array.isArray(activity.steps) && activity.steps.length > 0 && (
                     <div className="mt-2">
-                      <h4 className="text-sm font-medium mb-2">Steps:</h4>
-                      <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
+                      <h4 className="text-sm font-medium mb-2 text-amber-500/90">Steps:</h4>
+                      <ol className="list-decimal list-inside text-sm text-gray-300 space-y-1">
                         {activity.steps.map((step, index) => (
-                          <li key={index}>{step}</li>
+                          <li key={index}>{String(step)}</li>
                         ))}
                       </ol>
                     </div>
@@ -131,8 +132,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
                   
                   {activity.benefits && (
                     <div className="mt-3">
-                      <h4 className="text-sm font-medium mb-1">Benefits:</h4>
-                      <p className="text-sm text-muted-foreground">{activity.benefits}</p>
+                      <h4 className="text-sm font-medium mb-1 text-amber-500/90">Benefits:</h4>
+                      <p className="text-sm text-gray-300">{activity.benefits}</p>
                     </div>
                   )}
                 </CardContent>
