@@ -111,14 +111,9 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                 <LabelList 
                   dataKey="originalScore" 
                   position="right" 
-                  // Use the Recharts approach for formatters with LabelList
-                  // This is what fixes the TypeScript error - remove the "formatter" prop
-                  // and use the "formatter" property on the "labelProps" prop instead
-                  labelProps={{
-                    fill: '#f5f5f5', 
-                    fontSize: isMobile ? 10 : 12, 
-                    fontWeight: 'bold',
-                  }}
+                  fill="#f5f5f5"
+                  fontSize={isMobile ? 10 : 12}
+                  fontWeight="bold"
                   formatter={(value: number) => value.toFixed(1)}
                 />
               </Bar>
