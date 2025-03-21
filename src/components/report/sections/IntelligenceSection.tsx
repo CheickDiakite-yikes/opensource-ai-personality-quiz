@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Brain, BarChart, AlertCircle } from "lucide-react";
 import { IntelligenceType } from "@/utils/types";
 import IntelligenceDomainChart from "../IntelligenceDomainChart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface IntelligenceSectionProps {
   intelligence: IntelligenceType;
@@ -24,6 +25,8 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
   intelligenceScore,
   emotionalIntelligenceScore
 }) => {
+  const isMobile = useIsMobile();
+  
   // Ensure intelligence data exists
   const hasIntelligenceData = intelligence && intelligence.type && intelligence.domains && intelligence.domains.length > 0;
   const hasScores = typeof intelligenceScore === 'number' && typeof emotionalIntelligenceScore === 'number';
@@ -71,7 +74,7 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
           
           {hasIntelligenceData ? (
             <div className="mt-6">
-              <h3 className="font-medium text-lg mb-2 text-foreground">Type: {intelligence.type}</h3>
+              <h3 className="font-medium text-lg mb-2 text-foreground">{intelligence.type}</h3>
               <p className="text-foreground/80 mb-4">{intelligence.description}</p>
               
               <h4 className="font-medium text-md mb-3 flex items-center text-foreground">
@@ -79,7 +82,9 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                 Intelligence Domains
               </h4>
               
-              <IntelligenceDomainChart domains={intelligence.domains} />
+              <div className={isMobile ? "overflow-x-auto pb-6" : ""}>
+                <IntelligenceDomainChart domains={intelligence.domains} />
+              </div>
             </div>
           ) : (
             <div className="p-4 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-2">

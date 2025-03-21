@@ -3,13 +3,40 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PersonalityTrait } from "@/utils/types";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Card } from "@/components/ui/card";
 
 interface TopTraitsTableProps {
   traits: PersonalityTrait[];
 }
 
 const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
-  // Creating a 5x2 table (5 rows, 2 columns) from the traits array
+  const isMobile = useIsMobile();
+  
+  if (isMobile) {
+    // Mobile layout: Stacked view instead of two columns
+    return (
+      <div className="space-y-3">
+        {traits.map((trait, index) => (
+          <Card key={index} className="p-3 hover:shadow-md transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                  {index + 1}
+                </div>
+                <div className="font-semibold">{trait.trait}</div>
+              </div>
+              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
+                {trait.score.toFixed(1)}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+  
+  // Desktop layout: 5x2 table
   const leftColumn = traits.slice(0, 5);
   const rightColumn = traits.slice(5, 10);
   

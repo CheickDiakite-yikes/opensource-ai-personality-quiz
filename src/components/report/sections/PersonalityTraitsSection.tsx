@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Zap } from "lucide-react";
 import { PersonalityTrait } from "@/utils/types";
 import PersonalityTraitCard from "../PersonalityTraitCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PersonalityTraitsSectionProps {
   traits: PersonalityTrait[];
@@ -20,6 +21,11 @@ interface PersonalityTraitsSectionProps {
 
 const PersonalityTraitsSection: React.FC<PersonalityTraitsSectionProps> = ({ traits }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  // Show fewer traits on mobile to save space
+  const displayTraits = isMobile ? traits.slice(0, 3) : traits.slice(0, 5);
+  const remainingCount = traits.length - displayTraits.length;
   
   return (
     <motion.div variants={{
@@ -42,14 +48,14 @@ const PersonalityTraitsSection: React.FC<PersonalityTraitsSectionProps> = ({ tra
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {traits.slice(0, 5).map((trait, index) => (
+            {displayTraits.map((trait, index) => (
               <PersonalityTraitCard key={index} trait={trait} index={index} />
             ))}
             
-            {traits.length > 5 && (
+            {remainingCount > 0 && (
               <Button 
                 variant="outline" 
-                className="w-full mt-4"
+                className="w-full mt-4 py-3 text-base sticky bottom-2"
                 onClick={() => navigate("/traits")}
               >
                 View All {traits.length} Traits
