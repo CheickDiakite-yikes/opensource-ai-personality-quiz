@@ -14,51 +14,38 @@ import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
-import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
-  const { getAnalysisHistory, isLoading, refreshAnalysis } = useAIAnalysis();
+  const { getAnalysisHistory, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
-  const [loadingLatest, setLoadingLatest] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   
   // Fetch the latest analysis when the component mounts
   useEffect(() => {
     const fetchLatestAnalysis = async () => {
-      setLoadingLatest(true);
-      console.log("ProfilePage: Refreshing analysis data to get latest");
+      // Get the analysis history (should be sorted with newest first)
+      const history = getAnalysisHistory();
       
-      try {
-        // Refresh analyses to ensure we have the latest data
-        await refreshAnalysis();
-        
-        // Get the analysis history (should be sorted with newest first)
-        const history = getAnalysisHistory();
-        console.log("ProfilePage: Got analysis history with", history?.length || 0, "items");
-        
-        if (history && history.length > 0) {
-          // Set the most recent analysis (first item in the array)
-          const latestAnalysis = history[0];
-          console.log("ProfilePage: Setting latest analysis:", latestAnalysis.id);
-          setStableAnalysis(latestAnalysis);
-        } else {
-          console.log("ProfilePage: No analysis history found");
-          setStableAnalysis(null);
-        }
-      } catch (error) {
-        console.error("Error fetching latest analysis:", error);
-        toast.error("Failed to load your latest analysis data");
-      } finally {
-        setLoadingLatest(false);
+      if (history && history.length > 0) {
+        // Set the most recent analysis (first item in the array)
+        setStableAnalysis(history[0]);
+      } else {
+        setStableAnalysis(null);
       }
+      
+      setProfileLoading(false);
     };
     
-    fetchLatestAnalysis();
-  }, [refreshAnalysis, getAnalysisHistory]);
+    // Only fetch data when loading is complete
+    if (!isLoading) {
+      fetchLatestAnalysis();
+    }
+  }, [getAnalysisHistory, isLoading]);
   
   // Render loading state during initial load
-  if (isLoading || loadingLatest) {
+  if (isLoading || profileLoading) {
     return <LoadingProfile />;
   }
   
@@ -68,23 +55,23 @@ const ProfilePage: React.FC = () => {
   }
   
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0.95 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.05 // Reduce stagger time for more stable appearance
+        duration: 0.15,
+        ease: "linear"
       }
     }
   };
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 }, // Reduced y offset for subtle animation
+    hidden: { opacity: 0.95 },
     visible: {
       opacity: 1,
-      y: 0,
       transition: {
-        duration: 0.3, // Shorter duration
-        ease: "easeOut" // Simpler easing
+        duration: 0.15,
+        ease: "linear"
       }
     }
   };
@@ -100,17 +87,12 @@ const ProfilePage: React.FC = () => {
       </Button>
       
       {user && (
-        <motion.div
-          initial={{ opacity: 0.9 }} // Start almost fully visible
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="mb-6 p-4 bg-secondary/10 rounded-lg"
-        >
+        <div className="mb-6 p-4 bg-secondary/10 rounded-lg">
           <p className="text-sm text-muted-foreground">
             {user ? "Your analysis is saved to your account and will be available whenever you log in." : 
             "Sign in to save your personality analysis results to your account."}
           </p>
-        </motion.div>
+        </div>
       )}
       
       <motion.div

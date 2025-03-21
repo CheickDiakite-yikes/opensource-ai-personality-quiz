@@ -18,37 +18,21 @@ const ReportPage: React.FC = () => {
     analysis, 
     isLoading, 
     getAnalysisHistory, 
-    setCurrentAnalysis, 
-    refreshAnalysis 
+    setCurrentAnalysis 
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
     const history = getAnalysisHistory();
-    console.log("ReportPage: Available analyses:", history?.length || 0);
     return history;
   }, [getAnalysisHistory]);
   
-  // Refresh analyses only once when the component mounts
-  useEffect(() => {
-    if (!initialLoadComplete) {
-      console.log("ReportPage: Initial refresh of analysis data");
-      refreshAnalysis();
-      setInitialLoadComplete(true);
-    }
-  }, [refreshAnalysis, initialLoadComplete]);
-  
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
-    // Only run this effect after initial loading is complete
-    if (!isLoading && initialLoadComplete) {
-      console.log("ReportPage: ID param or loading state changed", id);
-      
+    if (!isLoading) {
       if (id) {
-        console.log("ReportPage: Setting analysis from URL param:", id);
         const success = setCurrentAnalysis(id);
         
         if (!success && !analysis && !stableAnalysis) {
@@ -61,24 +45,17 @@ const ReportPage: React.FC = () => {
         }
       } else if (analysisHistory && analysisHistory.length > 0) {
         // If no ID is provided, redirect to the latest analysis
-        console.log("ReportPage: No ID provided, redirecting to latest analysis");
         navigate(`/report/${analysisHistory[0].id}`);
       }
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, initialLoadComplete, analysisHistory]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
-      console.log("ReportPage: Updating stable analysis", analysis.id);
       setStableAnalysis(analysis);
     }
   }, [analysis, stableAnalysis]);
-  
-  // Add additional logging for debugging
-  useEffect(() => {
-    console.log("ReportPage: Analysis history updated:", analysisHistory?.length || 0);
-  }, [analysisHistory]);
   
   // Show loading state only on initial load
   if (isLoading && !stableAnalysis) {
@@ -103,7 +80,6 @@ const ReportPage: React.FC = () => {
   }
   
   const handleAnalysisChange = (analysisId: string) => {
-    console.log("ReportPage: User selected analysis:", analysisId);
     navigate(`/report/${analysisId}`);
   };
   

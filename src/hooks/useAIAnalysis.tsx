@@ -62,18 +62,26 @@ export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const { user } = useAuth();
 
-  // Function to refresh analysis data from database
+  // Function to refresh analysis data from database with debounce
   const refreshAnalysis = useCallback(async () => {
+    // Only refresh if it's been at least 5 seconds since the last refresh
+    const now = new Date();
+    const timeSinceLastRefresh = now.getTime() - lastRefresh.getTime();
+    
+    if (timeSinceLastRefresh < 5000 && analysisHistory.length > 0) {
+      // Skip refresh if it's been less than 5 seconds and we have data
+      return;
+    }
+    
     setIsLoading(true);
-    console.log("useAIAnalysis: Refreshing analysis data");
+    setLastRefresh(now);
     
     try {
       if (user) {
-        console.log("useAIAnalysis: Fetching analysis from Supabase for user:", user.id);
-        
-        // Get the most recent analysis from Supabase
+        // Get analyses from Supabase
         const { data, error } = await supabase
           .from('analyses')
           .select('*')
@@ -83,24 +91,18 @@ export const useAIAnalysis = () => {
           
         if (error) {
           console.error("Error fetching analysis from Supabase:", error);
-          toast.error("Failed to load your analysis data");
           
           // Fallback to localStorage
           const history = loadAnalysisHistory();
-          console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
           const sortedHistory = sortAnalysesByDate(history);
           setAnalysisHistory(sortedHistory);
           
           if (sortedHistory.length > 0 && !analysis) {
-            console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
             setAnalysis(sortedHistory[0]);
           }
         } else if (data && data.length > 0) {
-          console.log("useAIAnalysis: Fetched analyses from Supabase:", data.length);
-          
-          // Transform the data into our PersonalityAnalysis type with proper type safety
+          // Transform the data into our PersonalityAnalysis type
           const analyses: PersonalityAnalysis[] = data.map(item => convertToPersonalityAnalysis(item));
-          console.log("useAIAnalysis: Converted analyses:", analyses.map(a => a.id));
           
           // Ensure analyses are sorted by date (newest first)
           const sortedAnalyses = sortAnalysesByDate(analyses);
@@ -110,7 +112,6 @@ export const useAIAnalysis = () => {
           
           // Set the most recent as current if no current selection
           if (!analysis) {
-            console.log("useAIAnalysis: Setting first analysis:", sortedAnalyses[0].id);
             setAnalysis(sortedAnalyses[0]);
           }
           
@@ -119,29 +120,22 @@ export const useAIAnalysis = () => {
             saveAnalysisToHistory(analysis, analysisHistory);
           });
         } else {
-          console.log("useAIAnalysis: No analyses found in Supabase, using localStorage");
-          
           // Fallback to localStorage
           const history = loadAnalysisHistory();
-          console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
           const sortedHistory = sortAnalysesByDate(history);
           setAnalysisHistory(sortedHistory);
           
           if (sortedHistory.length > 0 && !analysis) {
-            console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
             setAnalysis(sortedHistory[0]);
           }
         }
       } else {
         // No user, just use localStorage
-        console.log("useAIAnalysis: No user, using localStorage");
         const history = loadAnalysisHistory();
-        console.log("useAIAnalysis: Loaded history from localStorage:", history.length);
         const sortedHistory = sortAnalysesByDate(history);
         setAnalysisHistory(sortedHistory);
         
         if (sortedHistory.length > 0 && !analysis) {
-          console.log("useAIAnalysis: Setting first analysis from history:", sortedHistory[0].id);
           setAnalysis(sortedHistory[0]);
         }
       }
@@ -150,27 +144,24 @@ export const useAIAnalysis = () => {
       
       // Fallback to localStorage
       const history = loadAnalysisHistory();
-      console.log("useAIAnalysis: Loaded history from localStorage due to error:", history.length);
       const sortedHistory = sortAnalysesByDate(history);
       setAnalysisHistory(sortedHistory);
       
       if (sortedHistory.length > 0 && !analysis) {
-        console.log("useAIAnalysis: Setting first analysis from history after error:", sortedHistory[0].id);
         setAnalysis(sortedHistory[0]);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [user, analysis, analysisHistory]);
+  }, [user, analysis, analysisHistory, lastRefresh]);
 
-  // Load analysis from Supabase if user is logged in, otherwise from localStorage
+  // Load analysis from Supabase or localStorage once on mount
   useEffect(() => {
     refreshAnalysis();
   }, [refreshAnalysis]);
 
   // Function to save analysis to history
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
-    console.log("useAIAnalysis: Saving analysis to history:", newAnalysis.id);
     const savedAnalysis = saveAnalysisToHistory(newAnalysis, analysisHistory);
     // Update the history state - always keep sorted by date
     setAnalysisHistory(prev => sortAnalysesByDate([savedAnalysis, ...prev.filter(a => a.id !== savedAnalysis.id)]));
@@ -181,23 +172,18 @@ export const useAIAnalysis = () => {
   const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, setAnalysis);
 
   // Utility functions for history management
-  const getAnalysisHistory = () => {
+  const getAnalysisHistory = useCallback(() => {
     return analysisHistory;
-  };
+  }, [analysisHistory]);
 
-  const setCurrentAnalysis = (analysisId: string) => {
-    console.log("useAIAnalysis: Setting current analysis to:", analysisId);
-    console.log("useAIAnalysis: Available analyses:", analysisHistory.map(a => a.id));
-    
+  const setCurrentAnalysis = useCallback((analysisId: string) => {
     const selected = analysisHistory.find(item => item.id === analysisId);
     if (selected) {
-      console.log("useAIAnalysis: Found matching analysis, setting as current");
       setAnalysis(selected);
       return true;
     }
-    console.log("useAIAnalysis: No matching analysis found with ID:", analysisId);
     return false;
-  };
+  }, [analysisHistory]);
 
   return {
     isAnalyzing,
