@@ -4,12 +4,14 @@ import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { activitySuggestionsByCategory } from "../utils/activitySuggestions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useActivityGenerator = (
   setActivities: React.Dispatch<React.SetStateAction<Activity[]>>,
   userAnalysis: PersonalityAnalysis | null = null
 ) => {
   const [isGeneratingActivity, setIsGeneratingActivity] = useState(false);
+  const { user } = useAuth();
   
   // Generate a new activity based on user's profile
   const generateActivity = async (category?: ActivityCategory) => {
@@ -20,8 +22,6 @@ export const useActivityGenerator = (
       
       if (!userAnalysis) {
         toast.warning("No personality analysis available. Creating a general activity.");
-        generateFallbackActivity(category, setActivities);
-        return;
       }
       
       console.log("Generating activity with AI using o3-mini model...");
@@ -46,11 +46,67 @@ export const useActivityGenerator = (
       
       console.log("Received AI-generated activity from o3-mini model:", data.activity);
       
-      // Add the new activity to the list
-      setActivities(prev => [data.activity, ...prev]);
+      // Create the new activity
+      const newActivity = data.activity;
+      
+      // If user is logged in, save to Supabase first
+      if (user) {
+        console.log("Saving new activity to Supabase for user:", user.id);
+        
+        try {
+          const { data: savedData, error: saveError } = await supabase
+            .from('activities')
+            .insert({
+              title: newActivity.title,
+              description: newActivity.description,
+              points: newActivity.points,
+              category: newActivity.category,
+              completed: false,
+              user_id: user.id,
+              steps: newActivity.steps || [],
+              benefits: newActivity.benefits || ""
+            })
+            .select('*')
+            .single();
+          
+          if (saveError) {
+            console.error("Error saving activity to Supabase:", saveError);
+            toast.error("Failed to save your new activity");
+            
+            // Add to local state even if Supabase save fails
+            setActivities(prev => [newActivity, ...prev]);
+          } else {
+            console.log("Activity saved to Supabase:", savedData);
+            
+            // Transform the saved data to Activity type and add to state
+            const savedActivity: Activity = {
+              id: savedData.id,
+              title: savedData.title,
+              description: savedData.description || "",
+              points: savedData.points,
+              category: savedData.category as ActivityCategory,
+              completed: savedData.completed,
+              completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
+              steps: savedData.steps,
+              benefits: savedData.benefits
+            };
+            
+            setActivities(prev => [savedActivity, ...prev]);
+          }
+        } catch (saveError) {
+          console.error("Unexpected error saving activity:", saveError);
+          toast.error("Failed to save your new activity");
+          
+          // Add to local state even if Supabase save fails
+          setActivities(prev => [newActivity, ...prev]);
+        }
+      } else {
+        // No user logged in, just add to local state
+        setActivities(prev => [newActivity, ...prev]);
+      }
       
       toast.success("New activity created!", {
-        description: `${data.activity.title} (${data.activity.points} points)`,
+        description: `${newActivity.title} (${newActivity.points} points)`,
         duration: 5000
       });
       
@@ -72,7 +128,7 @@ export const useActivityGenerator = (
 };
 
 // Fallback function to generate an activity locally if the API fails
-function generateFallbackActivity(
+async function generateFallbackActivity(
   userCategory: ActivityCategory | undefined, 
   setActivities: React.Dispatch<React.SetStateAction<Activity[]>>
 ) {
@@ -95,8 +151,50 @@ function generateFallbackActivity(
     completed: false
   };
   
-  // Add the new activity to the list
-  setActivities(prev => [newActivity, ...prev]);
+  // If user is logged in, save to Supabase first
+  const { user } = supabase.auth.getSession();
+  
+  if (user) {
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .insert({
+          title: newActivity.title,
+          description: newActivity.description,
+          points: newActivity.points,
+          category: newActivity.category,
+          completed: false,
+          user_id: user.id
+        })
+        .select('*')
+        .single();
+      
+      if (!error && data) {
+        // Transform the saved data to Activity type
+        const savedActivity: Activity = {
+          id: data.id,
+          title: data.title,
+          description: data.description || "",
+          points: data.points,
+          category: data.category as ActivityCategory,
+          completed: data.completed,
+          completedAt: data.completed_at ? new Date(data.completed_at) : undefined
+        };
+        
+        // Add the new activity to the list
+        setActivities(prev => [savedActivity, ...prev]);
+      } else {
+        // Add the local activity as fallback
+        setActivities(prev => [newActivity, ...prev]);
+      }
+    } catch (error) {
+      // Add the local activity as fallback
+      setActivities(prev => [newActivity, ...prev]);
+    }
+  } else {
+    // No user logged in, just add to local state
+    setActivities(prev => [newActivity, ...prev]);
+  }
   
   toast.success("New activity created!", {
     description: `${randomActivity} (${randomPoints} points)`,
