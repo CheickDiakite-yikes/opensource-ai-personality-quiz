@@ -9,13 +9,14 @@ interface HeroSectionProps {
   isAuthenticated: boolean;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, isAuthenticated }) => {
+// Using React.memo to prevent unnecessary re-renders
+const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionProps) => {
   return (
     <section className="relative py-24 md:py-32 container mx-auto px-4 text-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
         className="max-w-3xl mx-auto"
       >
         <div className="inline-block mb-4">
@@ -46,7 +47,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, isAuthenticated
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => window.scrollTo({ top: document.getElementById("features")?.offsetTop || 0, behavior: "smooth" })}
+            onClick={() => {
+              const featuresElement = document.getElementById("features");
+              if (featuresElement) {
+                featuresElement.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
           >
             Learn More
           </Button>
@@ -56,6 +62,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, isAuthenticated
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"></div>
     </section>
   );
-};
+});
+
+HeroSection.displayName = "HeroSection";
 
 export default HeroSection;

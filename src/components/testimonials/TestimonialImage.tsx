@@ -8,12 +8,13 @@ interface TestimonialImageProps {
   active: number;
 }
 
-const TestimonialImage: React.FC<TestimonialImageProps> = ({ testimonials, active }) => {
+// Using React.memo to prevent unnecessary re-renders
+const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageProps) => {
   const isActive = (index: number) => index === active;
 
-  const randomRotateY = () => {
+  const randomRotateY = React.useCallback(() => {
     return Math.floor(Math.random() * 21) - 10;
-  };
+  }, []);
 
   return (
     <div>
@@ -45,10 +46,10 @@ const TestimonialImage: React.FC<TestimonialImageProps> = ({ testimonials, activ
                 rotate: randomRotateY(),
               }}
               transition={{
-                duration: 0.4,
+                duration: 0.3, // Slightly faster for better UX
                 ease: "easeInOut",
               }}
-              className="absolute inset-0 origin-bottom"
+              className="absolute inset-0 origin-bottom will-change-transform"
             >
               <div
                 style={{ 
@@ -62,6 +63,8 @@ const TestimonialImage: React.FC<TestimonialImageProps> = ({ testimonials, activ
       </div>
     </div>
   );
-};
+});
+
+TestimonialImage.displayName = "TestimonialImage";
 
 export default TestimonialImage;

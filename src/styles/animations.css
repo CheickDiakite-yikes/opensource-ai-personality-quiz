@@ -15,6 +15,7 @@
     z-index: -1;
     @apply border border-white/30 dark:border-white/10 rounded-lg;
     animation: border-pulse 3s ease-in-out infinite;
+    will-change: opacity;
   }
 
   @keyframes border-pulse {
@@ -28,10 +29,12 @@
   
   .animate-rotate-glow {
     animation: rotate-glow 15s linear infinite;
+    will-change: transform;
   }
   
   .animate-pulse-subtle {
     animation: pulse-subtle 6s ease-in-out infinite;
+    will-change: transform, opacity;
   }
   
   @keyframes rotate-glow {
