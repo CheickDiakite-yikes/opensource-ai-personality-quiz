@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Activity, ActivityCategory } from "@/utils/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +32,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
       return `Completed ${activity.completedAt.toLocaleDateString()}`;
     }
     
+    // If the activity has a createdAt date, use that
+    if (activity.createdAt) {
+      return `Added ${activity.createdAt.toLocaleDateString()}`;
+    }
+    
     // Try to extract timestamp from ID for Supabase-generated IDs
     if (activity.id.includes('-')) {
       try {
@@ -43,14 +47,6 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
       } catch (error) {
         console.error("Error parsing date from ID:", error);
       }
-    }
-    
-    // For created_at timestamps from Supabase
-    if (activity.createdAt) {
-      const createdDate = typeof activity.createdAt === 'string' 
-        ? new Date(activity.createdAt)
-        : activity.createdAt;
-      return `Added ${createdDate.toLocaleDateString()}`;
     }
     
     // Fallback

@@ -19,7 +19,12 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
   useEffect(() => {
     const fetchActivities = async () => {
       if (!user) {
-        setActivities(sampleActivities);
+        // For non-logged-in users, add the createdAt property to sample activities
+        const activitiesWithCreatedAt = sampleActivities.map(activity => ({
+          ...activity,
+          createdAt: new Date()
+        }));
+        setActivities(activitiesWithCreatedAt);
         setIsLoading(false);
         return;
       }
@@ -36,7 +41,12 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         if (error) {
           console.error("Error fetching activities:", error);
           toast.error("Failed to load your activities");
-          setActivities(sampleActivities);
+          // Add createdAt to sample activities
+          const activitiesWithCreatedAt = sampleActivities.map(activity => ({
+            ...activity,
+            createdAt: new Date()
+          }));
+          setActivities(activitiesWithCreatedAt);
           return;
         }
         
@@ -72,6 +82,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             category: item.category as ActivityCategory,
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date(),
             steps: stepsArray,
             benefits: item.benefits || ""
           };
@@ -82,7 +93,12 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       } catch (error) {
         console.error("Unexpected error fetching activities:", error);
         toast.error("Failed to load your activities");
-        setActivities(sampleActivities);
+        // Add createdAt to sample activities
+        const activitiesWithCreatedAt = sampleActivities.map(activity => ({
+          ...activity,
+          createdAt: new Date()
+        }));
+        setActivities(activitiesWithCreatedAt);
       } finally {
         setIsLoading(false);
       }
@@ -120,7 +136,11 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       if (error) {
         console.error("Error creating initial activities:", error);
         toast.error("Failed to create initial activities");
-        return sampleActivities;
+        // Add createdAt to sample activities
+        return sampleActivities.map(activity => ({
+          ...activity,
+          createdAt: new Date()
+        }));
       }
       
       console.log("Created initial activities:", data);
@@ -146,13 +166,18 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
           category: item.category as ActivityCategory,
           completed: item.completed,
           completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+          createdAt: item.created_at ? new Date(item.created_at) : new Date(),
           steps: stepsArray,
           benefits: item.benefits || ""
         };
       });
     } catch (error) {
       console.error("Error creating initial activities:", error);
-      return sampleActivities;
+      // Add createdAt to sample activities
+      return sampleActivities.map(activity => ({
+        ...activity,
+        createdAt: new Date()
+      }));
     }
   };
 
@@ -201,3 +226,4 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
     isGeneratingActivity
   };
 };
+

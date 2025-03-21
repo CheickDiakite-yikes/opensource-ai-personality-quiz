@@ -46,6 +46,8 @@ export const useActivityGenerator = (
         newActivity = generateLocalActivity(category);
       }
       
+      const now = new Date();
+      
       // If user is logged in, save to Supabase first
       if (user) {
         try {
@@ -72,6 +74,7 @@ export const useActivityGenerator = (
             
             // Add a locally generated ID to the activity
             newActivity.id = `local-${Date.now()}`;
+            newActivity.createdAt = now;
             setActivities(prev => [newActivity, ...prev]);
           } else {
             console.log("Activity saved to Supabase:", savedData);
@@ -85,7 +88,7 @@ export const useActivityGenerator = (
               category: savedData.category as ActivityCategory,
               completed: savedData.completed,
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
-              createdAt: savedData.created_at ? new Date(savedData.created_at) : new Date(),
+              createdAt: savedData.created_at ? new Date(savedData.created_at) : now,
               steps: Array.isArray(savedData.steps) 
                 ? savedData.steps.map(step => typeof step === 'string' ? step : String(step))
                 : [],
@@ -100,11 +103,13 @@ export const useActivityGenerator = (
           
           // Add to local state even if Supabase save fails
           newActivity.id = `local-${Date.now()}`;
+          newActivity.createdAt = now;
           setActivities(prev => [newActivity, ...prev]);
         }
       } else {
         // No user logged in, just add to local state
         newActivity.id = `local-${Date.now()}`;
+        newActivity.createdAt = now;
         setActivities(prev => [newActivity, ...prev]);
       }
       
@@ -118,6 +123,7 @@ export const useActivityGenerator = (
       // Fallback to local activity generation
       const fallbackActivity = generateLocalActivity(category);
       fallbackActivity.id = `local-${Date.now()}`;
+      fallbackActivity.createdAt = new Date();
       setActivities(prev => [fallbackActivity, ...prev]);
       
       toast.success("New activity created!", {
@@ -145,7 +151,6 @@ export const useActivityGenerator = (
       points,
       category: selectedCategory,
       completed: false,
-      createdAt: new Date(),
       steps: [],
       benefits: `Improve your ${selectedCategory.toLowerCase()} abilities.`
     };
