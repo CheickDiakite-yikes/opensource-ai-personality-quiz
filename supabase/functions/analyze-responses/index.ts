@@ -6,9 +6,59 @@ import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "./typ
 // Get OpenAI API key from environment variables
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+// Enhanced security headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Content-Security-Policy': "default-src 'self'",
+};
+
+// Basic request validation
+const validateResponses = (responses: any[]): boolean => {
+  if (!responses || !Array.isArray(responses) || responses.length === 0) {
+    return false;
+  }
+  
+  // Check each response for required fields
+  return responses.every(r => 
+    r.questionId !== undefined && 
+    r.category !== undefined &&
+    (r.selectedOption !== undefined || r.customResponse !== undefined)
+  );
+};
+
+// Simple rate limiting (can be enhanced further)
+const requestCounts = new Map<string, { count: number, timestamp: number }>();
+const RATE_LIMIT = 5; // analysis is more resource-intensive, so lower limit
+const RATE_WINDOW = 60 * 1000; // 1 minute in milliseconds
+
+const checkRateLimit = (clientIP: string) => {
+  const now = Date.now();
+  const clientData = requestCounts.get(clientIP);
+  
+  if (!clientData) {
+    requestCounts.set(clientIP, { count: 1, timestamp: now });
+    return true;
+  }
+  
+  if (now - clientData.timestamp > RATE_WINDOW) {
+    // Reset if window has passed
+    requestCounts.set(clientIP, { count: 1, timestamp: now });
+    return true;
+  }
+  
+  if (clientData.count >= RATE_LIMIT) {
+    return false; // Rate limit exceeded
+  }
+  
+  // Increment count
+  requestCounts.set(clientIP, { 
+    count: clientData.count + 1, 
+    timestamp: clientData.timestamp 
+  });
+  return true;
 };
 
 serve(async (req) => {
@@ -19,9 +69,21 @@ serve(async (req) => {
 
   try {
     console.log("Received request to analyze-responses");
+    
+    // Get client IP for rate limiting (simplified for demo)
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    
+    // Check rate limit
+    if (!checkRateLimit(clientIP)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     const { responses, assessmentId } = await req.json();
     
-    if (!responses || !Array.isArray(responses) || responses.length === 0) {
+    if (!validateResponses(responses)) {
       throw new Error("Invalid or missing responses data");
     }
 
@@ -36,8 +98,14 @@ serve(async (req) => {
     // Group responses by category for analysis
     const responsesByCategory = categorizeResponses(cleanedResponses);
     
-    // Generate the AI analysis using OpenAI's API
-    const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
+    // Add request timeout to prevent hanging requests
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Request timeout")), 30000); // 30 seconds timeout
+    });
+    
+    // Generate the AI analysis with timeout
+    const analysisPromise = generateAIAnalysis(responsesByCategory, assessmentId);
+    const analysis = await Promise.race([analysisPromise, timeoutPromise]);
     
     console.log("Analysis completed successfully");
     
@@ -47,7 +115,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in analyze-responses function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+      status: error.status || 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -67,7 +135,7 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
-// Generate AI analysis using OpenAI's o3-mini model
+// Generate AI analysis using OpenAI's o3-mini model with enhanced security
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string
@@ -140,46 +208,65 @@ async function generateAIAnalysis(
   try {
     console.log("Sending request to OpenAI API using o3-mini model");
     
-    // Use the correct parameters supported by the o3-mini model
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a psychological assessment expert specialized in personality analysis. Focus on providing insightful, accurate, and helpful analysis.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        response_format: { type: "json_object" },
-        seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (!openAIApiKey) {
+      throw new Error("OpenAI API key not configured");
     }
-
-    const data = await response.json();
-    console.log("Received response from OpenAI gpt-4o-mini model");
+    
+    // Add timeout for fetch call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
     
     try {
-      const analysisJson = JSON.parse(data.choices[0].message.content);
-      // Make sure createdAt is set correctly
-      if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
-        analysisJson.createdAt = new Date().toISOString();
+      // Use the correct parameters supported by the gpt-4o-mini model
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are a psychological assessment expert specialized in personality analysis. Focus on providing insightful, accurate, and helpful analysis.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: "json_object" },
+          seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("OpenAI API error:", errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
       }
-      return analysisJson as PersonalityAnalysis;
+
+      const data = await response.json();
+      console.log("Received response from OpenAI gpt-4o-mini model");
+      
+      try {
+        const analysisJson = JSON.parse(data.choices[0].message.content);
+        // Make sure createdAt is set correctly
+        if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
+          analysisJson.createdAt = new Date().toISOString();
+        }
+        return analysisJson as PersonalityAnalysis;
+      } catch (error) {
+        console.error("Error parsing OpenAI response:", error);
+        throw new Error("Failed to parse AI analysis results");
+      }
     } catch (error) {
-      console.error("Error parsing OpenAI response:", error);
-      throw new Error("Failed to parse AI analysis results");
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error("OpenAI API request timed out");
+      }
+      throw error;
     }
   } catch (error) {
     console.error("Error generating AI analysis:", error);
