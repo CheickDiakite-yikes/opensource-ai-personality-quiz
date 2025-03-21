@@ -18,22 +18,21 @@ import { toast } from "sonner";
 const ProfilePage: React.FC = () => {
   const { analysis, isLoading, error, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   
-  // Always try to refresh data when component mounts if user is logged in
+  // Always refresh data when component mounts if user is logged in
   useEffect(() => {
-    // Check if user is authenticated but data is missing
-    if (user && session && !isLoading && !analysis) {
-      console.log("User is logged in but no analysis found, attempting to refresh");
+    if (user) {
+      console.log("ProfilePage: User is logged in, refreshing data");
       refreshAnalysis();
     }
-  }, [user, session, isLoading, analysis, refreshAnalysis]);
+  }, [user, refreshAnalysis]);
   
   const handleRefresh = async () => {
     toast.info("Refreshing your profile data...");
     await refreshAnalysis();
     
-    if (user && !analysis) {
+    if (!analysis) {
       toast.warning("No analysis found. Please take an assessment first.");
     } else {
       toast.success("Profile data refreshed");
@@ -52,6 +51,20 @@ const ProfilePage: React.FC = () => {
           <p className="text-muted-foreground max-w-md mx-auto">{error}</p>
           <Button onClick={handleRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" /> Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <div className="container max-w-4xl py-8 px-4 flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="text-center space-y-6">
+          <h1 className="text-2xl font-bold">Profile Requires Login</h1>
+          <p className="text-muted-foreground max-w-md mx-auto">Please sign in to view your profile.</p>
+          <Button onClick={() => navigate("/auth")}>
+            Sign In / Register
           </Button>
         </div>
       </div>
@@ -103,18 +116,15 @@ const ProfilePage: React.FC = () => {
         </Button>
       </div>
       
-      {user && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-secondary/10 rounded-lg"
-        >
-          <p className="text-sm text-muted-foreground">
-            {user ? "Your analysis is saved to your account and will be available whenever you log in." : 
-            "Sign in to save your personality analysis results to your account."}
-          </p>
-        </motion.div>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 p-4 bg-secondary/10 rounded-lg"
+      >
+        <p className="text-sm text-muted-foreground">
+          Your analysis is saved to your account and will be available whenever you log in.
+        </p>
+      </motion.div>
       
       <motion.div
         variants={containerVariants}

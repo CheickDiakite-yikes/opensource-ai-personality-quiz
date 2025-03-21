@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const TrackerPage: React.FC = () => {
   const { analysis, refreshAnalysis, isLoading: analysisLoading } = useAIAnalysis();
@@ -20,11 +22,11 @@ const TrackerPage: React.FC = () => {
   
   // Automatically refresh analysis data when component mounts if user is logged in
   useEffect(() => {
-    if (user && !analysis) {
-      console.log("TrackerPage: User is logged in but no analysis found, refreshing data");
+    if (user) {
+      console.log("TrackerPage: User is logged in, refreshing data");
       refreshAnalysis();
     }
-  }, [user, analysis, refreshAnalysis]);
+  }, [user, refreshAnalysis]);
   
   const {
     activities,
@@ -73,6 +75,12 @@ const TrackerPage: React.FC = () => {
       </div>
     );
   }
+  
+  const handleRefresh = async () => {
+    toast.info("Refreshing your data...");
+    await refreshAnalysis();
+    toast.success("Data refreshed successfully");
+  };
   
   // If not authenticated, show login prompt
   if (!user) {
@@ -123,12 +131,20 @@ const TrackerPage: React.FC = () => {
   
   return (
     <div className="container max-w-4xl py-6 md:py-10 px-4 min-h-screen">
-      <div className="mb-8">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Growth Tracker</h1>
-        <p className="text-muted-foreground mt-2">
-          Track your progress and earn points through self-improvement activities
-        </p>
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" /> Refresh
+        </Button>
       </div>
+      
+      <p className="text-muted-foreground mb-8">
+        Track your progress and earn points through self-improvement activities
+      </p>
       
       <LevelProgress
         currentLevel={currentLevel}
