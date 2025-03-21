@@ -36,11 +36,8 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
     originalScore: domain.score, // Keep original score for tooltip
   })) || [];
 
-  // Custom gradient colors based on primary color
-  const getBarColor = (index: number) => {
-    // Using a fixed color to avoid animation warnings with rgba variables
-    return "#f97316"; // Using orange-500 from Tailwind which matches the screenshot
-  };
+  // Using fixed orange color for all bars to match the screenshot
+  const barColor = "#f97316"; // orange-500
 
   // Fallback if no domains data
   if (!domains || domains.length === 0) {
@@ -94,7 +91,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
             />
             <Bar dataKey="score" radius={[0, 4, 4, 0]}>
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(index)} />
+                <Cell key={`cell-${index}`} fill={barColor} />
               ))}
               <LabelList 
                 dataKey="originalScore" 
