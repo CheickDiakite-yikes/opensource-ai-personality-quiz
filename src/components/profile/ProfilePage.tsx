@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import LoadingProfile from "./LoadingProfile";
 import NoAnalysisFound from "./NoAnalysisFound";
 import ProfileHeader from "./ProfileHeader";
@@ -13,14 +13,43 @@ import TraitsCard from "./TraitsCard";
 import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
-  const { analysis, isLoading } = useAIAnalysis();
+  const { analysis, isLoading, error, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  
+  useEffect(() => {
+    // Check if user is authenticated but data is missing
+    if (user && session && !isLoading && !analysis) {
+      console.log("User is logged in but no analysis found, attempting to refresh");
+      refreshAnalysis();
+    }
+  }, [user, session, isLoading, analysis, refreshAnalysis]);
+  
+  const handleRefresh = async () => {
+    toast.info("Refreshing your profile data...");
+    await refreshAnalysis();
+    toast.success("Profile data refreshed");
+  };
   
   if (isLoading) {
     return <LoadingProfile />;
+  }
+  
+  if (error) {
+    return (
+      <div className="container max-w-4xl py-8 px-4 flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="text-center space-y-6">
+          <h1 className="text-2xl font-bold text-red-500">Error Loading Profile</h1>
+          <p className="text-muted-foreground max-w-md mx-auto">{error}</p>
+          <Button onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+          </Button>
+        </div>
+      </div>
+    );
   }
   
   if (!analysis) {
@@ -51,13 +80,22 @@ const ProfilePage: React.FC = () => {
   
   return (
     <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
-      <Button 
-        variant="ghost" 
-        className="mb-6" 
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-      </Button>
+      <div className="flex justify-between items-center mb-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh}
+          className="flex items-center"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" /> Refresh Data
+        </Button>
+      </div>
       
       {user && (
         <motion.div

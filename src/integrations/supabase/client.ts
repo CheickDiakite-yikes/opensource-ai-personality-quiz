@@ -12,7 +12,8 @@ const createSingletonClient = () => {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false
+      detectSessionInUrl: true,
+      storage: localStorage
     },
     realtime: {
       params: {
