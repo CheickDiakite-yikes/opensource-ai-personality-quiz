@@ -24,41 +24,11 @@ export const useAnalyzeResponses = (
       // Save responses to localStorage and get assessment ID
       const assessmentId = saveAssessmentToStorage(responses);
       
-      console.log("Sending responses to AI for analysis...");
+      console.log("Starting AI analysis for responses:", responses.length);
       console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
       
-      // Store assessment responses in Supabase if user is logged in
-      if (user) {
-        console.log("User is logged in, saving assessment to Supabase for user:", user.id);
-        try {
-          // We need to convert AssessmentResponse[] to a JSON-compatible format
-          // by using JSON.stringify and then parsing it back to handle Date objects
-          const jsonResponses = JSON.parse(JSON.stringify(responses));
-          
-          const { error: assessmentError } = await supabase
-            .from('assessments')
-            .insert({
-              id: assessmentId,
-              user_id: user.id,
-              responses: jsonResponses
-            });
-            
-          if (assessmentError) {
-            console.error("Error saving assessment to Supabase:", assessmentError);
-            toast.error("Could not save your assessment data, but continuing with analysis", {
-              description: assessmentError.message,
-              duration: 5000
-            });
-          } else {
-            console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
-          }
-        } catch (err) {
-          console.error("Error saving assessment:", err);
-        }
-      }
-      
       // Call the Supabase Edge Function for AI analysis
-      console.log("Calling analyze-responses edge function with user ID:", user?.id || "none");
+      console.log("Calling analyze-responses edge function with assessment ID:", assessmentId);
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
@@ -77,7 +47,7 @@ export const useAnalyzeResponses = (
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis");
+      console.log("Received AI analysis:", data.analysis.id);
       
       // Add user ID to the analysis if user is logged in
       let analysisWithUser = data.analysis;
@@ -129,6 +99,8 @@ export const useAnalyzeResponses = (
         } catch (err) {
           console.error("Error saving analysis:", err);
         }
+      } else {
+        console.log("User not logged in, analysis will only be stored locally");
       }
       
       // Save to history and update the current analysis

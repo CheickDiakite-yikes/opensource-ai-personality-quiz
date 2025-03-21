@@ -9,6 +9,9 @@ import ReportTabContent from "./ReportTabContent";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { PersonalityAnalysis } from "@/utils/types";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,19 +19,91 @@ const ReportPage: React.FC = () => {
   const { analysis, isLoading, error, getAnalysisHistory, setCurrentAnalysis, refreshAnalysis } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [loadAttempts, setLoadAttempts] = useState(0);
+  const { user } = useAuth();
+  const [directFetchInProgress, setDirectFetchInProgress] = useState(false);
+  
+  // Function to directly fetch analysis from Supabase if other methods fail
+  const fetchAnalysisDirectly = async (analysisId: string) => {
+    try {
+      console.log("Attempting to fetch analysis directly from Supabase:", analysisId);
+      setDirectFetchInProgress(true);
+      
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', analysisId)
+        .single();
+        
+      if (error) {
+        console.error("Error fetching specific analysis from Supabase:", error);
+        return null;
+      }
+      
+      if (data) {
+        console.log("Successfully fetched analysis directly from Supabase:", data.id);
+        // Convert to PersonalityAnalysis type
+        const convertedAnalysis: PersonalityAnalysis = {
+          id: data.id,
+          createdAt: data.created_at || new Date().toISOString(),
+          userId: data.user_id,
+          assessmentId: data.assessment_id,
+          overview: data.overview || '',
+          traits: data.traits || [],
+          intelligence: data.intelligence || { type: '', score: 0, description: '', domains: [] },
+          intelligenceScore: data.intelligence_score || 0,
+          emotionalIntelligenceScore: data.emotional_intelligence_score || 0,
+          cognitiveStyle: data.cognitive_style || '',
+          valueSystem: data.value_system || [],
+          motivators: data.motivators || [],
+          inhibitors: data.inhibitors || [],
+          weaknesses: data.weaknesses || [],
+          growthAreas: data.growth_areas || [],
+          relationshipPatterns: data.relationship_patterns || [],
+          careerSuggestions: data.career_suggestions || [],
+          learningPathways: data.learning_pathways || [],
+          roadmap: data.roadmap || ''
+        };
+        
+        return convertedAnalysis;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error("Error in direct fetch:", err);
+      return null;
+    } finally {
+      setDirectFetchInProgress(false);
+    }
+  };
   
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
-    if (id && !isLoading) {
-      console.log("Trying to set current analysis to ID from URL param:", id);
+    const loadAnalysis = async () => {
+      if (!id || directFetchInProgress) return;
+      
+      console.log(`Trying to load analysis with ID: ${id}, Loading state: ${isLoading}, Attempt: ${loadAttempts}`);
+      
+      // Try setting the current analysis from the hook's state or localStorage
       const success = setCurrentAnalysis(id);
       
       if (!success && !analysis) {
-        console.log("Could not find analysis with ID:", id, "Attempt:", loadAttempts);
+        console.log(`Could not find analysis with ID: ${id} in local storage, attempt: ${loadAttempts}`);
         
-        // Try refreshing data from Supabase if this is the first or second attempt
+        // If user is logged in, try fetching directly from Supabase
+        if (user && loadAttempts < 2) {
+          console.log("User is logged in, attempting direct fetch from Supabase");
+          const directAnalysis = await fetchAnalysisDirectly(id);
+          
+          if (directAnalysis) {
+            console.log("Direct fetch successful, setting analysis");
+            setCurrentAnalysis(directAnalysis.id);
+            return;
+          }
+        }
+        
+        // Try refreshing data from Supabase if previous attempts failed
         if (loadAttempts < 3) {
-          console.log("Attempting to refresh analysis data from Supabase, attempt:", loadAttempts + 1);
+          console.log(`Attempting to refresh analysis data from Supabase, attempt: ${loadAttempts + 1}`);
           refreshAnalysis();
           setLoadAttempts(prev => prev + 1);
           return;
@@ -43,10 +118,14 @@ const ReportPage: React.FC = () => {
       } else if (success) {
         console.log("Successfully set analysis from ID param:", id);
       }
+    };
+    
+    if (!isLoading) {
+      loadAnalysis();
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, refreshAnalysis, loadAttempts]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, refreshAnalysis, loadAttempts, user, directFetchInProgress]);
   
-  if (isLoading) {
+  if (isLoading || directFetchInProgress) {
     console.log("Report page is in loading state");
     return (
       <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
@@ -95,13 +174,35 @@ const ReportPage: React.FC = () => {
   
   if (!analysisResult) {
     console.error("No analysis available to display");
-    toast.error("Error loading analysis", {
-      description: "We couldn't load the personality analysis. Please try taking the assessment again.",
-      duration: 5000
-    });
-    
-    navigate("/assessment");
-    return null;
+    return (
+      <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
+        <div className="p-6 bg-destructive/10 rounded-lg text-center">
+          <h2 className="text-xl font-bold mb-2">No Analysis Found</h2>
+          <p className="text-muted-foreground mb-4">
+            We couldn't find the personality analysis you're looking for.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+            <button 
+              className="px-4 py-2 bg-primary text-white rounded-md"
+              onClick={() => navigate("/assessment")}
+            >
+              Take the Assessment
+            </button>
+            {user && (
+              <button 
+                className="px-4 py-2 bg-secondary text-white rounded-md"
+                onClick={() => {
+                  refreshAnalysis();
+                  setLoadAttempts(0);
+                }}
+              >
+                Refresh Data
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
   
   console.log("Rendering report for analysis:", analysisResult.id);
