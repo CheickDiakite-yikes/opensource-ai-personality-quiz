@@ -29,6 +29,7 @@ export const useAssessmentSubmission = (
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
       
       // Navigate to the report page with the ID to ensure it can be loaded in the future
+      console.log("Analysis complete, navigating to report page with ID:", analysis.id);
       navigate(`/report/${analysis.id}`);
     } catch (error) {
       console.error("Error submitting assessment:", error);

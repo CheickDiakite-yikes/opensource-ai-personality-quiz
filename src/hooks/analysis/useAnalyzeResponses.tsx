@@ -24,7 +24,7 @@ export const useAnalyzeResponses = (
       // Save responses to localStorage and get assessment ID
       const assessmentId = saveAssessmentToStorage(responses);
       
-      console.log("Sending responses to AI for analysis using o3-mini model...");
+      console.log("Sending responses to AI for analysis...");
       console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
       
       // Store assessment responses in Supabase if user is logged in
@@ -57,7 +57,7 @@ export const useAnalyzeResponses = (
         }
       }
       
-      // Call the Supabase Edge Function for AI analysis with debugging
+      // Call the Supabase Edge Function for AI analysis
       console.log("Calling analyze-responses edge function with user ID:", user?.id || "none");
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
@@ -77,7 +77,7 @@ export const useAnalyzeResponses = (
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis from o3-mini model");
+      console.log("Received AI analysis");
       
       // Add user ID to the analysis if user is logged in
       let analysisWithUser = data.analysis;
@@ -91,30 +91,28 @@ export const useAnalyzeResponses = (
         // Save analysis to Supabase
         try {
           console.log("Saving analysis to Supabase for user:", user.id);
-          // Convert all JSON fields to their string representation to ensure compatibility
-          const jsonAnalysis = JSON.parse(JSON.stringify(data.analysis));
-          
+          // Prepare analysis for insertion
           const { error: analysisError } = await supabase
             .from('analyses')
             .insert({
               id: data.analysis.id,
               user_id: user.id,
               assessment_id: assessmentId,
-              result: jsonAnalysis,
+              result: data.analysis,
               overview: data.analysis.overview,
-              traits: jsonAnalysis.traits,
-              intelligence: jsonAnalysis.intelligence,
+              traits: data.analysis.traits,
+              intelligence: data.analysis.intelligence,
               intelligence_score: data.analysis.intelligenceScore,
               emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
-              cognitive_style: jsonAnalysis.cognitiveStyle,
-              value_system: jsonAnalysis.valueSystem,
-              motivators: jsonAnalysis.motivators,
-              inhibitors: jsonAnalysis.inhibitors,
-              weaknesses: jsonAnalysis.weaknesses,
-              growth_areas: jsonAnalysis.growthAreas,
-              relationship_patterns: jsonAnalysis.relationshipPatterns,
-              career_suggestions: jsonAnalysis.careerSuggestions,
-              learning_pathways: jsonAnalysis.learningPathways,
+              cognitive_style: data.analysis.cognitiveStyle,
+              value_system: data.analysis.valueSystem,
+              motivators: data.analysis.motivators,
+              inhibitors: data.analysis.inhibitors,
+              weaknesses: data.analysis.weaknesses,
+              growth_areas: data.analysis.growthAreas,
+              relationship_patterns: data.analysis.relationshipPatterns,
+              career_suggestions: data.analysis.careerSuggestions,
+              learning_pathways: data.analysis.learningPathways,
               roadmap: data.analysis.roadmap
             });
             

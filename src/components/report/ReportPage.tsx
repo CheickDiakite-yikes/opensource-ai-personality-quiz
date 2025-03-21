@@ -24,11 +24,11 @@ const ReportPage: React.FC = () => {
       const success = setCurrentAnalysis(id);
       
       if (!success && !analysis) {
-        console.log("Could not find analysis with ID:", id);
+        console.log("Could not find analysis with ID:", id, "Attempt:", loadAttempts);
         
-        // Try refreshing data from Supabase if this is the first attempt
-        if (loadAttempts < 1) {
-          console.log("Attempting to refresh analysis data from Supabase");
+        // Try refreshing data from Supabase if this is the first or second attempt
+        if (loadAttempts < 3) {
+          console.log("Attempting to refresh analysis data from Supabase, attempt:", loadAttempts + 1);
           refreshAnalysis();
           setLoadAttempts(prev => prev + 1);
           return;
@@ -40,7 +40,7 @@ const ReportPage: React.FC = () => {
         });
         
         navigate("/assessment");
-      } else {
+      } else if (success) {
         console.log("Successfully set analysis from ID param:", id);
       }
     }
@@ -64,7 +64,11 @@ const ReportPage: React.FC = () => {
           <p className="text-muted-foreground mb-4">{error}</p>
           <button 
             className="px-4 py-2 bg-primary text-white rounded-md"
-            onClick={() => refreshAnalysis()}
+            onClick={() => {
+              console.log("Manually refreshing analysis data");
+              refreshAnalysis();
+              setLoadAttempts(0); // Reset attempts on manual refresh
+            }}
           >
             Try Again
           </button>

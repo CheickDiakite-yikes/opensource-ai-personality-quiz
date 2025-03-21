@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { loadAnalysisHistory, saveAnalysisToHistory, getAnalysisById } from "./analysis/useLocalStorage";
@@ -182,24 +181,8 @@ export const useAIAnalysis = () => {
   // Fetch analysis when component mounts, user changes, or session changes
   useEffect(() => {
     console.log("useEffect in useAIAnalysis triggered");
-    if (user) {
-      console.log("User exists, fetching analysis for:", user.id);
-      fetchAnalysis();
-    } else if (!isLoading) {
-      console.log("No user, loading from localStorage only");
-      const history = loadAnalysisHistory();
-      setAnalysisHistory(history);
-      
-      if (history.length > 0) {
-        setAnalysis(history[0]);
-        console.log("Set analysis from localStorage history");
-      } else {
-        setAnalysis(null);
-        console.log("No analysis in localStorage");
-      }
-      setIsLoading(false);
-    }
-  }, [user, fetchAnalysis, isLoading]);
+    fetchAnalysis();
+  }, [user, fetchAnalysis]);
 
   // Function to save analysis to history
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
@@ -240,6 +223,47 @@ export const useAIAnalysis = () => {
         ...prev.filter(a => a.id !== selectedFromStorage.id)
       ]);
       return true;
+    }
+    
+    // If not found in either state or localStorage, try Supabase directly
+    if (user && session) {
+      console.log("Not found locally, trying to fetch from Supabase directly");
+      
+      // Use an IIFE to work with async/await
+      (async () => {
+        try {
+          const { data, error } = await supabase
+            .from('analyses')
+            .select('*')
+            .eq('id', analysisId)
+            .limit(1)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching specific analysis from Supabase:", error);
+            return false;
+          }
+          
+          if (data) {
+            console.log("Found analysis in Supabase:", data.id);
+            const convertedAnalysis = convertToPersonalityAnalysis(data);
+            setAnalysis(convertedAnalysis);
+            
+            // Update history with the found analysis
+            setAnalysisHistory(prev => [
+              convertedAnalysis,
+              ...prev.filter(a => a.id !== convertedAnalysis.id)
+            ]);
+            
+            // Also save to localStorage
+            saveAnalysisToHistory(convertedAnalysis);
+            
+            return true;
+          }
+        } catch (err) {
+          console.error("Error in direct Supabase fetch:", err);
+        }
+      })();
     }
     
     console.log("No matching analysis found for id:", analysisId);
