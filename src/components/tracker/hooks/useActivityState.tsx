@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Activity, PersonalityAnalysis, ActivityCategory } from "@/utils/types";
+import { Activity, ActivityCategory, PersonalityAnalysis, Json } from "@/utils/types";
 import { sampleActivities } from "../data/sampleActivities";
 import { useActivityFilters } from "./useActivityFilters";
 import { useLevelProgress } from "./useLevelProgress";
@@ -14,6 +14,29 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  
+  // Helper function to ensure steps are properly formatted as strings
+  const formatSteps = (steps: any): string[] => {
+    if (!steps) return [];
+    
+    // If already an array, map each item to string
+    if (Array.isArray(steps)) {
+      return steps.map(step => String(step));
+    }
+    
+    // If it's a string that looks like JSON, try to parse it
+    if (typeof steps === 'string' && (steps.startsWith('[') || steps.startsWith('{'))) {
+      try {
+        const parsed = JSON.parse(steps);
+        return Array.isArray(parsed) ? parsed.map(step => String(step)) : [];
+      } catch (e) {
+        console.error("Error parsing steps:", e);
+        return [];
+      }
+    }
+    
+    return [];
+  };
   
   // Fetch activities from Supabase when component mounts or user changes
   useEffect(() => {
@@ -55,20 +78,6 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         
         // Transform the data from Supabase format to our Activity type
         const formattedActivities: Activity[] = data.map(item => {
-          // Parse steps from JSON string if needed
-          let steps: string[] = [];
-          if (item.steps) {
-            if (typeof item.steps === 'string') {
-              try {
-                steps = JSON.parse(item.steps);
-              } catch (e) {
-                console.error("Error parsing steps:", e);
-              }
-            } else if (Array.isArray(item.steps)) {
-              steps = item.steps;
-            }
-          }
-          
           return {
             id: item.id,
             title: item.title,
@@ -78,7 +87,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
             createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-            steps: steps,
+            steps: formatSteps(item.steps),
             benefits: item.benefits || "",
             user_id: item.user_id
           };
@@ -139,7 +148,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         completed: item.completed,
         completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
         createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-        steps: Array.isArray(item.steps) ? item.steps : [],
+        steps: formatSteps(item.steps),
         benefits: item.benefits || "",
         user_id: item.user_id
       }));

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
+import { Activity, ActivityCategory, PersonalityAnalysis, Json } from "@/utils/types";
 import { toast } from "sonner";
 import { activitySuggestionsByCategory } from "../utils/activitySuggestions";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,18 @@ export const useActivityGenerator = (
 ) => {
   const [isGeneratingActivity, setIsGeneratingActivity] = useState(false);
   const { user } = useAuth();
+  
+  // Helper function to ensure steps are properly formatted
+  const formatSteps = (steps: any): string[] => {
+    if (!steps) return [];
+    
+    // If already an array, map each item to string
+    if (Array.isArray(steps)) {
+      return steps.map(step => String(step));
+    }
+    
+    return [];
+  };
   
   // Generate a new activity based on user's profile
   const generateActivity = async (category?: ActivityCategory) => {
@@ -62,7 +74,7 @@ export const useActivityGenerator = (
               category: newActivity.category,
               completed: false,
               user_id: user.id,
-              steps: newActivity.steps || [],
+              steps: Array.isArray(newActivity.steps) ? formatSteps(newActivity.steps) : [],
               benefits: newActivity.benefits || ""
             })
             .select('*')
@@ -89,10 +101,9 @@ export const useActivityGenerator = (
               completed: savedData.completed,
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
               createdAt: savedData.created_at ? new Date(savedData.created_at) : now,
-              steps: Array.isArray(savedData.steps) 
-                ? savedData.steps.map(step => typeof step === 'string' ? step : String(step))
-                : [],
-              benefits: savedData.benefits || ""
+              steps: formatSteps(savedData.steps),
+              benefits: savedData.benefits || "",
+              user_id: savedData.user_id
             };
             
             setActivities(prev => [savedActivity, ...prev]);

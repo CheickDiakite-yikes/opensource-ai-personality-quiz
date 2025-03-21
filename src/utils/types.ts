@@ -133,6 +133,9 @@ export enum ActivityCategory {
   STRENGTHS = "STRENGTHS"
 }
 
+// Adding Json type for Supabase compatibility
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
 export interface Activity {
   id: string;
   title: string;
@@ -141,8 +144,8 @@ export interface Activity {
   category: ActivityCategory;
   completed: boolean;
   completedAt?: Date;
-  steps?: string[];
+  steps?: string[] | Json[];  // Updated to accept both string[] and Json[]
   benefits?: string;
   createdAt: Date;
-  user_id?: string; // Add user_id to match Supabase schema
+  user_id?: string;
 }
