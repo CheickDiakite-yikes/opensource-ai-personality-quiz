@@ -30,8 +30,7 @@ serve(async (req) => {
     // Group responses by category for analysis
     const responsesByCategory = categorizeResponses(responses);
     
-    // Generate the AI analysis using OpenAI's reasoning capabilities
-    // IMPORTANT: We exclusively use the o3-mini model for all AI analysis
+    // Generate the AI analysis using OpenAI's API
     const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
     
     console.log("Analysis completed successfully");
@@ -62,8 +61,7 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
-// Generate AI analysis using OpenAI's o3-mini model with reasoning capabilities
-// IMPORTANT: We exclusively use o3-mini model for all OpenAI API calls
+// Generate AI analysis using OpenAI's o3-mini model
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string
@@ -75,7 +73,7 @@ async function generateAIAnalysis(
     return `Category ${category}:\n${summary}`;
   }).join('\n\n');
 
-  // Create a detailed prompt with instructions that leverage OpenAI's reasoning capabilities
+  // Create a detailed prompt for analysis
   const prompt = `
   You are an expert psychological profiler analyzing assessment responses to create a comprehensive personality profile.
   
@@ -136,7 +134,7 @@ async function generateAIAnalysis(
   try {
     console.log("Sending request to OpenAI API using o3-mini model");
     
-    // IMPORTANT: We are exclusively using the o3-mini model for all OpenAI API calls
+    // Use the current OpenAI API format for o3-mini
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -144,7 +142,7 @@ async function generateAIAnalysis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini', // IMPORTANT: We exclusively use the o3-mini model
+        model: 'o3-mini',
         messages: [
           { 
             role: 'system', 
@@ -154,12 +152,8 @@ async function generateAIAnalysis(
         ],
         temperature: 0.7,
         max_tokens: 3000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
         response_format: { type: "json_object" },
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
-        reasoning_effort: "medium", // o3-mini model supports reasoning_effort parameter
       }),
     });
 

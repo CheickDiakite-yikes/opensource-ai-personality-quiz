@@ -22,7 +22,6 @@ export const useAnalyzeResponses = (
       console.log("Sending responses to AI for analysis using o3-mini model...", responses);
       
       // Call the Supabase Edge Function for AI analysis
-      // IMPORTANT: This function uses the o3-mini model from OpenAI API
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
