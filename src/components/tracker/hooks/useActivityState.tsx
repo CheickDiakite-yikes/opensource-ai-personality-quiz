@@ -49,8 +49,9 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
           category: item.category as ActivityCategory,
           completed: item.completed,
           completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-          steps: item.steps,
-          benefits: item.benefits
+          // Add steps and benefits with default values if they don't exist
+          steps: item.steps ? Array.isArray(item.steps) ? item.steps : [] : [],
+          benefits: item.benefits || ""
         }));
         
         console.log("Fetched activities:", formattedActivities);

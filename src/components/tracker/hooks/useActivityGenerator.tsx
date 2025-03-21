@@ -87,8 +87,8 @@ export const useActivityGenerator = (
               category: savedData.category as ActivityCategory,
               completed: savedData.completed,
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
-              steps: savedData.steps,
-              benefits: savedData.benefits
+              steps: savedData.steps || [],
+              benefits: savedData.benefits || ""
             };
             
             setActivities(prev => [savedActivity, ...prev]);
@@ -148,11 +148,16 @@ async function generateFallbackActivity(
     description: `This activity will help you develop your ${category.toLowerCase()} skills and earn you points toward your next level.`,
     points: randomPoints,
     category: category,
-    completed: false
+    completed: false,
+    // Add default empty values for steps and benefits
+    steps: [],
+    benefits: ""
   };
   
   // If user is logged in, save to Supabase first
-  const { user } = supabase.auth.getSession();
+  // Using supabase.auth.getUser() instead of getSession() to get the user
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData?.user;
   
   if (user) {
     try {
@@ -164,7 +169,9 @@ async function generateFallbackActivity(
           points: newActivity.points,
           category: newActivity.category,
           completed: false,
-          user_id: user.id
+          user_id: user.id,
+          steps: [],
+          benefits: ""
         })
         .select('*')
         .single();
@@ -178,7 +185,9 @@ async function generateFallbackActivity(
           points: data.points,
           category: data.category as ActivityCategory,
           completed: data.completed,
-          completedAt: data.completed_at ? new Date(data.completed_at) : undefined
+          completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
+          steps: data.steps || [],
+          benefits: data.benefits || ""
         };
         
         // Add the new activity to the list
