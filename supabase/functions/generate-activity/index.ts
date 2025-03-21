@@ -101,8 +101,9 @@ Return the activity in JSON format with these fields:
           { role: 'user', content: prompt }
         ],
         temperature: 0.8,
-        max_tokens: 1000,
-        top_p: 1,
+        // Updated parameter name from max_tokens to max_completion_tokens for o3-mini
+        // Increased to 90000 tokens (close to the maximum allowed limit of 100000)
+        max_completion_tokens: 90000,
         frequency_penalty: 0.2,
         presence_penalty: 0.4,
         response_format: { type: "json_object" },

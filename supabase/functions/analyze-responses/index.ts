@@ -152,7 +152,8 @@ async function generateAIAnalysis(
         ],
         temperature: 0.7,
         // Updated parameter name from max_tokens to max_completion_tokens for o3-mini
-        max_completion_tokens: 3000,
+        // Increased to 90000 tokens (close to the maximum allowed limit of 100000)
+        max_completion_tokens: 90000,
         response_format: { type: "json_object" },
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
       }),
