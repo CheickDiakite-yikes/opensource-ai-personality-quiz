@@ -23,6 +23,8 @@
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
+    /* Added to fix content overflow issues on mobile */
+    position: relative;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -32,5 +34,7 @@
 
   #root {
     height: 100%;
+    width: 100%;
+    overflow-x: hidden;
   }
 }
