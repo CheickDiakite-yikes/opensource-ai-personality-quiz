@@ -27,9 +27,20 @@ const createSingletonClient = () => {
     }
   };
   
+  // Create and return the client instance
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, options);
 };
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 export const supabase = createSingletonClient();
+
+// Add a function to check if the session is valid
+export const getSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error("Error getting session:", error);
+    return null;
+  }
+  return data.session;
+};

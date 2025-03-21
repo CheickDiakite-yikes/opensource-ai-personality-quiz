@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { loadAnalysisHistory, saveAnalysisToHistory } from "./analysis/useLocalStorage";
@@ -78,6 +79,7 @@ export const useAIAnalysis = () => {
 
   // Load analysis from Supabase if user is logged in, otherwise from localStorage
   const fetchAnalysis = useCallback(async () => {
+    console.log("fetchAnalysis called, user:", user?.id || "no user", "session:", session ? "exists" : "none");
     setIsLoading(true);
     setError(null);
     
@@ -85,17 +87,21 @@ export const useAIAnalysis = () => {
       if (user && session) {
         console.log("Fetching analysis from Supabase for user:", user.id);
         
-        // Get the most recent analysis from Supabase
+        // Get the most recent analysis from Supabase with debugging
         const { data, error } = await supabase
           .from('analyses')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10);
+        
+        console.log("Supabase query executed, data:", data ? `${data.length} items` : "none", "error:", error || "none");
           
         if (error) {
           console.error("Error fetching analysis from Supabase:", error);
-          toast.error("Failed to load your analysis data");
+          toast.error("Failed to load your analysis data", {
+            description: error.message
+          });
           setError("Failed to load analysis data: " + error.message);
           
           // Fallback to localStorage
@@ -104,12 +110,14 @@ export const useAIAnalysis = () => {
           
           if (history.length > 0) {
             setAnalysis(history[0]);
+            console.log("Using first item from localStorage history as fallback");
           }
         } else if (data && data.length > 0) {
           console.log("Fetched analyses from Supabase:", data.length, "items");
           
           // Transform the data into our PersonalityAnalysis type with proper type safety
           const analyses: PersonalityAnalysis[] = data.map(item => convertToPersonalityAnalysis(item));
+          console.log("Converted analyses:", analyses.length);
           
           // Save to history state
           setAnalysisHistory(analyses);
@@ -117,12 +125,14 @@ export const useAIAnalysis = () => {
           // Set the most recent as current
           if (analyses.length > 0) {
             setAnalysis(analyses[0]);
+            console.log("Set current analysis to first item:", analyses[0].id);
           }
           
           // Also update localStorage for offline access
           analyses.forEach(analysis => {
             saveAnalysisToHistory(analysis);
           });
+          console.log("Saved analyses to localStorage");
         } else {
           console.log("No analyses found in Supabase, using localStorage");
           
@@ -132,7 +142,9 @@ export const useAIAnalysis = () => {
           
           if (history.length > 0) {
             setAnalysis(history[0]);
+            console.log("Using first item from localStorage history");
           } else {
+            console.log("No analyses found in localStorage either");
             setAnalysis(null);
           }
         }
@@ -144,12 +156,14 @@ export const useAIAnalysis = () => {
         
         if (history.length > 0) {
           setAnalysis(history[0]);
+          console.log("Using first item from localStorage history (no user)");
         } else {
+          console.log("No analyses found in localStorage (no user)");
           setAnalysis(null);
         }
       }
     } catch (error: any) {
-      console.error("Error in fetchAnalysis:", error);
+      console.error("Unexpected error in fetchAnalysis:", error);
       setError("Unexpected error: " + error.message);
       
       // Fallback to localStorage
@@ -158,16 +172,18 @@ export const useAIAnalysis = () => {
       
       if (history.length > 0) {
         setAnalysis(history[0]);
+        console.log("Using first item from localStorage history after error");
       }
     } finally {
       setIsLoading(false);
     }
   }, [user, session]);
   
-  // Fetch analysis when user changes or session changes
+  // Fetch analysis when component mounts, user changes, or session changes
   useEffect(() => {
+    console.log("useEffect in useAIAnalysis triggered");
     if (user) {
-      console.log("User changed, fetching analysis for:", user.id);
+      console.log("User exists, fetching analysis for:", user.id);
       fetchAnalysis();
     } else if (!isLoading) {
       console.log("No user, loading from localStorage only");
@@ -176,8 +192,10 @@ export const useAIAnalysis = () => {
       
       if (history.length > 0) {
         setAnalysis(history[0]);
+        console.log("Set analysis from localStorage history");
       } else {
         setAnalysis(null);
+        console.log("No analysis in localStorage");
       }
       setIsLoading(false);
     }
@@ -185,6 +203,7 @@ export const useAIAnalysis = () => {
 
   // Function to save analysis to history
   const saveToHistory = (newAnalysis: PersonalityAnalysis) => {
+    console.log("Saving analysis to history:", newAnalysis.id);
     const savedAnalysis = saveAnalysisToHistory(newAnalysis);
     // Update the history state
     setAnalysisHistory(prev => [savedAnalysis, ...prev.filter(a => a.id !== savedAnalysis.id)].slice(0, 10));
@@ -200,16 +219,20 @@ export const useAIAnalysis = () => {
   };
 
   const setCurrentAnalysis = (analysisId: string) => {
+    console.log("Setting current analysis to:", analysisId);
     const selected = analysisHistory.find(item => item.id === analysisId);
     if (selected) {
+      console.log("Found matching analysis:", selected.id);
       setAnalysis(selected);
       return true;
     }
+    console.log("No matching analysis found for id:", analysisId);
     return false;
   };
 
   // Function to manually refresh the data
   const refreshAnalysis = () => {
+    console.log("Manual refresh of analysis requested");
     return fetchAnalysis();
   };
 

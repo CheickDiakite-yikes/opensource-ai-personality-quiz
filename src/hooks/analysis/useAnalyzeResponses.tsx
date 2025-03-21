@@ -22,6 +22,7 @@ export const useAnalyzeResponses = (
       const assessmentId = saveAssessmentToStorage(responses);
       
       console.log("Sending responses to AI for analysis using o3-mini model...", responses);
+      console.log("User logged in:", user ? "yes" : "no", "User ID:", user?.id || "none");
       
       // Store assessment responses in Supabase if user is logged in
       if (user) {
@@ -41,16 +42,19 @@ export const useAnalyzeResponses = (
             
           if (assessmentError) {
             console.error("Error saving assessment to Supabase:", assessmentError);
-            toast.error("Could not save your assessment data, but continuing with analysis");
+            toast.error("Could not save your assessment data, but continuing with analysis", {
+              description: assessmentError.message
+            });
           } else {
-            console.log("Successfully saved assessment to Supabase");
+            console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
         }
       }
       
-      // Call the Supabase Edge Function for AI analysis
+      // Call the Supabase Edge Function for AI analysis with debugging
+      console.log("Calling analyze-responses edge function with user ID:", user?.id || "none");
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
@@ -65,6 +69,7 @@ export const useAnalyzeResponses = (
       }
       
       if (!data || !data.analysis) {
+        console.error("Invalid response from analysis function:", data);
         throw new Error("Invalid response from analysis function");
       }
       
@@ -111,9 +116,11 @@ export const useAnalyzeResponses = (
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
-            toast.error("Could not save your analysis data to your profile, but we've saved it locally");
+            toast.error("Could not save your analysis data to your profile, but we've saved it locally", {
+              description: analysisError.message
+            });
           } else {
-            console.log("Successfully saved analysis to Supabase");
+            console.log("Successfully saved analysis to Supabase with ID:", data.analysis.id);
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
