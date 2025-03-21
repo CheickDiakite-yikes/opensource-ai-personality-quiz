@@ -28,8 +28,8 @@ interface IntelligenceDomainChartProps {
   domains: IntelligenceDomain[];
 }
 
-// Create a formatter function outside of the component
-const formatScore = (value: number) => value.toFixed(1);
+// Format score to 1 decimal place
+const formatScore = (value: number) => `${value.toFixed(1)}`;
 
 const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domains }) => {
   const isMobile = useIsMobile();
