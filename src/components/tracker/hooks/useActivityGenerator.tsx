@@ -152,7 +152,8 @@ export const useActivityGenerator = (
       category: selectedCategory,
       completed: false,
       steps: [],
-      benefits: `Improve your ${selectedCategory.toLowerCase()} abilities.`
+      benefits: `Improve your ${selectedCategory.toLowerCase()} abilities.`,
+      createdAt: new Date() // Add this to match our updated interface
     };
   };
   

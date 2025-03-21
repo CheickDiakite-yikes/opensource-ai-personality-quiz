@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Activity, ActivityCategory } from "@/utils/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

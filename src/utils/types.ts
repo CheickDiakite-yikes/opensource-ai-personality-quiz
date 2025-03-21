@@ -143,5 +143,5 @@ export interface Activity {
   completedAt?: Date;
   steps?: string[];
   benefits?: string;
-  createdAt?: Date; // Added createdAt property
+  createdAt: Date; // Keep this property to fix the type errors
 }
