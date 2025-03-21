@@ -19,7 +19,7 @@ This project is built with:
 
 - React + TypeScript
 - Tailwind CSS for styling
-- shadcn-ui component library
+- UI component library with accessible design
 - Framer Motion for animations
 - Recharts for data visualization
 - Supabase for backend functionality
@@ -52,7 +52,3 @@ npm run dev
 ## Deployment
 
 The project can be easily deployed to any modern hosting provider and connected to a custom domain for professional use.
-
-## Learn More
-
-For detailed documentation on the components and features, please visit the [project documentation](https://docs.whoami.app).
