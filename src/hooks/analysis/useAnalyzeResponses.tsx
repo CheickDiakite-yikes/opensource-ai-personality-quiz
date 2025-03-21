@@ -65,6 +65,37 @@ export const useAnalyzeResponses = (
       if (user) {
         analysisWithUser.userId = user.id;
         
+        // Ensure we have a record in assessments table
+        try {
+          // Check if assessment already exists
+          const { data: existingAssessment } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('id', finalAssessmentId)
+            .single();
+            
+          if (!existingAssessment) {
+            console.log("Saving assessment to Supabase:", finalAssessmentId);
+            
+            // Ensure responses are properly formatted for JSON storage
+            const cleanedResponses = responses.map(response => ({
+              ...response,
+              timestamp: response.timestamp instanceof Date ? response.timestamp.toISOString() : response.timestamp
+            }));
+            
+            // Save assessment to Supabase
+            await supabase
+              .from('assessments')
+              .insert({
+                id: finalAssessmentId,
+                user_id: user.id,
+                responses: cleanedResponses
+              });
+          }
+        } catch (err) {
+          console.error("Error saving assessment:", err);
+        }
+        
         // Save analysis to Supabase
         try {
           console.log("Saving analysis to Supabase for user:", user.id);
@@ -93,10 +124,31 @@ export const useAnalyzeResponses = (
             roadmap: data.analysis.roadmap || ''
           };
 
-          // Insert the formatted data
-          const { error: analysisError } = await supabase
+          // Check if analysis already exists, then update or insert
+          const { data: existingAnalysis } = await supabase
             .from('analyses')
-            .insert(formattedData);
+            .select('id')
+            .eq('id', data.analysis.id)
+            .single();
+            
+          let analysisError;
+          
+          if (existingAnalysis) {
+            // Update existing analysis
+            const { error: updateError } = await supabase
+              .from('analyses')
+              .update(formattedData)
+              .eq('id', data.analysis.id);
+              
+            analysisError = updateError;
+          } else {
+            // Insert new analysis
+            const { error: insertError } = await supabase
+              .from('analyses')
+              .insert(formattedData);
+              
+            analysisError = insertError;
+          }
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);

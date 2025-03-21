@@ -20,6 +20,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   
+  // Always try to refresh data when component mounts if user is logged in
   useEffect(() => {
     // Check if user is authenticated but data is missing
     if (user && session && !isLoading && !analysis) {

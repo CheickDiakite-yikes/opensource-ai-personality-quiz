@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { useActivityState } from "./hooks/useActivityState";
 import LevelProgress from "./components/LevelProgress";
@@ -14,9 +14,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const TrackerPage: React.FC = () => {
-  const { analysis } = useAIAnalysis();
+  const { analysis, refreshAnalysis, isLoading: analysisLoading } = useAIAnalysis();
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Automatically refresh analysis data when component mounts if user is logged in
+  useEffect(() => {
+    if (user && !analysis) {
+      console.log("TrackerPage: User is logged in but no analysis found, refreshing data");
+      refreshAnalysis();
+    }
+  }, [user, analysis, refreshAnalysis]);
   
   const {
     activities,
@@ -42,7 +50,7 @@ const TrackerPage: React.FC = () => {
   const categories = ["all", ...Object.values(ActivityCategory)];
   
   // Loading skeleton
-  if (isLoading) {
+  if (isLoading || analysisLoading) {
     return (
       <div className="container max-w-4xl py-6 md:py-10 px-4">
         <div className="mb-8">

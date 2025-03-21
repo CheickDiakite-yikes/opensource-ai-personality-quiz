@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 import { useAnalyzeResponses } from "./analysis/useAnalyzeResponses";
 import { saveAnalysisToHistory, getAnalysisById, getAnalysisHistory } from "./analysis/useLocalStorage";
@@ -10,15 +10,30 @@ import { toast } from "sonner";
 
 export const useAIAnalysis = () => {
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading state
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   // Use the useAnalyzeResponses hook to handle analysis operations
   const { isAnalyzing, analyzeResponses: processResponses } = useAnalyzeResponses(
     saveAnalysisToHistory,
     setAnalysis
   );
+  
+  // Automatically fetch analysis data from Supabase when component mounts or user changes
+  useEffect(() => {
+    if (user && session) {
+      console.log("User is logged in, automatically fetching analysis data from Supabase");
+      refreshAnalysis();
+    } else {
+      // Not logged in, check local storage
+      const analyses = getAnalysisHistory();
+      if (analyses.length > 0) {
+        setAnalysis(analyses[0]);
+      }
+      setIsLoading(false);
+    }
+  }, [user, session]);
   
   // Wrapper function to analyze responses
   const analyzeResponses = (
@@ -28,20 +43,77 @@ export const useAIAnalysis = () => {
     return processResponses(responses, assessmentId);
   };
   
-  // Get analysis by ID from local storage
-  const getAnalysis = (id: string): PersonalityAnalysis | null => {
-    return getAnalysisById(id);
+  // Get analysis by ID from local storage or Supabase
+  const getAnalysis = async (id: string): Promise<PersonalityAnalysis | null> => {
+    // First check localStorage
+    const localAnalysis = getAnalysisById(id);
+    if (localAnalysis) {
+      return localAnalysis;
+    }
+    
+    // If not in localStorage and user is logged in, try Supabase
+    if (user) {
+      try {
+        console.log("Fetching specific analysis from Supabase:", id);
+        const { data, error } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching analysis from Supabase:", error);
+          return null;
+        }
+        
+        if (data) {
+          const analysisData = convertToPersonalityAnalysis(data);
+          // Save to localStorage for future reference
+          saveAnalysisToHistory(analysisData);
+          return analysisData;
+        }
+      } catch (err) {
+        console.error("Error retrieving analysis:", err);
+      }
+    }
+    
+    return null;
   };
   
   // Set current analysis by ID
-  const setCurrentAnalysis = (idOrAnalysis: string | PersonalityAnalysis): boolean => {
+  const setCurrentAnalysis = async (idOrAnalysis: string | PersonalityAnalysis): Promise<boolean> => {
     try {
       if (typeof idOrAnalysis === 'string') {
+        // First check localStorage
         const foundAnalysis = getAnalysisById(idOrAnalysis);
         if (foundAnalysis) {
           setAnalysis(foundAnalysis);
           return true;
         }
+        
+        // If not in localStorage and user is logged in, try Supabase
+        if (user) {
+          console.log("Analysis not found in localStorage, checking Supabase:", idOrAnalysis);
+          const { data, error } = await supabase
+            .from('analyses')
+            .select('*')
+            .eq('id', idOrAnalysis)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching analysis from Supabase:", error);
+            return false;
+          }
+          
+          if (data) {
+            const analysisData = convertToPersonalityAnalysis(data);
+            // Save to localStorage for future reference
+            saveAnalysisToHistory(analysisData);
+            setAnalysis(analysisData);
+            return true;
+          }
+        }
+        
         return false;
       } else {
         setAnalysis(idOrAnalysis);
@@ -61,6 +133,7 @@ export const useAIAnalysis = () => {
       if (analyses.length > 0) {
         setAnalysis(analyses[0]);
       }
+      setIsLoading(false);
       return;
     }
     
@@ -91,7 +164,7 @@ export const useAIAnalysis = () => {
         
         // Set the most recent analysis as current
         setAnalysis(analyses[0]);
-        toast.success("Analysis data refreshed from your account");
+        console.log("Set most recent analysis:", analyses[0].id);
       } else {
         console.log("No analyses found in Supabase");
         // No analyses found in Supabase, check local storage

@@ -10,50 +10,16 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { PersonalityAnalysis, Json } from "@/utils/types";
-import { convertToPersonalityAnalysis } from "@/components/report/utils/dataConverters";
+import { PersonalityAnalysis } from "@/utils/types";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { analysis, isLoading, error, getAnalysisHistory, setCurrentAnalysis, refreshAnalysis } = useAIAnalysis();
+  const { analysis, isLoading, error, getAnalysisHistory, setCurrentAnalysis, refreshAnalysis, getAnalysis } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [loadAttempts, setLoadAttempts] = useState(0);
   const { user } = useAuth();
   const [directFetchInProgress, setDirectFetchInProgress] = useState(false);
-  
-  // Function to directly fetch analysis from Supabase if other methods fail
-  const fetchAnalysisDirectly = async (analysisId: string) => {
-    try {
-      console.log("Attempting to fetch analysis directly from Supabase:", analysisId);
-      setDirectFetchInProgress(true);
-      
-      const { data, error } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', analysisId)
-        .single();
-        
-      if (error) {
-        console.error("Error fetching specific analysis from Supabase:", error);
-        return null;
-      }
-      
-      if (data) {
-        console.log("Successfully fetched analysis directly from Supabase:", data.id);
-        // Convert to PersonalityAnalysis type using the utility function
-        return convertToPersonalityAnalysis(data);
-      }
-      
-      return null;
-    } catch (err) {
-      console.error("Error in direct fetch:", err);
-      return null;
-    } finally {
-      setDirectFetchInProgress(false);
-    }
-  };
   
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
@@ -62,28 +28,37 @@ const ReportPage: React.FC = () => {
       
       console.log(`Trying to load analysis with ID: ${id}, Loading state: ${isLoading}, Attempt: ${loadAttempts}`);
       
-      // Try setting the current analysis from the hook's state or localStorage
-      const success = setCurrentAnalysis(id);
+      // Try setting the current analysis from the hook's state or by fetching from Supabase
+      const success = await setCurrentAnalysis(id);
       
       if (!success && !analysis) {
-        console.log(`Could not find analysis with ID: ${id} in local storage, attempt: ${loadAttempts}`);
+        console.log(`Could not find analysis with ID: ${id}, attempt: ${loadAttempts}`);
         
-        // If user is logged in, try fetching directly from Supabase
-        if (user && loadAttempts < 2) {
-          console.log("User is logged in, attempting direct fetch from Supabase");
-          const directAnalysis = await fetchAnalysisDirectly(id);
+        // Try fetching directly with getAnalysis which tries both localStorage and Supabase
+        if (loadAttempts < 2) {
+          console.log("Attempting direct fetch using getAnalysis");
+          setDirectFetchInProgress(true);
           
-          if (directAnalysis) {
-            console.log("Direct fetch successful, setting analysis");
-            setCurrentAnalysis(directAnalysis.id);
-            return;
+          try {
+            const directAnalysis = await getAnalysis(id);
+            
+            if (directAnalysis) {
+              console.log("Direct fetch successful, setting analysis");
+              await setCurrentAnalysis(directAnalysis);
+              setDirectFetchInProgress(false);
+              return;
+            }
+            setDirectFetchInProgress(false);
+          } catch (err) {
+            console.error("Error in direct fetch:", err);
+            setDirectFetchInProgress(false);
           }
         }
         
         // Try refreshing data from Supabase if previous attempts failed
         if (loadAttempts < 3) {
           console.log(`Attempting to refresh analysis data from Supabase, attempt: ${loadAttempts + 1}`);
-          refreshAnalysis();
+          await refreshAnalysis();
           setLoadAttempts(prev => prev + 1);
           return;
         }
@@ -102,7 +77,16 @@ const ReportPage: React.FC = () => {
     if (!isLoading) {
       loadAnalysis();
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, refreshAnalysis, loadAttempts, user, directFetchInProgress]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, refreshAnalysis, loadAttempts, user, directFetchInProgress, getAnalysis]);
+  
+  // Always try to refresh data when user is logged in and no analysis is found
+  useEffect(() => {
+    if (user && !isLoading && !analysis && !error && loadAttempts === 0) {
+      console.log("User is logged in but no analysis found, refreshing data");
+      refreshAnalysis();
+      setLoadAttempts(1);
+    }
+  }, [user, isLoading, analysis, error, refreshAnalysis, loadAttempts]);
   
   if (isLoading || directFetchInProgress) {
     console.log("Report page is in loading state");
