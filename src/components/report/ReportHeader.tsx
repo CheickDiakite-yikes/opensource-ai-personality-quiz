@@ -82,26 +82,27 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               {analysisHistory.length <= 1 ? (
                 <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
               ) : (
-                analysisHistory.map((item) => {
-                  // Skip the current analysis
-                  if (item.id === analysis.id) return null;
-                  
-                  let dateLabel = "Unknown date";
-                  try {
-                    dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                  } catch (e) {
-                    console.error("Invalid date format", e);
-                  }
-                  
-                  return (
-                    <DropdownMenuItem 
-                      key={item.id}
-                      onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                    >
-                      {dateLabel}
-                    </DropdownMenuItem>
-                  );
-                })
+                // Always show up to 5 past analyses (not including current)
+                analysisHistory
+                  .filter(item => item.id !== analysis.id)
+                  .slice(0, 5)
+                  .map((item) => {
+                    let dateLabel = "Unknown date";
+                    try {
+                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                    } catch (e) {
+                      console.error("Invalid date format", e);
+                    }
+                    
+                    return (
+                      <DropdownMenuItem 
+                        key={item.id}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                      >
+                        {dateLabel}
+                      </DropdownMenuItem>
+                    );
+                  })
               )}
             </DropdownMenuContent>
           </DropdownMenu>
