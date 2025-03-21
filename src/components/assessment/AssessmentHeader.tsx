@@ -17,6 +17,13 @@ const AssessmentHeader: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      <div className="flex justify-center mb-3">
+        <img 
+          src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
+          alt="Who Am I Logo" 
+          className="h-10 w-auto" 
+        />
+      </div>
       <h1 className="text-3xl font-bold">Who Am I? Assessment</h1>
       <p className="text-muted-foreground mt-2 flex items-center justify-center gap-2">
         Answer thoughtfully for the most accurate personality insights

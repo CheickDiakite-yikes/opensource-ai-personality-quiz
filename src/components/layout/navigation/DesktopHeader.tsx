@@ -2,7 +2,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Heart } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import NotificationCenter from "../../notifications/NotificationCenter";
 
@@ -30,7 +30,11 @@ const DesktopHeader: React.FC = () => {
               <span className="sr-only">Go back</span>
             </Button>
           )}
-          <Heart className="h-5 w-5 text-red-500" />
+          <img 
+            src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
+            alt="Who Am I Logo" 
+            className="h-6 w-auto" 
+          />
         </div>
         <div>
           <NotificationCenter />

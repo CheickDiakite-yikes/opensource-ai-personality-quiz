@@ -19,6 +19,17 @@ const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionPr
         transition={{ duration: 0.6, delay: 0.1 }}
         className="max-w-3xl mx-auto"
       >
+        <div className="flex justify-center mb-6">
+          <motion.img 
+            src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
+            alt="Who Am I Logo" 
+            className="h-24 w-auto" 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+        
         <div className="inline-block mb-4">
           <div className="flex items-center bg-primary/10 px-3 py-1 rounded-full text-sm text-primary">
             <Sparkles className="h-4 w-4 mr-2" />
