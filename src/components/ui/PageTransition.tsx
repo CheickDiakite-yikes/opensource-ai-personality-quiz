@@ -9,19 +9,18 @@ interface PageTransitionProps {
   className?: string;
 }
 
-// Create a stable component with minimal animations to prevent blinking
+// Create a stable component with minimal animations
 const PageTransition = memo(({ children, className }: PageTransitionProps) => {
   const location = useLocation();
   
-  // Extremely simplified transition to eliminate blinking entirely
+  // Simple fade transition that doesn't cause flickering
   return (
     <motion.div
       key={location.pathname}
       initial={{ opacity: 0.99 }}
       animate={{ opacity: 1 }}
       transition={{ 
-        duration: 0.05,
-        ease: "linear"
+        duration: 0.05
       }}
       className={cn("h-full w-full", className)}
     >

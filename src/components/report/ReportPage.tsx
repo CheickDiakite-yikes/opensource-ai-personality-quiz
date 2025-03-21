@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
 import ReportHeader from "./ReportHeader";
@@ -12,43 +12,68 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
 
 const ReportPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     analysis, 
     isLoading, 
     getAnalysisHistory, 
-    setCurrentAnalysis 
+    setCurrentAnalysis,
+    refreshAnalysis
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
-    const history = getAnalysisHistory();
-    return history;
+    return getAnalysisHistory();
   }, [getAnalysisHistory]);
+  
+  // Force a data refresh when the component mounts
+  useEffect(() => {
+    refreshAnalysis(true);
+  }, [refreshAnalysis]);
   
   // Set the current analysis based on the ID param if provided
   useEffect(() => {
     if (!isLoading) {
       if (id) {
+        // If we have an ID in the URL, try to load that specific analysis
         const success = setCurrentAnalysis(id);
         
-        if (!success && !analysis && !stableAnalysis) {
-          toast.error("Could not find the requested analysis", {
-            description: "Please try taking the assessment again or log in to access your saved analyses",
-            duration: 5000
-          });
-          
-          navigate("/assessment");
+        if (!success && !stableAnalysis) {
+          // If we can't find that ID and don't have a stable analysis yet
+          if (analysisHistory && analysisHistory.length > 0) {
+            // If there's any analysis available, redirect to the latest one
+            navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+          } else {
+            // If no analysis is available at all, show error and redirect to assessment
+            toast.error("Could not find the requested analysis", {
+              description: "Please try taking the assessment again or log in to access your saved analyses",
+              duration: 5000
+            });
+            
+            navigate("/assessment");
+          }
         }
       } else if (analysisHistory && analysisHistory.length > 0) {
-        // If no ID is provided, redirect to the latest analysis
-        navigate(`/report/${analysisHistory[0].id}`);
+        // If no ID is provided but we have analysis history, redirect to the latest analysis
+        navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+      } else if (!stableAnalysis && !initialLoadComplete) {
+        // If we have no analysis history and no stable analysis, show error
+        toast.error("No analysis found", {
+          description: "Please take the assessment first to generate your personality analysis",
+          duration: 5000
+        });
+        
+        navigate("/assessment");
       }
+      
+      setInitialLoadComplete(true);
     }
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, stableAnalysis, analysisHistory, initialLoadComplete]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {
@@ -58,7 +83,7 @@ const ReportPage: React.FC = () => {
   }, [analysis, stableAnalysis]);
   
   // Show loading state only on initial load
-  if (isLoading && !stableAnalysis) {
+  if ((isLoading && !stableAnalysis) || !initialLoadComplete) {
     return (
       <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'}`}>
         <ReportSkeleton />
@@ -70,13 +95,18 @@ const ReportPage: React.FC = () => {
   const displayAnalysis = stableAnalysis || analysis;
   
   if (!displayAnalysis) {
-    toast.error("Error loading analysis", {
-      description: "We couldn't load the personality analysis. Please try taking the assessment again.",
-      duration: 5000
-    });
-    
-    navigate("/assessment");
-    return null;
+    return (
+      <div className="container py-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">No Analysis Available</h2>
+        <p className="mb-6">Please take the assessment to generate your personality profile.</p>
+        <button 
+          onClick={() => navigate("/assessment")}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        >
+          Go to Assessment
+        </button>
+      </div>
+    );
   }
   
   const handleAnalysisChange = (analysisId: string) => {

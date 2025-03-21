@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
 
 const ProfilePage: React.FC = () => {
-  const { getAnalysisHistory, isLoading } = useAIAnalysis();
+  const { getAnalysisHistory, isLoading, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  
+  // Extract the analysis history and ensure it's a stable reference
+  const analysisHistory = useMemo(() => {
+    return getAnalysisHistory();
+  }, [getAnalysisHistory]);
   
   // Fetch the latest analysis when the component mounts, but only once
   useEffect(() => {
@@ -28,17 +33,22 @@ const ProfilePage: React.FC = () => {
     const fetchLatestAnalysis = async () => {
       if (!isMounted) return;
       
-      // Get the analysis history (should be sorted with newest first)
-      const history = getAnalysisHistory();
-      
-      if (history && history.length > 0) {
-        // Only set the most recent analysis once
-        setStableAnalysis(history[0]);
-      } else {
+      try {
+        // Get the analysis history (should be sorted with newest first)
+        const history = analysisHistory;
+        
+        if (history && history.length > 0) {
+          // Only set the most recent analysis once
+          setStableAnalysis(history[0]);
+        } else {
+          if (isMounted) setStableAnalysis(null);
+        }
+      } catch (error) {
+        console.error("Error fetching analysis data:", error);
         if (isMounted) setStableAnalysis(null);
+      } finally {
+        if (isMounted) setProfileLoading(false);
       }
-      
-      if (isMounted) setProfileLoading(false);
     };
     
     // Only fetch data once when loading is complete
@@ -49,7 +59,14 @@ const ProfilePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [getAnalysisHistory, isLoading]);
+  }, [analysisHistory, isLoading]);
+  
+  // On page load or when user logs in, refresh the analysis data
+  useEffect(() => {
+    if (user) {
+      refreshAnalysis();
+    }
+  }, [user, refreshAnalysis]);
   
   // Render loading state during initial load
   if (isLoading || profileLoading) {
@@ -60,15 +77,6 @@ const ProfilePage: React.FC = () => {
   if (!stableAnalysis) {
     return <NoAnalysisFound />;
   }
-  
-  // Very simplified animation variants to prevent blinking
-  const containerVariants = {
-    visible: { opacity: 1 }
-  };
-  
-  const itemVariants = {
-    visible: { opacity: 1 }
-  };
   
   return (
     <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
@@ -90,11 +98,11 @@ const ProfilePage: React.FC = () => {
       )}
       
       <div className="space-y-8">
-        <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
-        <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <InsightsCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <GrowthPathwayCard analysis={stableAnalysis} itemVariants={itemVariants} />
+        <ProfileHeader analysis={stableAnalysis} itemVariants={{}} />
+        <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={{}} />
+        <TraitsCard analysis={stableAnalysis} itemVariants={{}} />
+        <InsightsCard analysis={stableAnalysis} itemVariants={{}} />
+        <GrowthPathwayCard analysis={stableAnalysis} itemVariants={{}} />
       </div>
     </div>
   );

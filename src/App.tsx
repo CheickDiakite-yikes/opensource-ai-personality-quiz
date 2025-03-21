@@ -71,13 +71,22 @@ function AppRoutes() {
             </Suspense>
           </PrivateRoute>
         } />
-        <Route path="report/:id?" element={
-          <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
-              <ReportPage />
-            </Suspense>
-          </PrivateRoute>
-        } />
+        <Route path="report">
+          <Route index element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ReportPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path=":id" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ReportPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+        </Route>
         <Route path="tracker" element={
           <PrivateRoute>
             <Suspense fallback={<PageLoader />}>
