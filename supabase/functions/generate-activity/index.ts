@@ -46,7 +46,7 @@ serve(async (req) => {
 
 // Generate activity using OpenAI's o3-mini model
 async function generateActivity(analysis: any, userCategory?: string) {
-  // Create a system prompt that instructs the model to generate a personalized activity
+  // Create a more detailed system prompt with user's personality insights
   const analysisOverview = `
 User Profile:
 - Core Traits: ${analysis.traits.slice(0, 3).map(t => t.trait).join(', ')}
@@ -55,6 +55,7 @@ User Profile:
 - Key Motivators: ${analysis.motivators.slice(0, 3).join(', ')}
 - Growth Areas: ${analysis.growthAreas.slice(0, 3).join(', ')}
 - Learning Pathways: ${analysis.learningPathways.slice(0, 2).join(', ')}
+- Weaknesses: ${analysis.weaknesses.slice(0, 2).join(', ')}
   `;
 
   const prompt = `
@@ -67,15 +68,16 @@ ${userCategory ? `The activity should be specifically focused on the "${userCate
 The activity should:
 1. Be specific and actionable
 2. Take between 15-60 minutes to complete
-3. Target one of their growth areas
-4. Align with their learning style and motivators
+3. Target one of their growth areas or weaknesses
+4. Align with their learning style, intelligence type, and motivators
 5. Have clear steps to follow
 6. Explain why this will benefit their development
 
 Return the activity in JSON format with these fields:
 - title: A concise, engaging title (max 10 words)
 - description: A detailed explanation (2-3 sentences)
-- category: One of [COGNITIVE, EMOTIONAL, SOCIAL, PERSONALITY, MOTIVATION, VALUES, LEARNING, STRENGTHS]
+- category: One of [COGNITIVE, EMOTIONAL, SOCIAL, PERSONALITY, MOTIVATION, VALUES, LEARNING, STRENGTHS] 
+  or if specified: ${userCategory || 'any appropriate category'}
 - points: A number between 10-40 representing the challenge level
 - steps: An array of 3-5 specific steps to complete the activity
 - benefits: A brief explanation of how this helps their growth
@@ -96,7 +98,7 @@ Return the activity in JSON format with these fields:
         messages: [
           { 
             role: 'system', 
-            content: 'You are a personal development coach specialized in creating custom activities that help people grow. Always provide activities that are practical, specific, and tailored to the individual.'
+            content: 'You are a personal development coach specialized in creating custom activities that help people grow based on their personality assessment. Always provide activities that are practical, specific, and tailored to the individual.'
           },
           { role: 'user', content: prompt }
         ],

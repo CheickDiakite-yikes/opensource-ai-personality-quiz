@@ -7,8 +7,11 @@ import ProgressCard from "./components/ProgressCard";
 import CategoryTabs from "./components/CategoryTabs";
 import CategoryTabContent from "./components/CategoryTabContent";
 import { ActivityCategory } from "@/utils/types";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 
 const TrackerPage: React.FC = () => {
+  const { analysis } = useAIAnalysis();
+  
   const {
     activities,
     filter,
@@ -26,7 +29,7 @@ const TrackerPage: React.FC = () => {
     filteredActivities,
     generateActivity,
     isGeneratingActivity
-  } = useActivityState();
+  } = useActivityState(analysis);
   
   // Define the categories including "all" for cleaner iteration
   const categories = ["all", ...Object.values(ActivityCategory)];

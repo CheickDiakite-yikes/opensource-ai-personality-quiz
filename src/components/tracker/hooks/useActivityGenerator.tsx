@@ -4,11 +4,12 @@ import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { activitySuggestionsByCategory } from "../utils/activitySuggestions";
 import { supabase } from "@/integrations/supabase/client";
-import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 
-export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStateAction<Activity[]>>) => {
+export const useActivityGenerator = (
+  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>,
+  userAnalysis: PersonalityAnalysis | null = null
+) => {
   const [isGeneratingActivity, setIsGeneratingActivity] = useState(false);
-  const { analysis } = useAIAnalysis();
   
   // Generate a new activity based on user's profile
   const generateActivity = async (category?: ActivityCategory) => {
@@ -17,8 +18,10 @@ export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStat
     try {
       toast.info("Generating a personalized activity for you...");
       
-      if (!analysis) {
-        throw new Error("No personality analysis available. Complete the assessment first.");
+      if (!userAnalysis) {
+        toast.warning("No personality analysis available. Creating a general activity.");
+        generateFallbackActivity(category, setActivities);
+        return;
       }
       
       console.log("Generating activity with AI using o3-mini model...");
@@ -27,7 +30,7 @@ export const useActivityGenerator = (setActivities: React.Dispatch<React.SetStat
       // IMPORTANT: This function uses the o3-mini model from OpenAI API
       const { data, error } = await supabase.functions.invoke("generate-activity", {
         body: { 
-          analysis,
+          analysis: userAnalysis,
           userCategory: category 
         }
       });
