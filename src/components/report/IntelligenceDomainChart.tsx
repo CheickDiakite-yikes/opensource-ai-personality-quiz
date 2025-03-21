@@ -28,6 +28,9 @@ interface IntelligenceDomainChartProps {
   domains: IntelligenceDomain[];
 }
 
+// Create a formatter function outside of the component
+const formatScore = (value: number) => value.toFixed(1);
+
 const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domains }) => {
   const isMobile = useIsMobile();
   
@@ -114,7 +117,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                   fill="#f5f5f5"
                   fontSize={isMobile ? 10 : 12}
                   fontWeight="bold"
-                  formatter={(value: number) => value.toFixed(1)}
+                  formatter={formatScore}
                 />
               </Bar>
             </BarChart>
