@@ -22,14 +22,14 @@ export const useAssessmentSubmission = (
         duration: 3000,
       });
       
-      // In a real app, you would send this to your backend
-      // For now we'll just pass it to our mock analysis function
-      await analyzeResponses(responses);
+      // Send responses to the analyze function, which will store in Supabase if user is logged in
+      const analysis = await analyzeResponses(responses);
       
       // Clear saved progress after successful submission
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
       
-      navigate("/report");
+      // Navigate to the report page with the ID to ensure it can be loaded in the future
+      navigate(`/report/${analysis.id}`);
     } catch (error) {
       console.error("Error submitting assessment:", error);
       toast.error("Something went wrong. Please try again.");
