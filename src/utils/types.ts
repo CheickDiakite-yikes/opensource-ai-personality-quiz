@@ -143,5 +143,6 @@ export interface Activity {
   completedAt?: Date;
   steps?: string[];
   benefits?: string;
-  createdAt: Date; // Keep this property to fix the type errors
+  createdAt: Date;
+  user_id?: string; // Add user_id to match Supabase schema
 }

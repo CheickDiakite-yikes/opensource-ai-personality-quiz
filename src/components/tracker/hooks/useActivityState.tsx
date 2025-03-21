@@ -18,19 +18,16 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
   // Fetch activities from Supabase when component mounts or user changes
   useEffect(() => {
     const fetchActivities = async () => {
-      if (!user) {
-        // For non-logged-in users, add the createdAt property to sample activities
-        const activitiesWithCreatedAt = sampleActivities.map(activity => ({
-          ...activity,
-          createdAt: new Date()
-        }));
-        setActivities(activitiesWithCreatedAt);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         setIsLoading(true);
+        
+        if (!user) {
+          // For non-logged-in users, use sample activities
+          setActivities(sampleActivities);
+          setIsLoading(false);
+          return;
+        }
+        
         console.log("Fetching activities for user:", user.id);
         
         const { data, error } = await supabase
@@ -41,12 +38,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         if (error) {
           console.error("Error fetching activities:", error);
           toast.error("Failed to load your activities");
-          // Add createdAt to sample activities
-          const activitiesWithCreatedAt = sampleActivities.map(activity => ({
-            ...activity,
-            createdAt: new Date()
-          }));
-          setActivities(activitiesWithCreatedAt);
+          setActivities(sampleActivities);
           return;
         }
         
@@ -63,14 +55,17 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         
         // Transform the data from Supabase format to our Activity type
         const formattedActivities: Activity[] = data.map(item => {
-          // Convert steps from JSON to string array
-          let stepsArray: string[] = [];
+          // Parse steps from JSON string if needed
+          let steps: string[] = [];
           if (item.steps) {
-            // Handle different potential formats of the steps data
-            if (Array.isArray(item.steps)) {
-              stepsArray = item.steps.map(step => 
-                typeof step === 'string' ? step : String(step)
-              );
+            if (typeof item.steps === 'string') {
+              try {
+                steps = JSON.parse(item.steps);
+              } catch (e) {
+                console.error("Error parsing steps:", e);
+              }
+            } else if (Array.isArray(item.steps)) {
+              steps = item.steps;
             }
           }
           
@@ -83,8 +78,9 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
             createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-            steps: stepsArray,
-            benefits: item.benefits || ""
+            steps: steps,
+            benefits: item.benefits || "",
+            user_id: item.user_id
           };
         });
         
@@ -93,12 +89,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       } catch (error) {
         console.error("Unexpected error fetching activities:", error);
         toast.error("Failed to load your activities");
-        // Add createdAt to sample activities
-        const activitiesWithCreatedAt = sampleActivities.map(activity => ({
-          ...activity,
-          createdAt: new Date()
-        }));
-        setActivities(activitiesWithCreatedAt);
+        setActivities(sampleActivities);
       } finally {
         setIsLoading(false);
       }
@@ -113,71 +104,48 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       console.log("Creating initial activities for user:", userId);
       
       // Use the first 3 sample activities as a starting point
-      const initialActivities = sampleActivities.slice(0, 3).map(activity => ({
-        ...activity,
-        user_id: userId
+      const initialActivitiesData = sampleActivities.slice(0, 3).map(activity => ({
+        title: activity.title,
+        description: activity.description,
+        points: activity.points,
+        category: activity.category,
+        completed: false,
+        user_id: userId,
+        steps: activity.steps || [],
+        benefits: activity.benefits || ""
       }));
       
       // Insert them into Supabase
       const { data, error } = await supabase
         .from('activities')
-        .insert(initialActivities.map(activity => ({
-          title: activity.title,
-          description: activity.description,
-          points: activity.points,
-          category: activity.category,
-          completed: false,
-          user_id: userId,
-          steps: activity.steps || [],
-          benefits: activity.benefits || ""
-        })))
+        .insert(initialActivitiesData)
         .select();
       
       if (error) {
         console.error("Error creating initial activities:", error);
         toast.error("Failed to create initial activities");
-        // Add createdAt to sample activities
-        return sampleActivities.map(activity => ({
-          ...activity,
-          createdAt: new Date()
-        }));
+        return sampleActivities;
       }
       
       console.log("Created initial activities:", data);
       
       // Transform the returned data to our Activity type
-      return data.map(item => {
-        // Convert steps from JSON to string array
-        let stepsArray: string[] = [];
-        if (item.steps) {
-          // Handle different potential formats of the steps data
-          if (Array.isArray(item.steps)) {
-            stepsArray = item.steps.map(step => 
-              typeof step === 'string' ? step : String(step)
-            );
-          }
-        }
-        
-        return {
-          id: item.id,
-          title: item.title,
-          description: item.description || "",
-          points: item.points,
-          category: item.category as ActivityCategory,
-          completed: item.completed,
-          completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-          createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-          steps: stepsArray,
-          benefits: item.benefits || ""
-        };
-      });
+      return data.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || "",
+        points: item.points,
+        category: item.category as ActivityCategory,
+        completed: item.completed,
+        completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+        createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+        steps: Array.isArray(item.steps) ? item.steps : [],
+        benefits: item.benefits || "",
+        user_id: item.user_id
+      }));
     } catch (error) {
       console.error("Error creating initial activities:", error);
-      // Add createdAt to sample activities
-      return sampleActivities.map(activity => ({
-        ...activity,
-        createdAt: new Date()
-      }));
+      return sampleActivities;
     }
   };
 
@@ -226,4 +194,3 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
     isGeneratingActivity
   };
 };
-

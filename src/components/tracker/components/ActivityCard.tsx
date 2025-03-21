@@ -26,32 +26,37 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
     );
   };
   
+  // Helper to safely format date
+  const formatDate = (date: Date | string | undefined): string => {
+    if (!date) return 'Unknown date';
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      // Check if date is valid
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid date';
+      }
+      return dateObj.toLocaleDateString();
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return 'Invalid date';
+    }
+  };
+  
   // Helper to safely parse date from ID or use activity's completion date
   const getDateDisplay = () => {
     // If the activity has a completedAt date, show that for completed activities
     if (activity.completed && activity.completedAt) {
-      return `Completed ${activity.completedAt.toLocaleDateString()}`;
+      return `Completed ${formatDate(activity.completedAt)}`;
     }
     
     // If the activity has a createdAt date, use that
     if (activity.createdAt) {
-      return `Added ${activity.createdAt.toLocaleDateString()}`;
-    }
-    
-    // Try to extract timestamp from ID for Supabase-generated IDs
-    if (activity.id.includes('-')) {
-      try {
-        const timestampPart = activity.id.split('-')[1];
-        if (timestampPart && !isNaN(Number(timestampPart))) {
-          return `Added ${new Date(Number(timestampPart)).toLocaleDateString()}`;
-        }
-      } catch (error) {
-        console.error("Error parsing date from ID:", error);
-      }
+      return `Added ${formatDate(activity.createdAt)}`;
     }
     
     // Fallback
-    return `Added ${new Date().toLocaleDateString()}`;
+    return `Added recently`;
   };
   
   return (
