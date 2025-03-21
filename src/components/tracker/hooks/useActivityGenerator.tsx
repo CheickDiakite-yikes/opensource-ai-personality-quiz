@@ -78,6 +78,9 @@ export const useActivityGenerator = (
           } else {
             console.log("Activity saved to Supabase:", savedData);
             
+            // Type assertion to access potentially missing fields
+            const supabaseData = savedData as any;
+            
             // Transform the saved data to Activity type and add to state
             const savedActivity: Activity = {
               id: savedData.id,
@@ -87,8 +90,8 @@ export const useActivityGenerator = (
               category: savedData.category as ActivityCategory,
               completed: savedData.completed,
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
-              steps: savedData.steps || [],
-              benefits: savedData.benefits || ""
+              steps: Array.isArray(supabaseData.steps) ? supabaseData.steps : [],
+              benefits: supabaseData.benefits || ""
             };
             
             setActivities(prev => [savedActivity, ...prev]);
@@ -154,8 +157,7 @@ async function generateFallbackActivity(
     benefits: ""
   };
   
-  // If user is logged in, save to Supabase first
-  // Using supabase.auth.getUser() instead of getSession() to get the user
+  // Using supabase.auth.getUser() to get the current user
   const { data: authData } = await supabase.auth.getUser();
   const user = authData?.user;
   
@@ -177,6 +179,9 @@ async function generateFallbackActivity(
         .single();
       
       if (!error && data) {
+        // Type assertion to access potentially missing fields
+        const supabaseData = data as any;
+        
         // Transform the saved data to Activity type
         const savedActivity: Activity = {
           id: data.id,
@@ -186,8 +191,8 @@ async function generateFallbackActivity(
           category: data.category as ActivityCategory,
           completed: data.completed,
           completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
-          steps: data.steps || [],
-          benefits: data.benefits || ""
+          steps: Array.isArray(supabaseData.steps) ? supabaseData.steps : [],
+          benefits: supabaseData.benefits || ""
         };
         
         // Add the new activity to the list

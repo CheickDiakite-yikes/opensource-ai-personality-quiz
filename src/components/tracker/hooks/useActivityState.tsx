@@ -41,18 +41,23 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         }
         
         // Transform the data from Supabase format to our Activity type
-        const formattedActivities: Activity[] = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description || "",
-          points: item.points,
-          category: item.category as ActivityCategory,
-          completed: item.completed,
-          completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-          // Add steps and benefits with default values if they don't exist
-          steps: item.steps ? Array.isArray(item.steps) ? item.steps : [] : [],
-          benefits: item.benefits || ""
-        }));
+        const formattedActivities: Activity[] = data.map(item => {
+          // Type assertion to access potential custom fields that might not be in the type definition
+          const activityData = item as any;
+          
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description || "",
+            points: item.points,
+            category: item.category as ActivityCategory,
+            completed: item.completed,
+            completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+            // Access steps and benefits with fallbacks
+            steps: Array.isArray(activityData.steps) ? activityData.steps : [],
+            benefits: activityData.benefits || ""
+          };
+        });
         
         console.log("Fetched activities:", formattedActivities);
         
