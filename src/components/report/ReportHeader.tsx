@@ -53,7 +53,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/51176333-6542-4e09-980a-53189b514c92.png`;
     
     switch (platform) {
       case 'twitter':
@@ -83,6 +83,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   };
 
   return (
+    
     <div className="flex flex-col gap-4 sm:gap-1">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -103,7 +104,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             {copied ? "Copied" : "Copy Link"}
           </Button>
           
-          {/* Past Reports Button - ALWAYS visible right next to Share button */}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -120,7 +121,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               {analysisHistory.length <= 1 ? (
                 <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
               ) : (
-                // Always show up to 5 past analyses (not including current)
+                
                 analysisHistory
                   .filter(item => item.id !== analysis.id)
                   .slice(0, 5)
@@ -145,7 +146,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Share Button - Opens dialog with share options */}
+          
           <Dialog>
             <DialogTrigger asChild>
               <Button size={isMobile ? "sm" : "default"}>

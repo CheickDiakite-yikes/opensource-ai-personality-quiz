@@ -16,7 +16,7 @@ import {
   SidebarGroupLabel,
   SidebarRail
 } from "@/components/ui/sidebar";
-import { Home, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useNavigationItems } from "./NavigationItems";
 
 const DesktopSidebar: React.FC = () => {
@@ -34,7 +34,7 @@ const DesktopSidebar: React.FC = () => {
         >
           <Link to="/" className="text-xl font-bold hover:text-primary transition-colors flex items-center">
             <img 
-              src="/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png" 
+              src="/lovable-uploads/51176333-6542-4e09-980a-53189b514c92.png" 
               alt="Who Am I Logo" 
               className="h-8 w-auto mr-2" 
             />
