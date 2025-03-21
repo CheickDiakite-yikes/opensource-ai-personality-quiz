@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -42,23 +43,25 @@ const PersonalityTraitsSection: React.FC<PersonalityTraitsSectionProps> = ({ tra
           </CardTitle>
           <CardDescription>Your most prominent characteristics</CardDescription>
         </CardHeader>
-        <CardContent className={isMobile ? "p-4 pt-3" : "pt-6"}>
+        <CardContent className={`${isMobile ? "p-4 pt-3 pb-2" : "pt-6 pb-2"}`}>
           <div className="space-y-3 md:space-y-4">
             {traits.slice(0, isMobile ? 3 : 5).map((trait, index) => (
               <PersonalityTraitCard key={index} trait={trait} index={index} />
             ))}
-            
-            {traits.length > (isMobile ? 3 : 5) && (
-              <Button 
-                variant="outline" 
-                className="w-full mt-3 md:mt-4 text-sm md:text-base py-1.5 md:py-2"
-                onClick={() => navigate("/traits")}
-              >
-                View All {traits.length} Traits
-              </Button>
-            )}
           </div>
         </CardContent>
+        
+        {traits.length > (isMobile ? 3 : 5) && (
+          <CardFooter className={`${isMobile ? "px-4 py-3" : "px-6 py-4"} pt-2 flex justify-center`}>
+            <Button 
+              variant="outline" 
+              className="w-full text-sm md:text-base py-1.5 md:py-2"
+              onClick={() => navigate("/traits")}
+            >
+              View All {traits.length} Traits
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </motion.div>
   );
