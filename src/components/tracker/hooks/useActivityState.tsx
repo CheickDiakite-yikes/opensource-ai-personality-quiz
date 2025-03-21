@@ -42,6 +42,17 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
         
         // Transform the data from Supabase format to our Activity type
         const formattedActivities: Activity[] = data.map(item => {
+          // Convert steps from JSON to string array
+          let stepsArray: string[] = [];
+          if (item.steps) {
+            // Handle different potential formats of the steps data
+            if (Array.isArray(item.steps)) {
+              stepsArray = item.steps.map(step => 
+                typeof step === 'string' ? step : String(step)
+              );
+            }
+          }
+          
           return {
             id: item.id,
             title: item.title,
@@ -50,8 +61,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
             category: item.category as ActivityCategory,
             completed: item.completed,
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-            // Access steps with fallback to empty array if null or undefined
-            steps: Array.isArray(item.steps) ? item.steps : [],
+            steps: stepsArray,
             benefits: item.benefits || ""
           };
         });
@@ -107,17 +117,30 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
       }
       
       // Transform the returned data to our Activity type
-      return data.map(item => ({
-        id: item.id,
-        title: item.title,
-        description: item.description || "",
-        points: item.points,
-        category: item.category as ActivityCategory,
-        completed: item.completed,
-        completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-        steps: Array.isArray(item.steps) ? item.steps : [],
-        benefits: item.benefits || ""
-      }));
+      return data.map(item => {
+        // Convert steps from JSON to string array
+        let stepsArray: string[] = [];
+        if (item.steps) {
+          // Handle different potential formats of the steps data
+          if (Array.isArray(item.steps)) {
+            stepsArray = item.steps.map(step => 
+              typeof step === 'string' ? step : String(step)
+            );
+          }
+        }
+        
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description || "",
+          points: item.points,
+          category: item.category as ActivityCategory,
+          completed: item.completed,
+          completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+          steps: stepsArray,
+          benefits: item.benefits || ""
+        };
+      });
     } catch (error) {
       console.error("Error creating initial activities:", error);
       return sampleActivities;
