@@ -1,3 +1,4 @@
+
 import { PersonalityAnalysis, Json, PersonalityTrait, IntelligenceType, RelationshipPatterns } from "@/utils/types";
 import { isValueSystemObject, isRelationshipObject, isCognitiveStyleObject } from "./typeGuards";
 
@@ -20,14 +21,19 @@ const safeJsonToTraits = (json: Json | null | undefined): PersonalityTrait[] => 
       'trait' in item && 
       'score' in item && 
       'description' in item
-    ).map(item => ({
-      trait: String(item.trait || ''),
-      score: Number(item.score || 0),
-      description: String(item.description || ''),
-      strengths: Array.isArray(item.strengths) ? item.strengths.map(s => String(s)) : [],
-      challenges: Array.isArray(item.challenges) ? item.challenges.map(c => String(c)) : [],
-      growthSuggestions: Array.isArray(item.growthSuggestions) ? item.growthSuggestions.map(g => String(g)) : []
-    }));
+    ).map(item => {
+      // Type assert item as a Record with string keys for type safety
+      const traitItem = item as Record<string, any>;
+      return {
+        trait: String(traitItem.trait || ''),
+        score: Number(traitItem.score || 0),
+        description: String(traitItem.description || ''),
+        strengths: Array.isArray(traitItem.strengths) ? traitItem.strengths.map((s: any) => String(s)) : [],
+        challenges: Array.isArray(traitItem.challenges) ? traitItem.challenges.map((c: any) => String(c)) : [],
+        growthSuggestions: Array.isArray(traitItem.growthSuggestions) ? 
+          traitItem.growthSuggestions.map((g: any) => String(g)) : []
+      };
+    });
   }
   return [];
 };
