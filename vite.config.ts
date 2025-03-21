@@ -2,7 +2,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -15,12 +14,12 @@ export default defineConfig(({ mode }) => ({
       host: 'localhost'
     },
     // Enable history API fallback for SPA routing
-    historyApiFallback: true
+    proxy: {}
   },
   plugins: [
     react(),
     mode === 'development' &&
-    componentTagger(),
+    require('lovable-tagger').componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -34,12 +33,19 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'es2020',
-    // Implement chunk size limits to prevent large bundle sizes on mobile
+    // Ensure proper handling of SPA routing
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Prevent the build from failing on warnings
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
-          ui: ['@/components/ui'],
+          ui: ['@/components/ui/button', '@/components/ui/card']
         }
       }
     }

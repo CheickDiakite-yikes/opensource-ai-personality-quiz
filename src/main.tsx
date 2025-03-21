@@ -16,18 +16,13 @@ const root = createRoot(rootElement);
 
 // Render app with proper provider hierarchy to ensure
 // authentication context is always available
-const renderApp = () => {
-  root.render(
-    <Router>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </Router>
-  );
-};
-
-// Render the app
-renderApp();
+root.render(
+  <Router>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </Router>
+);
 
 // Add event listener for unhandled errors to improve debugging
 window.addEventListener('error', (event) => {
