@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import { Activity } from "@/utils/types";
 import ActivityCard from "./ActivityCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,11 +10,12 @@ interface ActivityListProps {
   isGeneratingActivity: boolean;
 }
 
-const ActivityList: React.FC<ActivityListProps> = ({
+// Using memo to prevent unnecessary re-renders
+const ActivityList = memo(({
   filteredActivities,
   toggleActivityCompletion,
   isGeneratingActivity,
-}) => {
+}: ActivityListProps) => {
   // If there are no activities, show a message
   if (filteredActivities.length === 0 && !isGeneratingActivity) {
     return (
@@ -46,6 +47,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
       ))}
     </div>
   );
-};
+});
+
+ActivityList.displayName = "ActivityList";
 
 export default ActivityList;

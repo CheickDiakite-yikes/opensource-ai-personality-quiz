@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Activity, ActivityCategory } from "@/utils/types";
 import { sampleActivities } from "../data/sampleActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ export const useActivityDataFetching = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const hasFetchedRef = useRef(false);
   
   // Helper function to ensure steps are properly formatted as strings
   const formatSteps = (steps: any): string[] => {
@@ -35,7 +36,7 @@ export const useActivityDataFetching = () => {
   };
   
   // Function to create initial activities for new users
-  const createInitialActivities = async (userId: string) => {
+  const createInitialActivities = useCallback(async (userId: string) => {
     try {
       console.log("Creating initial activities for user:", userId);
       
@@ -83,10 +84,13 @@ export const useActivityDataFetching = () => {
       console.error("Error creating initial activities:", error);
       return sampleActivities;
     }
-  };
+  }, []);
 
   // Fetch activities from Supabase when component mounts or user changes
   useEffect(() => {
+    // Prevent multiple fetches in development mode due to React.StrictMode
+    if (hasFetchedRef.current) return;
+    
     const fetchActivities = async () => {
       try {
         setIsLoading(true);
@@ -111,8 +115,6 @@ export const useActivityDataFetching = () => {
           setActivities(sampleActivities);
           return;
         }
-        
-        console.log("Raw data from Supabase:", data);
         
         // Check if we got any data back
         if (!data || data.length === 0) {
@@ -140,7 +142,6 @@ export const useActivityDataFetching = () => {
           };
         });
         
-        console.log("Formatted activities:", formattedActivities);
         setActivities(formattedActivities);
       } catch (error) {
         console.error("Unexpected error fetching activities:", error);
@@ -148,11 +149,12 @@ export const useActivityDataFetching = () => {
         setActivities(sampleActivities);
       } finally {
         setIsLoading(false);
+        hasFetchedRef.current = true;
       }
     };
     
     fetchActivities();
-  }, [user]);
+  }, [user, createInitialActivities]);
 
   return {
     activities,

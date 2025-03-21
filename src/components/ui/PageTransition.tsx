@@ -1,6 +1,6 @@
 
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -12,31 +12,27 @@ interface PageTransitionProps {
 // Using React.memo to prevent unnecessary re-renders
 const PageTransition = React.memo(({ children, className }: PageTransitionProps) => {
   const location = useLocation();
-
+  const prevPathRef = useRef<string>(location.pathname);
+  
+  // Only animate when the path actually changes
+  useEffect(() => {
+    prevPathRef.current = location.pathname;
+  }, [location.pathname]);
+  
+  // Simpler, more stable animation
   return (
     <motion.div
       key={location.pathname}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ 
-        duration: 0.3, // Slightly faster transition
-        ease: [0.22, 1, 0.36, 1] 
+        duration: 0.2, // Shorter duration
+        ease: "easeOut" // Simpler easing function
       }}
       className={cn("h-full w-full", className)}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{
-          duration: 0.4, // Slightly faster transition
-          delay: 0.05, // Reduced delay
-          ease: [0.22, 1, 0.36, 1]
-        }}
-        className="h-full w-full"
-      >
-        {children}
-      </motion.div>
+      {children}
     </motion.div>
   );
 });

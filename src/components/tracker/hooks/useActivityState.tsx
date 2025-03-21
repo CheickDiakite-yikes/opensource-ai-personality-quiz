@@ -1,14 +1,14 @@
 
-import { useState } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { useActivityFilters } from "./useActivityFilters";
 import { useLevelProgress } from "./useLevelProgress";
 import { useActivityGenerator } from "./useActivityGenerator";
 import { useActivityCompletion } from "./useActivityCompletion";
 import { useActivityDataFetching } from "./useActivityDataFetching";
+import { useCallback } from "react";
 
 export const useActivityState = (analysis: PersonalityAnalysis | null = null) => {
-  // Use the extracted hooks
+  // Use the extracted hooks with stable references
   const { activities, setActivities, isLoading } = useActivityDataFetching();
   
   const { 
@@ -32,6 +32,7 @@ export const useActivityState = (analysis: PersonalityAnalysis | null = null) =>
   
   const { generateActivity, isGeneratingActivity } = useActivityGenerator(setActivities, analysis);
   
+  // Use useCallback to stabilize the function reference
   const { toggleActivityCompletion } = useActivityCompletion(activities, setActivities, totalPoints);
 
   return {
