@@ -23,3 +23,44 @@ body {
   max-width: 100vw;
   position: relative;
 }
+
+/* Mobile viewport improvements */
+@media screen and (max-width: 767px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    width: 100%;
+  }
+  
+  /* Improve tap target sizes on mobile */
+  button, a, input, select, textarea, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Add responsive card styles for mobile */
+  .card {
+    @apply rounded-lg border px-3 py-3 md:px-6 md:py-4;
+  }
+
+  /* Adjust text sizes for readability on mobile */
+  h1 {
+    @apply text-2xl md:text-3xl;
+  }
+  
+  h2 {
+    @apply text-xl md:text-2xl;
+  }
+  
+  p, li {
+    @apply text-sm md:text-base;
+  }
+}
+
+/* Fix for notch phones and other devices with safe areas */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: min(0vmin, env(safe-area-inset-left));
+    padding-right: min(0vmin, env(safe-area-inset-right));
+  }
+}

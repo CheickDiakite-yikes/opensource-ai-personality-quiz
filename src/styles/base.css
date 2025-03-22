@@ -38,3 +38,21 @@
     overflow-x: hidden;
   }
 }
+
+@layer utilities {
+  /* Define the scrollbar-none utility class */
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Mobile-optimized scrollable container for tabs */
+  .scrollable-tabs {
+    @apply overflow-x-auto -mx-3 px-3;
+    -webkit-overflow-scrolling: touch;
+  }
+}
