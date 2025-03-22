@@ -15,20 +15,16 @@ const MobileHeader: React.FC = () => {
     navigate(-1);
   };
 
-  const isHomePage = location.pathname === "/";
-  const headerClasses = `md:hidden py-3 px-3 border-b fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md`;
-
   return (
-    <header className={headerClasses}>
+    <header className="md:hidden py-4 px-4 border-b">
       <div className="container flex justify-between items-center">
         <div className="flex items-center gap-2">
-          {!isHomePage && (
+          {location.pathname !== "/" && (
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleBack}
-              className="mr-1 hover:bg-accent/50 transition-colors rounded-full w-9 h-9 p-0"
-              aria-label="Go back"
+              className="mr-1 hover:bg-accent/50 transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
               <span className="sr-only">Go back</span>
@@ -46,11 +42,11 @@ const MobileHeader: React.FC = () => {
                 alt="Who Am I Logo" 
                 className="h-8 w-auto mr-2" 
               />
-              <span className="text-lg font-bold">Who Am I?</span>
+              <span className="text-xl font-bold">Who Am I?</span>
             </Link>
           </motion.div>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-3">
           <NotificationCenter />
           <MobileMenu />
         </div>

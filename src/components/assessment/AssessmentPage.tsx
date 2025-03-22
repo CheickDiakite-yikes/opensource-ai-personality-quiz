@@ -8,11 +8,9 @@ import AssessmentHeader from "./AssessmentHeader";
 import AssessmentProgressInfo from "./AssessmentProgressInfo";
 import AssessmentControls from "./AssessmentControls";
 import { useAssessmentState } from "./useAssessmentState";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const AssessmentPage: React.FC = () => {
   const allQuestions = questionBank;
-  const isMobile = useIsMobile();
   
   const {
     currentQuestionIndex,
@@ -42,14 +40,14 @@ const AssessmentPage: React.FC = () => {
   };
   
   return (
-    <div className={`container max-w-3xl ${isMobile ? 'py-4' : 'py-8 md:py-12'} px-3 sm:px-4 md:px-6 min-h-screen flex flex-col`}>
+    <div className="container max-w-3xl py-8 md:py-12 px-4 md:px-6 min-h-screen flex flex-col">
       <AssessmentHeader />
       
       <motion.div
         variants={progressContainerVariants}
         initial="hidden"
         animate="visible"
-        className={`${isMobile ? 'mb-4' : 'mb-6'}`}
+        className="mb-6"
       >
         <AssessmentProgressInfo 
           currentQuestionIndex={currentQuestionIndex}
@@ -75,7 +73,6 @@ const AssessmentPage: React.FC = () => {
           onOptionSelect={handleOptionSelect}
           onCustomResponseChange={handleCustomResponseChange}
           useCustomResponse={useCustomResponse}
-          isMobile={isMobile}
         />
       </AnimatePresence>
       
@@ -87,7 +84,6 @@ const AssessmentPage: React.FC = () => {
         onPrevious={goToPreviousQuestion}
         onNext={goToNextQuestion}
         onSubmit={handleSubmitAssessment}
-        isMobile={isMobile}
       />
     </div>
   );

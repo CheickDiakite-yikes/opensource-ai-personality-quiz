@@ -13,7 +13,6 @@ interface AssessmentControlsProps {
   onPrevious: () => void;
   onNext: () => void;
   onSubmit: () => void;
-  isMobile?: boolean;
 }
 
 const AssessmentControls: React.FC<AssessmentControlsProps> = ({
@@ -24,7 +23,6 @@ const AssessmentControls: React.FC<AssessmentControlsProps> = ({
   onPrevious,
   onNext,
   onSubmit,
-  isMobile = false,
 }) => {
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const hasResponse = !!currentResponse.selectedOption || !!currentResponse.customResponse;
