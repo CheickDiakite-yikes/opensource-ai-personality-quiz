@@ -45,7 +45,7 @@ const TraitsPage: React.FC = () => {
   }
   
   return (
-    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
+    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen overflow-x-hidden">
       <Button 
         variant="ghost" 
         className="mb-3 md:mb-6 -ml-2" 
@@ -65,7 +65,7 @@ const TraitsPage: React.FC = () => {
             <CardTitle className="text-foreground">All Personality Traits</CardTitle>
             <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
-          <CardContent className={isMobile ? "p-4 pt-3" : "pt-6"}>
+          <CardContent className={isMobile ? "p-3 pt-2" : "pt-6"}>
             <TraitsDetail traits={analysis.traits} />
           </CardContent>
         </Card>

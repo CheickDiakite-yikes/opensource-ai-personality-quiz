@@ -1,3 +1,4 @@
+
 import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -83,111 +84,207 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-1">
+    <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Your Personality Analysis</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">{isMobile ? "Your Analysis" : "Your Personality Analysis"}</h1>
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
             {renderDate()}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <Button
-            onClick={handleCopyLink}
-            size={isMobile ? "sm" : "default"}
-            variant="outline"
-          >
-            {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
-            {copied ? "Copied" : "Copy Link"}
-          </Button>
-          
-          {/* Past Reports Button - ALWAYS visible right next to Share button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size={isMobile ? "sm" : "default"}
-                disabled={analysisHistory.length <= 1}
-              >
-                <History className="h-4 w-4 mr-2" /> Past Reports
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {analysisHistory.length <= 1 ? (
-                <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
-              ) : (
-                // Always show up to 5 past analyses (not including current)
-                analysisHistory
-                  .filter(item => item.id !== analysis.id)
-                  .slice(0, 5)
-                  .map((item) => {
-                    let dateLabel = "Unknown date";
-                    try {
-                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                    } catch (e) {
-                      console.error("Invalid date format", e);
-                    }
-                    
-                    return (
-                      <DropdownMenuItem 
-                        key={item.id}
-                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                      >
-                        {dateLabel}
-                      </DropdownMenuItem>
-                    );
-                  })
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {isMobile ? (
+          <div className="flex items-center gap-1 self-start w-full">
+            <Button
+              onClick={handleCopyLink}
+              size="sm"
+              variant="outline"
+              className="flex-1 px-2"
+            >
+              {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />} 
+              Copy
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={analysisHistory.length <= 1}
+                  className="flex-1 px-2"
+                >
+                  <History className="h-3 w-3 mr-1" /> Past
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {analysisHistory.length <= 1 ? (
+                  <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+                ) : (
+                  // Always show up to 5 past analyses (not including current)
+                  analysisHistory
+                    .filter(item => item.id !== analysis.id)
+                    .slice(0, 5)
+                    .map((item) => {
+                      let dateLabel = "Unknown date";
+                      try {
+                        dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                      } catch (e) {
+                        console.error("Invalid date format", e);
+                      }
+                      
+                      return (
+                        <DropdownMenuItem 
+                          key={item.id}
+                          onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                        >
+                          {dateLabel}
+                        </DropdownMenuItem>
+                      );
+                    })
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Share Button - Opens dialog with share options */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size={isMobile ? "sm" : "default"}>
-                <Share className="h-4 w-4 mr-2" /> Share
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Share your analysis</DialogTitle>
-                <DialogDescription>
-                  Let others see your personality analysis results
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="flex items-center space-x-2 mt-4">
-                <div className="grid flex-1 gap-2">
-                  <div className="bg-muted text-muted-foreground p-2 rounded-md text-sm overflow-hidden text-ellipsis">
-                    {shareUrl}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" className="flex-1 px-2">
+                  <Share className="h-3 w-3 mr-1" /> Share
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Share your analysis</DialogTitle>
+                  <DialogDescription>
+                    Let others see your personality analysis results
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex items-center space-x-2 mt-4">
+                  <div className="grid flex-1 gap-2">
+                    <div className="bg-muted text-muted-foreground p-2 rounded-md text-sm overflow-hidden text-ellipsis">
+                      {shareUrl}
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={handleCopyLink}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleShare('twitter')}>
+                      <Twitter className="h-4 w-4 mr-2" /> Twitter
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleShare('facebook')}>
+                      <Facebook className="h-4 w-4 mr-2" /> Facebook
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleShare('linkedin')}>
+                      <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+                    </Button>
                   </div>
                 </div>
-                <Button size="sm" onClick={handleCopyLink}>
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </DialogContent>
+            </Dialog>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <Button
+              onClick={handleCopyLink}
+              size={isMobile ? "sm" : "default"}
+              variant="outline"
+            >
+              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
+              {copied ? "Copied" : "Copy Link"}
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size={isMobile ? "sm" : "default"}
+                  disabled={analysisHistory.length <= 1}
+                >
+                  <History className="h-4 w-4 mr-2" /> Past Reports
                 </Button>
-              </div>
-              
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleShare('twitter')}>
-                    <Twitter className="h-4 w-4 mr-2" /> Twitter
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleShare('facebook')}>
-                    <Facebook className="h-4 w-4 mr-2" /> Facebook
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleShare('linkedin')}>
-                    <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {analysisHistory.length <= 1 ? (
+                  <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+                ) : (
+                  // Always show up to 5 past analyses (not including current)
+                  analysisHistory
+                    .filter(item => item.id !== analysis.id)
+                    .slice(0, 5)
+                    .map((item) => {
+                      let dateLabel = "Unknown date";
+                      try {
+                        dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                      } catch (e) {
+                        console.error("Invalid date format", e);
+                      }
+                      
+                      return (
+                        <DropdownMenuItem 
+                          key={item.id}
+                          onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                        >
+                          {dateLabel}
+                        </DropdownMenuItem>
+                      );
+                    })
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size={isMobile ? "sm" : "default"}>
+                  <Share className="h-4 w-4 mr-2" /> Share
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Share your analysis</DialogTitle>
+                  <DialogDescription>
+                    Let others see your personality analysis results
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex items-center space-x-2 mt-4">
+                  <div className="grid flex-1 gap-2">
+                    <div className="bg-muted text-muted-foreground p-2 rounded-md text-sm overflow-hidden text-ellipsis">
+                      {shareUrl}
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={handleCopyLink}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleShare('twitter')}>
+                      <Twitter className="h-4 w-4 mr-2" /> Twitter
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleShare('facebook')}>
+                      <Facebook className="h-4 w-4 mr-2" /> Facebook
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleShare('linkedin')}>
+                      <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
     </div>
   );
