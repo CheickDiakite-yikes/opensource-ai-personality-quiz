@@ -43,7 +43,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
     <section className="max-w-full overflow-hidden">
       <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold mb-2`}>Personality Overview</h2>
       
-      <Card className="mb-3 md:mb-6 overflow-hidden w-full force-wrap text-wrap">
+      <Card className="mb-3 md:mb-6 overflow-hidden w-full max-w-[100vw] text-wrap">
         {isMobile ? (
           <>
             <Collapsible open={expanded} onOpenChange={setExpanded} className="w-full">
@@ -87,12 +87,12 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
         <Card className="w-full">
           <CardContent className={`${isMobile ? 'px-3 py-2' : 'pt-6'} w-full`}>
             <h3 className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold mb-1`}>Cognitive Style</h3>
-            <p className="text-muted-foreground text-xs md:text-base break-words whitespace-normal force-wrap">
+            <p className="text-muted-foreground text-xs md:text-base break-words whitespace-normal">
               You tend to process information as a {formatCognitiveStyle()}
             </p>
             
             {isCognitiveStyleObject(cognitiveStyle) && cognitiveStyle.description && (
-              <p className="mt-2 text-xs text-muted-foreground break-words whitespace-normal force-wrap">
+              <p className="mt-2 text-xs text-muted-foreground break-words whitespace-normal">
                 {cognitiveStyle.description}
               </p>
             )}
