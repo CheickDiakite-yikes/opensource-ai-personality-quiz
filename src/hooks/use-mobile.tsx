@@ -1,10 +1,19 @@
 
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Define breakpoints according to common device sizes
+export const BREAKPOINTS = {
+  MOBILE: 640,      // Small smartphones
+  TABLET: 768,      // Tablets and large smartphones
+  DESKTOP: 1024,    // Small desktops and landscape tablets
+  LARGE_DESKTOP: 1280  // Large desktops
+}
 
+/**
+ * Hook that detects if the current viewport is mobile size
+ */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean | null>(null)
 
   React.useEffect(() => {
     // Check if we're in a browser environment
@@ -14,29 +23,49 @@ export function useIsMobile() {
     
     // Initial check
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      setIsMobile(window.innerWidth < BREAKPOINTS.TABLET)
     }
     
     // Check immediately
     checkMobile()
     
-    // Then set up listener for resize events
-    window.addEventListener("resize", checkMobile)
+    // Then set up listener for resize events with debounce for performance
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     
-    return () => window.removeEventListener("resize", checkMobile)
+    const handleResize = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      
+      timeoutId = setTimeout(() => {
+        checkMobile()
+      }, 100)
+    }
+    
+    window.addEventListener("resize", handleResize)
+    
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [])
 
-  // If we haven't determined yet, default to false,
-  // but in most cases this will be updated very quickly
-  return isMobile === undefined ? false : isMobile
+  // During SSR or initial render, return false to prevent layout shift
+  // Use null to differentiate between "not yet determined" and "definitely not mobile"
+  return isMobile === null ? false : isMobile
 }
 
-// Hook to get specific breakpoints
+/**
+ * Hook to get specific breakpoints with better typing
+ */
 export function useBreakpoint() {
   const [breakpoint, setBreakpoint] = React.useState({
-    isMobile: false,   // < 640px
-    isTablet: false,   // >= 640px and < 1024px
-    isDesktop: false,  // >= 1024px
+    isMobile: false,        // < 640px (phone)
+    isTablet: false,        // >= 640px and < 1024px (tablet)
+    isDesktop: false,       // >= 1024px and < 1280px (small desktop)
+    isLargeDesktop: false,  // >= 1280px (large desktop)
   })
 
   React.useEffect(() => {
@@ -48,20 +77,80 @@ export function useBreakpoint() {
     const checkBreakpoint = () => {
       const width = window.innerWidth
       setBreakpoint({
-        isMobile: width < 640,
-        isTablet: width >= 640 && width < 1024,
-        isDesktop: width >= 1024,
+        isMobile: width < BREAKPOINTS.MOBILE,
+        isTablet: width >= BREAKPOINTS.MOBILE && width < BREAKPOINTS.DESKTOP,
+        isDesktop: width >= BREAKPOINTS.DESKTOP && width < BREAKPOINTS.LARGE_DESKTOP,
+        isLargeDesktop: width >= BREAKPOINTS.LARGE_DESKTOP,
       })
     }
     
     // Check immediately
     checkBreakpoint()
     
-    // Then set up listener for resize events
-    window.addEventListener("resize", checkBreakpoint)
+    // Then set up listener for resize events with debounce for performance
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     
-    return () => window.removeEventListener("resize", checkBreakpoint)
+    const handleResize = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      
+      timeoutId = setTimeout(() => {
+        checkBreakpoint()
+      }, 100)
+    }
+    
+    window.addEventListener("resize", handleResize)
+    
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [])
 
   return breakpoint
+}
+
+/**
+ * Hook to get viewport dimensions and orientation
+ */
+export function useViewport() {
+  const [viewport, setViewport] = React.useState({
+    width: 0,
+    height: 0,
+    isPortrait: true,
+  })
+
+  React.useEffect(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      return
+    }
+    
+    const updateViewport = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isPortrait: window.innerHeight > window.innerWidth,
+      })
+    }
+    
+    // Initial check
+    updateViewport()
+    
+    // Set up listener for resize events
+    window.addEventListener('resize', updateViewport)
+    
+    // Detect orientation change for mobile devices
+    window.addEventListener('orientationchange', updateViewport)
+    
+    return () => {
+      window.removeEventListener('resize', updateViewport)
+      window.removeEventListener('orientationchange', updateViewport)
+    }
+  }, [])
+
+  return viewport
 }

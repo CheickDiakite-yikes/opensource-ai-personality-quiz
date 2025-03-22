@@ -1,3 +1,4 @@
+
 import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -27,15 +28,21 @@ interface ReportHeaderProps {
   analysis: PersonalityAnalysis;
   analysisHistory?: PersonalityAnalysis[];
   onAnalysisChange?: (analysisId: string) => void;
+  isMobile?: boolean;
 }
 
 const ReportHeader: React.FC<ReportHeaderProps> = ({ 
   analysis,
   analysisHistory = [],
-  onAnalysisChange
+  onAnalysisChange,
+  isMobile = false
 }) => {
-  const isMobile = useIsMobile();
+  // We still need the useIsMobile hook for backward compatibility
+  const isMobileDetected = useIsMobile();
   const [copied, setCopied] = useState(false);
+  
+  // Use provided prop or fallback to the hook
+  const isSmallScreen = isMobile || isMobileDetected;
   
   // Generate a share URL for the current analysis
   const shareUrl = `${window.location.origin}/report/${analysis.id}`;
@@ -86,17 +93,17 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     <div className="flex flex-col gap-4 sm:gap-1">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Your Personality Analysis</h1>
+          <h1 className={`${isSmallScreen ? 'text-2xl' : 'text-3xl'} font-bold`}>Your Personality Analysis</h1>
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
             {renderDate()}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className={`${isSmallScreen ? 'w-full' : ''}`}>
           <Button
             onClick={handleCopyLink}
-            size={isMobile ? "sm" : "default"}
+            size={isSmallScreen ? "sm" : "default"}
             variant="outline"
           >
             {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
@@ -108,7 +115,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size={isMobile ? "sm" : "default"}
+                size={isSmallScreen ? "sm" : "default"}
                 disabled={analysisHistory.length <= 1}
               >
                 <History className="h-4 w-4 mr-2" /> Past Reports
@@ -148,7 +155,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
           {/* Share Button - Opens dialog with share options */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button size={isMobile ? "sm" : "default"}>
+              <Button size={isSmallScreen ? "sm" : "default"}>
                 <Share className="h-4 w-4 mr-2" /> Share
               </Button>
             </DialogTrigger>
