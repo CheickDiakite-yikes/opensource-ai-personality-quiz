@@ -27,15 +27,15 @@ body {
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
     width: 100%;
   }
   
   /* Improve tap target sizes on mobile */
   button, a, input, select, textarea, [role="button"] {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    min-width: 44px;
   }
   
   /* Add responsive card styles for mobile */
@@ -45,33 +45,16 @@ body {
 
   /* Adjust text sizes for readability on mobile */
   h1 {
-    @apply text-xl md:text-3xl;
+    @apply text-2xl md:text-3xl;
   }
   
   h2 {
-    @apply text-lg md:text-2xl;
+    @apply text-xl md:text-2xl;
   }
   
   p, li {
     @apply text-sm md:text-base;
   }
-  
-  /* Improve scrollable tabs for mobile */
-  .scrollable-tabs {
-    @apply overflow-x-auto scrollbar-none pb-0.5;
-    -webkit-overflow-scrolling: touch;
-    scroll-padding: 0.5rem;
-  }
-}
-
-/* Add a utility class for removing scrollbars but keeping functionality */
-.scrollbar-none {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Fix for notch phones and other devices with safe areas */
@@ -81,9 +64,3 @@ body {
     padding-right: min(0vmin, env(safe-area-inset-right));
   }
 }
-
-/* Utility class for glassmorphism panels */
-.glass-panel {
-  @apply bg-background/60 backdrop-blur-sm border border-white/10;
-}
-
