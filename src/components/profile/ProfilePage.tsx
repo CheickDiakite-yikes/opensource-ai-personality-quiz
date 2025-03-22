@@ -80,7 +80,7 @@ const ProfilePage: React.FC = () => {
   };
   
   return (
-    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
+    <div className="container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
       <Button 
         variant="ghost" 
         className="mb-3 md:mb-6 -ml-2" 

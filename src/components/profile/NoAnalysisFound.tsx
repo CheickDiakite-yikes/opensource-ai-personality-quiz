@@ -10,7 +10,7 @@ const NoAnalysisFound: React.FC = () => {
   const { user } = useAuth();
   
   return (
-    <div className="container max-w-4xl py-8 px-4 flex items-center justify-center min-h-[calc(100vh-200px)]">
+    <div className="container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-200px)]">
       <div className="text-center space-y-6">
         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
           <ClipboardList className="h-8 w-8 text-primary" />
