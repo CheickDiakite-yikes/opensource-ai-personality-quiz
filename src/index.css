@@ -27,15 +27,15 @@ body {
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     width: 100%;
   }
   
   /* Improve tap target sizes on mobile */
   button, a, input, select, textarea, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 40px;
+    min-width: 40px;
   }
   
   /* Add responsive card styles for mobile */
@@ -45,11 +45,11 @@ body {
 
   /* Adjust text sizes for readability on mobile */
   h1 {
-    @apply text-2xl md:text-3xl;
+    @apply text-xl md:text-3xl;
   }
   
   h2 {
-    @apply text-xl md:text-2xl;
+    @apply text-lg md:text-2xl;
   }
   
   p, li {
@@ -58,8 +58,9 @@ body {
   
   /* Improve scrollable tabs for mobile */
   .scrollable-tabs {
-    @apply -mx-2 px-2 overflow-x-auto scrollbar-none pb-1;
+    @apply overflow-x-auto scrollbar-none pb-0.5;
     -webkit-overflow-scrolling: touch;
+    scroll-padding: 0.5rem;
   }
 }
 
@@ -85,3 +86,4 @@ body {
 .glass-panel {
   @apply bg-background/60 backdrop-blur-sm border border-white/10;
 }
+

@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
@@ -53,7 +52,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
     : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
     
   const tabContentClass = isMobile 
-    ? "space-y-5 mt-3 overflow-x-hidden px-0" 
+    ? "space-y-4 mt-3 px-2 sm:px-0" 
     : "space-y-10 mt-6";
     
   return (
