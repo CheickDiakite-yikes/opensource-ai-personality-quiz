@@ -16,7 +16,9 @@ const MainContent: React.FC = () => {
       
       <main className={`flex-1 ${isMobile ? 'px-2' : 'px-6'} overflow-x-hidden max-w-[100vw]`}>
         <AnimatePresence mode="wait">
-          <Outlet />
+          <div className="max-w-full overflow-x-hidden">
+            <Outlet />
+          </div>
         </AnimatePresence>
       </main>
       

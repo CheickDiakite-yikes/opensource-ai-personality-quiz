@@ -1,0 +1,305 @@
+
+/* Mobile viewport optimizations */
+@layer utilities {
+  @media screen and (max-width: 767px) {
+    .container {
+      padding-left: 0.25rem !important;
+      padding-right: 0.25rem !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    
+    /* Improve tap target sizes on mobile */
+    button, a, input, select, textarea, [role="button"] {
+      min-height: 36px;
+      min-width: 36px;
+    }
+    
+    /* Add responsive card styles for mobile */
+    .card {
+      @apply rounded-md border px-2 py-2 md:px-6 md:py-4;
+    }
+
+    /* Adjust text sizes for readability on mobile */
+    h1 {
+      @apply text-xl md:text-3xl;
+    }
+    
+    h2 {
+      @apply text-lg md:text-2xl;
+    }
+    
+    h3 {
+      @apply text-base md:text-xl;
+    }
+    
+    p, li {
+      @apply text-xs md:text-base;
+    }
+    
+    /* Compact card headers for mobile */
+    .card-header {
+      @apply px-3 py-2;
+    }
+    
+    .card-content {
+      @apply px-3 py-2;
+    }
+    
+    /* Ultra-compact design for mobile cards */
+    .mobile-compact {
+      @apply p-0 m-0 !important;
+    }
+  }
+
+  /* Fix for tabs to scroll horizontally on mobile */
+  .tabs-container {
+    width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: calc(100vw - 1rem) !important;
+  }
+  
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fix content overflow */
+  .break-words {
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    hyphens: auto;
+  }
+  
+  /* Prevent horizontal overflow */
+  .overflow-x-hidden {
+    overflow-x: hidden !important;
+  }
+  
+  /* Adjust tabs padding and sizing */
+  .tabs-list-mobile {
+    padding: 0.125rem !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab-trigger-mobile {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  /* Make sure cards don't stretch beyond screen width */
+  .glass-panel {
+    max-width: calc(100vw - 1rem) !important;
+    width: 100% !important;
+  }
+  
+  /* Allow long text to break */
+  .whitespace-normal {
+    white-space: normal !important;
+  }
+  
+  /* Mobile screen overflow fixes */
+  .mobile-overflow-fix {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+  
+  /* Force text wrapping */
+  .force-wrap {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    hyphens: auto !important;
+  }
+  
+  /* Fix layouts that could cause horizontal scroll */
+  .grid, .flex {
+    max-width: 100% !important;
+  }
+  
+  /* Extra small padding for very small phones */
+  .xs-padding {
+    padding-left: 0.125rem !important;
+    padding-right: 0.125rem !important;
+  }
+  
+  /* Fix for any tables causing overflow */
+  table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+  
+  /* Fix horizontal scrolling in sections */
+  section {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}
+
+/* Fix for notch phones and other devices with safe areas */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: min(0vmin, env(safe-area-inset-left));
+    padding-right: min(0vmin, env(safe-area-inset-right));
+  }
+  
+  /* Add safe area insets for notched phones */
+  .container {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Ultra-small screens optimization */
+@media (max-width: 360px) {
+  html, body {
+    font-size: 14px;
+  }
+  
+  .xs-text-tiny {
+    font-size: 0.65rem !important;
+  }
+  
+  .xs-padding-minimal {
+    padding: 0.125rem !important;
+  }
+  
+  .xs-hide {
+    display: none !important;
+  }
+  
+  /* Ultra compact cards for very small screens */
+  .card {
+    @apply rounded-sm border px-1.5 py-1.5;
+  }
+  
+  .card-header {
+    @apply px-2 py-1.5;
+  }
+  
+  .card-content {
+    @apply px-2 py-1.5;
+  }
+}
+
+/* Mobile-optimized cards */
+@media (max-width: 640px) {
+  .mobile-card {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 0;
+    width: calc(100% + 1rem);
+  }
+  
+  .mobile-full-width {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
+  
+  .mobile-mini-padding {
+    padding: 0.125rem !important;
+  }
+  
+  .mobile-mini-margin {
+    margin: 0.125rem !important;
+  }
+  
+  .mobile-mini-gap {
+    gap: 0.125rem !important;
+  }
+  
+  /* Fix accordion styling */
+  .mobile-accordion-fix .accordion-trigger {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .mobile-accordion-fix .accordion-content {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Collapsible section stylings */
+  .mobile-collapsible-header {
+    padding: 0.5rem !important;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  
+  .mobile-collapsible-trigger {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .mobile-collapsible-content {
+    padding: 0.5rem !important;
+  }
+  
+  /* Ultra-compact mobile views */
+  .ultra-compact-text {
+    font-size: 0.6rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  .ultra-compact-spacing {
+    padding: 0.125rem !important;
+    margin: 0.125rem !important;
+  }
+  
+  .ultra-compact-card {
+    padding: 0.125rem !important;
+  }
+}
+
+/* Mobile utilities and additional fixes */
+.max-w-full-mobile {
+  max-width: 100% !important;
+}
+
+.w-full-mobile {
+  width: 100% !important;
+}
+
+.p-safe-mobile {
+  padding-left: max(0.5rem, env(safe-area-inset-left)) !important;
+  padding-right: max(0.5rem, env(safe-area-inset-right)) !important;
+}
+
+/* Mobile-optimized scrollable areas */
+.nested-scroll-fix {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Sticky tabs for mobile */
+.sticky-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: hsl(var(--background)/80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid hsl(var(--border));
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+/* Enhanced visibility for active tabs */
+.tab-active-highlight[data-state="active"] {
+  background-color: hsl(var(--primary)/20);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
