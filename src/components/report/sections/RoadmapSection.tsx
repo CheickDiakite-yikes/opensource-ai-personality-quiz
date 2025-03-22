@@ -34,14 +34,14 @@ const RoadmapSection: React.FC<RoadmapSectionProps> = ({ roadmap }) => {
       }
     }}>
       <Card className="glass-panel overflow-hidden">
-        <CardHeader className={`bg-gradient-to-r from-indigo-500/10 to-violet-500/10 ${isMobile ? 'p-4 pb-3' : 'pb-4'}`}>
+        <CardHeader className={`bg-gradient-to-r from-indigo-500/10 to-violet-500/10 ${isMobile ? 'px-3 py-3 pb-2' : 'pb-4'}`}>
           <CardTitle className="flex items-center">
             <ArrowRight className="h-5 w-5 mr-2 text-primary" /> Your Personalized Roadmap
           </CardTitle>
           <CardDescription>Steps to become your best self</CardDescription>
         </CardHeader>
-        <CardContent className={`${isMobile ? 'p-4 pt-3' : 'pt-6'}`}>
-          <p className={`${isMobile ? 'text-sm' : 'text-base md:text-lg'} leading-relaxed`}>{roadmap}</p>
+        <CardContent className={`${isMobile ? 'px-3 py-3 pt-2' : 'pt-6'}`}>
+          <p className={`${isMobile ? 'text-sm' : 'text-base md:text-lg'} leading-relaxed break-words`}>{roadmap}</p>
           
           <div className="mt-4 md:mt-6">
             <Button 

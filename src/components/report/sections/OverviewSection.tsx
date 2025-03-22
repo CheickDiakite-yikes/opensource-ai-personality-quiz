@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CognitiveStyleType } from "@/utils/types";
@@ -36,10 +37,10 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   
   return (
     <section>
-      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-4`}>Personality Overview</h2>
+      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`}>Personality Overview</h2>
       
-      <Card className="mb-4 md:mb-6">
-        <CardContent className="pt-3 md:pt-6">
+      <Card className="mb-3 md:mb-6">
+        <CardContent className={`${isMobile ? 'px-3 py-3' : 'pt-6'}`}>
           <div className="prose prose-sm max-w-none">
             {paragraphs.map((paragraph, index) => (
               <p key={index} className="mb-3 md:mb-4 leading-relaxed text-sm md:text-base">
@@ -52,14 +53,14 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
       
       <div className={`grid grid-cols-1 ${isMobile ? 'gap-3' : 'md:grid-cols-2 gap-4'} mb-4`}>
         <Card>
-          <CardContent className="pt-3 md:pt-6">
+          <CardContent className={`${isMobile ? 'px-3 py-3' : 'pt-6'}`}>
             <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-2`}>Cognitive Style</h3>
-            <p className="text-muted-foreground text-sm md:text-base">
+            <p className="text-muted-foreground text-sm md:text-base break-words">
               You tend to process information as a {formatCognitiveStyle()}
             </p>
             
             {isCognitiveStyleObject(cognitiveStyle) && cognitiveStyle.description && (
-              <p className="mt-2 md:mt-3 text-xs md:text-sm text-muted-foreground">
+              <p className="mt-2 md:mt-3 text-xs md:text-sm text-muted-foreground break-words">
                 {cognitiveStyle.description}
               </p>
             )}

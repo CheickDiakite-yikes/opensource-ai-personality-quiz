@@ -55,6 +55,37 @@ body {
   p, li {
     @apply text-sm md:text-base;
   }
+  
+  /* Fix for mobile tabs */
+  .scrollable-tabs-container {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+    width: calc(100% + 1rem);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix content overflow */
+  .break-words {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Prevent horizontal overflow */
+  .overflow-x-hidden {
+    overflow-x: hidden;
+  }
+  
+  /* Adjust tabs padding and sizing */
+  .tabs-list-mobile {
+    padding: 0.25rem !important;
+  }
+  
+  .tab-trigger-mobile {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
 }
 
 /* Fix for notch phones and other devices with safe areas */
@@ -63,4 +94,31 @@ body {
     padding-left: min(0vmin, env(safe-area-inset-left));
     padding-right: min(0vmin, env(safe-area-inset-right));
   }
+  
+  /* Add safe area insets for notched phones */
+  .container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Add scrolling improvements for tabs */
+.scrollable-tabs {
+  @apply overflow-x-auto -mx-3 px-3 scrollbar-none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollable-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fix for tabs to avoid cutoff content */
+.tabs-content-fix {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
