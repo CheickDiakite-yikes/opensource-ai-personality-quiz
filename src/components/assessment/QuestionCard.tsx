@@ -15,6 +15,7 @@ interface QuestionCardProps {
   onOptionSelect: (option: string) => void;
   onCustomResponseChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   useCustomResponse: boolean;
+  isMobile?: boolean;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -24,6 +25,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   onOptionSelect,
   onCustomResponseChange,
   useCustomResponse,
+  isMobile = false,
 }) => {
   // Animation variants
   const cardVariants = {
@@ -82,7 +84,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   
   // Format category name for display
   const formatCategoryName = (category: QuestionCategory): string => {
-    // Convert from enum value (like "personality") to display text
+    // Convert from enum value to display text
     const displayNames: Record<QuestionCategory, string> = {
       [QuestionCategory.PersonalityTraits]: "Personality Traits",
       [QuestionCategory.EmotionalIntelligence]: "Emotional Intelligence",
@@ -100,7 +102,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <Card className={`glass-panel p-6 md:p-8 rounded-xl mb-6 h-full overflow-hidden bg-gradient-to-br ${getCategoryColor(question.category)}`}>
+    <Card 
+      className={`glass-panel ${isMobile ? 'p-4 sm:p-5' : 'p-6 md:p-8'} rounded-xl mb-6 h-full overflow-hidden bg-gradient-to-br ${getCategoryColor(question.category)}`}
+    >
       <motion.div
         key={question.id}
         initial="enter"
@@ -109,11 +113,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         variants={cardVariants}
         className="h-full flex flex-col"
       >
-        <div className="mb-4">
-          <Badge variant="outline" className="mb-3 bg-black/10 dark:bg-white/10 backdrop-blur-sm">
+        <div className={`${isMobile ? 'mb-3' : 'mb-4'}`}>
+          <Badge variant="outline" className={`${isMobile ? 'mb-2 text-xs' : 'mb-3'} bg-black/10 dark:bg-white/10 backdrop-blur-sm`}>
             {formatCategoryName(question.category)}
           </Badge>
-          <h2 className="text-xl font-medium">
+          <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium`}>
             {question.question}
           </h2>
         </div>
@@ -121,7 +125,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         <div className="flex-1">
           <RadioGroup 
             value={selectedOption} 
-            className="space-y-3 mb-6"
+            className={`space-y-2 sm:space-y-3 ${isMobile ? 'mb-4' : 'mb-6'}`}
             onValueChange={onOptionSelect}
           >
             {question.options.map((option, idx) => (
@@ -136,7 +140,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 <RadioGroupItem value={option} id={option} className="mt-1" />
                 <Label 
                   htmlFor={option} 
-                  className="text-base leading-relaxed cursor-pointer"
+                  className={`${isMobile ? 'text-sm' : 'text-base'} leading-relaxed cursor-pointer`}
                 >
                   {option}
                 </Label>
@@ -146,7 +150,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           
           {question.allowCustomResponse && (
             <motion.div 
-              className="mt-6"
+              className={`${isMobile ? 'mt-4' : 'mt-6'}`}
               variants={optionVariants}
               initial="hidden"
               animate="visible"
@@ -154,7 +158,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             >
               <Label 
                 htmlFor="custom-response" 
-                className="block text-base font-medium mb-2"
+                className={`block ${isMobile ? 'text-sm' : 'text-base'} font-medium mb-2`}
               >
                 Or provide your own response (optional)
               </Label>
@@ -163,7 +167,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 placeholder="Write your response here..."
                 value={customResponse || ""}
                 onChange={onCustomResponseChange}
-                className="min-h-[120px] bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:bg-white/70 dark:focus:bg-black/30 transition-colors"
+                className={`${isMobile ? 'min-h-[80px]' : 'min-h-[120px]'} bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:bg-white/70 dark:focus:bg-black/30 transition-colors`}
                 maxLength={300}
               />
               {customResponse && (

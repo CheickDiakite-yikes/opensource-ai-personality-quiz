@@ -15,6 +15,7 @@ html {
   color-scheme: dark;
   max-width: 100vw;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -22,4 +23,67 @@ body {
   color: hsl(var(--foreground));
   max-width: 100vw;
   position: relative;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+/* Fix text legibility on mobile */
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+  
+  h1 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  
+  p {
+    line-height: 1.5;
+  }
+}
+
+/* Improve touch targets for mobile */
+@media (max-width: 640px) {
+  button, 
+  a, 
+  [role="button"],
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .card-content {
+    padding: 1rem;
+  }
+}
+
+/* Fix mobile scrolling issues */
+.overflow-scroll-fix {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Enhanced visible focus for accessibility */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Fix iOS input styling */
+input, 
+textarea {
+  -webkit-appearance: none;
+  border-radius: 0.5rem;
 }

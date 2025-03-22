@@ -131,6 +131,7 @@ const ReportPage: React.FC = () => {
             analysis={displayAnalysis} 
             analysisHistory={analysisHistory || []}
             onAnalysisChange={handleAnalysisChange}
+            isMobile={isMobile}
           />
           
           <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>

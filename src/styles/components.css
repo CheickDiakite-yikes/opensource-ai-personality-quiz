@@ -98,4 +98,53 @@
     right: -1.5rem;
     bottom: -1.5rem;
   }
+  
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    .mobile-card {
+      @apply rounded-lg px-4 py-5;
+    }
+    
+    .mobile-container {
+      @apply px-3 py-4;
+    }
+    
+    .mobile-section {
+      @apply mb-4;
+    }
+    
+    .mobile-touch-target {
+      @apply min-h-[44px] flex items-center;
+    }
+    
+    /* Adjust spacing for mobile */
+    .mobile-tight-spacing > * + * {
+      @apply mt-3;
+    }
+    
+    /* Better scrolling on mobile */
+    .mobile-scroll-container {
+      @apply overflow-x-auto overflow-y-hidden -mx-3 px-3 pb-3 scrollable-content;
+      scroll-snap-type: x mandatory;
+    }
+    
+    .mobile-scroll-item {
+      @apply flex-shrink-0 w-[85%] scroll-ml-3;
+      scroll-snap-align: start;
+    }
+  }
+  
+  /* Avatar animation for profile */
+  .avatar-glow {
+    animation: glow 4s ease-in-out infinite alternate;
+  }
+  
+  @keyframes glow {
+    0% {
+      box-shadow: 0 0 5px 0 rgba(245, 158, 11, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 15px 5px rgba(245, 158, 11, 0.3);
+    }
+  }
 }
