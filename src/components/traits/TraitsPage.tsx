@@ -45,29 +45,27 @@ const TraitsPage: React.FC = () => {
   }
   
   return (
-    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-0 sm:px-3 md:px-4 min-h-screen overflow-x-hidden">
-      <div className="px-3">
-        <Button 
-          variant="ghost" 
-          className="mb-3 md:mb-6 -ml-2" 
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-      </div>
+    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen overflow-x-hidden">
+      <Button 
+        variant="ghost" 
+        className="mb-3 md:mb-6 -ml-2" 
+        onClick={() => navigate(-1)}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+      </Button>
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className={`space-y-4 ${isMobile ? '' : 'space-y-8'} overflow-hidden`}
+        className={`space-y-4 ${isMobile ? '' : 'space-y-8'}`}
       >
-        <Card className="overflow-hidden rounded-none sm:rounded-md">
+        <Card className="overflow-hidden">
           <CardHeader className={`bg-gradient-to-r from-primary/20 to-secondary/20 ${isMobile ? 'p-4 pb-3' : 'pb-4'}`}>
             <CardTitle className="text-foreground">All Personality Traits</CardTitle>
             <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
-          <CardContent className={isMobile ? "p-3 pt-2 overflow-x-hidden" : "pt-6 overflow-x-hidden"}>
+          <CardContent className={isMobile ? "p-3 pt-2" : "pt-6"}>
             <TraitsDetail traits={analysis.traits} />
           </CardContent>
         </Card>

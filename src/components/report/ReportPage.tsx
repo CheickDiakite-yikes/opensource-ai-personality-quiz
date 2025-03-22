@@ -92,7 +92,7 @@ const ReportPage: React.FC = () => {
   // Show loading state only on initial load
   if (isLoading && !stableAnalysis) {
     return (
-      <div className={`container ${isMobile ? 'pt-2 pb-16 px-0.5 mx-0 w-full max-w-full' : 'py-10'}`}>
+      <div className={`container ${isMobile ? 'pt-2 pb-16 px-0.5 mx-0 w-screen max-w-full' : 'py-10'}`}>
         <ReportSkeleton />
       </div>
     );
@@ -124,24 +124,20 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className={`container mx-auto ${isMobile ? 'p-0 pt-1 pb-16 w-full max-w-full overflow-hidden' : 'py-6 space-y-8 max-w-4xl'}`}>
+    <div className={`container mx-auto ${isMobile ? 'p-0 pt-1 pb-16 px-0.5 max-w-full overflow-hidden' : 'py-6 space-y-8 max-w-4xl'}`}>
       {displayAnalysis && (
         <>
-          <div className={isMobile ? 'px-2' : ''}>
-            <ReportHeader 
-              analysis={displayAnalysis} 
-              analysisHistory={analysisHistory || []}
-              onAnalysisChange={handleAnalysisChange}
-            />
-          </div>
+          <ReportHeader 
+            analysis={displayAnalysis} 
+            analysisHistory={analysisHistory || []}
+            onAnalysisChange={handleAnalysisChange}
+          />
           
           <Tabs defaultValue="overview" className="w-full overflow-hidden">
             <div className="w-full overflow-x-auto sticky top-0 z-10 bg-background/80 backdrop-blur-sm pt-1 shadow-sm">
               <ReportTabs />
             </div>
-            <div className={isMobile ? 'px-2' : ''}>
-              <ReportTabContent analysis={displayAnalysis} />
-            </div>
+            <ReportTabContent analysis={displayAnalysis} />
           </Tabs>
         </>
       )}
