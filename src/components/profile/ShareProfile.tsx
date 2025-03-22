@@ -17,6 +17,8 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   
   // Generate a unique share URL using the new domain
   const shareUrl = `https://www.sowei.io/shared-profile/${analysis.id || 'demo'}`;
+  // Set the image URL for social media previews
+  const shareImageUrl = "https://www.sowei.io/lovable-uploads/73100c42-a0d7-4978-8bc7-244dd399a57b.png";
   
   // Handle copy to clipboard
   const handleCopy = () => {
@@ -34,7 +36,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
     
     switch (platform) {
       case 'twitter':
-        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&image=${encodeURIComponent(shareImageUrl)}`;
         break;
       case 'facebook':
         shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
