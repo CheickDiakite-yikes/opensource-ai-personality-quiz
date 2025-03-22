@@ -60,8 +60,8 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
 
   return (
     <div className="w-full h-auto mt-4">
-      <ScrollArea className="w-full" style={{ height: isMobile ? 320 : 350 }}>
-        <div style={{ height: chartHeight, minWidth: isMobile ? "500px" : "100%" }}>
+      <ScrollArea className="w-full" style={{ height: isMobile ? 300 : 350 }}>
+        <div style={{ height: chartHeight, minWidth: "100%" }}>
           <ChartContainer
             config={{
               domain: { label: "Intelligence Domain", color: "#f97316" },
@@ -87,7 +87,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
                 <YAxis 
                   type="category" 
                   dataKey="name" 
-                  width={isMobile ? 120 : 150} 
+                  width={isMobile ? 100 : 150} 
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: isMobile ? 10 : 12, fill: "#f5f5f5" }}
