@@ -49,18 +49,19 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="w-full flex items-center justify-between p-3 border-b"
+                  className="w-full flex items-center justify-between p-2 border-b"
+                  size="sm"
                 >
-                  <span className="font-medium">Relationship Patterns</span>
+                  <span className="font-medium text-sm">Relationship Patterns</span>
                   {patternsOpen ? (
-                    <ChevronUp className="h-5 w-5" />
+                    <ChevronUp className="h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-5 w-5" />
+                    <ChevronDown className="h-4 w-4" />
                   )}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="p-3">
+                <div className="p-2">
                   <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
                 </div>
               </CollapsibleContent>
@@ -72,18 +73,19 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="w-full flex items-center justify-between p-3 border-b"
+                  className="w-full flex items-center justify-between p-2 border-b"
+                  size="sm"
                 >
-                  <span className="font-medium">Learning Pathways</span>
+                  <span className="font-medium text-sm">Learning Pathways</span>
                   {pathwaysOpen ? (
-                    <ChevronUp className="h-5 w-5" />
+                    <ChevronUp className="h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-5 w-5" />
+                    <ChevronDown className="h-4 w-4" />
                   )}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="p-3">
+                <div className="p-2">
                   <LearningPathways pathways={learningPathways} />
                 </div>
               </CollapsibleContent>

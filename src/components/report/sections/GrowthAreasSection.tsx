@@ -37,7 +37,7 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
           ease: [0.22, 1, 0.36, 1]
         }
       }
-    }} className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-6'}`}>
+    }} className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'md:grid-cols-2 gap-6'}`}>
       <Card className="glass-panel overflow-hidden">
         <CardHeader className={`bg-gradient-to-r from-rose-500/10 to-red-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
           <CardTitle className={isMobile ? 'text-base' : ''}>Weaknesses</CardTitle>
@@ -64,10 +64,10 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="pt-2 pb-2 px-3">
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {weaknesses.map((item, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-4 w-4 text-[0.65rem] text-primary mr-1.5 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </span>
                       <span className="text-xs">{item}</span>
@@ -119,10 +119,10 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="pt-2 pb-2 px-3">
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {growthAreas.map((item, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-4 w-4 text-[0.65rem] text-primary mr-1.5 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </span>
                       <span className="text-xs">{item}</span>

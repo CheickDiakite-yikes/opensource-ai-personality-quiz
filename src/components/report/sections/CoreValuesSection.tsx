@@ -34,7 +34,7 @@ const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) =>
         <CardDescription>Principles that guide your decisions</CardDescription>
       </CardHeader>
       <CardContent className={`${isMobile ? 'px-3 py-2' : 'pt-3 md:pt-6'}`}>
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'sm:grid-cols-2 gap-2'}`}>
+        <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'sm:grid-cols-2 gap-2'}`}>
           {valuesToDisplay.map((value, index) => (
             <div
               key={index}

@@ -157,6 +157,16 @@ body {
   height: 0;
 }
 
+/* No scrollbar utility class */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Fix for tabs to avoid cutoff content */
 .tabs-content-fix {
   width: 100%;
@@ -230,6 +240,25 @@ body {
     padding: 0.5rem !important;
     font-size: 0.75rem !important;
   }
+  
+  /* Collapsible section stylings */
+  .mobile-collapsible-header {
+    padding: 0.5rem !important;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  
+  .mobile-collapsible-trigger {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .mobile-collapsible-content {
+    padding: 0.5rem !important;
+  }
 }
 
 /* Fix for nested scrollable areas */
@@ -260,9 +289,42 @@ body {
   .xs-hide {
     display: none !important;
   }
+  
+  /* Ultra compact cards for very small screens */
+  .card {
+    @apply rounded-sm border px-1.5 py-1.5;
+  }
+  
+  .card-header {
+    @apply px-2 py-1.5;
+  }
+  
+  .card-content {
+    @apply px-2 py-1.5;
+  }
 }
 
 /* Make whitespace pre-wrap work nicely with line breaks */
 .whitespace-pre-line {
   white-space: pre-line;
+}
+
+/* Sticky tabs for mobile */
+.sticky-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: hsl(var(--background)/80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid hsl(var(--border));
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+/* Enhanced visibility for active tabs */
+.tab-active-highlight[data-state="active"] {
+  background-color: hsl(var(--primary)/20);
+  color: hsl(var(--primary));
+  font-weight: 600;
 }
