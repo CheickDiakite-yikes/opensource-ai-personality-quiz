@@ -12,12 +12,11 @@ const MainContent: React.FC = () => {
   
   return (
     <SidebarInset className="flex-1 flex flex-col overflow-hidden">
-      {/* Only show desktop header on non-mobile devices */}
-      {!isMobile && <DesktopHeader />}
+      <DesktopHeader />
       
       <main className={`flex-1 ${isMobile ? 'px-2' : 'px-6'} overflow-x-hidden max-w-[100vw]`}>
         <AnimatePresence mode="wait">
-          <div className="max-w-full mobile-overflow-fix">
+          <div className="max-w-full overflow-x-hidden">
             <Outlet />
           </div>
         </AnimatePresence>
