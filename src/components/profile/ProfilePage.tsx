@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -13,6 +12,7 @@ import InsightsCard from "./InsightsCard";
 import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -20,6 +20,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const isMobile = useIsMobile();
   
   // Refresh analysis data when component mounts or auth state changes
   useEffect(() => {
@@ -78,17 +79,17 @@ const ProfilePage: React.FC = () => {
   };
   
   return (
-    <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
+    <div className="container max-w-4xl mx-auto py-6 md:py-10 px-4 min-h-screen">
       <Button 
         variant="ghost" 
-        className="mb-6" 
+        className="mb-4 md:mb-6" 
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
       
       {user && (
-        <div className="mb-6 p-4 bg-secondary/10 rounded-lg">
+        <div className="mb-4 md:mb-6 p-3 md:p-4 bg-secondary/10 rounded-lg">
           <p className="text-sm text-muted-foreground">
             {user ? "Your analysis is saved to your account and will be available whenever you log in." : 
             "Sign in to save your personality analysis results to your account."}
@@ -96,7 +97,7 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
       
-      <div className="space-y-8">
+      <div className={`space-y-4 ${isMobile ? '' : 'space-y-8'}`}>
         <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
         <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
         <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />

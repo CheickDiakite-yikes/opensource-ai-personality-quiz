@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CognitiveStyleType } from "@/utils/types";
 import { isCognitiveStyleObject } from "../utils/typeGuards";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OverviewSectionProps {
   overview: string;
@@ -13,6 +13,8 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   overview,
   cognitiveStyle
 }) => {
+  const isMobile = useIsMobile();
+  
   // Format cognitive style for display based on type
   const formatCognitiveStyle = () => {
     if (isCognitiveStyleObject(cognitiveStyle)) {
@@ -34,13 +36,13 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   
   return (
     <section>
-      <h2 className="text-2xl font-bold mb-4">Personality Overview</h2>
+      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-4`}>Personality Overview</h2>
       
-      <Card className="mb-6">
-        <CardContent className="pt-6">
+      <Card className="mb-4 md:mb-6">
+        <CardContent className="pt-3 md:pt-6">
           <div className="prose prose-sm max-w-none">
             {paragraphs.map((paragraph, index) => (
-              <p key={index} className="mb-4 leading-relaxed">
+              <p key={index} className="mb-3 md:mb-4 leading-relaxed text-sm md:text-base">
                 {paragraph}
               </p>
             ))}
@@ -48,16 +50,16 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className={`grid grid-cols-1 ${isMobile ? 'gap-3' : 'md:grid-cols-2 gap-4'} mb-4`}>
         <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-2">Cognitive Style</h3>
-            <p className="text-muted-foreground">
+          <CardContent className="pt-3 md:pt-6">
+            <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-2`}>Cognitive Style</h3>
+            <p className="text-muted-foreground text-sm md:text-base">
               You tend to process information as a {formatCognitiveStyle()}
             </p>
             
             {isCognitiveStyleObject(cognitiveStyle) && cognitiveStyle.description && (
-              <p className="mt-3 text-sm text-muted-foreground">
+              <p className="mt-2 md:mt-3 text-xs md:text-sm text-muted-foreground">
                 {cognitiveStyle.description}
               </p>
             )}

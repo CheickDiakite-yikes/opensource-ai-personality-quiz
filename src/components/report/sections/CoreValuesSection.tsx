@@ -11,12 +11,15 @@ import {
 import { Award } from "lucide-react";
 import { ValueSystemType } from "@/utils/types";
 import { isValueSystemObject } from "../utils/typeGuards";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CoreValuesSectionProps {
   valueSystem: ValueSystemType;
 }
 
 const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) => {
+  const isMobile = useIsMobile();
+  
   // Extract values to display based on valueSystem type
   const valuesToDisplay = isValueSystemObject(valueSystem) 
     ? valueSystem.strengths 
@@ -24,23 +27,23 @@ const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) =>
 
   return (
     <Card className="glass-panel overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pb-4">
+      <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pb-3 md:pb-4">
         <CardTitle className="flex items-center">
           <Award className="h-5 w-5 mr-2 text-primary" /> Your Core Values
         </CardTitle>
         <CardDescription>Principles that guide your decisions</CardDescription>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <CardContent className="pt-3 md:pt-6">
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'sm:grid-cols-2 gap-2'}`}>
           {valuesToDisplay.map((value, index) => (
             <div
               key={index}
-              className="border border-border/40 p-3 rounded-md flex items-center bg-card/30"
+              className="border border-border/40 p-2 md:p-3 rounded-md flex items-center bg-card/30"
             >
-              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 flex-shrink-0">
+              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-2 md:mr-3 flex-shrink-0">
                 {index + 1}
               </span>
-              <span>{value}</span>
+              <span className="text-sm md:text-base">{value}</span>
             </div>
           ))}
         </div>

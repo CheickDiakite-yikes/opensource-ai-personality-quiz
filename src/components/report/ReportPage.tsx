@@ -124,7 +124,7 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
+    <div className={`container max-w-4xl mx-auto ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       {displayAnalysis && (
         <>
           <ReportHeader 
@@ -134,7 +134,9 @@ const ReportPage: React.FC = () => {
           />
           
           <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
-            <ReportTabs />
+            <div className="scrollable-tabs">
+              <ReportTabs />
+            </div>
             <ReportTabContent analysis={displayAnalysis} />
           </Tabs>
         </>

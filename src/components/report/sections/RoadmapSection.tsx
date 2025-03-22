@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RoadmapSectionProps {
   roadmap: string;
@@ -18,6 +19,7 @@ interface RoadmapSectionProps {
 
 const RoadmapSection: React.FC<RoadmapSectionProps> = ({ roadmap }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   return (
     <motion.div variants={{
@@ -32,16 +34,16 @@ const RoadmapSection: React.FC<RoadmapSectionProps> = ({ roadmap }) => {
       }
     }}>
       <Card className="glass-panel overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 pb-4">
+        <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 pb-3 md:pb-4">
           <CardTitle className="flex items-center">
             <ArrowRight className="h-5 w-5 mr-2 text-primary" /> Your Personalized Roadmap
           </CardTitle>
           <CardDescription>Steps to become your best self</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
-          <p className="text-lg leading-relaxed">{roadmap}</p>
+        <CardContent className="pt-3 md:pt-6">
+          <p className={`${isMobile ? 'text-base' : 'text-lg'} leading-relaxed`}>{roadmap}</p>
           
-          <div className="mt-8">
+          <div className="mt-6 md:mt-8">
             <Button 
               className="w-full sm:w-auto" 
               onClick={() => navigate("/tracker")}

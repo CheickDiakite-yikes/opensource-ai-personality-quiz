@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -7,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import TraitsDetail from "./TraitsDetail";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TraitsPage: React.FC = () => {
   const { analysis, isLoading } = useAIAnalysis();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Redirect if no analysis is available
   React.useEffect(() => {
@@ -43,10 +44,10 @@ const TraitsPage: React.FC = () => {
   }
   
   return (
-    <div className="container max-w-5xl py-6 md:py-10 px-4 min-h-screen">
+    <div className="container max-w-4xl mx-auto py-4 md:py-10 px-3 md:px-4 min-h-screen">
       <Button 
         variant="ghost" 
-        className="mb-6" 
+        className="mb-4 md:mb-6" 
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -56,14 +57,14 @@ const TraitsPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-8"
+        className={`space-y-4 ${isMobile ? '' : 'space-y-8'}`}
       >
         <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-primary/20 to-secondary/20 pb-4">
+          <CardHeader className={`bg-gradient-to-r from-primary/20 to-secondary/20 ${isMobile ? 'p-4 pb-3' : 'pb-4'}`}>
             <CardTitle className="text-foreground">All Personality Traits</CardTitle>
             <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className={isMobile ? "p-4" : "pt-6"}>
             <TraitsDetail traits={analysis.traits} />
           </CardContent>
         </Card>
