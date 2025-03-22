@@ -103,6 +103,8 @@ const ReportPage: React.FC = () => {
   
   // Handle case where no analysis is available after loading
   if (!displayAnalysis && !isLoading && hasAttemptedToLoadAnalysis) {
+    // This shouldn't happen often since we redirect in the useEffect,
+    // but this is a fallback just in case
     return (
       <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'} text-center`}>
         <h2 className="text-2xl font-bold mb-4">No Analysis Found</h2>
@@ -122,7 +124,7 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className={`container ${isMobile ? 'px-3 py-4 max-w-full space-y-4' : 'py-6 space-y-8'}`}>
+    <div className={`container ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       {displayAnalysis && (
         <>
           <ReportHeader 
@@ -133,9 +135,7 @@ const ReportPage: React.FC = () => {
           />
           
           <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
-            <div className={`${isMobile ? 'overflow-x-auto -mx-3 px-3 pb-1' : ''}`}>
-              <ReportTabs />
-            </div>
+            <ReportTabs />
             <ReportTabContent analysis={displayAnalysis} />
           </Tabs>
         </>

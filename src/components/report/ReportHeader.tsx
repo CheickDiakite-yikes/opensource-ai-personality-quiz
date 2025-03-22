@@ -37,6 +37,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   onAnalysisChange,
   isMobile = false
 }) => {
+  // We still need the useIsMobile hook for backward compatibility
   const isMobileDetected = useIsMobile();
   const [copied, setCopied] = useState(false);
   
@@ -59,6 +60,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
+    const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
     
     switch (platform) {
       case 'twitter':
@@ -91,81 +93,73 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     <div className="flex flex-col gap-4 sm:gap-1">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className={`${isSmallScreen ? 'text-2xl' : 'text-3xl'} font-bold leading-tight`}>Your Personality Analysis</h1>
+          <h1 className={`${isSmallScreen ? 'text-2xl' : 'text-3xl'} font-bold`}>Your Personality Analysis</h1>
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
             {renderDate()}
           </div>
         </div>
 
-        {/* Mobile-optimized button layout */}
-        <div className={`${isSmallScreen ? 'w-full flex flex-col gap-2' : 'flex gap-2'}`}>
-          <div className={`${isSmallScreen ? 'flex justify-between gap-2' : 'flex gap-2'}`}>
-            {/* Copy Link Button */}
-            <Button
-              onClick={handleCopyLink}
-              size={isSmallScreen ? "sm" : "default"}
-              variant="outline"
-              className={`${isSmallScreen ? 'flex-1' : ''}`}
-            >
-              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
-              {copied ? "Copied" : "Copy Link"}
-            </Button>
-            
-            {/* Past Reports Button */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={isSmallScreen ? "sm" : "default"}
-                  disabled={analysisHistory.length <= 1}
-                  className={`${isSmallScreen ? 'flex-1' : ''}`}
-                >
-                  <History className="h-4 w-4 mr-2" /> Past Reports
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {analysisHistory.length <= 1 ? (
-                  <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
-                ) : (
-                  analysisHistory
-                    .filter(item => item.id !== analysis.id)
-                    .slice(0, 5)
-                    .map((item) => {
-                      let dateLabel = "Unknown date";
-                      try {
-                        dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                      } catch (e) {
-                        console.error("Invalid date format", e);
-                      }
-                      
-                      return (
-                        <DropdownMenuItem 
-                          key={item.id}
-                          onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                        >
-                          {dateLabel}
-                        </DropdownMenuItem>
-                      );
-                    })
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <div className={`${isSmallScreen ? 'w-full' : ''}`}>
+          <Button
+            onClick={handleCopyLink}
+            size={isSmallScreen ? "sm" : "default"}
+            variant="outline"
+          >
+            {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
+            {copied ? "Copied" : "Copy Link"}
+          </Button>
+          
+          {/* Past Reports Button - ALWAYS visible right next to Share button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size={isSmallScreen ? "sm" : "default"}
+                disabled={analysisHistory.length <= 1}
+              >
+                <History className="h-4 w-4 mr-2" /> Past Reports
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {analysisHistory.length <= 1 ? (
+                <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+              ) : (
+                // Always show up to 5 past analyses (not including current)
+                analysisHistory
+                  .filter(item => item.id !== analysis.id)
+                  .slice(0, 5)
+                  .map((item) => {
+                    let dateLabel = "Unknown date";
+                    try {
+                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                    } catch (e) {
+                      console.error("Invalid date format", e);
+                    }
+                    
+                    return (
+                      <DropdownMenuItem 
+                        key={item.id}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                      >
+                        {dateLabel}
+                      </DropdownMenuItem>
+                    );
+                  })
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {/* Share Button - always full width on mobile */}
+          {/* Share Button - Opens dialog with share options */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button 
-                size={isSmallScreen ? "sm" : "default"}
-                className={`${isSmallScreen ? 'w-full' : ''}`}
-              >
+              <Button size={isSmallScreen ? "sm" : "default"}>
                 <Share className="h-4 w-4 mr-2" /> Share
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-w-[calc(100%-2rem)]">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Share your analysis</DialogTitle>
                 <DialogDescription>
@@ -186,7 +180,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               
               <div className="mt-4">
                 <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
-                <div className={`flex ${isSmallScreen ? 'flex-wrap' : ''} gap-2`}>
+                <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleShare('twitter')}>
                     <Twitter className="h-4 w-4 mr-2" /> Twitter
                   </Button>
