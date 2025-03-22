@@ -31,11 +31,11 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
           ease: [0.22, 1, 0.36, 1]
         }
       }
-    }} className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-6'}`}>
-      <div className="w-full">
+    }} className="flex flex-col md:flex-row w-full gap-3 md:gap-6">
+      <div className="w-full md:w-1/2">
         <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
       </div>
-      <div className="w-full">
+      <div className="w-full md:w-1/2">
         <LearningPathways pathways={learningPathways} />
       </div>
     </motion.div>

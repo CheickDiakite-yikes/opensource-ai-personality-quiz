@@ -92,7 +92,7 @@ const ReportPage: React.FC = () => {
   // Show loading state only on initial load
   if (isLoading && !stableAnalysis) {
     return (
-      <div className={`container ${isMobile ? 'py-2 px-2' : 'py-10'}`}>
+      <div className={`container ${isMobile ? 'py-2 px-1 mx-0 w-full max-w-full' : 'py-10'}`}>
         <ReportSkeleton />
       </div>
     );
@@ -106,7 +106,7 @@ const ReportPage: React.FC = () => {
     // This shouldn't happen often since we redirect in the useEffect,
     // but this is a fallback just in case
     return (
-      <div className={`container ${isMobile ? 'py-4 px-3' : 'py-10'} text-center`}>
+      <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'} text-center`}>
         <h2 className="text-2xl font-bold mb-4">No Analysis Found</h2>
         <p className="mb-6">We couldn't find any personality analysis reports.</p>
         <button
@@ -124,7 +124,7 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className={`container max-w-4xl mx-auto ${isMobile ? 'py-2 px-2 space-y-3' : 'py-6 space-y-8'}`}>
+    <div className={`container mx-auto ${isMobile ? 'p-0 py-1 px-2 max-w-full' : 'py-6 space-y-8 max-w-4xl'}`}>
       {displayAnalysis && (
         <>
           <ReportHeader 
@@ -133,8 +133,8 @@ const ReportPage: React.FC = () => {
             onAnalysisChange={handleAnalysisChange}
           />
           
-          <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-3' : 'space-y-6'}`}>
-            <div className="scrollable-tabs-container overflow-x-auto w-full">
+          <Tabs defaultValue="overview" className="w-full">
+            <div className="w-full overflow-x-auto">
               <ReportTabs />
             </div>
             <ReportTabContent analysis={displayAnalysis} />

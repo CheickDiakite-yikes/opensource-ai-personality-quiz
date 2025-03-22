@@ -7,10 +7,12 @@ const ReportTabs: React.FC = () => {
   const isMobile = useIsMobile();
   
   // Set smaller text and padding for mobile
-  const tabTriggerClass = isMobile ? "text-xs px-2 py-1.5 whitespace-nowrap" : "whitespace-nowrap";
+  const tabTriggerClass = isMobile 
+    ? "text-xs py-1.5 whitespace-nowrap flex-shrink-0" 
+    : "whitespace-nowrap";
   
   return (
-    <TabsList className="overflow-x-auto flex w-full scrollbar-none pb-1">
+    <TabsList className="w-full scrollbar-none flex overflow-x-auto pb-1 snap-x">
       <TabsTrigger className={tabTriggerClass} value="overview">Overview</TabsTrigger>
       <TabsTrigger className={tabTriggerClass} value="personality">Personality</TabsTrigger>
       <TabsTrigger className={tabTriggerClass} value="intelligence">Intelligence</TabsTrigger>

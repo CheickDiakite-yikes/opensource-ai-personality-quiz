@@ -53,8 +53,8 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
     : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
     
   const tabContentClass = isMobile 
-    ? "space-y-4 mt-3 overflow-visible px-0 pb-16" 
-    : "space-y-10 mt-6";
+    ? "space-y-4 mt-3 px-0 pb-16 w-full overflow-visible" 
+    : "space-y-10 mt-6 w-full";
     
   return (
     <>

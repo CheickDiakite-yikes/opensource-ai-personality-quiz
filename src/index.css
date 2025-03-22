@@ -22,20 +22,22 @@ body {
   color: hsl(var(--foreground));
   max-width: 100vw;
   position: relative;
+  overflow-x: hidden;
 }
 
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     width: 100%;
+    max-width: 100%;
   }
   
   /* Improve tap target sizes on mobile */
   button, a, input, select, textarea, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 40px;
+    min-width: 40px;
   }
   
   /* Add responsive card styles for mobile */
@@ -45,11 +47,11 @@ body {
 
   /* Adjust text sizes for readability on mobile */
   h1 {
-    @apply text-2xl md:text-3xl;
+    @apply text-xl md:text-3xl;
   }
   
   h2 {
-    @apply text-xl md:text-2xl;
+    @apply text-lg md:text-2xl;
   }
   
   p, li {
@@ -57,18 +59,23 @@ body {
   }
   
   /* Fix for mobile tabs */
-  .scrollable-tabs-container {
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem;
-    width: calc(100% + 1rem);
+  .tabs-container {
+    width: 100%;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .tabs-container::-webkit-scrollbar {
+    display: none;
   }
   
   /* Fix content overflow */
   .break-words {
     overflow-wrap: break-word;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: break-all;
     hyphens: auto;
   }
   
@@ -80,6 +87,7 @@ body {
   /* Adjust tabs padding and sizing */
   .tabs-list-mobile {
     padding: 0.25rem !important;
+    -webkit-overflow-scrolling: touch;
   }
   
   .tab-trigger-mobile {
@@ -97,21 +105,21 @@ body {
   
   /* Add safe area insets for notched phones */
   .container {
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
   }
 }
 
 /* Add scrolling improvements for tabs */
-.scrollable-tabs {
-  @apply overflow-x-auto -mx-3 px-3 scrollbar-none;
+.scrollbar-none {
+  @apply overflow-x-auto;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.scrollable-tabs::-webkit-scrollbar {
+.scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 
@@ -121,4 +129,47 @@ body {
   max-width: 100%;
   overflow-x: hidden;
   overflow-y: visible;
+}
+
+/* Custom responsive grid layouts */
+.responsive-grid {
+  @apply grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Snap scrolling for better mobile experience */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* Better text wrapping on narrow screens */
+.text-wrap {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+  white-space: pre-wrap;
+}
+
+/* Mobile-optimized cards */
+@media (max-width: 640px) {
+  .mobile-card {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 0;
+    width: calc(100% + 1rem);
+  }
+  
+  .mobile-full-width {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
 }
