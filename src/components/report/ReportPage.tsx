@@ -124,7 +124,7 @@ const ReportPage: React.FC = () => {
   };
   
   return (
-    <div className={`container max-w-4xl mx-auto ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
+    <div className={`container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto ${isMobile ? 'py-4 px-3 space-y-4' : 'py-6 space-y-8'}`}>
       {displayAnalysis && (
         <>
           <ReportHeader 
