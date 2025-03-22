@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -22,8 +23,8 @@ const TraitsPage: React.FC = () => {
   
   if (isLoading) {
     return (
-      <div className="container max-w-5xl py-10 px-4">
-        <div className="space-y-6">
+      <div className="container max-w-5xl py-4 md:py-8 px-3 md:px-4">
+        <div className="space-y-4 md:space-y-6">
           <div className="h-8 w-40 bg-muted rounded animate-pulse"></div>
           <div className="h-64 bg-muted rounded animate-pulse"></div>
         </div>
@@ -33,7 +34,7 @@ const TraitsPage: React.FC = () => {
   
   if (!analysis) {
     return (
-      <div className="container max-w-5xl py-10 px-4">
+      <div className="container max-w-5xl py-4 md:py-8 px-3 md:px-4">
         <h2 className="text-2xl font-bold">No analysis found</h2>
         <p className="mt-2">Complete the assessment to view your personality traits.</p>
         <Button onClick={() => navigate("/assessment")} className="mt-4">
@@ -44,10 +45,10 @@ const TraitsPage: React.FC = () => {
   }
   
   return (
-    <div className="container max-w-4xl mx-auto py-4 md:py-10 px-3 md:px-4 min-h-screen">
+    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
       <Button 
         variant="ghost" 
-        className="mb-4 md:mb-6" 
+        className="mb-3 md:mb-6 -ml-2" 
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -64,7 +65,7 @@ const TraitsPage: React.FC = () => {
             <CardTitle className="text-foreground">All Personality Traits</CardTitle>
             <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
-          <CardContent className={isMobile ? "p-4" : "pt-6"}>
+          <CardContent className={isMobile ? "p-4 pt-3" : "pt-6"}>
             <TraitsDetail traits={analysis.traits} />
           </CardContent>
         </Card>

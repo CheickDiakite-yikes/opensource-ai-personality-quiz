@@ -43,14 +43,14 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
         }
       }
     }}>
-      <Card className="glass-panel overflow-hidden bg-[#231815]">
+      <Card className="glass-panel overflow-hidden">
         <CardHeader className={`bg-gradient-to-r from-amber-500/20 to-orange-500/20 ${isMobile ? 'p-4 pb-3' : 'pb-4'}`}>
           <CardTitle className="flex items-center text-foreground text-lg md:text-xl">
             <Brain className="h-5 w-5 mr-2 text-orange-500" /> Intelligence Profile
           </CardTitle>
           <CardDescription className="text-foreground/80">Your cognitive strengths and style</CardDescription>
         </CardHeader>
-        <CardContent className={isMobile ? "p-4 pt-3" : "pt-6"}>
+        <CardContent className={isMobile ? "p-4 pt-3 overflow-hidden" : "pt-6"}>
           {hasScores ? (
             <div className="mb-4">
               <div className="flex justify-between mb-1">
@@ -73,7 +73,7 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
           )}
           
           {hasIntelligenceData ? (
-            <div className="mt-5 md:mt-6">
+            <div className="mt-4 md:mt-6">
               <h3 className="font-medium text-base md:text-lg mb-2 text-foreground">Type: {intelligence.type}</h3>
               <p className="text-sm md:text-base text-foreground/80 mb-3 md:mb-4">{intelligence.description}</p>
               
@@ -82,7 +82,11 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                 Intelligence Domains
               </h4>
               
-              <IntelligenceDomainChart domains={intelligence.domains} />
+              <div className={isMobile ? "w-full overflow-x-auto -mx-2 px-2" : ""}>
+                <div className={isMobile ? "min-w-[300px]" : ""}>
+                  <IntelligenceDomainChart domains={intelligence.domains} />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="p-3 md:p-4 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-2">

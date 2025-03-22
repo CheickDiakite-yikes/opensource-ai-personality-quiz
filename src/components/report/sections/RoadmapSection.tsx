@@ -34,18 +34,18 @@ const RoadmapSection: React.FC<RoadmapSectionProps> = ({ roadmap }) => {
       }
     }}>
       <Card className="glass-panel overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 pb-3 md:pb-4">
+        <CardHeader className={`bg-gradient-to-r from-indigo-500/10 to-violet-500/10 ${isMobile ? 'p-4 pb-3' : 'pb-4'}`}>
           <CardTitle className="flex items-center">
             <ArrowRight className="h-5 w-5 mr-2 text-primary" /> Your Personalized Roadmap
           </CardTitle>
           <CardDescription>Steps to become your best self</CardDescription>
         </CardHeader>
-        <CardContent className="pt-3 md:pt-6">
-          <p className={`${isMobile ? 'text-base' : 'text-lg'} leading-relaxed`}>{roadmap}</p>
+        <CardContent className={`${isMobile ? 'p-4 pt-3' : 'pt-6'}`}>
+          <p className={`${isMobile ? 'text-sm' : 'text-base md:text-lg'} leading-relaxed`}>{roadmap}</p>
           
-          <div className="mt-6 md:mt-8">
+          <div className="mt-4 md:mt-6">
             <Button 
-              className="w-full sm:w-auto" 
+              className="w-full" 
               onClick={() => navigate("/tracker")}
             >
               Begin Your Growth Journey

@@ -20,9 +20,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ analysis, itemVariants })
       variants={itemVariants} 
       className={`flex flex-col ${isMobile ? 'gap-4' : 'md:flex-row justify-between items-center gap-6'} py-2 md:py-4`}
     >
-      <div className={`flex ${isMobile ? 'flex-col items-center text-center' : 'items-center'} gap-4`}>
+      <div className={`flex ${isMobile ? 'flex-col items-center text-center w-full' : 'items-center'} gap-4`}>
         <div className="relative">
-          <Avatar className={`${isMobile ? 'h-20 w-20' : 'h-24 w-24'} border-4 border-primary/20 shadow-lg avatar-glow`}>
+          <Avatar className={`${isMobile ? 'h-20 w-20' : 'h-24 w-24'} border-4 border-primary/20 shadow-lg avatar-glow mx-auto`}>
             <AvatarImage src="/placeholder.svg" alt="Profile" />
             <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary/40 text-2xl font-semibold text-primary-foreground">
               <User className={`${isMobile ? 'h-10 w-10' : 'h-12 w-12'}`} />

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Share, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ShareProfileProps {
   analysis: PersonalityAnalysis;
@@ -12,6 +13,7 @@ interface ShareProfileProps {
 
 const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
+  const isMobile = useIsMobile();
   
   // Generate a unique share URL using the new domain
   const shareUrl = `https://www.sowei.io/shared-profile/${analysis.id || 'demo'}`;
@@ -29,7 +31,6 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0].trait}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/9c15c55d-2498-4c6b-868b-51fecd3b2f3c.png`;
     
     switch (platform) {
       case 'twitter':
@@ -52,7 +53,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="hover-glow">
+        <Button className="hover-glow w-full">
           <Share className="mr-2 h-4 w-4" /> Share Profile
         </Button>
       </DialogTrigger>
@@ -75,14 +76,14 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
         
         <div className="mt-4">
           <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => handleShare('twitter')}>
+          <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
+            <Button size="sm" variant="outline" onClick={() => handleShare('twitter')} className={isMobile ? "w-full" : ""}>
               <Twitter className="h-4 w-4 mr-2" /> Twitter
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleShare('facebook')}>
+            <Button size="sm" variant="outline" onClick={() => handleShare('facebook')} className={isMobile ? "w-full" : ""}>
               <Facebook className="h-4 w-4 mr-2" /> Facebook
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleShare('linkedin')}>
+            <Button size="sm" variant="outline" onClick={() => handleShare('linkedin')} className={isMobile ? "w-full" : ""}>
               <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
             </Button>
           </div>

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -79,10 +80,10 @@ const ProfilePage: React.FC = () => {
   };
   
   return (
-    <div className="container max-w-4xl mx-auto py-6 md:py-10 px-4 min-h-screen">
+    <div className="container max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
       <Button 
         variant="ghost" 
-        className="mb-4 md:mb-6" 
+        className="mb-3 md:mb-6 -ml-2" 
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -97,7 +98,7 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
       
-      <div className={`space-y-4 ${isMobile ? '' : 'space-y-8'}`}>
+      <div className={`space-y-4 ${isMobile ? '' : 'space-y-6 md:space-y-8'}`}>
         <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
         <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
         <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />
