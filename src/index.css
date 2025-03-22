@@ -50,6 +50,24 @@ body {
   
   p {
     line-height: 1.5;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Fix tab overflow */
+  .tabs-container {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent text from overflowing on small screens */
+  .text-wrap-mobile {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
   }
 }
 
@@ -68,11 +86,40 @@ body {
   .card-content {
     padding: 1rem;
   }
+  
+  /* Make sure dialogs don't overflow on small screens */
+  .dialog-content {
+    width: calc(100% - 2rem);
+    max-width: 100%;
+    margin: 0 1rem;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  /* Fix tabs on mobile */
+  [role="tablist"] {
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+  }
+  
+  [role="tab"] {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
 }
 
 /* Fix mobile scrolling issues */
 .overflow-scroll-fix {
   -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 /* Enhanced visible focus for accessibility */
@@ -86,4 +133,19 @@ input,
 textarea {
   -webkit-appearance: none;
   border-radius: 0.5rem;
+}
+
+/* Fix text truncation on mobile */
+.mobile-text-wrap {
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Fix tab content on mobile */
+@media (max-width: 640px) {
+  [role="tabpanel"] {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 }

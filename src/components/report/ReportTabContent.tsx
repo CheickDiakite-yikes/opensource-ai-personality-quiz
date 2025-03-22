@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
@@ -13,6 +12,7 @@ import CareerValuesSection from "./sections/CareerValuesSection";
 import RoadmapSection from "./sections/RoadmapSection";
 import { isRelationshipObject } from "./utils/typeGuards";
 import ReportSectionSkeleton from "./skeletons/ReportSectionSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReportTabContentProps {
   analysis: PersonalityAnalysis;
@@ -26,6 +26,7 @@ const SectionLoader = ({ children }: { children: React.ReactNode }) => (
 );
 
 const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
+  const isMobile = useIsMobile();
   const {
     overview,
     traits,
@@ -48,10 +49,13 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   const processedRelationships = isRelationshipObject(relationshipPatterns)
     ? relationshipPatterns
     : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
+  
+  // Common tab content classes for consistent mobile spacing
+  const tabContentClass = `space-y-${isMobile ? '6' : '10'} mt-${isMobile ? '4' : '6'}`;
     
   return (
     <>
-      <TabsContent value="overview" className="space-y-10 mt-6">
+      <TabsContent value="overview" className={tabContentClass}>
         <SectionLoader>
           <OverviewSection 
             overview={overview} 
@@ -108,13 +112,14 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="personality" className="space-y-10 mt-6">
+      {/* Apply the same consistent spacing to all tab contents */}
+      <TabsContent value="personality" className={tabContentClass}>
         <SectionLoader>
           <PersonalityTraitsSection traits={traits} />
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="intelligence" className="space-y-10 mt-6">
+      <TabsContent value="intelligence" className={tabContentClass}>
         <SectionLoader>
           <IntelligenceSection 
             intelligence={intelligence}
@@ -124,7 +129,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="motivation" className="space-y-10 mt-6">
+      <TabsContent value="motivation" className={tabContentClass}>
         <SectionLoader>
           <MotivationSection 
             motivators={motivators}
@@ -133,13 +138,13 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="values" className="space-y-10 mt-6">
+      <TabsContent value="values" className={tabContentClass}>
         <SectionLoader>
           <CoreValuesSection valueSystem={valueSystem} />
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="growth" className="space-y-10 mt-6">
+      <TabsContent value="growth" className={tabContentClass}>
         <SectionLoader>
           <GrowthAreasSection 
             weaknesses={weaknesses}
@@ -148,7 +153,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="relationships" className="space-y-10 mt-6">
+      <TabsContent value="relationships" className={tabContentClass}>
         <SectionLoader>
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
@@ -157,7 +162,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="career" className="space-y-10 mt-6">
+      <TabsContent value="career" className={tabContentClass}>
         <SectionLoader>
           <CareerValuesSection 
             careerSuggestions={careerSuggestions}
@@ -166,7 +171,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         </SectionLoader>
       </TabsContent>
       
-      <TabsContent value="roadmap" className="space-y-10 mt-6">
+      <TabsContent value="roadmap" className={tabContentClass}>
         <SectionLoader>
           <RoadmapSection roadmap={roadmap} />
         </SectionLoader>
