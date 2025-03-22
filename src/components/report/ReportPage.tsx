@@ -134,7 +134,9 @@ const ReportPage: React.FC = () => {
           />
           
           <Tabs defaultValue="overview" className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
-            <ReportTabs />
+            <div className="scrollable-tabs">
+              <ReportTabs />
+            </div>
             <ReportTabContent analysis={displayAnalysis} />
           </Tabs>
         </>

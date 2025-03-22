@@ -149,6 +149,47 @@
   animation: progress-animation 1s linear infinite;
 }
 
+/* Mobile-specific adjustments */
+@media screen and (max-width: 767px) {
+  /* Smaller avatar glow for mobile */
+  .avatar-glow::after {
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+  }
+  
+  /* Smaller trait bubbles for mobile */
+  .trait-bubble {
+    padding: 0.35rem 0.75rem;
+    margin-right: 0.4rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Ensure tables are scrollable on mobile */
+  .mobile-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better touch targets for mobile */
+  .mobile-touch-friendly button,
+  .mobile-touch-friendly a {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Reduce animation intensity on mobile for better performance */
+  .avatar-glow::after {
+    animation: rotate-glow 20s linear infinite, pulse-subtle 5s ease-in-out infinite;
+  }
+}
+
 /* Keyframe Animations */
 @keyframes rotate-glow {
   0% {
