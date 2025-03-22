@@ -27,8 +27,8 @@ body {
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     width: 100%;
   }
   
@@ -55,6 +55,22 @@ body {
   p, li {
     @apply text-sm md:text-base;
   }
+  
+  /* Improve scrollable tabs for mobile */
+  .scrollable-tabs {
+    @apply -mx-2 px-2 overflow-x-auto scrollbar-none pb-1;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Add a utility class for removing scrollbars but keeping functionality */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Fix for notch phones and other devices with safe areas */
@@ -63,4 +79,9 @@ body {
     padding-left: min(0vmin, env(safe-area-inset-left));
     padding-right: min(0vmin, env(safe-area-inset-right));
   }
+}
+
+/* Utility class for glassmorphism panels */
+.glass-panel {
+  @apply bg-background/60 backdrop-blur-sm border border-white/10;
 }
