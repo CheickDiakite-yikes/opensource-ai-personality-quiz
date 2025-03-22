@@ -40,13 +40,13 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   const paragraphs = overview.split('\n\n');
   
   return (
-    <section>
-      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-2`}>Personality Overview</h2>
+    <section className="max-w-full overflow-hidden">
+      <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold mb-2`}>Personality Overview</h2>
       
-      <Card className="mb-3 md:mb-6 overflow-hidden">
+      <Card className="mb-3 md:mb-6 overflow-hidden w-full max-w-[100vw] text-wrap">
         {isMobile ? (
           <>
-            <Collapsible open={expanded} onOpenChange={setExpanded}>
+            <Collapsible open={expanded} onOpenChange={setExpanded} className="w-full">
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
@@ -57,11 +57,11 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
                   {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="px-3 py-2">
-                  <div className="prose prose-sm max-w-none">
+              <CollapsibleContent className="w-full">
+                <CardContent className="px-3 py-2 w-full">
+                  <div className="prose prose-sm max-w-none w-full">
                     {paragraphs.map((paragraph, index) => (
-                      <p key={index} className="mb-2 leading-relaxed text-xs">
+                      <p key={index} className="mb-2 leading-relaxed text-xs break-words whitespace-normal">
                         {paragraph}
                       </p>
                     ))}
@@ -83,16 +83,16 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
         )}
       </Card>
       
-      <div className={`grid grid-cols-1 ${isMobile ? 'gap-2' : 'md:grid-cols-2 gap-4'} mb-4`}>
-        <Card>
-          <CardContent className={`${isMobile ? 'px-3 py-2' : 'pt-6'}`}>
-            <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1`}>Cognitive Style</h3>
-            <p className="text-muted-foreground text-xs md:text-base break-words">
+      <div className={`grid grid-cols-1 ${isMobile ? 'gap-2' : 'md:grid-cols-2 gap-4'} mb-4 max-w-full`}>
+        <Card className="w-full">
+          <CardContent className={`${isMobile ? 'px-3 py-2' : 'pt-6'} w-full`}>
+            <h3 className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold mb-1`}>Cognitive Style</h3>
+            <p className="text-muted-foreground text-xs md:text-base break-words whitespace-normal">
               You tend to process information as a {formatCognitiveStyle()}
             </p>
             
             {isCognitiveStyleObject(cognitiveStyle) && cognitiveStyle.description && (
-              <p className="mt-2 text-xs text-muted-foreground break-words">
+              <p className="mt-2 text-xs text-muted-foreground break-words whitespace-normal">
                 {cognitiveStyle.description}
               </p>
             )}
