@@ -9,6 +9,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface GrowthAreasSectionProps {
   weaknesses: string[];
@@ -20,6 +23,8 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
   growthAreas 
 }) => {
   const isMobile = useIsMobile();
+  const [weaknessesOpen, setWeaknessesOpen] = React.useState(!isMobile);
+  const [growthOpen, setGrowthOpen] = React.useState(!isMobile);
   
   return (
     <motion.div variants={{
@@ -32,43 +37,115 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
           ease: [0.22, 1, 0.36, 1]
         }
       }
-    }} className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'md:grid-cols-2 gap-6'}`}>
+    }} className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-6'}`}>
       <Card className="glass-panel overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-rose-500/10 to-red-500/10 pb-3 md:pb-4">
-          <CardTitle>Weaknesses</CardTitle>
+        <CardHeader className={`bg-gradient-to-r from-rose-500/10 to-red-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
+          <CardTitle className={isMobile ? 'text-base' : ''}>Weaknesses</CardTitle>
           <CardDescription>Areas that may need attention</CardDescription>
         </CardHeader>
-        <CardContent className="pt-3 md:pt-6">
-          <ul className="space-y-2">
-            {weaknesses.map((item, index) => (
-              <li key={index} className="flex items-start">
-                <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
-                  {index + 1}
+        
+        {isMobile ? (
+          <Collapsible open={weaknessesOpen} onOpenChange={setWeaknessesOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {weaknessesOpen ? "Collapse" : "Expand"} ({weaknesses.length})
                 </span>
-                <span className="text-sm md:text-base">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
+                {weaknessesOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <ul className="space-y-2">
+                  {weaknesses.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-3 md:pt-6">
+            <ul className="space-y-2">
+              {weaknesses.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm md:text-base">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        )}
       </Card>
       
       <Card className="glass-panel overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 pb-3 md:pb-4">
-          <CardTitle>Growth Areas</CardTitle>
+        <CardHeader className={`bg-gradient-to-r from-blue-500/10 to-indigo-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
+          <CardTitle className={isMobile ? 'text-base' : ''}>Growth Areas</CardTitle>
           <CardDescription>Opportunities for development</CardDescription>
         </CardHeader>
-        <CardContent className="pt-3 md:pt-6">
-          <ul className="space-y-2">
-            {growthAreas.map((item, index) => (
-              <li key={index} className="flex items-start">
-                <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
-                  {index + 1}
+        
+        {isMobile ? (
+          <Collapsible open={growthOpen} onOpenChange={setGrowthOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {growthOpen ? "Collapse" : "Expand"} ({growthAreas.length})
                 </span>
-                <span className="text-sm md:text-base">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
+                {growthOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <ul className="space-y-2">
+                  {growthAreas.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-3 md:pt-6">
+            <ul className="space-y-2">
+              {growthAreas.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm md:text-base">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        )}
       </Card>
     </motion.div>
   );

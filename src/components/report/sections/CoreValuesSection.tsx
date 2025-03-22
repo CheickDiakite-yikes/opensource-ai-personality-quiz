@@ -27,23 +27,23 @@ const CoreValuesSection: React.FC<CoreValuesSectionProps> = ({ valueSystem }) =>
 
   return (
     <Card className="glass-panel overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pb-3 md:pb-4">
-        <CardTitle className="flex items-center">
+      <CardHeader className={`bg-gradient-to-r from-indigo-500/10 to-purple-500/10 ${isMobile ? 'px-3 py-2' : 'pb-3 md:pb-4'}`}>
+        <CardTitle className={`flex items-center ${isMobile ? 'text-base' : ''}`}>
           <Award className="h-5 w-5 mr-2 text-primary" /> Your Core Values
         </CardTitle>
         <CardDescription>Principles that guide your decisions</CardDescription>
       </CardHeader>
-      <CardContent className="pt-3 md:pt-6">
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'sm:grid-cols-2 gap-2'}`}>
+      <CardContent className={`${isMobile ? 'px-3 py-2' : 'pt-3 md:pt-6'}`}>
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'sm:grid-cols-2 gap-2'}`}>
           {valuesToDisplay.map((value, index) => (
             <div
               key={index}
-              className="border border-border/40 p-2 md:p-3 rounded-md flex items-center bg-card/30"
+              className={`border border-border/40 ${isMobile ? 'p-1.5' : 'p-2 md:p-3'} rounded-md flex items-center bg-card/30`}
             >
-              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-2 md:mr-3 flex-shrink-0">
+              <span className={`inline-flex items-center justify-center rounded-full bg-primary/10 ${isMobile ? 'h-5 w-5 text-xs mr-1.5' : 'h-6 w-6 text-sm mr-2 md:mr-3'} text-primary flex-shrink-0`}>
                 {index + 1}
               </span>
-              <span className="text-sm md:text-base">{value}</span>
+              <span className={`${isMobile ? 'text-xs' : 'text-sm md:text-base'} break-words`}>{value}</span>
             </div>
           ))}
         </div>

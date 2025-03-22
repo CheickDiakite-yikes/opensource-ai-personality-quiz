@@ -28,21 +28,21 @@ body {
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    width: 100%;
-    max-width: 100%;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* Improve tap target sizes on mobile */
   button, a, input, select, textarea, [role="button"] {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 36px;
+    min-width: 36px;
   }
   
   /* Add responsive card styles for mobile */
   .card {
-    @apply rounded-lg border px-3 py-3 md:px-6 md:py-4;
+    @apply rounded-md border px-2 py-2 md:px-6 md:py-4;
   }
 
   /* Adjust text sizes for readability on mobile */
@@ -54,17 +54,36 @@ body {
     @apply text-lg md:text-2xl;
   }
   
+  h3 {
+    @apply text-base md:text-xl;
+  }
+  
   p, li {
-    @apply text-sm md:text-base;
+    @apply text-xs md:text-base;
+  }
+  
+  /* Compact card headers for mobile */
+  .card-header {
+    @apply px-3 py-2;
+  }
+  
+  .card-content {
+    @apply px-3 py-2;
+  }
+  
+  /* Ultra-compact design for mobile cards */
+  .mobile-compact {
+    @apply p-0 m-0 !important;
   }
   
   /* Fix for mobile tabs */
   .tabs-container {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    max-width: calc(100vw - 1rem) !important;
   }
   
   .tabs-container::-webkit-scrollbar {
@@ -73,26 +92,36 @@ body {
   
   /* Fix content overflow */
   .break-words {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-all;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
     hyphens: auto;
   }
   
   /* Prevent horizontal overflow */
   .overflow-x-hidden {
-    overflow-x: hidden;
+    overflow-x: hidden !important;
   }
   
   /* Adjust tabs padding and sizing */
   .tabs-list-mobile {
-    padding: 0.25rem !important;
+    padding: 0.125rem !important;
     -webkit-overflow-scrolling: touch;
   }
   
   .tab-trigger-mobile {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  /* Make sure cards don't stretch beyond screen width */
+  .glass-panel {
+    max-width: calc(100vw - 1rem) !important;
+  }
+  
+  /* Allow long text to break */
+  .whitespace-normal {
+    white-space: normal !important;
   }
 }
 
@@ -117,10 +146,15 @@ body {
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  position: relative;
+  touch-action: pan-x;
+  max-width: 100%;
 }
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 /* Fix for tabs to avoid cutoff content */
@@ -135,12 +169,13 @@ body {
 .responsive-grid {
   @apply grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 /* Snap scrolling for better mobile experience */
 .snap-x {
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .snap-center {
@@ -172,4 +207,62 @@ body {
     margin-left: -50vw;
     margin-right: -50vw;
   }
+  
+  .mobile-mini-padding {
+    padding: 0.125rem !important;
+  }
+  
+  .mobile-mini-margin {
+    margin: 0.125rem !important;
+  }
+  
+  .mobile-mini-gap {
+    gap: 0.125rem !important;
+  }
+  
+  /* Fix accordion styling */
+  .mobile-accordion-fix .accordion-trigger {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .mobile-accordion-fix .accordion-content {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Fix for nested scrollable areas */
+.nested-scroll-fix {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Add a glass-card style for dark themes */
+.glass-card {
+  @apply bg-black/30 backdrop-blur-sm border border-white/10 shadow-lg;
+}
+
+/* Optimize for ultra-small screens */
+@media (max-width: 360px) {
+  html, body {
+    font-size: 14px;
+  }
+  
+  .xs-text-tiny {
+    font-size: 0.65rem !important;
+  }
+  
+  .xs-padding-minimal {
+    padding: 0.125rem !important;
+  }
+  
+  .xs-hide {
+    display: none !important;
+  }
+}
+
+/* Make whitespace pre-wrap work nicely with line breaks */
+.whitespace-pre-line {
+  white-space: pre-line;
 }

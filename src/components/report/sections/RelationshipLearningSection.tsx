@@ -4,6 +4,14 @@ import { motion } from "framer-motion";
 import RelationshipPatterns from "../RelationshipPatterns";
 import LearningPathways from "../LearningPathways";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Card } from "@/components/ui/card";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface RelationshipLearningProps {
   relationshipPatterns: {
@@ -19,6 +27,8 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
   learningPathways 
 }) => {
   const isMobile = useIsMobile();
+  const [patternsOpen, setPatternsOpen] = React.useState(!isMobile);
+  const [pathwaysOpen, setPathwaysOpen] = React.useState(!isMobile);
   
   return (
     <motion.div variants={{
@@ -31,13 +41,66 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
           ease: [0.22, 1, 0.36, 1]
         }
       }
-    }} className="flex flex-col md:flex-row w-full gap-3 md:gap-6">
-      <div className="w-full md:w-1/2">
-        <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
-      </div>
-      <div className="w-full md:w-1/2">
-        <LearningPathways pathways={learningPathways} />
-      </div>
+    }} className="flex flex-col w-full gap-2 md:gap-6">
+      {isMobile ? (
+        <>
+          <Card className="overflow-hidden">
+            <Collapsible open={patternsOpen} onOpenChange={setPatternsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between p-3 border-b"
+                >
+                  <span className="font-medium">Relationship Patterns</span>
+                  {patternsOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3">
+                  <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+          
+          <Card className="overflow-hidden">
+            <Collapsible open={pathwaysOpen} onOpenChange={setPathwaysOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between p-3 border-b"
+                >
+                  <span className="font-medium">Learning Pathways</span>
+                  {pathwaysOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3">
+                  <LearningPathways pathways={learningPathways} />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        </>
+      ) : (
+        // Desktop view - side by side
+        <div className="flex flex-row w-full gap-6">
+          <div className="w-1/2">
+            <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
+          </div>
+          <div className="w-1/2">
+            <LearningPathways pathways={learningPathways} />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
