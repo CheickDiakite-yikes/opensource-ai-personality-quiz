@@ -41,10 +41,10 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
           ease: [0.22, 1, 0.36, 1]
         }
       }
-    }} className="flex flex-col w-full gap-2 md:gap-6 max-w-[100vw]">
+    }} className="flex flex-col w-full gap-2 md:gap-6 overflow-hidden">
       {isMobile ? (
         <>
-          <Card className="overflow-hidden max-w-full">
+          <Card className="overflow-hidden w-full">
             <Collapsible open={patternsOpen} onOpenChange={setPatternsOpen}>
               <CollapsibleTrigger asChild>
                 <Button 
@@ -68,7 +68,7 @@ const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({
             </Collapsible>
           </Card>
           
-          <Card className="overflow-hidden max-w-full">
+          <Card className="overflow-hidden w-full">
             <Collapsible open={pathwaysOpen} onOpenChange={setPathwaysOpen}>
               <CollapsibleTrigger asChild>
                 <Button 

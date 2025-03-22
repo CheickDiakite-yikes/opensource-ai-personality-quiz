@@ -1,3 +1,4 @@
+
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
@@ -52,130 +53,148 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
     : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
     
   const tabContentClass = isMobile 
-    ? "space-y-3 mt-2 px-0 pb-16 w-full overflow-visible max-w-[100vw]" 
+    ? "space-y-3 mt-2 px-0 pb-16 w-full overflow-x-hidden" 
     : "space-y-8 mt-6 w-full";
     
   return (
     <>
       <TabsContent value="overview" className={tabContentClass}>
-        <SectionLoader>
-          <OverviewSection 
-            overview={overview} 
-            cognitiveStyle={cognitiveStyle} 
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <PersonalityTraitsSection traits={traits} />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <IntelligenceSection 
-            intelligence={intelligence}
-            intelligenceScore={intelligenceScore}
-            emotionalIntelligenceScore={emotionalIntelligenceScore}
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <MotivationSection 
-            motivators={motivators}
-            inhibitors={inhibitors}
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <CoreValuesSection valueSystem={valueSystem} />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <GrowthAreasSection 
-            weaknesses={weaknesses}
-            growthAreas={growthAreas}
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <RelationshipLearningSection 
-            relationshipPatterns={processedRelationships}
-            learningPathways={learningPathways}
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <CareerValuesSection 
-            careerSuggestions={careerSuggestions}
-            valueSystem={valueSystem}
-          />
-        </SectionLoader>
-        
-        <SectionLoader>
-          <RoadmapSection roadmap={roadmap} />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <OverviewSection 
+              overview={overview} 
+              cognitiveStyle={cognitiveStyle} 
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <PersonalityTraitsSection traits={traits} />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <IntelligenceSection 
+              intelligence={intelligence}
+              intelligenceScore={intelligenceScore}
+              emotionalIntelligenceScore={emotionalIntelligenceScore}
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <MotivationSection 
+              motivators={motivators}
+              inhibitors={inhibitors}
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <CoreValuesSection valueSystem={valueSystem} />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <GrowthAreasSection 
+              weaknesses={weaknesses}
+              growthAreas={growthAreas}
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <RelationshipLearningSection 
+              relationshipPatterns={processedRelationships}
+              learningPathways={learningPathways}
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <CareerValuesSection 
+              careerSuggestions={careerSuggestions}
+              valueSystem={valueSystem}
+            />
+          </SectionLoader>
+          
+          <SectionLoader>
+            <RoadmapSection roadmap={roadmap} />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="personality" className={tabContentClass}>
-        <SectionLoader>
-          <PersonalityTraitsSection traits={traits} />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <PersonalityTraitsSection traits={traits} />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="intelligence" className={tabContentClass}>
-        <SectionLoader>
-          <IntelligenceSection 
-            intelligence={intelligence}
-            intelligenceScore={intelligenceScore}
-            emotionalIntelligenceScore={emotionalIntelligenceScore}
-          />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <IntelligenceSection 
+              intelligence={intelligence}
+              intelligenceScore={intelligenceScore}
+              emotionalIntelligenceScore={emotionalIntelligenceScore}
+            />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="motivation" className={tabContentClass}>
-        <SectionLoader>
-          <MotivationSection 
-            motivators={motivators}
-            inhibitors={inhibitors}
-          />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <MotivationSection 
+              motivators={motivators}
+              inhibitors={inhibitors}
+            />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="values" className={tabContentClass}>
-        <SectionLoader>
-          <CoreValuesSection valueSystem={valueSystem} />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <CoreValuesSection valueSystem={valueSystem} />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="growth" className={tabContentClass}>
-        <SectionLoader>
-          <GrowthAreasSection 
-            weaknesses={weaknesses}
-            growthAreas={growthAreas}
-          />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <GrowthAreasSection 
+              weaknesses={weaknesses}
+              growthAreas={growthAreas}
+            />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="relationships" className={tabContentClass}>
-        <SectionLoader>
-          <RelationshipLearningSection 
-            relationshipPatterns={processedRelationships}
-            learningPathways={learningPathways}
-          />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <RelationshipLearningSection 
+              relationshipPatterns={processedRelationships}
+              learningPathways={learningPathways}
+            />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="career" className={tabContentClass}>
-        <SectionLoader>
-          <CareerValuesSection 
-            careerSuggestions={careerSuggestions}
-            valueSystem={valueSystem}
-          />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <CareerValuesSection 
+              careerSuggestions={careerSuggestions}
+              valueSystem={valueSystem}
+            />
+          </SectionLoader>
+        </div>
       </TabsContent>
       
       <TabsContent value="roadmap" className={tabContentClass}>
-        <SectionLoader>
-          <RoadmapSection roadmap={roadmap} />
-        </SectionLoader>
+        <div className="w-full overflow-x-hidden">
+          <SectionLoader>
+            <RoadmapSection roadmap={roadmap} />
+          </SectionLoader>
+        </div>
       </TabsContent>
     </>
   );

@@ -26,7 +26,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
+    <div className="w-full space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
       {!isMobile ? (
         <Table>
           <TableHeader>
@@ -104,15 +104,15 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
         </Table>
       ) : (
         // Mobile-optimized view
-        <div className="pt-2">
+        <div className="pt-2 w-full overflow-hidden">
           <Accordion type="single" collapsible className="w-full">
             {traits.map((trait, index) => (
               <AccordionItem key={index} value={`trait-${index}`} className="border-b">
-                <AccordionTrigger className="py-3">
+                <AccordionTrigger className="py-3 pr-2">
                   <div className="flex items-center justify-between w-full text-left">
                     <div className="flex items-center">
                       <span className="mr-2 text-sm">{index + 1}.</span>
-                      <span className="truncate max-w-[160px] text-sm">{trait.trait}</span>
+                      <span className="max-w-[120px] text-sm truncate">{trait.trait}</span>
                     </div>
                     <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
                       {trait.score.toFixed(1)}
@@ -120,7 +120,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-3 p-3 bg-muted/30 rounded-md">
+                  <div className="space-y-3 p-3 bg-muted/30 rounded-md overflow-x-hidden">
                     <div className="space-y-1">
                       <h4 className="font-medium text-xs">Description</h4>
                       <p className="text-xs">{trait.description}</p>
@@ -150,9 +150,9 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                     
                     <div className="space-y-1">
                       <h4 className="font-medium text-xs">Growth Suggestions</h4>
-                      <ul className="text-xs list-disc pl-4 space-y-0.5">
+                      <ul className="text-xs list-disc pl-4 space-y-0.5 overflow-x-hidden">
                         {trait.growthSuggestions.map((suggestion, i) => (
-                          <li key={i}>{suggestion}</li>
+                          <li key={i} className="break-words">{suggestion}</li>
                         ))}
                       </ul>
                     </div>

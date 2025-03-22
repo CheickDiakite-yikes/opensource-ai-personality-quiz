@@ -28,8 +28,8 @@ body {
 /* Mobile viewport improvements */
 @media screen and (max-width: 767px) {
   .container {
-    padding-left: 0.25rem !important;
-    padding-right: 0.25rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -83,7 +83,7 @@ body {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    max-width: calc(100vw - 1rem) !important;
+    max-width: 100% !important;
   }
   
   .tabs-container::-webkit-scrollbar {
@@ -103,6 +103,14 @@ body {
     overflow-x: hidden !important;
   }
   
+  /* Force text to wrap properly */
+  .text-wrap {
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+  
   /* Adjust tabs padding and sizing */
   .tabs-list-mobile {
     padding: 0.125rem !important;
@@ -116,7 +124,11 @@ body {
   
   /* Make sure cards don't stretch beyond screen width */
   .glass-panel {
-    max-width: calc(100vw - 1rem) !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0 !important;
   }
   
   /* Allow long text to break */
@@ -200,22 +212,25 @@ body {
   white-space: pre-wrap;
 }
 
+/* Improved tab styling for active state */
+.tab-active-highlight[data-state="active"] {
+  background-color: hsl(var(--primary)/20);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
 /* Mobile-optimized cards */
 @media (max-width: 640px) {
   .mobile-card {
-    margin-left: -0.5rem;
-    margin-right: -0.5rem;
+    margin-left: 0;
+    margin-right: 0;
     border-radius: 0;
-    width: calc(100% + 1rem);
+    width: 100%;
   }
   
   .mobile-full-width {
-    width: 100vw;
+    width: 100%;
     position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
   }
   
   .mobile-mini-padding {
@@ -258,6 +273,19 @@ body {
   
   .mobile-collapsible-content {
     padding: 0.5rem !important;
+  }
+  
+  /* Make cards flush with edges on mobile */
+  .card, .glass-panel {
+    border-radius: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Ensure all containers have proper padding on mobile */
+  .container-padded {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
   }
 }
 
@@ -320,11 +348,4 @@ body {
   border-bottom: 1px solid hsl(var(--border));
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
-}
-
-/* Enhanced visibility for active tabs */
-.tab-active-highlight[data-state="active"] {
-  background-color: hsl(var(--primary)/20);
-  color: hsl(var(--primary));
-  font-weight: 600;
 }
