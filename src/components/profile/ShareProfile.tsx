@@ -18,7 +18,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   // Generate a unique share URL using the new domain
   const shareUrl = `https://www.sowei.io/shared-profile/${analysis.id || 'demo'}`;
   // Set the image URL for social media previews
-  const shareImageUrl = "https://www.sowei.io/lovable-uploads/73100c42-a0d7-4978-8bc7-244dd399a57b.png";
+  const shareImageUrl = "https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png";
   
   // Handle copy to clipboard
   const handleCopy = () => {

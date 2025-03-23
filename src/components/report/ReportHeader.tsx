@@ -40,6 +40,8 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   
   // Generate a share URL for the current analysis
   const shareUrl = `${window.location.origin}/report/${analysis.id}`;
+  // Set the image URL for social media previews
+  const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
   
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -54,11 +56,10 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const handleShare = (platform: string) => {
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
-    const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
     
     switch (platform) {
       case 'twitter':
-        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&image=${encodeURIComponent(imageUrl)}`;
         break;
       case 'facebook':
         shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;

@@ -1,0 +1,18 @@
+
+/* Social Media Sharing Styles */
+.social-share-image {
+  display: none;
+}
+
+/* Make sure links shared on social media display the correct preview */
+@media (max-width: 0px) {
+  /* This media query won't apply to regular browsing but helps with metadata */
+  .social-share-image {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
