@@ -10,7 +10,7 @@ const TestimonialSection: React.FC = () => {
       quote: "This app helped me understand why I react to situations the way I do. It's been genuinely transformative for my personal growth journey.",
       name: "Sarah K.",
       designation: "Marketing Director",
-      imageSrc: "/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png" 
+      imageSrc: "/lovable-uploads/61e4bbf7-cf7f-4318-b3d4-b684924014a5.png" 
     },
     {
       quote: "The personalized growth plan is exactly what I needed to make meaningful changes. Now I can see clear progress in areas I've struggled with for years.",
