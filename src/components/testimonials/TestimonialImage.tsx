@@ -51,12 +51,13 @@ const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageP
               }}
               className="absolute inset-0 origin-bottom will-change-transform"
             >
-              <div
-                style={{ 
-                  backgroundImage: `url(${testimonial.imageSrc})` 
-                }}
-                className="h-full w-full rounded-3xl object-cover object-center bg-cover bg-center elegant-card"
-              />
+              <div className="h-full w-full rounded-3xl overflow-hidden elegant-card">
+                <img 
+                  src={testimonial.imageSrc} 
+                  alt={`${testimonial.name}, ${testimonial.designation}`}
+                  className="h-full w-full object-cover object-top"
+                />
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

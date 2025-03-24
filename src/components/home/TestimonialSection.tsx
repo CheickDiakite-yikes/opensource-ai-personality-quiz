@@ -4,25 +4,25 @@ import { motion } from "framer-motion";
 import AnimatedTestimonials from "@/components/testimonials/AnimatedTestimonials";
 
 const TestimonialSection: React.FC = () => {
-  // Enhanced testimonials with images
+  // Enhanced testimonials with better images of real people
   const testimonials = [
     {
       quote: "This app helped me understand why I react to situations the way I do. It's been genuinely transformative for my personal growth journey.",
       name: "Sarah K.",
       designation: "Marketing Director",
-      imageSrc: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80"
+      imageSrc: "/lovable-uploads/03c0c12c-5bc0-4613-811a-662add832c4f.png" 
     },
     {
       quote: "The personalized growth plan is exactly what I needed to make meaningful changes. Now I can see clear progress in areas I've struggled with for years.",
       name: "Michael T.",
       designation: "Software Engineer",
-      imageSrc: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80"
+      imageSrc: "/lovable-uploads/9c15c55d-2498-4c6b-868b-51fecd3b2f3c.png"
     },
     {
       quote: "The assessment was incredibly accurate! I finally feel like I understand myself better and can focus on the right growth areas.",
       name: "Jessica L.",
       designation: "Teacher",
-      imageSrc: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80"
+      imageSrc: "/lovable-uploads/94f8c274-1a06-4bde-8383-3a46aea85f20.png"
     }
   ];
 

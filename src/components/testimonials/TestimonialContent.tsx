@@ -26,38 +26,22 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
         duration: 0.2,
         ease: "easeInOut",
       }}
+      className="flex flex-col h-full"
     >
-      <h3 className="text-2xl font-bold text-foreground font-serif">
-        {testimonial.name}
-      </h3>
-      <p className="text-sm text-muted-foreground">
-        {testimonial.designation}
-      </p>
-      <motion.p className="text-lg text-muted-foreground mt-8">
-        {testimonial.quote.split(" ").map((word, index) => (
-          <motion.span
-            key={index}
-            initial={{
-              filter: "blur(10px)",
-              opacity: 0,
-              y: 5,
-            }}
-            animate={{
-              filter: "blur(0px)",
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              duration: 0.2,
-              ease: "easeInOut",
-              delay: 0.02 * index,
-            }}
-            className="inline-block"
-          >
-            {word}&nbsp;
-          </motion.span>
-        ))}
-      </motion.p>
+      <div className="flex-1">
+        <motion.p className="text-lg text-muted-foreground mb-6 italic">
+          "{testimonial.quote}"
+        </motion.p>
+      </div>
+      
+      <div className="mt-auto">
+        <h3 className="text-xl font-bold text-foreground font-serif">
+          {testimonial.name}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {testimonial.designation}
+        </p>
+      </div>
     </motion.div>
   );
 };
