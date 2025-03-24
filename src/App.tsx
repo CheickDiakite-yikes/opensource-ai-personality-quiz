@@ -1,6 +1,6 @@
-
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,14 +48,15 @@ function App() {
   }
   
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={
-          <Suspense fallback={<PageLoader />}>
-            <HomePage />
-          </Suspense>
-        } />
-        <Route path="auth" element={
+    <HelmetProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={
+            <Suspense fallback={<PageLoader />}>
+              <HomePage />
+            </Suspense>
+          } />
+          <Route path="auth" element={
           user ? (
             <Navigate to="/" replace />
           ) : (
@@ -104,8 +105,9 @@ function App() {
             <NotFound />
           </Suspense>
         } />
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </HelmetProvider>
   );
 }
 
