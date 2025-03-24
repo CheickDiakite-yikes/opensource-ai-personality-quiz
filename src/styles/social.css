@@ -1,28 +1,32 @@
 
 /* Social Media Sharing Styles */
 .social-share-image {
-  /* Hidden from regular view but accessible to crawlers */
+  /* Hide the image for normal users but keep it available for crawlers */
   position: absolute;
   width: 1px;
   height: 1px;
-  opacity: 0.01; /* Not completely hidden for crawlers */
-  pointer-events: none;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
-  z-index: -1;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+  
+  /* Ensure the image is still downloaded/rendered for crawlers */
+  pointer-events: none;
+  opacity: 0.01;
 }
 
-/* Add special considerations for social media crawlers */
-@media (max-width: 0px) {
-  /* This media query won't apply in browsers but helps with metadata */
-  .social-share-image {
-    display: block !important;
-    width: 1200px !important;
-    height: 1200px !important;
-    opacity: 1 !important;
-  }
-}
-
-/* Force og:image to be used through metadata */
+/* Social media metadata helpers */
 :root {
-  --og-image: url('/lovable-uploads/992359a2-8172-44dd-a149-834482f771ba.png');
+  --social-preview-image: url('/lovable-uploads/e04ec529-5b59-45d5-bcc6-1866fe85b6d4.png');
+}
+
+/* We're using a media query that won't ever apply to keep these properties loaded but not affecting layout */
+@media (max-width: 0px) {
+  body::before {
+    content: '';
+    background-image: var(--social-preview-image);
+    display: none;
+  }
 }
