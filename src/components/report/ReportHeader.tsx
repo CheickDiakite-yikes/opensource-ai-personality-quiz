@@ -1,4 +1,3 @@
-
 import React from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -40,8 +39,8 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   
   // Generate a share URL for the current analysis
   const shareUrl = `${window.location.origin}/report/${analysis.id}`;
-  // Set the image URL for social media previews
-  const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
+  // Update to the new image URL for social media previews
+  const imageUrl = `https://www.sowei.io/lovable-uploads/992359a2-8172-44dd-a149-834482f771ba.png`;
   
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -62,7 +61,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
         shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&image=${encodeURIComponent(imageUrl)}`;
         break;
       case 'facebook':
-        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
+        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&picture=${encodeURIComponent(imageUrl)}&quote=${encodeURIComponent(text)}`;
         break;
       case 'linkedin':
         shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
@@ -94,6 +93,9 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             {renderDate()}
           </div>
         </div>
+
+        {/* Hidden image element for social media */}
+        <img src={imageUrl} alt="Personality Analysis" className="social-share-image" />
 
         {isMobile ? (
           <div className="flex items-center gap-1 self-start w-full">
