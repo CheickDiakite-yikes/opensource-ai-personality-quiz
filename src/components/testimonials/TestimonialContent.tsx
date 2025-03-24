@@ -23,18 +23,19 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
         opacity: 0,
       }}
       transition={{
-        duration: 0.3,
+        duration: 0.2,
         ease: "easeInOut",
       }}
-      className="flex flex-col h-full justify-center"
+      className="relative"
     >
-      <h3 className="text-2xl font-bold text-foreground font-serif mb-1">
+      <h3 className="text-2xl font-bold text-foreground font-serif">
         {testimonial.name}
       </h3>
-      <p className="text-sm text-muted-foreground mb-6">
+      <p className="text-sm text-muted-foreground mb-2">
         {testimonial.designation}
       </p>
-      <motion.blockquote className="text-lg text-muted-foreground">
+      <motion.p className="text-lg text-muted-foreground mt-6 relative pl-4 pr-2">
+        <span className="absolute text-4xl text-primary/30 font-serif -left-2 -top-4">"</span>
         {testimonial.quote.split(" ").map((word, index) => (
           <motion.span
             key={index}
@@ -58,7 +59,8 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
             {word}&nbsp;
           </motion.span>
         ))}
-      </motion.blockquote>
+        <span className="absolute text-4xl text-primary/30 font-serif -right-2 -bottom-4">"</span>
+      </motion.p>
     </motion.div>
   );
 };

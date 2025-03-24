@@ -1,18 +1,28 @@
 
 /* Social Media Sharing Styles */
 .social-share-image {
-  display: none;
+  /* Hidden from regular view but accessible to crawlers */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01; /* Not completely hidden for crawlers */
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
 }
 
-/* Make sure links shared on social media display the correct preview */
+/* Add special considerations for social media crawlers */
 @media (max-width: 0px) {
-  /* This media query won't apply to regular browsing but helps with metadata */
+  /* This media query won't apply in browsers but helps with metadata */
   .social-share-image {
-    display: block;
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
+    display: block !important;
+    width: 1200px !important;
+    height: 1200px !important;
+    opacity: 1 !important;
   }
+}
+
+/* Force og:image to be used through metadata */
+:root {
+  --og-image: url('/lovable-uploads/992359a2-8172-44dd-a149-834482f771ba.png');
 }
