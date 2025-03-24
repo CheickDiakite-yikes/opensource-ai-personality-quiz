@@ -41,7 +41,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   // Generate a share URL for the current analysis
   const shareUrl = `${window.location.origin}/report/${analysis.id}`;
   // Set the image URL for social media previews
-  const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
+  const imageUrl = `https://www.sowei.io/lovable-uploads/e04ec529-5b59-45d5-bcc6-1866fe85b6d4.png`;
   
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
