@@ -55,7 +55,7 @@ const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageP
                 style={{ 
                   backgroundImage: `url(${testimonial.imageSrc})` 
                 }}
-                className="h-full w-full rounded-3xl object-cover object-center bg-cover bg-center elegant-card"
+                className="h-full w-full rounded-3xl object-cover object-center bg-cover bg-center elegant-card shadow-2xl"
               />
             </motion.div>
           ))}
