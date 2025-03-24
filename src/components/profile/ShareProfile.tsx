@@ -17,8 +17,8 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   
   // Generate a unique share URL using the new domain
   const shareUrl = `https://www.sowei.io/shared-profile/${analysis.id || 'demo'}`;
-  // Set the new image URL for social media previews
-  const shareImageUrl = "https://www.sowei.io/lovable-uploads/992359a2-8172-44dd-a149-834482f771ba.png";
+  // Set the image URL for social media previews
+  const shareImageUrl = "https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png";
   
   // Handle copy to clipboard
   const handleCopy = () => {
@@ -39,7 +39,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
         shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&image=${encodeURIComponent(shareImageUrl)}`;
         break;
       case 'facebook':
-        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&picture=${encodeURIComponent(shareImageUrl)}&quote=${encodeURIComponent(text)}`;
+        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
         break;
       case 'linkedin':
         shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
@@ -75,9 +75,6 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
-        
-        {/* Hidden image element to help with social sharing */}
-        <img src={shareImageUrl} alt="Personality Profile" className="social-share-image" />
         
         <div className="mt-4">
           <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
