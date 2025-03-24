@@ -37,7 +37,7 @@ const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageP
                 zIndex: isActive(index)
                   ? 999
                   : testimonials.length + 2 - index,
-                y: isActive(index) ? [0, -30, 0] : 0,
+                y: isActive(index) ? [0, -10, 0] : 0,
               }}
               exit={{
                 opacity: 0,
@@ -46,7 +46,7 @@ const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageP
                 rotate: randomRotateY(),
               }}
               transition={{
-                duration: 0.3, // Slightly faster for better UX
+                duration: 0.4,
                 ease: "easeInOut",
               }}
               className="absolute inset-0 origin-bottom will-change-transform"
@@ -55,7 +55,9 @@ const TestimonialImage = React.memo(({ testimonials, active }: TestimonialImageP
                 style={{ 
                   backgroundImage: `url(${testimonial.imageSrc})` 
                 }}
-                className="h-full w-full rounded-3xl object-cover object-center bg-cover bg-center elegant-card"
+                className="h-full w-full rounded-3xl object-cover object-center bg-cover bg-center shadow-lg elegant-card"
+                aria-label={`Photo of ${testimonial.name}`}
+                role="img"
               />
             </motion.div>
           ))}
