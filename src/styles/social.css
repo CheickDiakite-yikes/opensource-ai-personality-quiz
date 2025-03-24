@@ -1,32 +1,18 @@
 
 /* Social Media Sharing Styles */
 .social-share-image {
-  /* Hide the image for normal users but keep it available for crawlers */
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-  
-  /* Ensure the image is still downloaded/rendered for crawlers */
-  pointer-events: none;
-  opacity: 0.01;
+  display: none;
 }
 
-/* Social media metadata helpers */
-:root {
-  --social-preview-image: url('/lovable-uploads/e04ec529-5b59-45d5-bcc6-1866fe85b6d4.png');
-}
-
-/* We're using a media query that won't ever apply to keep these properties loaded but not affecting layout */
+/* Make sure links shared on social media display the correct preview */
 @media (max-width: 0px) {
-  body::before {
-    content: '';
-    background-image: var(--social-preview-image);
-    display: none;
+  /* This media query won't apply to regular browsing but helps with metadata */
+  .social-share-image {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
   }
 }
