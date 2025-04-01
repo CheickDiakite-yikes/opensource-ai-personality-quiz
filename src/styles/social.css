@@ -16,19 +16,3 @@
     pointer-events: none;
   }
 }
-
-/* Add the new shared image as a background in specific contexts to help crawlers */
-.social-share-container {
-  position: relative;
-}
-
-.social-share-container::before {
-  content: "";
-  background-image: url('/lovable-uploads/f755f3a3-4905-4c19-8315-4a40cb646280.png');
-  background-size: 0 0;
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-}

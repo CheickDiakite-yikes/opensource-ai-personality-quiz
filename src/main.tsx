@@ -4,7 +4,6 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
-import './styles/social.css'; // Import social.css to ensure it's loaded
 
 // Create a root once rather than on every render
 const rootElement = document.getElementById("root");
