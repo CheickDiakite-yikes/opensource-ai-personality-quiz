@@ -26,6 +26,7 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
         duration: 0.2,
         ease: "easeInOut",
       }}
+      className="flex flex-col h-full"
     >
       <h3 className="text-2xl font-bold text-foreground font-serif">
         {testimonial.name}
