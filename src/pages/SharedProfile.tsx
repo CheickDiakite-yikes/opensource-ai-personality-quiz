@@ -45,15 +45,18 @@ const SharedProfile: React.FC = () => {
       
       if (!id) {
         setLoading(false);
+        toast.error("No profile ID provided");
         return;
       }
       
       try {
+        console.log("Attempting to fetch shared analysis with ID:", id);
+        
         // Get the analysis by ID without requiring login
         const fetchedAnalysis = await getAnalysisById(id);
         
         if (fetchedAnalysis) {
-          console.log("Fetched analysis:", fetchedAnalysis);
+          console.log("Successfully fetched shared analysis:", fetchedAnalysis);
           setAnalysis(fetchedAnalysis);
           // Show success toast
           toast.success("Profile loaded successfully");

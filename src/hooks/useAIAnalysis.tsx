@@ -19,7 +19,10 @@ export const useAIAnalysis = () => {
   // Add function to get analysis by ID (for shared profiles)
   const getAnalysisById = async (id: string): Promise<PersonalityAnalysis | null> => {
     try {
-      // Fetch analysis directly from Supabase
+      console.log("Fetching analysis from Supabase with ID:", id);
+      
+      // Fetch analysis directly from Supabase without requiring authentication
+      // This works because we have a policy allowing public SELECT access
       const { data, error } = await supabase
         .from('analyses')
         .select('*')
@@ -27,18 +30,21 @@ export const useAIAnalysis = () => {
         .single();
       
       if (error) {
-        console.error("Error fetching analysis:", error);
+        console.error("Error fetching shared analysis:", error);
         return null;
       }
       
       if (!data) {
+        console.log("No data found for analysis ID:", id);
         return null;
       }
+      
+      console.log("Successfully retrieved analysis data:", data);
       
       // Use the utility function to safely convert Supabase data to PersonalityAnalysis
       return convertToPersonalityAnalysis(data);
     } catch (error) {
-      console.error("Error in getAnalysisById:", error);
+      console.error("Exception in getAnalysisById:", error);
       return null;
     }
   };
