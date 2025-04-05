@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAnalysisState } from './useAnalysisState';
 import { useAnalysisRefresh } from './useAnalysisRefresh';
 import { useAnalysisManagement } from './useAnalysisManagement';
@@ -11,10 +11,15 @@ export const useAIAnalysisCore = () => {
   const { refreshAnalysis } = useAnalysisRefresh(state, state);
   const { saveToHistory, getAnalysisHistory, setCurrentAnalysis } = useAnalysisManagement(state, state);
   const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, state.setAnalysis);
+  const initialLoadCompletedRef = useRef(false);
   
-  // Load analysis once on mount
+  // Load analysis once on mount - with a guard to prevent multiple loads
   useEffect(() => {
-    refreshAnalysis();
+    if (!initialLoadCompletedRef.current) {
+      refreshAnalysis().then(() => {
+        initialLoadCompletedRef.current = true;
+      });
+    }
   }, [refreshAnalysis]);
 
   return {

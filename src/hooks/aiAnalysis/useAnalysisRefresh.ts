@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { AIAnalysisState, AIAnalysisActions } from './types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,11 +13,18 @@ export const useAnalysisRefresh = (
   actions: AIAnalysisActions
 ) => {
   const { user } = useAuth();
+  const refreshInProgressRef = useRef(false);
 
   const refreshAnalysis = useCallback(async () => {
-    actions.setIsLoading(true);
-    
+    // Prevent concurrent or rapid successive refreshes
+    if (refreshInProgressRef.current) {
+      return;
+    }
+
     try {
+      refreshInProgressRef.current = true;
+      actions.setIsLoading(true);
+      
       // First, try to get analyses from Supabase if user is logged in
       if (user) {
         const { data, error } = await supabase
@@ -38,10 +45,17 @@ export const useAnalysisRefresh = (
           // Sort by date (newest first) and update state
           const sortedAnalyses = sortAnalysesByDate(analyses);
           actions.setAnalysisHistory(sortedAnalyses);
-          actions.setAnalysis(sortedAnalyses[0]);
-          actions.setLastRefresh(new Date());
           
-          toast.success("Analysis data refreshed from cloud");
+          // Only update current analysis if not already set or if it's different
+          if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
+            actions.setAnalysis(sortedAnalyses[0]);
+            // Only show toast on initial load or when analysis actually changes
+            if (!state.lastRefresh || new Date().getTime() - state.lastRefresh.getTime() > 5000) {
+              toast.success("Analysis data refreshed from cloud");
+            }
+          }
+          
+          actions.setLastRefresh(new Date());
           actions.setIsLoading(false);
           return;
         }
@@ -53,8 +67,15 @@ export const useAnalysisRefresh = (
         console.log(`Loaded ${localAnalyses.length} analyses from local storage`);
         const sortedAnalyses = sortAnalysesByDate(localAnalyses);
         actions.setAnalysisHistory(sortedAnalyses);
-        actions.setAnalysis(sortedAnalyses[0]);
-        toast.success("Analysis data loaded from local storage");
+        
+        // Only update if analysis is not already set or if it's different
+        if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
+          actions.setAnalysis(sortedAnalyses[0]);
+          // Only show this toast on initial load
+          if (!state.lastRefresh) {
+            toast.success("Analysis data loaded from local storage");
+          }
+        }
       } else {
         // No analysis found in either source
         actions.setAnalysis(null);
@@ -75,8 +96,12 @@ export const useAnalysisRefresh = (
     } finally {
       actions.setIsLoading(false);
       actions.setLastRefresh(new Date());
+      // Reset the refresh flag after a small delay to prevent rapid successive calls
+      setTimeout(() => {
+        refreshInProgressRef.current = false;
+      }, 1000);
     }
-  }, [user, actions]);
+  }, [user, actions, state.analysis, state.lastRefresh]);
 
   return { refreshAnalysis };
 };

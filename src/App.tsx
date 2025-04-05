@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 // Lazy load pages for better initial load performance
 const HomePage = lazy(() => import("@/pages/Index"));
@@ -48,64 +49,67 @@ function App() {
   }
   
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={
-          <Suspense fallback={<PageLoader />}>
-            <HomePage />
-          </Suspense>
-        } />
-        <Route path="auth" element={
-          user ? (
-            <Navigate to="/" replace />
-          ) : (
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={
             <Suspense fallback={<PageLoader />}>
-              <Auth />
+              <HomePage />
             </Suspense>
-          )
-        } />
-        <Route path="assessment" element={
-          <PrivateRoute>
+          } />
+          <Route path="auth" element={
+            user ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Suspense fallback={<PageLoader />}>
+                <Auth />
+              </Suspense>
+            )
+          } />
+          <Route path="assessment" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <AssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="report/:id?" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ReportPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="tracker" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <TrackerPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="profile" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="traits" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <TraitsPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
-              <AssessmentPage />
+              <NotFound />
             </Suspense>
-          </PrivateRoute>
-        } />
-        <Route path="report/:id?" element={
-          <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
-              <ReportPage />
-            </Suspense>
-          </PrivateRoute>
-        } />
-        <Route path="tracker" element={
-          <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
-              <TrackerPage />
-            </Suspense>
-          </PrivateRoute>
-        } />
-        <Route path="profile" element={
-          <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
-              <ProfilePage />
-            </Suspense>
-          </PrivateRoute>
-        } />
-        <Route path="traits" element={
-          <PrivateRoute>
-            <Suspense fallback={<PageLoader />}>
-              <TraitsPage />
-            </Suspense>
-          </PrivateRoute>
-        } />
-        <Route path="*" element={
-          <Suspense fallback={<PageLoader />}>
-            <NotFound />
-          </Suspense>
-        } />
-      </Route>
-    </Routes>
+          } />
+        </Route>
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 

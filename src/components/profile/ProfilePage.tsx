@@ -17,22 +17,24 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { getAnalysisHistory, isLoading: analysisLoading, refreshAnalysis } = useAIAnalysis();
+  const { analysis, getAnalysisHistory, isLoading: analysisLoading, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [refreshed, setRefreshed] = useState(false);
   const isMobile = useIsMobile();
   
-  // Refresh analysis data when component mounts or auth state changes
+  // Refresh analysis data when component mounts or auth state changes, but only once
   useEffect(() => {
     let isMounted = true;
     
     const loadAnalysisData = async () => {
-      if (!isMounted) return;
+      if (!isMounted || refreshed) return;
       
       try {
-        // Force a refresh of analysis data to ensure we have the latest
+        // Only refresh once when the component mounts
         await refreshAnalysis();
+        setRefreshed(true);
         
         // Get the analysis history (should be sorted with newest first)
         const history = getAnalysisHistory();
@@ -50,18 +52,26 @@ const ProfilePage: React.FC = () => {
       }
     };
     
-    // Only fetch data once auth is complete
-    if (!authLoading) {
+    // Only fetch data once auth is complete and we haven't refreshed yet
+    if (!authLoading && !refreshed) {
       loadAnalysisData();
     }
     
     return () => {
       isMounted = false;
     };
-  }, [getAnalysisHistory, refreshAnalysis, authLoading, user]);
+  }, [getAnalysisHistory, refreshAnalysis, authLoading, user, refreshed]);
+  
+  // Update stable analysis when analysis changes, without triggering a refresh
+  useEffect(() => {
+    if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
+      setStableAnalysis(analysis);
+      setProfileLoading(false);
+    }
+  }, [analysis, stableAnalysis]);
   
   // Render loading state during initial load
-  if (authLoading || analysisLoading || profileLoading) {
+  if (authLoading || (analysisLoading && profileLoading)) {
     return <LoadingProfile />;
   }
   
@@ -69,15 +79,6 @@ const ProfilePage: React.FC = () => {
   if (!stableAnalysis) {
     return <NoAnalysisFound />;
   }
-  
-  // Very simplified animation variants to prevent blinking
-  const containerVariants = {
-    visible: { opacity: 1 }
-  };
-  
-  const itemVariants = {
-    visible: { opacity: 1 }
-  };
   
   return (
     <div className="container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
@@ -99,11 +100,11 @@ const ProfilePage: React.FC = () => {
       )}
       
       <div className={`space-y-4 ${isMobile ? '' : 'space-y-6 md:space-y-8'}`}>
-        <ProfileHeader analysis={stableAnalysis} itemVariants={itemVariants} />
-        <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <TraitsCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <InsightsCard analysis={stableAnalysis} itemVariants={itemVariants} />
-        <GrowthPathwayCard analysis={stableAnalysis} itemVariants={itemVariants} />
+        <ProfileHeader analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        <TraitsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        <InsightsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        <GrowthPathwayCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
       </div>
     </div>
   );
