@@ -1,7 +1,7 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Creativity
+// Questions focused on Creativity - Enhanced with divergent thinking, creative cognition, and flow state research
 export const creativityQuestions: AssessmentQuestion[] = [
   {
     id: "41",

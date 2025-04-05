@@ -1,7 +1,7 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Social Interaction
+// Questions focused on Social Interaction - Enhanced with attachment theory, social cognitive theory, and interpersonal dynamics
 export const socialInteractionQuestions: AssessmentQuestion[] = [
   {
     id: "31",

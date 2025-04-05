@@ -1,7 +1,7 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Leadership
+// Questions focused on Leadership - Enhanced with transformational leadership theory, situational leadership, and leadership psychology
 export const leadershipQuestions: AssessmentQuestion[] = [
   {
     id: "46",

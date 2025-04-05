@@ -1,7 +1,7 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Decision Making
+// Questions focused on Decision Making - Enhanced with dual process theory, cognitive biases, and decision science
 export const decisionMakingQuestions: AssessmentQuestion[] = [
   {
     id: "36",
