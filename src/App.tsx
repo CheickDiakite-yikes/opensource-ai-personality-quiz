@@ -14,6 +14,7 @@ const ReportPage = lazy(() => import("@/components/report/ReportPage"));
 const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
+const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -100,6 +101,12 @@ function App() {
                 <TraitsPage />
               </Suspense>
             </PrivateRoute>
+          } />
+          {/* Publicly accessible shared profile route */}
+          <Route path="shared/:id" element={
+            <Suspense fallback={<PageLoader />}>
+              <SharedProfile />
+            </Suspense>
           } />
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>

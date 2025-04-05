@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Share, Copy, Calendar, History, Check, Twitter, Facebook, Linkedin } from "lucide-react";
@@ -22,7 +21,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { useState } from "react";
 
 interface ReportHeaderProps {
   analysis: PersonalityAnalysis;
@@ -39,7 +37,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const [copied, setCopied] = useState(false);
   
   // Generate a share URL for the current analysis
-  const shareUrl = `${window.location.origin}/report/${analysis.id}`;
+  const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
   // Set the image URL for social media previews
   const imageUrl = `https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png`;
   
@@ -59,7 +57,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     
     switch (platform) {
       case 'twitter':
-        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&image=${encodeURIComponent(imageUrl)}`;
+        shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
         break;
       case 'facebook':
         shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
@@ -124,7 +122,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 {analysisHistory.length <= 1 ? (
                   <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
                 ) : (
-                  // Always show up to 5 past analyses (not including current)
                   analysisHistory
                     .filter(item => item.id !== analysis.id)
                     .slice(0, 5)
@@ -218,7 +215,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 {analysisHistory.length <= 1 ? (
                   <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
                 ) : (
-                  // Always show up to 5 past analyses (not including current)
                   analysisHistory
                     .filter(item => item.id !== analysis.id)
                     .slice(0, 5)
