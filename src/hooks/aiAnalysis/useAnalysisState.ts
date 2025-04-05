@@ -6,7 +6,7 @@ import { AIAnalysisState } from './types';
 // This hook manages the core state of the analysis
 export const useAnalysisState = (): AIAnalysisState & {
   setAnalysis: (analysis: PersonalityAnalysis | null) => void;
-  setAnalysisHistory: (history: PersonalityAnalysis[]) => void;
+  setAnalysisHistory: (history: PersonalityAnalysis[] | ((prev: PersonalityAnalysis[]) => PersonalityAnalysis[])) => void;
   setIsLoading: (loading: boolean) => void;
   setLastRefresh: (date: Date) => void;
 } => {

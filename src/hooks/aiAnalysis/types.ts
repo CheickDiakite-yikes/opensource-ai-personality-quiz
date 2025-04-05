@@ -10,7 +10,7 @@ export interface AIAnalysisState {
 
 export interface AIAnalysisActions {
   setAnalysis: (analysis: PersonalityAnalysis | null) => void;
-  setAnalysisHistory: (history: PersonalityAnalysis[]) => void;
+  setAnalysisHistory: (history: PersonalityAnalysis[] | ((prev: PersonalityAnalysis[]) => PersonalityAnalysis[])) => void;
   setIsLoading: (loading: boolean) => void;
   setLastRefresh: (date: Date) => void;
 }
