@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { convertToPersonalityAnalysis, sortAnalysesByDate } from './utils';
 import { toast } from 'sonner';
-import { loadAnalysisHistory, getMostRecentStoredAnalysis } from '../analysis/useLocalStorage';
+import { loadAnalysisHistory } from '../analysis/useLocalStorage';
 
 // Hook for refreshing analysis data from local storage or Supabase
 export const useAnalysisRefresh = (
@@ -66,10 +66,11 @@ export const useAnalysisRefresh = (
       toast.error("Failed to refresh analysis data");
       
       // Try to use local analysis as fallback
-      const localAnalysis = getMostRecentStoredAnalysis();
-      if (localAnalysis) {
-        actions.setAnalysis(localAnalysis);
-        actions.setAnalysisHistory([localAnalysis]);
+      const localAnalyses = loadAnalysisHistory();
+      if (localAnalyses && localAnalyses.length > 0) {
+        const mostRecentAnalysis = sortAnalysesByDate(localAnalyses)[0];
+        actions.setAnalysis(mostRecentAnalysis);
+        actions.setAnalysisHistory([mostRecentAnalysis]);
       }
     } finally {
       actions.setIsLoading(false);

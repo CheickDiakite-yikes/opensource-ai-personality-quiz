@@ -67,7 +67,7 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
-// Generate AI analysis using OpenAI's o3-mini model
+// Generate AI analysis using OpenAI's gpt-4o model with maximum output tokens
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string
@@ -178,9 +178,9 @@ async function generateAIAnalysis(
   Ensure the analysis is detailed, evidence-based, balanced, and includes specific references to response patterns that justify your conclusions. Avoid overgeneralizations and include appropriate caveats about the limitations of the assessment.`;
 
   try {
-    console.log("Sending request to OpenAI API using o3-mini model");
+    console.log("Sending request to OpenAI API using gpt-4o model");
     
-    // Use the correct parameters supported by the o3-mini model
+    // Use the correct parameters supported by the gpt-4o model with maximum tokens
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -188,7 +188,7 @@ async function generateAIAnalysis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',  // Using more powerful model for more accurate analysis
+        model: 'gpt-4o',  // Using gpt-4o for accurate analysis
         messages: [
           { 
             role: 'system', 
@@ -197,6 +197,7 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
+        max_tokens: 4096, // Maximum output tokens for gpt-4o
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
         temperature: 0.4,  // Lower temperature for more consistent, less creative responses
       }),
