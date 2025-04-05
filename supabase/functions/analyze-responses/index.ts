@@ -197,7 +197,7 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 4096, // Maximum output tokens for gpt-4o
+        max_tokens: 16384, // Maximum output tokens for gpt-4o
         seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
         temperature: 0.4,  // Lower temperature for more consistent, less creative responses
       }),
