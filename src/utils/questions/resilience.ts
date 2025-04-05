@@ -1,18 +1,18 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Resilience
+// Questions focused on Resilience - Enhanced with post-traumatic growth, adaptive coping, and recovery dynamics
 export const resilienceQuestions: AssessmentQuestion[] = [
   {
     id: "26",
     category: QuestionCategory.Resilience,
-    question: "How do you typically respond to significant setbacks or failures?",
+    question: "Following a significant setback or failure, which approach most helps you recover and move forward?",
     options: [
-      "I analyze what went wrong and create a plan to improve",
-      "I seek support from others while processing my feelings",
-      "I take time to recover emotionally before moving forward",
-      "I look for the lessons or growth opportunities in the experience",
-      "I quickly pivot to alternative approaches or goals"
+      "Analyzing the experience for lessons and growth opportunities",
+      "Connecting with supportive people who provide perspective",
+      "Focusing on what aspects remain within my control",
+      "Reconnecting with my core values and larger purpose",
+      "Allowing myself to fully process the emotions before planning next steps"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -20,27 +20,27 @@ export const resilienceQuestions: AssessmentQuestion[] = [
   {
     id: "27",
     category: QuestionCategory.Resilience,
-    question: "What helps you cope with stress most effectively?",
+    question: "When experiencing prolonged stress, which coping mechanism proves most effective for maintaining your wellbeing?",
     options: [
-      "Physical activity or exercise",
-      "Speaking with supportive friends or family",
-      "Mindfulness practices like meditation",
-      "Creative expression or hobbies",
-      "Planning and organizing to regain a sense of control"
+      "Physical activity and attention to bodily needs",
+      "Mindfulness practices and present-moment awareness",
+      "Creative expression or immersion in meaningful activities",
+      "Structured problem-solving and prioritization techniques",
+      "Seeking connection and support from trusted others"
     ],
     allowCustomResponse: true,
-    weight: 0.8
+    weight: 0.9
   },
   {
     id: "28",
     category: QuestionCategory.Resilience,
-    question: "When faced with significant life changes, how do you typically adapt?",
+    question: "How has your approach to adversity evolved based on challenging life experiences?",
     options: [
-      "I embrace change as an opportunity for growth",
-      "I research and prepare as much as possible",
-      "I take it one day at a time with a flexible approach",
-      "I rely on my support network during the transition",
-      "I maintain some routines for stability while adapting to changes"
+      "I've developed greater emotional regulation during difficult situations",
+      "I more quickly identify what's within and beyond my control",
+      "I'm more willing to seek and accept support from others",
+      "I better recognize patterns and apply lessons from past challenges",
+      "I've cultivated more self-compassion when facing struggles"
     ],
     allowCustomResponse: true,
     weight: 0.9
@@ -48,13 +48,13 @@ export const resilienceQuestions: AssessmentQuestion[] = [
   {
     id: "29",
     category: QuestionCategory.Resilience,
-    question: "When a long-term project becomes difficult, what most helps you persevere?",
+    question: "When a long-term project encounters serious obstacles that threaten its completion, what most helps you persevere?",
     options: [
-      "Reconnecting with the purpose or meaning behind the work",
-      "Breaking it down into smaller milestones",
-      "Taking breaks to recharge and gain perspective",
-      "Getting input or support from others",
-      "Reminding myself of past challenges I've overcome"
+      "Remembering the meaningful purpose behind the work",
+      "Breaking down problems into smaller, more manageable steps",
+      "Adapting my approach or pivoting to alternative solutions",
+      "Drawing on successful strategies from past challenges",
+      "Gathering input and support from trusted collaborators"
     ],
     allowCustomResponse: true,
     weight: 0.8
@@ -62,15 +62,15 @@ export const resilienceQuestions: AssessmentQuestion[] = [
   {
     id: "30",
     category: QuestionCategory.Resilience,
-    question: "How have your past difficulties shaped your approach to new challenges?",
+    question: "Looking back on your most significant challenges, which perspective most resonates with your experience?",
     options: [
-      "They've made me more confident in my ability to overcome obstacles",
-      "They've taught me to be more careful and thorough in my planning",
-      "They've helped me develop better coping strategies",
-      "They've shown me the importance of asking for help when needed",
-      "They've given me perspective on what matters most"
+      "They revealed strengths I didn't know I possessed",
+      "They taught me what truly matters and clarified my priorities",
+      "They connected me more deeply with supportive people in my life",
+      "They forced me to develop new capabilities and approaches",
+      "They showed me that I can handle more than I thought possible"
     ],
     allowCustomResponse: true,
-    weight: 0.9
+    weight: 1.0
   }
 ];

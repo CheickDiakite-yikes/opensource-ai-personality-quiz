@@ -1,18 +1,18 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Value Systems
+// Questions focused on Value Systems - Enhanced with moral foundations theory and value-based trade-offs
 export const valueSystemQuestions: AssessmentQuestion[] = [
   {
     id: "16",
     category: QuestionCategory.ValueSystems,
-    question: "Which of these do you value most in your relationships with others?",
+    question: "If you had to prioritize one of these values above all others in your closest relationships, which would it be?",
     options: [
-      "Honesty and authenticity",
-      "Loyalty and dependability",
-      "Growth and mutual development",
-      "Understanding and empathy",
-      "Respect for independence and boundaries"
+      "Complete honesty, even when uncomfortable truths are involved",
+      "Loyalty and commitment, especially during challenging times",
+      "Mutual growth and supporting each other's development",
+      "Deep understanding and empathy for each other's experiences",
+      "Respect for autonomy and personal boundaries"
     ],
     allowCustomResponse: true,
     weight: 0.9
@@ -20,13 +20,13 @@ export const valueSystemQuestions: AssessmentQuestion[] = [
   {
     id: "17",
     category: QuestionCategory.ValueSystems,
-    question: "What do you consider most important when making significant life decisions?",
+    question: "When making a major life decision that involves competing values, which consideration typically guides you most strongly?",
     options: [
-      "Alignment with my core values and principles",
-      "Potential for personal growth and development",
-      "Impact on important relationships in my life",
-      "Practical considerations and likely outcomes",
-      "Following my passion and what brings fulfillment"
+      "Whether the decision aligns with my core ethical principles",
+      "The potential impact on the wellbeing of those closest to me",
+      "Which choice offers the greatest opportunity for personal growth",
+      "The option that best balances multiple important priorities",
+      "What feels most authentic to my sense of purpose and identity"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -34,43 +34,43 @@ export const valueSystemQuestions: AssessmentQuestion[] = [
   {
     id: "18",
     category: QuestionCategory.ValueSystems,
-    question: "How important is it to you that your work contributes to something beyond yourself?",
+    question: "In your view, what is the most fundamental responsibility we have toward society and others?",
     options: [
-      "Essential – I need to feel I'm contributing to a greater good",
-      "Important, but balanced with personal fulfillment and practical needs",
-      "Somewhat important, though other factors often take priority",
-      "Nice when possible, but not a primary consideration",
-      "Less important than excellence and personal achievement"
+      "To minimize harm and prevent suffering whenever possible",
+      "To uphold justice and fairness in our actions and systems",
+      "To remain loyal to our communities and shared traditions",
+      "To respect legitimate authority and social structures",
+      "To preserve what is pure and sacred against degradation"
+    ],
+    allowCustomResponse: true,
+    weight: 0.9
+  },
+  {
+    id: "19",
+    category: QuestionCategory.ValueSystems,
+    question: "Which quality do you most deeply admire and aspire to embody in your own life?",
+    options: [
+      "Moral courage - standing for what's right despite personal cost",
+      "Wisdom - deep understanding applied with good judgment",
+      "Compassion - genuine concern for others' wellbeing",
+      "Authenticity - true alignment between values and actions",
+      "Excellence - mastery and continuous improvement"
     ],
     allowCustomResponse: true,
     weight: 0.8
   },
   {
-    id: "19",
-    category: QuestionCategory.ValueSystems,
-    question: "Which of these qualities do you most admire in others?",
-    options: [
-      "Integrity and moral courage",
-      "Wisdom and insight",
-      "Kindness and compassion",
-      "Creativity and original thinking",
-      "Resilience and determination"
-    ],
-    allowCustomResponse: true,
-    weight: 0.7
-  },
-  {
     id: "20",
     category: QuestionCategory.ValueSystems,
-    question: "What constitutes 'success' in your view?",
+    question: "If you could ensure your life embodied one type of meaningful impact, which would you choose?",
     options: [
-      "Making a positive difference in others' lives",
-      "Achieving excellence in my chosen field",
-      "Finding personal fulfillment and happiness",
-      "Building meaningful relationships and connections",
-      "Continuously growing and developing as a person"
+      "Positively transforming individual lives through direct support",
+      "Advancing knowledge or innovation that benefits humanity",
+      "Creating beauty or meaning that inspires and moves others",
+      "Building communities and connections between people",
+      "Upholding important principles and being an example to others"
     ],
     allowCustomResponse: true,
-    weight: 0.9
+    weight: 1.0
   }
 ];

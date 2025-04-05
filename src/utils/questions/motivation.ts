@@ -1,76 +1,76 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Motivation
+// Questions focused on Motivation - Enhanced with self-determination theory and nuanced motivational factors
 export const motivationQuestions: AssessmentQuestion[] = [
   {
     id: "21",
     category: QuestionCategory.Motivation,
-    question: "What most often drives you to take on new challenges?",
+    question: "When you commit deeply to pursuing a challenging long-term goal, what typically drives your persistence?",
     options: [
-      "Curiosity and the desire to learn something new",
-      "The possibility of achievement and recognition",
-      "Personal development and growth",
-      "Making a positive impact or contribution",
-      "The excitement of pushing my boundaries"
+      "The intrinsic enjoyment of the activities involved",
+      "The personal meaning or purpose the goal represents for you",
+      "The opportunity to develop mastery and demonstrate competence",
+      "The vision of the specific outcome or achievement",
+      "The way it connects you to something larger than yourself"
+    ],
+    allowCustomResponse: true,
+    weight: 1.0
+  },
+  {
+    id: "22",
+    category: QuestionCategory.Motivation,
+    question: "After successfully completing a significant project or achievement, what most strongly motivates your next steps?",
+    options: [
+      "Seeking a more challenging extension of what I've just accomplished",
+      "Exploring an entirely different domain that intrigues me",
+      "Deepening my expertise in an aspect I found particularly engaging",
+      "Applying what I've learned to help others achieve similar goals",
+      "Reflecting on the experience before determining my next direction"
     ],
     allowCustomResponse: true,
     weight: 0.9
   },
   {
-    id: "22",
+    id: "23",
     category: QuestionCategory.Motivation,
-    question: "When you've achieved a goal, what typically motivates you next?",
+    question: "When facing a necessary but uninspiring task, which approach helps you maintain the highest quality of engagement?",
     options: [
-      "Setting a more ambitious related goal",
-      "Finding a completely different challenge",
-      "Taking time to enjoy the achievement before moving on",
-      "Helping others achieve similar goals",
-      "Reflecting on what I learned from the process"
+      "Connecting it to a larger purpose or value that matters to me",
+      "Finding creative ways to make the process itself more enjoyable",
+      "Breaking it into smaller milestones with rewards for completion",
+      "Transforming it into a challenge or opportunity to develop a skill",
+      "Creating accountability through commitments to others"
     ],
     allowCustomResponse: true,
     weight: 0.8
-  },
-  {
-    id: "23",
-    category: QuestionCategory.Motivation,
-    question: "What typically helps you persist through difficult or tedious tasks?",
-    options: [
-      "Focusing on the purpose or meaning behind the task",
-      "Breaking it down into smaller, manageable parts",
-      "Rewarding myself at key milestones",
-      "Thinking about how good it will feel to complete it",
-      "Making the process more enjoyable or creative"
-    ],
-    allowCustomResponse: true,
-    weight: 0.7
   },
   {
     id: "24",
     category: QuestionCategory.Motivation,
-    question: "What tends to diminish your motivation most significantly?",
+    question: "Which situation most significantly diminishes your motivation and sense of engagement?",
     options: [
-      "Lack of clear purpose or meaning in the task",
-      "Not seeing progress or positive results",
-      "External pressure or control",
-      "Insufficient challenge or stimulation",
-      "Absence of recognition or appreciation"
+      "When I don't have autonomy in how I approach the work",
+      "When I don't understand the purpose behind what I'm doing",
+      "When I receive little feedback about my progress or impact",
+      "When the challenge level isn't well-matched to my capabilities",
+      "When there's minimal connection with others in the process"
     ],
     allowCustomResponse: true,
-    weight: 0.8
+    weight: 0.9
   },
   {
     id: "25",
     category: QuestionCategory.Motivation,
-    question: "What environment helps you feel most motivated and productive?",
+    question: "In your experience, which element most powerfully sustains your motivation through difficulties and setbacks?",
     options: [
-      "Collaborative setting with energetic, like-minded people",
-      "Quiet, private space where I can focus without interruption",
-      "Flexible environment that I can adjust as needs change",
-      "Structured setting with clear expectations and deadlines",
-      "Inspiring, aesthetically pleasing surroundings"
+      "A clear and compelling vision of what I'm working toward",
+      "Strong social support and encouragement from others",
+      "Seeing tangible progress, even if small",
+      "Connecting with my deeper values and why the goal matters",
+      "The confidence gained from overcoming previous obstacles"
     ],
     allowCustomResponse: true,
-    weight: 0.7
+    weight: 1.0
   }
 ];

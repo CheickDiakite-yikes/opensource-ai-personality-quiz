@@ -1,18 +1,18 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Personality Traits
+// Questions focused on Personality Traits - Enhanced with Big Five/HEXACO framework insights
 export const personalityTraitsQuestions: AssessmentQuestion[] = [
   {
     id: "1",
     category: QuestionCategory.PersonalityTraits,
-    question: "When faced with a difficult decision, how do you typically approach it?",
+    question: "When facing an important decision with multiple good options, what do you rely on most?",
     options: [
-      "I analyze all available data and weigh pros and cons systematically",
-      "I trust my intuition and go with what feels right",
-      "I consult with others whose judgment I trust",
-      "I consider the impact on others first and foremost",
-      "I look for creative solutions that might not be immediately obvious"
+      "Systematic analysis of pros and cons for each option",
+      "How each option aligns with my core values and principles",
+      "Input and perspectives from people I trust and respect",
+      "My intuition and emotional response to each possibility",
+      "Past experiences with similar situations and their outcomes"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -20,13 +20,13 @@ export const personalityTraitsQuestions: AssessmentQuestion[] = [
   {
     id: "2",
     category: QuestionCategory.PersonalityTraits,
-    question: "How do you typically react when your plans are unexpectedly disrupted?",
+    question: "How do you typically respond when your carefully made plans are unexpectedly disrupted?",
     options: [
-      "I quickly adapt and find alternative approaches",
-      "I feel frustrated but work to find the best path forward",
-      "I analyze what went wrong before deciding how to proceed",
-      "I seek input from others on how to move forward",
-      "I see it as an opportunity for a potentially better outcome"
+      "I quickly adapt and create alternative approaches",
+      "I feel frustrated but methodically work on a new plan",
+      "I seek to understand what went wrong before proceeding",
+      "I try to salvage as much of the original plan as possible",
+      "I see it as potentially opening up better opportunities"
     ],
     allowCustomResponse: true,
     weight: 0.9
@@ -34,13 +34,13 @@ export const personalityTraitsQuestions: AssessmentQuestion[] = [
   {
     id: "3",
     category: QuestionCategory.PersonalityTraits,
-    question: "In group settings, which role do you most naturally assume?",
+    question: "In collaborative projects where opinions differ strongly, how do you typically contribute?",
     options: [
-      "The leader who takes initiative and directs the group",
-      "The mediator who ensures everyone is heard and respected",
-      "The analyzer who evaluates ideas critically",
-      "The supporter who helps implement others' ideas",
-      "The innovator who generates new approaches and possibilities"
+      "I take charge to establish direction when there's uncertainty",
+      "I focus on finding common ground between opposing viewpoints",
+      "I carefully analyze all perspectives before forming my position",
+      "I support others' ideas while adding refinements and improvements",
+      "I offer creative alternatives that hadn't been considered"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -48,13 +48,13 @@ export const personalityTraitsQuestions: AssessmentQuestion[] = [
   {
     id: "4",
     category: QuestionCategory.PersonalityTraits,
-    question: "How do you prefer to spend your free time when you have no obligations?",
+    question: "Which statement most accurately describes how you recharge after periods of intense social interaction?",
     options: [
-      "Engaging in social activities with friends or family",
-      "Pursuing creative or artistic endeavors",
-      "Learning something new or intellectual exploration",
-      "Physical activities or being in nature",
-      "Quiet reflection, meditation, or restful solitude"
+      "I need significant alone time with minimal external stimulation",
+      "I prefer quiet activities with one or two close friends",
+      "I balance social and solitary activities based on my energy level",
+      "I shift to a different type of social setting with different people",
+      "I rarely feel drained by social interaction and can continue engaging"
     ],
     allowCustomResponse: true,
     weight: 0.8
@@ -62,13 +62,13 @@ export const personalityTraitsQuestions: AssessmentQuestion[] = [
   {
     id: "5",
     category: QuestionCategory.PersonalityTraits,
-    question: "When receiving criticism, what is your most typical initial reaction?",
+    question: "When you receive constructive criticism about your work, what is your most authentic immediate reaction?",
     options: [
-      "I carefully consider it for validity regardless of how it's delivered",
-      "I appreciate it as an opportunity to improve if delivered constructively",
-      "I tend to feel defensive initially before processing it later",
-      "I immediately look for ways to address the feedback",
-      "I compare it with my own self-assessment to see if it aligns"
+      "I appreciate the feedback and immediately consider how to implement it",
+      "I feel temporarily disappointed but recognize its value for growth",
+      "I carefully evaluate whether the criticism is valid before reacting",
+      "I tend to feel defensive initially before processing it objectively",
+      "I actively seek clarification to understand the critique fully"
     ],
     allowCustomResponse: true,
     weight: 0.9

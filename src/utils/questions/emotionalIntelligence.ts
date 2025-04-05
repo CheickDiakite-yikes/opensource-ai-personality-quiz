@@ -1,18 +1,18 @@
 
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Emotional Intelligence
+// Questions focused on Emotional Intelligence - Enhanced with Mayer-Salovey-Caruso model and regulatory dimensions
 export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "6",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "When you witness someone else's distress, how do you typically respond?",
+    question: "When someone close to you is experiencing intense distress, how do you most naturally respond?",
     options: [
-      "I immediately offer practical help and solutions",
-      "I listen empathetically without rushing to fix the situation",
-      "I give them space, respecting that they might want privacy",
-      "I share similar experiences to show understanding",
-      "I try to cheer them up or distract them from their troubles"
+      "I listen fully without interruption, validating their feelings before offering help",
+      "I share relevant experiences to show understanding of their situation",
+      "I focus on practical solutions to help resolve what's causing their distress",
+      "I give them space, recognizing some people process emotions privately",
+      "I offer physical comfort and reassurance through my presence"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -20,13 +20,13 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "7",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "How easily can you identify your own emotions as they arise?",
+    question: "When you experience a complex emotional reaction (like simultaneous anxiety, excitement, and uncertainty), how do you typically process it?",
     options: [
-      "Very easily – I'm immediately aware of what I'm feeling and why",
-      "Fairly easily, though some complex emotions take time to understand",
-      "It depends on the intensity – strong emotions are clear, subtle ones less so",
-      "I often need time alone to process and understand my feelings",
-      "I sometimes struggle to distinguish between similar emotions"
+      "I journal or internally reflect until I understand each component feeling",
+      "I talk through my emotions with someone who helps me gain clarity",
+      "I identify the physical sensations associated with each emotion",
+      "I analyze the situation triggering these emotions rather than the feelings themselves",
+      "I accept the emotional complexity without needing to fully dissect it"
     ],
     allowCustomResponse: true,
     weight: 0.9
@@ -34,27 +34,27 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "8",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "When you're feeling overwhelmed, what strategies do you typically employ?",
+    question: "When feeling overwhelmed by strong negative emotions, which regulation strategy do you find most effective?",
     options: [
-      "I break down the situation into manageable components",
-      "I seek social support and talk through my feelings",
-      "I engage in physical activity or exercise",
-      "I practice mindfulness, meditation, or breathing exercises",
-      "I temporarily distract myself before returning to the issue"
+      "Cognitive reframing - changing how I think about the situation",
+      "Mindfulness practices to observe emotions without judgment",
+      "Expressive techniques like physical activity or creative outlets",
+      "Strategic distraction until I'm in a better state to process feelings",
+      "Seeking support and discussing my feelings with others"
     ],
     allowCustomResponse: true,
-    weight: 0.8
+    weight: 1.0
   },
   {
     id: "9",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "How do you typically handle situations where others hold strong opinions that differ from yours?",
+    question: "In a heated disagreement on a topic you care deeply about, how do you typically handle conflicting viewpoints?",
     options: [
-      "I listen carefully to understand their perspective fully",
-      "I engage in respectful debate to express my viewpoint",
-      "I find common ground while acknowledging differences",
-      "I tend to keep my opinions to myself to avoid conflict",
-      "I reassess my own views to see if there's something I've missed"
+      "I listen carefully to understand the underlying values driving their perspective",
+      "I express my position clearly while acknowledging valid points they make",
+      "I focus on finding areas of agreement before addressing differences",
+      "I regulate my emotional response first, then engage intellectually",
+      "I ask questions to better understand their reasoning and experiences"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -62,15 +62,15 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "10",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "When someone close to you is celebrating a success, what's your most natural reaction?",
+    question: "When witnessing someone's professional triumph, which response most closely matches your genuine internal experience?",
     options: [
-      "I express genuine enthusiasm and celebrate with them",
-      "I ask questions to understand the achievement better",
-      "I highlight specific aspects of their accomplishment I find impressive",
-      "I share in their happiness while offering new goals to pursue",
-      "I express pride in them and their efforts"
+      "Pure joy and enthusiasm for their achievement",
+      "Happiness for them mixed with some reflection on your own goals",
+      "Appreciation of their success while recognizing the work behind it",
+      "Curiosity about their process and what you might learn from them",
+      "Motivated inspiration to pursue your own aspirations"
     ],
     allowCustomResponse: true,
-    weight: 0.7
+    weight: 0.8
   }
 ];
