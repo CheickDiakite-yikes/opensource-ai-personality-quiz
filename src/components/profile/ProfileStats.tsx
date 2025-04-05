@@ -3,6 +3,8 @@ import React from "react";
 import { PersonalityAnalysis, RelationshipPatterns, ValueSystemType, CognitiveStyleType } from "@/utils/types";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProfileStatsProps {
   analysis: PersonalityAnalysis;
@@ -42,10 +44,22 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Intelligence Score */}
+        {/* Cognitive Flexibility Score */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <div className="font-medium">Intelligence</div>
+            <div className="font-medium flex items-center">
+              Cognitive Flexibility
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[250px]">
+                    <p className="text-xs">Measures how adaptable your thinking processes are across different contexts and challenges.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className={`font-semibold ${intelligenceRating.color}`}>
               {intelligenceRating.rating}
             </div>
@@ -59,7 +73,19 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
         {/* Emotional Intelligence Score */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <div className="font-medium">Emotional Intelligence</div>
+            <div className="font-medium flex items-center">
+              Emotional Intelligence
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[250px]">
+                    <p className="text-xs">Measures your ability to understand, manage emotions and connect with others.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className={`font-semibold ${emotionalRating.color}`}>
               {emotionalRating.rating}
             </div>

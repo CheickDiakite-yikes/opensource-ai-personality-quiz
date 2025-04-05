@@ -98,13 +98,15 @@ async function generateAIAnalysis(
   
   1. First, identify response patterns across categories while accounting for the number of questions in each category.
   
-  2. For intelligence assessment:
-     - Analyze cognitive patterns responses to evaluate analytical reasoning
-     - Review decision-making responses to assess problem-solving approach
+  2. For cognitive processing profile (formerly "intelligence"):
+     - Analyze cognitive patterns responses to evaluate problem-solving approaches
+     - Review decision-making responses to assess adaptability and flexibility
      - Consider creativity responses to measure innovative thinking
      - Examine leadership responses for strategic thinking ability
-     - Base intelligence scores on demonstrated reasoning in responses, not on "correct" answers
+     - Base cognitive scores on thinking style and approach, not "correct" answers
+     - Rename "Intelligence" to "Cognitive Flexibility" or similar in your analysis
      - Assign scores on a curve: 40-60 is average, 60-80 is above average, 80-90 is exceptional, 90-100 is rare
+     - Be sure to clarify this measures cognitive approach, not academic ability
   
   3. For personality traits:
      - Identify consistent patterns across categories
@@ -142,18 +144,18 @@ async function generateAIAnalysis(
       }
     ],
     "intelligence": {
-      "type": "intelligence type with explanation of classification criteria",
+      "type": "cognitive processing type (avoid using raw 'intelligence type' terminology)",
       "score": score (0-10),
-      "description": "detailed description with specific evidence from responses",
+      "description": "detailed description explaining this is about cognitive approach, not academic ability",
       "domains": [
         {
-          "name": "domain name",
+          "name": "domain name (e.g., 'Pattern Recognition', 'Analytical Processing', etc.)",
           "score": score (0-10),
           "description": "description with specific supporting evidence"
         }
       ]
     },
-    "intelligenceScore": score (0-100),
+    "intelligenceScore": score (0-100, labeled as "Cognitive Flexibility Score"),
     "emotionalIntelligenceScore": score (0-100),
     "cognitiveStyle": {
       "primary": "primary style",
@@ -192,7 +194,7 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in evidence-based personality analysis. You provide detailed, objective, and scientifically grounded analyses with clear explanations of your methodology.'
+            content: 'You are an expert psychological assessment analyst specialized in evidence-based personality analysis. You provide detailed, objective, and scientifically grounded analyses with clear explanations of your methodology. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" to avoid implications of academic or IQ testing.'
           },
           { role: 'user', content: prompt }
         ],
@@ -220,7 +222,7 @@ async function generateAIAnalysis(
       }
       
       // Log some key metrics to help verify the quality of the analysis
-      console.log(`Analysis generated with intelligence score: ${analysisJson.intelligenceScore}, emotional intelligence: ${analysisJson.emotionalIntelligenceScore}`);
+      console.log(`Analysis generated with cognitive flexibility score: ${analysisJson.intelligenceScore}, emotional intelligence: ${analysisJson.emotionalIntelligenceScore}`);
       console.log(`Identified ${analysisJson.traits?.length || 0} personality traits`);
       
       return analysisJson as PersonalityAnalysis;

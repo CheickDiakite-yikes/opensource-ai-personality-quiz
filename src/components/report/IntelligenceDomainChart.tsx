@@ -53,7 +53,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
   if (!domains || domains.length === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center border border-dashed rounded-md">
-        <p className="text-muted-foreground">No intelligence domains data available</p>
+        <p className="text-muted-foreground">No cognitive domains data available</p>
       </div>
     );
   }
@@ -64,7 +64,7 @@ const IntelligenceDomainChart: React.FC<IntelligenceDomainChartProps> = ({ domai
         <div style={{ height: chartHeight, minWidth: "100%" }}>
           <ChartContainer
             config={{
-              domain: { label: "Intelligence Domain", color: "#f97316" },
+              domain: { label: "Cognitive Domain", color: "#f97316" },
               score: { label: "Score", color: "#f97316" },
             }}
           >
