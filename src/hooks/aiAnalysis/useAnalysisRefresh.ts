@@ -1,128 +1,81 @@
 
 import { useCallback } from 'react';
-import { loadAnalysisHistory } from "../analysis/useLocalStorage";
-import { sortAnalysesByDate } from './utils';
-import { useSupabaseSync } from './useSupabaseSync';
 import { AIAnalysisState, AIAnalysisActions } from './types';
-import { PersonalityAnalysis } from '@/utils/types';
-import { convertToPersonalityAnalysis } from './utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { convertToPersonalityAnalysis, sortAnalysesByDate } from './utils';
+import { toast } from 'sonner';
+import { loadAnalysisHistory, getMostRecentStoredAnalysis } from '../analysis/useLocalStorage';
 
-// This hook handles refreshing analysis data
+// Hook for refreshing analysis data from local storage or Supabase
 export const useAnalysisRefresh = (
   state: AIAnalysisState,
   actions: AIAnalysisActions
 ) => {
-  const { 
-    analysis, 
-    analysisHistory,
-    setAnalysis, 
-    setAnalysisHistory, 
-    setIsLoading, 
-    setLastRefresh 
-  } = { ...state, ...actions };
-  
-  const { 
-    fetchAnalysesFromSupabase, 
-    syncInProgress, 
-    setSyncInProgress,
-    user 
-  } = useSupabaseSync();
+  const { user } = useAuth();
 
-  // Function to refresh analysis data from database with debounce and locking
   const refreshAnalysis = useCallback(async () => {
-    // Prevent concurrent refresh operations
-    if (syncInProgress) return;
-    
-    // Only refresh if it's been at least 5 seconds since the last refresh
-    const now = new Date();
-    const timeSinceLastRefresh = now.getTime() - state.lastRefresh.getTime();
-    
-    if (timeSinceLastRefresh < 5000 && state.analysisHistory.length > 0) {
-      // Skip refresh if it's been less than 5 seconds and we have data
-      return;
-    }
-    
-    setSyncInProgress(true);
-    setIsLoading(true);
-    setLastRefresh(now);
+    actions.setIsLoading(true);
     
     try {
+      // First, try to get analyses from Supabase if user is logged in
       if (user) {
-        // Get analyses from Supabase
-        const data = await fetchAnalysesFromSupabase();
+        const { data, error } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
           
-        if (!data) {
-          // Fallback to localStorage without updating state if we already have data
-          if (analysisHistory.length === 0) {
-            const history = loadAnalysisHistory();
-            const sortedHistory = sortAnalysesByDate(history);
-            setAnalysisHistory(sortedHistory);
-            
-            if (sortedHistory.length > 0 && !analysis) {
-              setAnalysis(sortedHistory[0]);
-            }
-          }
-        } else if (data.length > 0) {
-          // Transform the data into our PersonalityAnalysis type
-          const analyses: PersonalityAnalysis[] = data.map(item => convertToPersonalityAnalysis(item));
+        if (error) {
+          console.error("Error fetching analyses from Supabase:", error);
+          toast.error("Failed to load analysis data from cloud");
+        } else if (data && data.length > 0) {
+          console.log(`Loaded ${data.length} analyses from Supabase`);
           
-          // Ensure analyses are sorted by date (newest first)
+          // Convert Supabase data to PersonalityAnalysis objects
+          const analyses = data.map(convertToPersonalityAnalysis);
+          
+          // Sort by date (newest first) and update state
           const sortedAnalyses = sortAnalysesByDate(analyses);
+          actions.setAnalysisHistory(sortedAnalyses);
+          actions.setAnalysis(sortedAnalyses[0]);
+          actions.setLastRefresh(new Date());
           
-          // Save to history state if changed
-          if (JSON.stringify(sortedAnalyses) !== JSON.stringify(analysisHistory)) {
-            setAnalysisHistory(sortedAnalyses);
-          
-            // Set the most recent as current if no current selection
-            if (!analysis) {
-              setAnalysis(sortedAnalyses[0]);
-            }
-          
-            // Also update localStorage for offline access
-            sortedAnalyses.forEach(analysis => {
-              import('../analysis/useLocalStorage').then(module => {
-                module.saveAnalysisToHistory(analysis, sortedAnalyses);
-              });
-            });
-          }
-        } else if (analysisHistory.length === 0) {
-          // Fallback to localStorage only if we don't have data yet
-          const history = loadAnalysisHistory();
-          const sortedHistory = sortAnalysesByDate(history);
-          setAnalysisHistory(sortedHistory);
-          
-          if (sortedHistory.length > 0 && !analysis) {
-            setAnalysis(sortedHistory[0]);
-          }
-        }
-      } else if (analysisHistory.length === 0) {
-        // No user and no data, use localStorage
-        const history = loadAnalysisHistory();
-        const sortedHistory = sortAnalysesByDate(history);
-        setAnalysisHistory(sortedHistory);
-        
-        if (sortedHistory.length > 0 && !analysis) {
-          setAnalysis(sortedHistory[0]);
+          toast.success("Analysis data refreshed from cloud");
+          actions.setIsLoading(false);
+          return;
         }
       }
-    } catch (error) {
-      console.error("Error in refreshAnalysis:", error);
       
-      // Fallback to localStorage only if we don't have data yet
-      if (analysisHistory.length === 0) {
-        const history = loadAnalysisHistory();
-        const sortedHistory = sortAnalysesByDate(history);
-        setAnalysisHistory(sortedHistory);
-        
-        if (sortedHistory.length > 0 && !analysis) {
-          setAnalysis(sortedHistory[0]);
-        }
+      // If we don't have Supabase data, fall back to local storage
+      const localAnalyses = loadAnalysisHistory();
+      if (localAnalyses && localAnalyses.length > 0) {
+        console.log(`Loaded ${localAnalyses.length} analyses from local storage`);
+        const sortedAnalyses = sortAnalysesByDate(localAnalyses);
+        actions.setAnalysisHistory(sortedAnalyses);
+        actions.setAnalysis(sortedAnalyses[0]);
+        toast.success("Analysis data loaded from local storage");
+      } else {
+        // No analysis found in either source
+        actions.setAnalysis(null);
+        actions.setAnalysisHistory([]);
+        console.log("No analysis data found");
+      }
+    } catch (err) {
+      console.error("Error refreshing analysis:", err);
+      toast.error("Failed to refresh analysis data");
+      
+      // Try to use local analysis as fallback
+      const localAnalysis = getMostRecentStoredAnalysis();
+      if (localAnalysis) {
+        actions.setAnalysis(localAnalysis);
+        actions.setAnalysisHistory([localAnalysis]);
       }
     } finally {
-      setIsLoading(false);
-      setSyncInProgress(false);
+      actions.setIsLoading(false);
+      actions.setLastRefresh(new Date());
     }
-  }, [user, analysis, analysisHistory, state.lastRefresh, syncInProgress]);
+  }, [user, actions]);
 
   return { refreshAnalysis };
 };
