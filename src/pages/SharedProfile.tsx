@@ -8,6 +8,7 @@ import IntelligenceProfileCard from "@/components/profile/IntelligenceProfileCar
 import ProfileStats from "@/components/profile/ProfileStats";
 import TraitsCard from "@/components/profile/TraitsCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,10 +53,17 @@ const SharedProfile: React.FC = () => {
         const fetchedAnalysis = await getAnalysisById(id);
         
         if (fetchedAnalysis) {
+          console.log("Fetched analysis:", fetchedAnalysis);
           setAnalysis(fetchedAnalysis);
+          // Show success toast
+          toast.success("Profile loaded successfully");
+        } else {
+          console.error("No analysis found with ID:", id);
+          toast.error("Could not load the shared profile");
         }
       } catch (error) {
         console.error("Error fetching shared analysis:", error);
+        toast.error("Error loading the shared profile");
       } finally {
         setLoading(false);
       }
