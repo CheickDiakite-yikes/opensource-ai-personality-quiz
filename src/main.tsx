@@ -1,4 +1,5 @@
 
+import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -17,11 +18,13 @@ const root = createRoot(rootElement);
 // Render app with proper provider hierarchy to ensure
 // authentication context is always available
 root.render(
-  <Router>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </Router>
+  <React.StrictMode>
+    <Router>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </Router>
+  </React.StrictMode>
 );
 
 // Add event listener for unhandled errors to improve debugging
