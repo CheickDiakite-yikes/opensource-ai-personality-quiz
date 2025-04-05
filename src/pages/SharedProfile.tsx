@@ -108,7 +108,7 @@ const SharedProfile: React.FC = () => {
         
         {/* Top Traits */}
         <motion.div variants={itemVariants}>
-          <TraitsCard analysis={analysis} />
+          <TraitsCard analysis={analysis} itemVariants={itemVariants} />
         </motion.div>
         
         {/* Profile Stats */}
