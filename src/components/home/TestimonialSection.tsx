@@ -36,8 +36,8 @@ const TestimonialSection: React.FC = () => {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-8"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Others Say</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <h2 className="ghibli-section-title mb-4">What Others Say</h2>
+          <p className="ghibli-text max-w-2xl mx-auto">
             Join thousands who have transformed their lives through self-discovery.
           </p>
         </motion.div>

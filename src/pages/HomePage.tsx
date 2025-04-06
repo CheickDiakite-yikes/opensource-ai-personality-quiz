@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -105,8 +106,8 @@ const HomePage: React.FC = () => {
           {/* Features Section */}
           <section id="features" className="py-12 md:py-16 relative z-10">
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-indie text-amber-900 mb-3">How It Works</h2>
-              <p className="text-amber-800 max-w-2xl mx-auto">Our personality assessment uses advanced AI to analyze your responses and provide personalized insights.</p>
+              <h2 className="ghibli-section-title mb-3">How It Works</h2>
+              <p className="ghibli-text max-w-2xl mx-auto">Our personality assessment uses advanced AI to analyze your responses and provide personalized insights.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-4">
@@ -154,37 +155,37 @@ const HomePage: React.FC = () => {
           {/* Testimonial Section */}
           <section className="py-12 md:py-16 relative z-10">
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-indie text-amber-900 mb-3">What People Say</h2>
-              <p className="text-amber-800 max-w-2xl mx-auto">Here's what others have discovered about themselves.</p>
+              <h2 className="ghibli-section-title mb-3">What People Say</h2>
+              <p className="ghibli-text max-w-2xl mx-auto">Here's what others have discovered about themselves.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto px-4">
               {/* Testimonial 1 */}
-              <div className="ghibli-card p-6 relative">
+              <div className="testimonial-card p-6 relative">
                 <div className="flex items-start mb-4">
-                  <div className="h-12 w-12 bg-amber-200 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-amber-800 font-bold">M</span>
+                  <div className="h-12 w-12 ghibli-avatar rounded-full mr-4">
+                    <span>M</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-amber-800">Mei</h4>
-                    <p className="text-amber-600 text-sm">Artist</p>
+                    <h4 className="ghibli-testimonial-name">Mei</h4>
+                    <p className="ghibli-testimonial-title">Artist</p>
                   </div>
                 </div>
-                <p className="text-amber-700 italic">"This assessment revealed aspects of my personality I never consciously realized. Now I understand why I approach creative projects the way I do!"</p>
+                <p className="ghibli-testimonial-text">"This assessment revealed aspects of my personality I never consciously realized. Now I understand why I approach creative projects the way I do!"</p>
               </div>
               
               {/* Testimonial 2 */}
-              <div className="ghibli-card p-6 relative">
+              <div className="testimonial-card p-6 relative">
                 <div className="flex items-start mb-4">
-                  <div className="h-12 w-12 bg-amber-200 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-amber-800 font-bold">T</span>
+                  <div className="h-12 w-12 ghibli-avatar rounded-full mr-4">
+                    <span>T</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-amber-800">Totoro</h4>
-                    <p className="text-amber-600 text-sm">Forest Guide</p>
+                    <h4 className="ghibli-testimonial-name">Totoro</h4>
+                    <p className="ghibli-testimonial-title">Forest Guide</p>
                   </div>
                 </div>
-                <p className="text-amber-700 italic">"The insights about my empathetic nature and how I connect with others were spot on. I've improved my relationships by applying what I learned."</p>
+                <p className="ghibli-testimonial-text">"The insights about my empathetic nature and how I connect with others were spot on. I've improved my relationships by applying what I learned."</p>
               </div>
             </div>
           </section>
@@ -193,8 +194,8 @@ const HomePage: React.FC = () => {
           <section className="py-12 md:py-24 relative z-10 text-center">
             <div className="relative max-w-3xl mx-auto px-4">
               <div className="ghibli-card p-8 md:p-10">
-                <h2 className="text-2xl md:text-3xl font-indie text-amber-900 mb-4">Start Your Self-Discovery Journey Today</h2>
-                <p className="text-amber-800 mb-6">Unlock insights about your personality, potential, and purpose</p>
+                <h2 className="ghibli-section-title mb-4">Start Your Self-Discovery Journey Today</h2>
+                <p className="ghibli-text mb-6">Unlock insights about your personality, potential, and purpose</p>
                 <button 
                   className="ghibli-button"
                   onClick={handleGetStarted}

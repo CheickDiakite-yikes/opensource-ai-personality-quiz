@@ -177,10 +177,10 @@ const GhibliHeroAnimation: React.FC = () => {
         <div className="w-8 h-12 bg-green-900 rounded-full"></div>
       </div>
       
-      {/* Title overlay with slight transparency for better readability */}
+      {/* Title overlay with improved contrast for better readability */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="p-4 rounded-xl bg-white/30 backdrop-blur-sm">
-          <h1 className="text-3xl md:text-4xl font-indie text-amber-900 text-center">
+        <div className="p-5 rounded-xl bg-white/50 backdrop-blur-sm border border-white/30 shadow-lg">
+          <h1 className="text-3xl md:text-4xl font-indie text-amber-900 text-center font-bold">
             Who Am I?
           </h1>
           <p className="text-amber-800 font-medium text-center">
