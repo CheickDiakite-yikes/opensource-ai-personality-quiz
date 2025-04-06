@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PersonalityAnalysis } from "@/utils/types";
@@ -17,6 +17,8 @@ const SharedProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const fetchStarted = useRef(false);
+  const toastShown = useRef(false);
   
   // Animation variants
   const containerVariants = {
@@ -42,13 +44,20 @@ const SharedProfile: React.FC = () => {
   
   useEffect(() => {
     const fetchAnalysis = async () => {
+      // Prevent multiple fetches
+      if (fetchStarted.current) return;
+      fetchStarted.current = true;
+      
       setLoading(true);
       setError(null);
       
       if (!id) {
         setLoading(false);
         setError("No profile ID provided");
-        toast.error("No profile ID provided");
+        if (!toastShown.current) {
+          toast.error("No profile ID provided");
+          toastShown.current = true;
+        }
         return;
       }
       
@@ -61,23 +70,38 @@ const SharedProfile: React.FC = () => {
         if (fetchedAnalysis) {
           console.log("Successfully fetched shared analysis:", fetchedAnalysis);
           setAnalysis(fetchedAnalysis);
-          // Show success toast
-          toast.success("Profile loaded successfully");
+          // Show success toast only once
+          if (!toastShown.current) {
+            toast.success("Profile loaded successfully");
+            toastShown.current = true;
+          }
         } else {
           console.error("No analysis found with ID:", id);
           setError("Could not load the shared profile");
-          toast.error("Could not load the shared profile");
+          if (!toastShown.current) {
+            toast.error("Could not load the shared profile");
+            toastShown.current = true;
+          }
         }
       } catch (error) {
         console.error("Error fetching shared analysis:", error);
         setError("Error loading the shared profile");
-        toast.error("Error loading the shared profile");
+        if (!toastShown.current) {
+          toast.error("Error loading the shared profile");
+          toastShown.current = true;
+        }
       } finally {
         setLoading(false);
       }
     };
     
     fetchAnalysis();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      fetchStarted.current = false;
+      toastShown.current = false;
+    };
   }, [id, getAnalysisById]);
   
   if (loading) {
@@ -102,14 +126,6 @@ const SharedProfile: React.FC = () => {
       </div>
     );
   }
-  
-  // Debug output to check what data we actually have
-  console.log("Rendering shared profile with data:", {
-    analysisId: analysis.id,
-    traits: analysis.traits?.length || 0,
-    intelligence: analysis.intelligence?.type,
-    intelligenceScore: analysis.intelligenceScore
-  });
   
   return (
     <div className={`container ${isMobile ? 'py-6' : 'py-16'}`}>

@@ -4,6 +4,9 @@ import { PersonalityAnalysis, PersonalityTrait, IntelligenceType, RelationshipPa
 import { supabase } from '@/integrations/supabase/client';
 import { convertToPersonalityAnalysis } from './aiAnalysis/utils';
 
+// Cache for shared analysis to prevent redundant fetches
+const analysisCache: Record<string, PersonalityAnalysis> = {};
+
 // Main hook for accessing AI analysis functionality
 export const useAIAnalysis = () => {
   const {
@@ -18,6 +21,12 @@ export const useAIAnalysis = () => {
 
   // Add function to get analysis by ID (for shared profiles)
   const getAnalysisById = async (id: string): Promise<PersonalityAnalysis | null> => {
+    // Check cache first to prevent redundant fetches
+    if (analysisCache[id]) {
+      console.log("Returning cached analysis for ID:", id);
+      return analysisCache[id];
+    }
+    
     try {
       console.log("Fetching analysis from Supabase with ID:", id);
       
@@ -47,6 +56,9 @@ export const useAIAnalysis = () => {
       // Additional validation to make sure we have the critical data needed for display
       if (!result.traits || !result.intelligence) {
         console.error("Converted analysis is missing critical data:", result);
+      } else {
+        // Store in cache to prevent redundant fetches
+        analysisCache[id] = result;
       }
       
       return result;
