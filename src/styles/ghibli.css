@@ -1,0 +1,298 @@
+
+/* Ghibli-inspired CSS */
+.ghibli-card {
+  @apply bg-card/90 border-2 border-amber-600/30 rounded-2xl shadow-md;
+  position: relative;
+  overflow: hidden;
+}
+
+.ghibli-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23a16207' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.ghibli-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ghibli-banner {
+  @apply bg-amber-600/90 text-white px-4 py-2 rounded-full font-medium text-center border-2 border-amber-700/30 shadow-md;
+  position: relative;
+  overflow: hidden;
+}
+
+.ghibli-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+.ghibli-button {
+  @apply bg-amber-600 hover:bg-amber-700 text-white rounded-full px-6 py-3 font-medium transition-all duration-300 border-2 border-amber-700/20 shadow-md;
+}
+
+.ghibli-button:hover {
+  @apply shadow-lg transform -translate-y-1;
+}
+
+.ghibli-secondary-button {
+  @apply bg-sky-100 hover:bg-sky-200 text-amber-800 rounded-full px-6 py-3 font-medium transition-all duration-300 border-2 border-sky-200 shadow-md;
+}
+
+.ghibli-secondary-button:hover {
+  @apply shadow-lg transform -translate-y-1;
+}
+
+.clouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cloud {
+  position: absolute;
+  width: 200px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 200px;
+  opacity: 0.6;
+  animation: float-cloud 120s linear infinite;
+}
+
+.cloud:before, .cloud:after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+}
+
+.cloud:before {
+  width: 100px;
+  height: 100px;
+  top: -40px;
+  left: 30px;
+}
+
+.cloud:after {
+  width: 120px;
+  height: 120px;
+  top: -55px;
+  right: 30px;
+}
+
+.cloud-1 {
+  top: 10%;
+  left: -10%;
+  transform: scale(0.8);
+  animation-delay: 0s;
+}
+
+.cloud-2 {
+  top: 25%;
+  left: -15%;
+  transform: scale(0.6);
+  animation-delay: -20s;
+}
+
+.cloud-3 {
+  top: 45%;
+  left: -5%;
+  transform: scale(0.7);
+  animation-delay: -50s;
+}
+
+.cloud-4 {
+  top: 75%;
+  left: -10%;
+  transform: scale(0.9);
+  animation-delay: -80s;
+}
+
+@keyframes float-cloud {
+  0% {
+    transform: translateX(0%) translateY(0%);
+  }
+  50% {
+    transform: translateX(1100%) translateY(20px);
+  }
+  100% {
+    transform: translateX(0%) translateY(0%);
+  }
+}
+
+.ghibli-character {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 140px;
+  height: 140px;
+  z-index: 5;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.ghibli-character:hover {
+  transform: scale(1);
+}
+
+.forest-background {
+  background-image: linear-gradient(to bottom, hsla(196, 53%, 85%, 1) 0%, hsla(196, 53%, 85%, 0.8) 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='%239C92AC' fill-opacity='0.06' d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/svg%3E");
+}
+
+.ghibli-heading {
+  @apply font-serif text-amber-900 leading-tight;
+  text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.ghibli-trait {
+  @apply bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded-full inline-block m-1 text-sm font-medium shadow-sm;
+  transition: all 0.3s ease;
+}
+
+.ghibli-trait:hover {
+  @apply bg-amber-200;
+  transform: translateY(-2px);
+}
+
+.grass {
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 25px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2374b567' fill-opacity='0.3' d='M0,224L60,218.7C120,213,240,203,360,213.3C480,224,600,256,720,245.3C840,235,960,181,1080,176C1200,171,1320,213,1380,234.7L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: cover;
+  pointer-events: none;
+}
+
+.flowers {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  pointer-events: none;
+}
+
+.flower {
+  position: absolute;
+  bottom: 5px;
+  width: 20px;
+  height: 20px;
+}
+
+.flower:nth-child(1) {
+  left: 5%;
+  bottom: 5px;
+}
+
+.flower:nth-child(2) {
+  left: 15%;
+  bottom: 10px;
+}
+
+.flower:nth-child(3) {
+  left: 25%;
+  bottom: 8px;
+}
+
+.flower:nth-child(4) {
+  left: 40%;
+  bottom: 6px;
+}
+
+.flower:nth-child(5) {
+  left: 60%;
+  bottom: 12px;
+}
+
+.flower:nth-child(6) {
+  left: 75%;
+  bottom: 9px;
+}
+
+.flower:nth-child(7) {
+  left: 85%;
+  bottom: 7px;
+}
+
+.flower:nth-child(8) {
+  left: 95%;
+  bottom: 11px;
+}
+
+.flower:before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #FFE15D;
+  border-radius: 50%;
+}
+
+.flower:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  background-color: #FF9E2C;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ghibli-banner-text {
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  display: inline-block;
+  background: #F8D775;
+  color: #5E4B23;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid #E9C55A;
+}
+
+.ghibli-banner-text:before, .ghibli-banner-text:after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  top: 0;
+  background: #F8D775;
+  border: 2px solid #E9C55A;
+}
+
+.ghibli-banner-text:before {
+  left: -12px;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.ghibli-banner-text:after {
+  right: -12px;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
