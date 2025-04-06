@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
               
               <motion.button 
                 onClick={handleLearnMore} 
-                className="bg-secondary/80 hover:bg-secondary text-secondary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300 w-full sm:w-64 mb-8"
+                className="bg-secondary/80 hover:bg-secondary text-secondary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300 w-full sm:w-64"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
@@ -67,13 +67,13 @@ const HomePage: React.FC = () => {
           </div>
           
           <motion.div 
-            className="absolute bottom-12 left-0 right-0 flex justify-center"
+            className="absolute bottom-0 left-0 right-0 flex justify-center mb-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 2.7 }}
           >
-            <div className="inline-flex items-center bg-primary/30 px-4 py-2 rounded-full text-sm font-medium text-primary-foreground border border-primary/40 shadow-md">
-              <Sparkles className="h-4 w-4 mr-2 text-primary-foreground" />
+            <div className="inline-flex items-center bg-primary/20 px-3 py-2 rounded-full text-sm font-medium text-foreground border border-primary/30 shadow-sm">
+              <Sparkles className="h-4 w-4 mr-2 text-primary" />
               <span>AI-Powered Personality Test That Truly Understands You</span>
             </div>
           </motion.div>
