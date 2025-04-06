@@ -30,14 +30,16 @@ const CTASection: React.FC<CTASectionProps> = ({
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
             {description}
           </p>
-          <Button 
-            size="lg" 
-            className="px-10 py-6 h-auto text-lg rounded-full shadow-lg flex items-center justify-center"
-            onClick={onAction}
-          >
-            <span>{buttonText}</span>
-            <ArrowRight className="ml-3 h-5 w-5" />
-          </Button>
+          <div className="flex justify-center">
+            <Button 
+              size="lg" 
+              className="px-10 py-6 h-auto text-lg rounded-full shadow-lg flex items-center justify-center"
+              onClick={onAction}
+            >
+              <span>{buttonText}</span>
+              <ArrowRight className="ml-3 h-5 w-5" />
+            </Button>
+          </div>
         </motion.div>
       </div>
     </div>
