@@ -15,6 +15,7 @@ const SharedProfile: React.FC = () => {
   const { getAnalysisById } = useAIAnalysis();
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
   // Animation variants
@@ -42,9 +43,11 @@ const SharedProfile: React.FC = () => {
   useEffect(() => {
     const fetchAnalysis = async () => {
       setLoading(true);
+      setError(null);
       
       if (!id) {
         setLoading(false);
+        setError("No profile ID provided");
         toast.error("No profile ID provided");
         return;
       }
@@ -62,10 +65,12 @@ const SharedProfile: React.FC = () => {
           toast.success("Profile loaded successfully");
         } else {
           console.error("No analysis found with ID:", id);
+          setError("Could not load the shared profile");
           toast.error("Could not load the shared profile");
         }
       } catch (error) {
         console.error("Error fetching shared analysis:", error);
+        setError("Error loading the shared profile");
         toast.error("Error loading the shared profile");
       } finally {
         setLoading(false);
@@ -87,16 +92,24 @@ const SharedProfile: React.FC = () => {
     );
   }
   
-  if (!analysis) {
+  if (error || !analysis) {
     return (
       <div className="container py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          Sorry, the shared profile you're looking for doesn't exist or may have been removed.
+          {error || "The shared profile you're looking for doesn't exist or may have been removed."}
         </p>
       </div>
     );
   }
+  
+  // Debug output to check what data we actually have
+  console.log("Rendering shared profile with data:", {
+    analysisId: analysis.id,
+    traits: analysis.traits?.length || 0,
+    intelligence: analysis.intelligence?.type,
+    intelligenceScore: analysis.intelligenceScore
+  });
   
   return (
     <div className={`container ${isMobile ? 'py-6' : 'py-16'}`}>
@@ -115,12 +128,16 @@ const SharedProfile: React.FC = () => {
         </motion.div>
         
         {/* Intelligence Profile Card */}
-        <IntelligenceProfileCard analysis={analysis} itemVariants={itemVariants} />
+        {analysis.intelligence && (
+          <IntelligenceProfileCard analysis={analysis} itemVariants={itemVariants} />
+        )}
         
         {/* Top Traits */}
-        <motion.div variants={itemVariants}>
-          <TraitsCard analysis={analysis} itemVariants={itemVariants} />
-        </motion.div>
+        {analysis.traits && analysis.traits.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <TraitsCard analysis={analysis} itemVariants={itemVariants} />
+          </motion.div>
+        )}
         
         {/* Profile Stats */}
         <motion.div variants={itemVariants} className="bg-card p-6 rounded-lg shadow-sm">

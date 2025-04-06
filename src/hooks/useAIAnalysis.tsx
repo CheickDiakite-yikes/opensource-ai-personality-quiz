@@ -27,7 +27,7 @@ export const useAIAnalysis = () => {
         .from('analyses')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();  // Changed from .single() to avoid not_found errors
       
       if (error) {
         console.error("Error fetching shared analysis:", error);
@@ -42,7 +42,14 @@ export const useAIAnalysis = () => {
       console.log("Successfully retrieved analysis data:", data);
       
       // Use the utility function to safely convert Supabase data to PersonalityAnalysis
-      return convertToPersonalityAnalysis(data);
+      const result = convertToPersonalityAnalysis(data);
+      
+      // Additional validation to make sure we have the critical data needed for display
+      if (!result.traits || !result.intelligence) {
+        console.error("Converted analysis is missing critical data:", result);
+      }
+      
+      return result;
     } catch (error) {
       console.error("Exception in getAnalysisById:", error);
       return null;
