@@ -238,7 +238,7 @@ const GhibliHeroAnimation: React.FC = () => {
         }} transition={{
           duration: 1,
           delay: 1.9
-        }} className="text-xl mb-8 drop-shadow-sm text-orange-400">
+        }} className="text-xl mb-8 drop-shadow-sm text-orange-900">
             Our advanced AI personality assessment delivers deep insights about your unique traits, cognitive patterns, and emotional intelligence.
           </motion.p>
         </motion.div>
