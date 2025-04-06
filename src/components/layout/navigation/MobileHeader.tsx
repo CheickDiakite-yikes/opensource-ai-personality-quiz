@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,42 +5,30 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import NotificationCenter from "../../notifications/NotificationCenter";
 import MobileMenu from "./MobileMenu";
-
 const MobileHeader: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
   const handleBack = () => {
     navigate(-1);
   };
-
-  return (
-    <header className="md:hidden py-4 px-4 border-b">
+  return <header className="md:hidden py-4 px-4 border-b bg-green-950">
       <div className="container flex justify-between items-center">
         <div className="flex items-center gap-2">
-          {location.pathname !== "/" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleBack}
-              className="mr-1 hover:bg-accent/50 transition-colors"
-            >
+          {location.pathname !== "/" && <Button variant="ghost" size="icon" onClick={handleBack} className="mr-1 hover:bg-accent/50 transition-colors">
               <ChevronLeft className="h-5 w-5" />
               <span className="sr-only">Go back</span>
-            </Button>
-          )}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center"
-          >
+            </Button>}
+          <motion.div initial={{
+          opacity: 0,
+          scale: 0.9
+        }} animate={{
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          duration: 0.5
+        }} className="flex items-center">
             <Link to="/" className="flex items-center hover:text-primary transition-colors">
-              <img 
-                src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
-                alt="Who Am I Logo" 
-                className="h-8 w-auto mr-2" 
-              />
+              <img src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" alt="Who Am I Logo" className="h-8 w-auto mr-2" />
               <span className="text-xl font-bold">Who Am I?</span>
             </Link>
           </motion.div>
@@ -51,8 +38,6 @@ const MobileHeader: React.FC = () => {
           <MobileMenu />
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default MobileHeader;
