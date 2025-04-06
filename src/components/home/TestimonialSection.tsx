@@ -13,10 +13,10 @@ const TestimonialSection: React.FC = () => {
       imageSrc: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80"
     },
     {
-      quote: "The personalized growth plan is exactly what I needed to make meaningful changes. Now I can see clear progress in areas I've struggled with for years.",
-      name: "Michael T.",
-      designation: "Software Engineer",
-      imageSrc: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80"
+      quote: "No one has gotten me like SOWAI, fun little app to learn more about yourself.",
+      name: "Dylon Adu-Gyamfi",
+      designation: "Business Development Rep",
+      imageSrc: "/lovable-uploads/7dbee29b-e195-40e9-9276-aa97e44288fb.png"
     },
     {
       quote: "The assessment was incredibly accurate! I finally feel like I understand myself better and can focus on the right growth areas.",
