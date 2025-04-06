@@ -7,7 +7,7 @@ import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const HomePage: React.FC = () => {
@@ -66,17 +66,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
           
-          <motion.div 
-            className="absolute bottom-0 left-0 right-0 flex justify-center mb-2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 2.7 }}
-          >
-            <div className="inline-flex items-center bg-primary/20 px-3 py-2 rounded-full text-sm font-medium text-foreground border border-primary/30 shadow-sm">
-              <Sparkles className="h-4 w-4 mr-2 text-primary" />
-              <span>AI-Powered Personality Test That Truly Understands You</span>
-            </div>
-          </motion.div>
+          {/* Removed the banner element that was here */}
         </section>
         
         {/* Feature section with Ghibli styling */}
