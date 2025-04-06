@@ -35,7 +35,7 @@
   
   .ghibli-testimonial-card::before {
     content: '';
-    @apply absolute -inset-1.5 -z-10 bg-gradient-to-br from-accent/40 to-secondary/40 blur-md opacity-50;
+    @apply absolute -inset-1.5 -z-10 bg-gradient-to-br from-accent/30 to-secondary/30 blur-md opacity-50;
     border-radius: inherit;
   }
   

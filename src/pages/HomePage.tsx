@@ -67,13 +67,13 @@ const HomePage: React.FC = () => {
           </div>
           
           <motion.div 
-            className="absolute bottom-0 left-0 right-0 flex justify-center"
+            className="absolute bottom-0 left-0 right-0 flex justify-center mb-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 2.7 }}
           >
-            <div className="inline-flex items-center bg-primary/10 px-3 py-1.5 rounded-full text-sm text-primary mb-4">
-              <Sparkles className="h-4 w-4 mr-2" />
+            <div className="inline-flex items-center bg-primary/20 px-3 py-2 rounded-full text-sm font-medium text-foreground border border-primary/30 shadow-sm">
+              <Sparkles className="h-4 w-4 mr-2 text-primary" />
               <span>AI-Powered Personality Test That Truly Understands You</span>
             </div>
           </motion.div>

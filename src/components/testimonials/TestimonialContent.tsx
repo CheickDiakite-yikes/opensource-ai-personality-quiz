@@ -31,10 +31,10 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
       <h3 className="text-2xl font-bold text-foreground font-serif">
         {testimonial.name}
       </h3>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-foreground/70 font-medium">
         {testimonial.designation}
       </p>
-      <motion.p className="text-lg text-foreground/90 mt-8">
+      <motion.p className="text-lg text-foreground mt-8">
         {testimonial.quote.split(" ").map((word, index) => (
           <motion.span
             key={index}
