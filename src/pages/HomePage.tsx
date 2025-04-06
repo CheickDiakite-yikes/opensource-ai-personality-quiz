@@ -38,23 +38,23 @@ const HomePage: React.FC = () => {
           
           {/* Call to action buttons */}
           <div className="container mx-auto px-4 -mt-16 relative z-10">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col gap-6 justify-center items-center">
               <motion.button 
                 onClick={handleGetStarted} 
-                className="ghibli-btn group"
+                className="ghibli-btn group flex items-center justify-center w-full sm:w-64 text-lg"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 2.3 }}
               >
-                {user ? "Take Assessment" : "Get Started"}
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <span>{user ? "Take Assessment" : "Get Started"}</span>
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
               
               <motion.button 
                 onClick={handleLearnMore} 
-                className="bg-secondary/80 hover:bg-secondary text-secondary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300"
+                className="bg-secondary/80 hover:bg-secondary text-secondary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300 w-full sm:w-64"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
@@ -67,7 +67,7 @@ const HomePage: React.FC = () => {
           </div>
           
           <motion.div 
-            className="absolute bottom-0 left-0 right-0 flex justify-center mb-10"
+            className="absolute bottom-0 left-0 right-0 flex justify-center mb-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 2.7 }}
