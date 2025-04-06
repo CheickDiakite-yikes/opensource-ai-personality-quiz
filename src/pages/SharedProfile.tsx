@@ -9,7 +9,6 @@ import ProfileStats from "@/components/profile/ProfileStats";
 import TraitsCard from "@/components/profile/TraitsCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { Cat, CloudSun, Leaf, Bird } from "lucide-react";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,14 +41,6 @@ const SharedProfile: React.FC = () => {
       }
     }
   };
-  
-  // Floating items for Ghibli effect
-  const floatingItems = [
-    { element: <CloudSun className="text-sky-400" size={24} />, className: "top-[10%] right-[5%] animate-float" },
-    { element: <Leaf className="text-green-500" size={20} />, className: "top-[25%] left-[8%] animate-float-x" },
-    { element: <Bird className="text-amber-500" size={18} />, className: "bottom-[25%] right-[10%] animate-sway" },
-    { element: <Cat className="text-orange-500" size={22} />, className: "top-[15%] left-[15%] animate-soft-bounce" },
-  ];
   
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -115,11 +106,11 @@ const SharedProfile: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="container py-16 text-center forest-background min-h-screen">
+      <div className="container py-16 text-center">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-amber-600/40 rounded-full max-w-md mx-auto"></div>
-          <div className="h-64 bg-amber-100/50 rounded-2xl max-w-4xl mx-auto"></div>
-          <div className="h-64 bg-amber-100/50 rounded-2xl max-w-4xl mx-auto"></div>
+          <div className="h-12 bg-primary/10 rounded-md max-w-md mx-auto"></div>
+          <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
+          <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
         </div>
       </div>
     );
@@ -127,90 +118,53 @@ const SharedProfile: React.FC = () => {
   
   if (error || !analysis) {
     return (
-      <div className="container py-16 text-center forest-background min-h-screen">
-        <div className="ghibli-card p-8 max-w-lg mx-auto">
-          <h1 className="text-2xl font-bold mb-4 font-indie text-amber-800">Profile Not Found</h1>
-          <p className="text-amber-700 mb-6">
-            {error || "The shared profile you're looking for doesn't exist or may have been removed."}
-          </p>
-          <a href="/" className="ghibli-button inline-block">Return Home</a>
-        </div>
+      <div className="container py-16 text-center">
+        <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
+        <p className="text-muted-foreground mb-6">
+          {error || "The shared profile you're looking for doesn't exist or may have been removed."}
+        </p>
       </div>
     );
   }
   
   return (
-    <div className={`container ${isMobile ? 'py-6' : 'py-16'} forest-background min-h-screen relative`}>
-      {/* Clouds */}
-      <div className="clouds">
-        <div className="cloud cloud-1"></div>
-        <div className="cloud cloud-2"></div>
-        <div className="cloud cloud-3"></div>
-      </div>
-      
-      {/* Floating elements */}
-      {floatingItems.map((item, index) => (
-        <div
-          key={index}
-          className={`absolute z-10 ${item.className}`}
-          style={{ animationDelay: `${index * 0.7}s` }}
-        >
-          {item.element}
-        </div>
-      ))}
-      
+    <div className={`container ${isMobile ? 'py-6' : 'py-16'}`}>
       <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-8 max-w-4xl mx-auto relative z-10"
+        className="space-y-8 max-w-4xl mx-auto"
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center mb-8">
-          <div className="ghibli-banner mx-auto inline-block mb-4">
-            <h1 className="text-xl md:text-2xl font-indie">Shared Personality Analysis</h1>
-          </div>
-          <p className="text-amber-800 font-medium">
+          <h1 className="text-3xl font-bold mb-2">Shared Personality Analysis</h1>
+          <p className="text-muted-foreground">
             This is a shared view of someone's personality analysis from Who Am I?
           </p>
         </motion.div>
         
         {/* Intelligence Profile Card */}
         {analysis.intelligence && (
-          <motion.div variants={itemVariants} className="ghibli-card p-6">
-            <h2 className="text-xl font-bold mb-4 font-indie text-amber-800">Intelligence Profile</h2>
-            <IntelligenceProfileCard analysis={analysis} itemVariants={itemVariants} />
-          </motion.div>
+          <IntelligenceProfileCard analysis={analysis} itemVariants={itemVariants} />
         )}
         
         {/* Top Traits */}
         {analysis.traits && analysis.traits.length > 0 && (
-          <motion.div variants={itemVariants} className="ghibli-card p-6">
-            <h2 className="text-xl font-bold mb-4 font-indie text-amber-800">Top Traits</h2>
+          <motion.div variants={itemVariants}>
             <TraitsCard analysis={analysis} itemVariants={itemVariants} />
           </motion.div>
         )}
         
         {/* Profile Stats */}
-        <motion.div variants={itemVariants} className="ghibli-card p-6">
-          <h2 className="text-xl font-bold mb-4 font-indie text-amber-800">Profile Statistics</h2>
+        <motion.div variants={itemVariants} className="bg-card p-6 rounded-lg shadow-sm">
+          <h2 className="text-xl font-bold mb-4">Profile Statistics</h2>
           <ProfileStats analysis={analysis} />
         </motion.div>
         
-        <motion.div variants={itemVariants} className="text-center text-amber-800">
+        <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground">
           <p>Want to discover your own personality traits?</p>
-          <a href="/" className="text-amber-600 hover:underline hover:text-amber-700 font-medium">Take the assessment at Who Am I?</a>
+          <a href="/" className="text-primary hover:underline">Take the assessment at Who Am I?</a>
         </motion.div>
-        
-        {/* Grass at bottom */}
-        <div className="grass absolute bottom-0 left-0 right-0"></div>
-        <div className="flowers absolute bottom-0 left-0 right-0">
-          <div className="flower"></div>
-          <div className="flower"></div>
-          <div className="flower"></div>
-          <div className="flower"></div>
-          <div className="flower"></div>
-        </div>
       </motion.div>
     </div>
   );

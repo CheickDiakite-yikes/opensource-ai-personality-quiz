@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -87,21 +86,10 @@ export default {
 					800: '#9a3412',
 					900: '#7c2d12',
 				},
-				ghibli: {
-					sky: '#A4DDED',
-					cloud: '#F0F9FF',
-					grass: '#85C285',
-					wood: '#DEB887',
-					soil: '#9B7653',
-					leaf: '#71C671',
-					water: '#8ED6FF',
-				}
 			},
 			fontFamily: {
-				sans: ['Nunito', 'sans-serif'],
+				sans: ['Inter', 'sans-serif'],
 				serif: ['Playfair Display', 'serif'],
-				indie: ['Indie Flower', 'cursive'],
-				ghibli: ['Nunito', 'Indie Flower', 'cursive'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -153,14 +141,6 @@ export default {
                     '0%, 100%': { transform: 'translateY(0)' },
                     '50%': { transform: 'translateY(-5px)' },
                 },
-                'sway': {
-                    '0%, 100%': { transform: 'rotate(-3deg)' },
-                    '50%': { transform: 'rotate(3deg)' },
-                },
-                'float-x': {
-                    '0%, 100%': { transform: 'translateX(0)' },
-                    '50%': { transform: 'translateX(10px)' },
-                },
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -174,8 +154,6 @@ export default {
 				'rotate-glow': 'rotate-glow 20s linear infinite',
 				'shimmer': 'shimmer 3s ease-in-out infinite',
                 'soft-bounce': 'soft-bounce 4s ease-in-out infinite',
-                'sway': 'sway 6s ease-in-out infinite',
-                'float-x': 'float-x 7s ease-in-out infinite',
 			},
 			typography: {
 				DEFAULT: {
@@ -205,16 +183,11 @@ export default {
                 'elegant': '0 10px 30px -5px rgba(0, 0, 0, 0.1)',
                 'elegant-lg': '0 20px 40px -5px rgba(0, 0, 0, 0.1)',
                 'inner-elegant': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
-                'ghibli': '0 5px 15px -3px rgba(157, 107, 0, 0.15)',
-                'ghibli-lg': '0 10px 25px -5px rgba(157, 107, 0, 0.2)',
             },
             backgroundImage: {
                 'warm-gradient': 'linear-gradient(to right, hsla(30, 100%, 92%, 0.8), hsla(20, 100%, 92%, 0.8))',
                 'warm-gradient-soft': 'linear-gradient(to right, hsla(30, 100%, 98%, 0.9), hsla(20, 100%, 98%, 0.9))',
                 'primary-gradient': 'linear-gradient(to right, hsl(var(--primary)), hsl(calc(var(--primary) - 10), 95%, 45%))',
-                'ghibli-sky': 'linear-gradient(to bottom, #A4DDED, #CEEAF2)',
-                'ghibli-sunset': 'linear-gradient(to bottom, #FAD961, #F76B1C)',
-                'ghibli-forest': 'linear-gradient(to bottom, #9FE160, #63C082)',
             },
 		}
 	},
