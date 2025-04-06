@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -6,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 
 // Lazy load pages for better initial load performance
-const HomePage = lazy(() => import("@/pages/Index"));
+const HomePage = lazy(() => import("@/pages/HomePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const AssessmentPage = lazy(() => import("@/components/assessment/AssessmentPage"));

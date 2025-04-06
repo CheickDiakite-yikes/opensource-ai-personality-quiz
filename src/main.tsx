@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from 'next-themes';
 import App from './App.tsx';
 import './index.css';
+import './styles/social.css'; // Make sure the social styles are imported
 
 // Create a root once rather than on every render
 const rootElement = document.getElementById("root");
