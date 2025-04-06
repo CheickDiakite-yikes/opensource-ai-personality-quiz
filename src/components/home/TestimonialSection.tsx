@@ -22,7 +22,7 @@ const TestimonialSection: React.FC = () => {
       quote: "The assessment was incredibly accurate! I finally feel like I understand myself better and can focus on the right growth areas.",
       name: "Jessica L.",
       designation: "Teacher",
-      imageSrc: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80"
+      imageSrc: "/lovable-uploads/935925a4-6895-4fd1-ab6d-38c6112194cc.png"
     }
   ];
 
