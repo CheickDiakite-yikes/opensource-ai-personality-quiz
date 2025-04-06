@@ -1,14 +1,14 @@
 
 import React from "react";
-import HeroSection from "@/components/home/HeroSection";
 import FeatureSection from "@/components/home/FeatureSection";
 import TestimonialSection from "@/components/home/TestimonialSection";
 import CTASection from "@/components/home/CTASection";
-import BackgroundElements from "@/components/home/BackgroundElements";
+import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -22,14 +22,72 @@ const HomePage: React.FC = () => {
     }
   };
   
+  const handleLearnMore = () => {
+    const featuresElement = document.getElementById("features");
+    if (featuresElement) {
+      featuresElement.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+  
   return (
     <PageTransition>
-      <div className="relative overflow-hidden">
-        <BackgroundElements />
+      <div className="relative overflow-hidden bg-ghibli-gradient">
+        {/* Hero section with animated Ghibli-style scene */}
+        <section className="relative pb-4">
+          <GhibliHeroAnimation />
+          
+          {/* Call to action buttons */}
+          <div className="container mx-auto px-4 -mt-16 relative z-10">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button 
+                onClick={handleGetStarted} 
+                className="ghibli-btn group"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 2.3 }}
+              >
+                {user ? "Take Assessment" : "Get Started"}
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+              
+              <motion.button 
+                onClick={handleLearnMore} 
+                className="bg-secondary/80 hover:bg-secondary text-secondary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 2.5 }}
+              >
+                Learn More
+              </motion.button>
+            </div>
+          </div>
+          
+          <motion.div 
+            className="absolute bottom-0 left-0 right-0 flex justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 2.7 }}
+          >
+            <div className="inline-flex items-center bg-primary/10 px-3 py-1.5 rounded-full text-sm text-primary mb-4">
+              <Sparkles className="h-4 w-4 mr-2" />
+              <span>AI-Powered Personality Test That Truly Understands You</span>
+            </div>
+          </motion.div>
+        </section>
         
-        <HeroSection onGetStarted={handleGetStarted} isAuthenticated={!!user} />
-        <FeatureSection />
+        {/* Feature section with Ghibli styling */}
+        <div id="features">
+          <FeatureSection />
+        </div>
+        
+        {/* Testimonial section with Ghibli styling */}
         <TestimonialSection />
+        
+        {/* CTA section with Ghibli styling */}
         <CTASection 
           title="Start Your Self-Discovery Journey Today"
           description="Unlock insights about your personality, potential, and purpose"

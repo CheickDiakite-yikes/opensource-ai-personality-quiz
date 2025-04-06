@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -88,8 +89,8 @@ export default {
 				},
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
-				serif: ['Playfair Display', 'serif'],
+				sans: ['Cabin', 'sans-serif'],
+				serif: ['Marcellus', 'serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -141,6 +142,18 @@ export default {
                     '0%, 100%': { transform: 'translateY(0)' },
                     '50%': { transform: 'translateY(-5px)' },
                 },
+                'drift-left': {
+                    '0%': { transform: 'translateX(-10px)' },
+                    '100%': { transform: 'translateX(10px)' },
+                },
+                'drift-right': {
+                    '0%': { transform: 'translateX(10px)' },
+                    '100%': { transform: 'translateX(-10px)' },
+                },
+                'sway': {
+                    '0%, 100%': { transform: 'rotate(-3deg)' },
+                    '50%': { transform: 'rotate(3deg)' },
+                },
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -154,6 +167,9 @@ export default {
 				'rotate-glow': 'rotate-glow 20s linear infinite',
 				'shimmer': 'shimmer 3s ease-in-out infinite',
                 'soft-bounce': 'soft-bounce 4s ease-in-out infinite',
+                'drift-left': 'drift-left 6s ease-in-out infinite alternate',
+                'drift-right': 'drift-right 7s ease-in-out infinite alternate',
+                'sway': 'sway 6s ease-in-out infinite',
 			},
 			typography: {
 				DEFAULT: {
@@ -162,15 +178,15 @@ export default {
 						color: 'hsl(var(--foreground))',
 						h1: {
                             color: 'hsl(var(--foreground))',
-                            fontFamily: 'Playfair Display, serif',
+                            fontFamily: 'Marcellus, serif',
                         },
                         h2: {
                             color: 'hsl(var(--foreground))',
-                            fontFamily: 'Playfair Display, serif',
+                            fontFamily: 'Marcellus, serif',
                         },
                         h3: {
                             color: 'hsl(var(--foreground))',
-                            fontFamily: 'Playfair Display, serif',
+                            fontFamily: 'Marcellus, serif',
                         },
 					},
 				},
@@ -183,11 +199,15 @@ export default {
                 'elegant': '0 10px 30px -5px rgba(0, 0, 0, 0.1)',
                 'elegant-lg': '0 20px 40px -5px rgba(0, 0, 0, 0.1)',
                 'inner-elegant': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+                'ghibli': '0 6px 12px -4px rgba(158, 133, 111, 0.15), 0 2px 6px -2px rgba(158, 133, 111, 0.1)',
+                'ghibli-btn': '0 4px 0 0 hsl(25 95% 53% / 0.5), 0 6px 10px -4px rgba(0, 0, 0, 0.2)',
             },
             backgroundImage: {
                 'warm-gradient': 'linear-gradient(to right, hsla(30, 100%, 92%, 0.8), hsla(20, 100%, 92%, 0.8))',
                 'warm-gradient-soft': 'linear-gradient(to right, hsla(30, 100%, 98%, 0.9), hsla(20, 100%, 98%, 0.9))',
                 'primary-gradient': 'linear-gradient(to right, hsl(var(--primary)), hsl(calc(var(--primary) - 10), 95%, 45%))',
+                'ghibli-gradient': 'linear-gradient(to bottom, hsla(38, 30%, 94%, 1), hsla(60, 30%, 96%, 1))',
+                'ghibli-sunset': 'linear-gradient(to bottom, #f9d3a5, #fcebd1)',
             },
 		}
 	},

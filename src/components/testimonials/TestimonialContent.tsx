@@ -26,6 +26,7 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
         duration: 0.2,
         ease: "easeInOut",
       }}
+      className="ghibli-testimonial-card"
     >
       <h3 className="text-2xl font-bold text-foreground font-serif">
         {testimonial.name}
@@ -33,7 +34,7 @@ const TestimonialContent: React.FC<TestimonialContentProps> = ({ testimonial }) 
       <p className="text-sm text-muted-foreground">
         {testimonial.designation}
       </p>
-      <motion.p className="text-lg text-muted-foreground mt-8">
+      <motion.p className="text-lg text-foreground/90 mt-8">
         {testimonial.quote.split(" ").map((word, index) => (
           <motion.span
             key={index}

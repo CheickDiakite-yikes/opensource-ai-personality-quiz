@@ -1,0 +1,105 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Marcellus&display=swap');
+
+@layer components {
+  .ghibli-card {
+    @apply relative bg-card/80 backdrop-blur-sm border border-border shadow-md rounded-xl overflow-hidden;
+    box-shadow: 0 6px 12px -4px rgba(158, 133, 111, 0.2), 0 2px 6px -2px rgba(158, 133, 111, 0.15);
+  }
+  
+  .ghibli-title {
+    @apply font-serif text-foreground;
+  }
+  
+  .ghibli-paper {
+    @apply bg-secondary/50 border border-border shadow-sm;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .ghibli-banner {
+    @apply relative overflow-hidden border-y border-border bg-gradient-to-r from-secondary/50 to-accent/30;
+  }
+  
+  .ghibli-banner::before {
+    content: '';
+    @apply absolute inset-0 bg-cover bg-center opacity-10;
+    background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23615f4d' fill-opacity='0.15'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .ghibli-testimonial-card {
+    @apply relative bg-card rounded-xl p-6 pb-8 border border-border shadow-md overflow-hidden;
+    box-shadow: 0 6px 12px -4px rgba(158, 133, 111, 0.15), 
+                0 2px 6px -2px rgba(158, 133, 111, 0.1),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  }
+  
+  .ghibli-testimonial-card::before {
+    content: '';
+    @apply absolute -inset-1.5 -z-10 bg-gradient-to-br from-accent/40 to-secondary/40 blur-md opacity-50;
+    border-radius: inherit;
+  }
+  
+  .ghibli-cloud {
+    @apply fixed z-0 opacity-50;
+    animation: drift linear infinite;
+  }
+  
+  .ghibli-grass {
+    @apply absolute bottom-0 left-0 right-0 h-20 bg-contain bg-repeat-x;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='30' viewBox='0 0 60 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 26c2.5-3.3 4.5-6.7 5-10 .7 3.3 2 6.7 5 10m9-10c0 0 1.5 3.3 6 10M12 26c-2-6.7-1-13.3 2-20M30 26c0-6.7-.5-13.3 0-20M42 26c1.5-6.7 1.5-13.3-2-20' stroke='%2372926c' stroke-width='2' fill='none' /%3E%3C/svg%3E");
+  }
+  
+  .ghibli-tree {
+    @apply absolute bottom-0 opacity-70 bg-contain bg-no-repeat;
+  }
+  
+  .ghibli-tree.left {
+    left: 5%;
+    height: 150px;
+    width: 100px;
+    background-position: bottom left;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='150' viewBox='0 0 100 150' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50,10 Q65,30 70,50 Q80,70 75,100 Q72,120 70,150 L60,150 Q62,120 60,100 Q55,70 50,50 Q45,30 50,10 Z' fill='%235d4037' /%3E%3Cellipse cx='50' cy='40' rx='30' ry='35' fill='%2381c784' /%3E%3Cellipse cx='65' cy='55' rx='25' ry='25' fill='%2381c784' /%3E%3Cellipse cx='35' cy='60' rx='20' ry='25' fill='%2381c784' /%3E%3C/svg%3E");
+  }
+  
+  .ghibli-tree.right {
+    right: 5%;
+    height: 180px;
+    width: 120px;
+    background-position: bottom right;
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='180' viewBox='0 0 120 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60,15 Q75,35 80,55 Q90,75 85,105 Q82,125 80,180 L70,180 Q72,125 70,105 Q65,75 60,55 Q55,35 60,15 Z' fill='%235d4037' /%3E%3Cellipse cx='60' cy='45' rx='40' ry='40' fill='%2381c784' /%3E%3Cellipse cx='80' cy='60' rx='30' ry='30' fill='%2381c784' /%3E%3Cellipse cx='45' cy='65' rx='25' ry='30' fill='%2381c784' /%3E%3C/svg%3E");
+  }
+  
+  .ghibli-btn {
+    @apply bg-primary/90 hover:bg-primary text-primary-foreground rounded-full px-6 py-3 font-medium shadow-md transition-all duration-300;
+    box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.5), 0 6px 10px -4px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+  }
+  
+  .ghibli-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 hsl(var(--primary) / 0.5), 0 8px 12px -4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .ghibli-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .ghibli-input {
+    @apply bg-secondary/50 border-border rounded-md shadow-inner;
+  }
+  
+  .ghibli-bg-texture {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05'/%3E%3C/svg%3E");
+  }
+  
+  /* Animated clouds */
+  @keyframes drift {
+    from {
+      transform: translateX(-10%);
+    }
+    to {
+      transform: translateX(110%);
+    }
+  }
+}

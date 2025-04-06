@@ -27,7 +27,7 @@ const TestimonialSection: React.FC = () => {
   ];
 
   return (
-    <div className="py-20 relative z-10">
+    <div className="py-20 relative z-10 ghibli-banner">
       <div className="container max-w-6xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -36,8 +36,8 @@ const TestimonialSection: React.FC = () => {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-8"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Others Say</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 ghibli-title">What Others Say</h2>
+          <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
             Join thousands who have transformed their lives through self-discovery.
           </p>
         </motion.div>
