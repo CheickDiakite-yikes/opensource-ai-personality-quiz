@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { ArrowRight, Bird, Cat, CloudSun, Flower, Fish } from "lucide-react";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -58,13 +58,9 @@ const HomePage: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="max-w-3xl mx-auto"
             >
-              {/* Wooden sign with logo */}
-              <div className="relative mx-auto mb-8 max-w-md">
-                <img
-                  src="/lovable-uploads/d92ae7df-b723-4e78-b516-e372194df445.png"
-                  alt="Who Am I? Logo"
-                  className="w-full h-auto"
-                />
+              {/* Replace static wooden sign with animated Ghibli scene */}
+              <div className="relative mx-auto mb-8 max-w-lg">
+                <GhibliHeroAnimation />
               </div>
               
               <motion.div
