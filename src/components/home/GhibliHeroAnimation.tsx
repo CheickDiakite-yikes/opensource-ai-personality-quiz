@@ -14,28 +14,31 @@ const GhibliHeroAnimation: React.FC = () => {
   const { mounted, clouds, birds, leaves } = useAnimationElements();
 
   return (
-    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-b-lg">
+    <div className="relative h-[550px] md:h-[650px] overflow-hidden rounded-b-lg">
+      {/* Dark overlay to improve contrast */}
+      <div className="absolute inset-0 bg-black/30 z-5"></div>
+      
       {/* Sky and static elements */}
       <SkyElements />
       
       {/* Sun */}
       <Sun mounted={mounted} />
       
-      {/* Clouds */}
-      {clouds.map((cloud, index) => (
+      {/* Clouds - reduce quantity for less clutter */}
+      {clouds.slice(0, 3).map((cloud, index) => (
         <Cloud key={`cloud-${index}`} {...cloud} />
       ))}
       
-      {/* Birds */}
-      {birds.map((bird) => (
+      {/* Birds - reduce quantity for less clutter */}
+      {birds.slice(0, 3).map((bird) => (
         <Bird key={bird.key} {...bird} />
       ))}
       
       {/* Hills */}
       <Hills />
       
-      {/* Falling leaves */}
-      {leaves.map(leaf => (
+      {/* Falling leaves - reduce quantity for less clutter */}
+      {leaves.slice(0, 5).map(leaf => (
         <Leaf key={leaf.key} {...leaf} />
       ))}
       
