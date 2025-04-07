@@ -25,21 +25,6 @@
                 0 6px 12px -4px rgba(0, 0, 0, 0.25),
                 inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
     transform: translateY(0);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-  }
-  
-  .ghibli-btn-enhanced::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.7s;
-    z-index: -1;
   }
   
   .ghibli-btn-enhanced:hover {
@@ -47,10 +32,6 @@
     box-shadow: 0 6px 0 0 hsl(var(--primary) / 0.6), 
                 0 10px 16px -4px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
-  }
-  
-  .ghibli-btn-enhanced:hover::before {
-    left: 100%;
   }
   
   .ghibli-btn-enhanced:active {
