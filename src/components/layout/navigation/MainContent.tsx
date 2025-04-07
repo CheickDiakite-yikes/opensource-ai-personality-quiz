@@ -14,7 +14,7 @@ const MainContent: React.FC = () => {
     <SidebarInset className="flex-1 flex flex-col overflow-hidden">
       <DesktopHeader />
       
-      <main className={`flex-1 ${isMobile ? 'px-2' : 'px-6'} overflow-x-hidden max-w-[100vw]`}>
+      <main className={`flex-1 overflow-x-hidden max-w-[100vw]`}>
         <AnimatePresence mode="wait">
           <Outlet />
         </AnimatePresence>
