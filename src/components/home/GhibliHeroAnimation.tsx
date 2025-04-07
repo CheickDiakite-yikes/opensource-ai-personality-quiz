@@ -13,7 +13,7 @@ const GhibliHeroAnimation: React.FC = () => {
   const { mounted, clouds, birds, leaves } = useAnimationElements();
 
   return (
-    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-b-3xl">
+    <div className="relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden rounded-b-3xl">
       {/* Sky and static elements */}
       <SkyElements />
       
@@ -21,25 +21,35 @@ const GhibliHeroAnimation: React.FC = () => {
       <Sun mounted={mounted} />
       
       {/* Clouds */}
-      {clouds.map((cloud, index) => (
-        <Cloud key={`cloud-${index}`} {...cloud} />
-      ))}
+      <div className="relative z-10">
+        {clouds.map((cloud, index) => (
+          <Cloud key={`cloud-${index}`} {...cloud} />
+        ))}
+      </div>
       
       {/* Birds */}
-      {birds.map((bird) => (
-        <Bird key={bird.key} {...bird} />
-      ))}
+      <div className="relative z-20">
+        {birds.map((bird) => (
+          <Bird key={bird.key} {...bird} />
+        ))}
+      </div>
       
-      {/* Hills */}
-      <Hills />
+      {/* Hills in background */}
+      <div className="relative z-30">
+        <Hills />
+      </div>
       
       {/* Falling leaves */}
-      {leaves.map(leaf => (
-        <Leaf key={leaf.key} {...leaf} />
-      ))}
+      <div className="relative z-40">
+        {leaves.map(leaf => (
+          <Leaf key={leaf.key} {...leaf} />
+        ))}
+      </div>
       
       {/* Content overlay */}
-      <HeroContent mounted={mounted} />
+      <div className="relative z-50">
+        <HeroContent mounted={mounted} />
+      </div>
     </div>
   );
 };
