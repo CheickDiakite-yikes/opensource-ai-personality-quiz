@@ -1,0 +1,69 @@
+
+@keyframes leaf-float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(5deg) translateX(5px);
+  }
+  100% {
+    transform: translateY(-25px) rotate(10deg) translateX(-5px);
+  }
+}
+
+@keyframes blob-morph {
+  0% { border-radius: 42% 56% 72% 28% / 42% 42% 56% 48%; }
+  33% { border-radius: 72% 28% 48% 48% / 28% 28% 72% 72%; }
+  66% { border-radius: 100% 56% 56% 100% / 100% 100% 56% 56%; }
+  100% { border-radius: 42% 56% 72% 28% / 42% 42% 56% 48%; }
+}
+
+/* Animated clouds */
+@keyframes drift {
+  from {
+    transform: translateX(-10%);
+  }
+  to {
+    transform: translateX(110%);
+  }
+}
+
+/* New animations for enhanced movement */
+@keyframes soft-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes drift-left {
+  0% { transform: translateX(-10px) rotate(-2deg); }
+  50% { transform: translateX(5px) rotate(2deg); }
+  100% { transform: translateX(15px) rotate(-1deg); }
+}
+
+@keyframes drift-right {
+  0% { transform: translateX(15px) rotate(2deg); }
+  50% { transform: translateX(0px) rotate(-2deg); }
+  100% { transform: translateX(-15px) rotate(1deg); }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(3deg) translateY(-5px); }
+}
+
+/* Animation classes */
+.animate-soft-bounce {
+  animation: soft-bounce 4s ease-in-out infinite;
+}
+
+.animate-drift-left {
+  animation: drift-left 12s ease-in-out infinite alternate;
+}
+
+.animate-drift-right {
+  animation: drift-right 15s ease-in-out infinite alternate;
+}
+
+.animate-sway {
+  animation: sway 8s ease-in-out infinite;
+}

@@ -1,0 +1,53 @@
+
+@layer components {
+  /* Ghibli-styled button */
+  .ghibli-btn {
+    @apply bg-primary/90 hover:bg-primary text-primary-foreground rounded-full px-8 py-4 font-medium shadow-md transition-all duration-300 flex items-center justify-center;
+    box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.5), 0 6px 10px -4px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+  }
+  
+  .ghibli-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 hsl(var(--primary) / 0.5), 0 8px 12px -4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .ghibli-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Enhanced button with more Ghibli-like styling */
+  .ghibli-btn-enhanced {
+    @apply bg-primary/90 hover:bg-primary text-primary-foreground rounded-full px-8 py-4 font-medium shadow-lg transition-all duration-300 flex items-center justify-center;
+    background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+    box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.6), 
+                0 6px 12px -4px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(0);
+  }
+  
+  .ghibli-btn-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 0 hsl(var(--primary) / 0.6), 
+                0 10px 16px -4px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  }
+  
+  .ghibli-btn-enhanced:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.6), 
+                0 4px 8px -4px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  }
+  
+  .ghibli-btn [data-icon],
+  .ghibli-btn-enhanced [data-icon] {
+    @apply ml-3 h-5 w-5 transition-transform;
+  }
+  
+  .ghibli-btn:hover [data-icon],
+  .ghibli-btn-enhanced:hover [data-icon] {
+    transform: translateX(4px);
+  }
+}

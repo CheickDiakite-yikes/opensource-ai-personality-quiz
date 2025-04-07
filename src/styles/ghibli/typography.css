@@ -1,0 +1,11 @@
+
+@layer components {
+  .ghibli-title {
+    @apply font-serif text-foreground;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .ghibli-input {
+    @apply bg-secondary/50 border-border rounded-md shadow-inner;
+  }
+}
