@@ -51,6 +51,22 @@
   50% { transform: rotate(3deg) translateY(-5px); }
 }
 
+/* Whimsical dust animation - new */
+@keyframes dust-float {
+  0% { 
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.2;
+  }
+  50% { 
+    transform: translateY(-20px) translateX(10px) scale(1.1); 
+    opacity: 0.5;
+  }
+  100% { 
+    transform: translateY(-40px) translateX(0) scale(0.9);
+    opacity: 0;
+  }
+}
+
 /* Animation classes */
 .animate-soft-bounce {
   animation: soft-bounce 4s ease-in-out infinite;
@@ -66,4 +82,10 @@
 
 .animate-sway {
   animation: sway 8s ease-in-out infinite;
+}
+
+/* New dust animation class */
+.animate-dust-float {
+  animation: dust-float 8s ease-in-out infinite;
+  animation-fill-mode: both;
 }
