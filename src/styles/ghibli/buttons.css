@@ -1,53 +1,58 @@
 
 @layer components {
-  /* Ghibli-styled button */
   .ghibli-btn {
-    @apply bg-primary/90 hover:bg-primary text-primary-foreground rounded-full px-8 py-4 font-medium shadow-md transition-all duration-300 flex items-center justify-center;
-    box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.5), 0 6px 10px -4px rgba(0, 0, 0, 0.2);
-    transform: translateY(0);
+    @apply relative overflow-hidden bg-orange-800/90 hover:bg-orange-800 text-white rounded-full px-6 py-3 font-medium shadow-lg transition-all duration-300;
+  }
+  
+  .ghibli-btn::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-yellow-600/30 to-transparent opacity-80;
+  }
+  
+  .ghibli-btn::after {
+    content: '';
+    @apply absolute inset-0 bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 20 L40 20 M20 0 L20 40' stroke='white' stroke-width='1' opacity='0.2'/%3E%3C/svg%3E")] opacity-10;
+  }
+  
+  .ghibli-btn span {
+    @apply relative z-10;
   }
   
   .ghibli-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 0 0 hsl(var(--primary) / 0.5), 0 8px 12px -4px rgba(0, 0, 0, 0.3);
+    @apply shadow-xl translate-y-[-2px];
   }
   
-  .ghibli-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Enhanced button with more Ghibli-like styling */
   .ghibli-btn-enhanced {
-    @apply bg-primary/90 hover:bg-primary text-primary-foreground rounded-full px-8 py-4 font-medium shadow-lg transition-all duration-300 flex items-center justify-center;
-    background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary) / 0.9));
-    box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.6), 
-                0 6px 12px -4px rgba(0, 0, 0, 0.25),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
-    transform: translateY(0);
+    @apply relative overflow-hidden bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-full px-6 py-4 font-medium shadow-md transition-all duration-300 hover:shadow-lg hover:from-amber-500 hover:to-orange-500 border border-amber-300/30;
+    text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  .ghibli-btn-enhanced::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-t from-black/10 to-white/20 opacity-60;
   }
   
   .ghibli-btn-enhanced:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 0 hsl(var(--primary) / 0.6), 
-                0 10px 16px -4px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .ghibli-btn-secondary {
+    @apply relative overflow-hidden bg-white/80 backdrop-blur-sm text-amber-800 border border-amber-200 rounded-full px-6 py-4 font-medium shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md;
   }
   
-  .ghibli-btn-enhanced:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 0 hsl(var(--primary) / 0.6), 
-                0 4px 8px -4px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  .ghibli-btn-secondary:hover {
+    transform: translateY(-2px);
   }
   
-  .ghibli-btn [data-icon],
-  .ghibli-btn-enhanced [data-icon] {
-    @apply ml-3 h-5 w-5 transition-transform;
+  .ghibli-btn-outline {
+    @apply relative overflow-hidden bg-transparent hover:bg-white/10 text-primary border border-primary/30 rounded-full px-6 py-3 font-medium transition-all duration-300;
   }
   
-  .ghibli-btn:hover [data-icon],
-  .ghibli-btn-enhanced:hover [data-icon] {
-    transform: translateX(4px);
+  .ghibli-btn-soft {
+    @apply relative overflow-hidden bg-primary/10 hover:bg-primary/20 text-primary rounded-lg px-4 py-2 font-medium transition-all duration-300;
+  }
+  
+  .ghibli-btn-card {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2;
   }
 }
