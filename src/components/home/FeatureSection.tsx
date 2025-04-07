@@ -1,40 +1,31 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Brain, PieChart, Lightbulb, Zap, Leaf } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
 const FeatureSection: React.FC = () => {
   const navigate = useNavigate();
 
   // Features for the landing page with enhanced SEO content
-  const features = [
-    {
-      icon: Brain,
-      title: "Advanced Personality Insights",
-      description: "Our AI analyzes your unique traits and behaviors to deliver a comprehensive personality profile that truly understands you"
-    }, 
-    {
-      icon: PieChart,
-      title: "Detailed Intelligence Analysis",
-      description: "Discover your cognitive strengths and multiple intelligence types with in-depth breakdowns of your mental capabilities"
-    }, 
-    {
-      icon: Lightbulb,
-      title: "Personalized Growth Roadmap",
-      description: "Follow a tailored development path based on your assessment results to become your authentic best self"
-    }, 
-    {
-      icon: Zap,
-      title: "Interactive Progress Tracker",
-      description: "Monitor your personal growth journey with engaging self-improvement activities designed for your personality type"
-    }
-  ];
-
-  return (
-    <div id="features" className="relative z-10 py-12 md:py-24 overflow-hidden">
+  const features = [{
+    icon: Brain,
+    title: "Advanced Personality Insights",
+    description: "Our AI analyzes your unique traits and behaviors to deliver a comprehensive personality profile that truly understands you"
+  }, {
+    icon: PieChart,
+    title: "Detailed Intelligence Analysis",
+    description: "Discover your cognitive strengths and multiple intelligence types with in-depth breakdowns of your mental capabilities"
+  }, {
+    icon: Lightbulb,
+    title: "Personalized Growth Roadmap",
+    description: "Follow a tailored development path based on your assessment results to become your authentic best self"
+  }, {
+    icon: Zap,
+    title: "Interactive Progress Tracker",
+    description: "Monitor your personal growth journey with engaging self-improvement activities designed for your personality type"
+  }];
+  return <div id="features" className="relative z-10 py-12 md:py-24 overflow-hidden">
       {/* Enhanced Ghibli-inspired background with richer paper texture and organic elements */}
       <div className="absolute inset-0 bg-secondary/20 ghibli-rich-texture overflow-hidden">
         {/* Additional animated forest elements in background */}
@@ -54,41 +45,40 @@ const FeatureSection: React.FC = () => {
         
         {/* Floating leaves animation */}
         <div className="absolute h-full w-full overflow-hidden pointer-events-none">
-          {[...Array(6)].map((_, i) => (
-            <div 
-              key={`floating-leaf-${i}`} 
-              className="floating-leaf" 
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${i * 0.8}s`,
-                opacity: 0.4 + Math.random() * 0.2
-              }}
-            >
-              <Leaf 
-                size={12 + Math.random() * 24} 
-                className="text-primary/40"
-                style={{ transform: `rotate(${Math.random() * 360}deg)` }}
-              />
-            </div>
-          ))}
+          {[...Array(6)].map((_, i) => <div key={`floating-leaf-${i}`} className="floating-leaf" style={{
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          animationDelay: `${i * 0.8}s`,
+          opacity: 0.4 + Math.random() * 0.2
+        }}>
+              <Leaf size={12 + Math.random() * 24} className="text-primary/40" style={{
+            transform: `rotate(${Math.random() * 360}deg)`
+          }} />
+            </div>)}
         </div>
         
         {/* Organic blob shapes */}
         <div className="ghibli-blob opacity-20 w-64 h-64 -top-12 -left-12"></div>
-        <div className="ghibli-blob opacity-15 w-80 h-80 -bottom-20 -right-16" 
-             style={{ animationDelay: '3s', backgroundColor: 'rgba(142, 209, 125, 0.15)' }}></div>
+        <div className="ghibli-blob opacity-15 w-80 h-80 -bottom-20 -right-16" style={{
+        animationDelay: '3s',
+        backgroundColor: 'rgba(142, 209, 125, 0.15)'
+      }}></div>
       </div>
       
       {/* Enhanced Content container with richer styling */}
       <div className="container max-w-6xl mx-auto px-4 py-4 sm:py-10 md:py-16 relative">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true, margin: "-100px" }}
-          className="text-center mb-16 relative"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.6
+      }} viewport={{
+        once: true,
+        margin: "-100px"
+      }} className="text-center mb-16 relative">
           {/* Enhanced decorative elements */}
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 opacity-50 animate-sway">
             <svg viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -101,7 +91,7 @@ const FeatureSection: React.FC = () => {
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground ghibli-title">
             How Our Personality Test Works
           </h2>
-          <p className="text-lg max-w-3xl mx-auto text-muted-foreground leading-relaxed">
+          <p className="text-lg max-w-3xl mx-auto leading-relaxed text-lime-700">
             Our sophisticated AI platform analyzes your responses to provide deeply personalized insights 
             about your personality traits and tailored growth opportunities that truly understand you.
           </p>
@@ -109,21 +99,30 @@ const FeatureSection: React.FC = () => {
         
         {/* Enhanced feature cards with better styling for improved accessibility */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {features.map((feature, index) => (
-            <motion.div 
-              key={feature.title} 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              viewport={{ once: true, margin: "-100px" }}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-            >
+          {features.map((feature, index) => <motion.div key={feature.title} initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.5,
+          delay: index * 0.15
+        }} viewport={{
+          once: true,
+          margin: "-100px"
+        }} whileHover={{
+          y: -5,
+          transition: {
+            duration: 0.2
+          }
+        }}>
               <Card className="ghibli-feature-card h-full relative overflow-visible">
                 {/* Watercolor accent */}
-                <div className="ghibli-card-accent" style={{ 
-                  backgroundColor: `hsl(${110 + index * 15}, 70%, 80%, 0.5)`,
-                  transform: `rotate(${-5 + Math.random() * 10}deg)`
-                }}></div>
+                <div className="ghibli-card-accent" style={{
+              backgroundColor: `hsl(${110 + index * 15}, 70%, 80%, 0.5)`,
+              transform: `rotate(${-5 + Math.random() * 10}deg)`
+            }}></div>
                 
                 {/* Content with natural padding */}
                 <CardContent className="p-6 h-full flex flex-col relative z-10">
@@ -132,20 +131,12 @@ const FeatureSection: React.FC = () => {
                     
                     {/* Nature element accent */}
                     <div className="ghibli-nature-accent">
-                      {index % 2 === 0 ? (
-                        <svg viewBox="0 0 50 20" className="w-10 h-4 text-primary/30">
-                          <path d="M1,15 C10,5 20,15 25,10 C30,5 40,15 49,10" 
-                            stroke="currentColor" 
-                            strokeWidth="1.5" 
-                            fill="none" 
-                            strokeLinecap="round" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 30 30" className="w-6 h-6 text-primary/30">
+                      {index % 2 === 0 ? <svg viewBox="0 0 50 20" className="w-10 h-4 text-primary/30">
+                          <path d="M1,15 C10,5 20,15 25,10 C30,5 40,15 49,10" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                        </svg> : <svg viewBox="0 0 30 30" className="w-6 h-6 text-primary/30">
                           <circle cx="15" cy="15" r="5" fill="currentColor" opacity="0.5" />
                           <circle cx="15" cy="15" r="10" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="2 4" />
-                        </svg>
-                      )}
+                        </svg>}
                     </div>
                   </div>
                   
@@ -156,8 +147,7 @@ const FeatureSection: React.FC = () => {
                   <div className="ghibli-card-decoration"></div>
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
+            </motion.div>)}
         </div>
         
         <div className="mt-16 text-center relative">
@@ -178,26 +168,25 @@ const FeatureSection: React.FC = () => {
             </svg>
           </div>
           
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true, margin: "-100px" }}
-          >
-            <Button 
-              size="lg" 
-              className="ghibli-btn-enhanced px-8 py-6 h-auto rounded-full flex items-center justify-center" 
-              onClick={() => navigate("/assessment")} 
-              aria-label="Start personality assessment"
-            >
+          <motion.div initial={{
+          opacity: 0,
+          scale: 0.95
+        }} whileInView={{
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          duration: 0.5
+        }} viewport={{
+          once: true,
+          margin: "-100px"
+        }}>
+            <Button size="lg" className="ghibli-btn-enhanced px-8 py-6 h-auto rounded-full flex items-center justify-center" onClick={() => navigate("/assessment")} aria-label="Start personality assessment">
               <span className="text-lg">Start Your Self-Discovery Journey</span> 
               <ArrowRight className="ml-3 h-5 w-5" aria-hidden="true" />
             </Button>
           </motion.div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FeatureSection;
