@@ -7,10 +7,10 @@ const TestimonialSection: React.FC = () => {
   // Enhanced testimonials with images
   const testimonials = [
     {
-      quote: "This app helped me understand why I react to situations the way I do. It's been genuinely transformative for my personal growth journey.",
-      name: "Sarah K.",
-      designation: "Marketing Director",
-      imageSrc: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80"
+      quote: "WOW! This is amazing! I honestly wasn't expecting it to be so accurate, it completely nailed my personality. It felt to real and I got some work to do lol, I may or may not be that crazy, haha! Can't wait to see what my friends get.",
+      name: "Mikayla Ching",
+      designation: "History and Law Student at WSU",
+      imageSrc: "/lovable-uploads/c036c5f8-27fb-4951-9e53-8358876ebd49.png"
     },
     {
       quote: "No one has gotten me like SOWAI, fun little app to learn more about yourself.",
