@@ -19,9 +19,9 @@ const TestimonialSection: React.FC = () => {
       imageSrc: "/lovable-uploads/7dbee29b-e195-40e9-9276-aa97e44288fb.png"
     },
     {
-      quote: "The assessment was incredibly accurate! I finally feel like I understand myself better and can focus on the right growth areas.",
-      name: "Jessica L.",
-      designation: "Teacher",
+      quote: "I didn't realize AI could read me so well! Sowai was easy, smooth, and surprisingly gave a very detailed report! It was fascinating to see all the career paths aligned with my personality. Loved it!",
+      name: "Tiersen Lenois",
+      designation: "Legal Administrative Specialist at Massumi + Consoli",
       imageSrc: "/lovable-uploads/935925a4-6895-4fd1-ab6d-38c6112194cc.png"
     }
   ];
