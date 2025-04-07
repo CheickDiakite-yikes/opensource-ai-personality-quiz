@@ -51,6 +51,12 @@
   50% { transform: rotate(3deg) translateY(-5px); }
 }
 
+/* Button glow animation */
+@keyframes button-glow {
+  0%, 100% { box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.1); }
+  50% { box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.2); }
+}
+
 /* Firefly animation */
 @keyframes glow-pulse {
   0%, 100% { opacity: 0.2; transform: scale(1); }
@@ -99,4 +105,8 @@
 
 .animate-seed-float {
   animation: seed-float 8s ease-in-out infinite;
+}
+
+.animate-button-glow {
+  animation: button-glow 3s ease-in-out infinite;
 }

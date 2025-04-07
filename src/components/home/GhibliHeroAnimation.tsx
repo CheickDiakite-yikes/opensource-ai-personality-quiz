@@ -7,6 +7,7 @@ import Bird from './hero/Bird';
 import Hills from './hero/Hills';
 import Leaf from './hero/Leaf';
 import HeroContent from './hero/HeroContent';
+import HeroButtons from './hero/HeroButtons';
 import { useAnimationElements } from './hero/useAnimationElements';
 
 const GhibliHeroAnimation: React.FC = () => {
@@ -40,6 +41,9 @@ const GhibliHeroAnimation: React.FC = () => {
       
       {/* Content overlay */}
       <HeroContent mounted={mounted} />
+      
+      {/* Hero Buttons - positioned absolutely relative to parent */}
+      <HeroButtons />
     </div>
   );
 };
