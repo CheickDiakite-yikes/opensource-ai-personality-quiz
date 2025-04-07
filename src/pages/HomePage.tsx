@@ -32,13 +32,13 @@ const HomePage: React.FC = () => {
   return (
     <PageTransition>
       <div className="relative overflow-hidden bg-ghibli-gradient">
-        {/* Hero section with animated Ghibli-style scene - removed excess padding */}
-        <section className="relative">
+        {/* Hero section with animated Ghibli-style scene */}
+        <section className="relative pb-4">
           <GhibliHeroAnimation />
           
-          {/* Call to action buttons - moved up with negative margin to reduce space */}
-          <div className="container mx-auto px-4 -mt-28 sm:-mt-24 md:-mt-20 relative z-10">
-            <div className="flex flex-col gap-4 justify-center items-center">
+          {/* Call to action buttons */}
+          <div className="container mx-auto px-4 -mt-16 relative z-10">
+            <div className="flex flex-col gap-6 justify-center items-center">
               <motion.button 
                 onClick={handleGetStarted} 
                 className="ghibli-btn group flex items-center justify-center w-full sm:w-64 text-lg"
@@ -65,10 +65,12 @@ const HomePage: React.FC = () => {
               </motion.button>
             </div>
           </div>
+          
+          {/* Removed the banner element that was here */}
         </section>
         
         {/* Feature section with Ghibli styling */}
-        <div id="features" className="pt-4">
+        <div id="features">
           <FeatureSection />
         </div>
         
