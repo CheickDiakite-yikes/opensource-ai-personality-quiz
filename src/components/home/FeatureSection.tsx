@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Brain, PieChart, Lightbulb, Zap, Leaf } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const FeatureSection: React.FC = () => {
   const navigate = useNavigate();
@@ -109,20 +110,53 @@ const FeatureSection: React.FC = () => {
         {/* Enhanced feature cards with better styling for improved accessibility */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {features.map((feature, index) => (
-            <motion.article 
+            <motion.div 
               key={feature.title} 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
               viewport={{ once: true, margin: "-100px" }}
-              className="bg-background/80 backdrop-blur-md rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-500 border border-primary/10 ghibli-card"
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
-              <div className="h-14 w-14 rounded-lg bg-primary/15 flex items-center justify-center mb-5 ghibli-icon-container">
-                <feature.icon className="h-7 w-7 text-primary" aria-hidden="true" />
-              </div>
-              <h3 className="text-xl font-serif font-semibold mb-3 text-foreground">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-            </motion.article>
+              <Card className="ghibli-feature-card h-full relative overflow-visible">
+                {/* Watercolor accent */}
+                <div className="ghibli-card-accent" style={{ 
+                  backgroundColor: `hsl(${110 + index * 15}, 70%, 80%, 0.5)`,
+                  transform: `rotate(${-5 + Math.random() * 10}deg)`
+                }}></div>
+                
+                {/* Content with natural padding */}
+                <CardContent className="p-6 h-full flex flex-col relative z-10">
+                  <div className="ghibli-icon-wrapper mb-5">
+                    <feature.icon className="h-7 w-7 text-primary" aria-hidden="true" />
+                    
+                    {/* Nature element accent */}
+                    <div className="ghibli-nature-accent">
+                      {index % 2 === 0 ? (
+                        <svg viewBox="0 0 50 20" className="w-10 h-4 text-primary/30">
+                          <path d="M1,15 C10,5 20,15 25,10 C30,5 40,15 49,10" 
+                            stroke="currentColor" 
+                            strokeWidth="1.5" 
+                            fill="none" 
+                            strokeLinecap="round" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 30 30" className="w-6 h-6 text-primary/30">
+                          <circle cx="15" cy="15" r="5" fill="currentColor" opacity="0.5" />
+                          <circle cx="15" cy="15" r="10" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="2 4" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-xl font-serif font-semibold mb-3 text-foreground">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  
+                  {/* Subtle decorative element */}
+                  <div className="ghibli-card-decoration"></div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
         
