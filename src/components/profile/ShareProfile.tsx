@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,8 +17,8 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   // Generate a proper shareable URL
   const shareUrl = `${window.location.origin}/shared/${analysis.id || 'demo'}`;
   
-  // Set the image URL for social media previews
-  const shareImageUrl = "https://www.sowei.io/lovable-uploads/5f4224f1-f59e-4af0-90ab-186051436b51.png";
+  // Update the image URL for social media previews
+  const shareImageUrl = "/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png";
   
   // Handle copy to clipboard
   const handleCopy = () => {
