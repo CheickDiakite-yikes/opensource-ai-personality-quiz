@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import NatureBorder from "@/components/home/hero/NatureBorder";
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ const HomePage: React.FC = () => {
     <PageTransition>
       <div className="relative overflow-hidden bg-ghibli-gradient">
         {/* Hero section with animated Ghibli-style scene */}
-        <section className="relative pb-4">
+        <section className="relative">
           <GhibliHeroAnimation />
           
           {/* Call to action buttons */}
@@ -66,11 +67,12 @@ const HomePage: React.FC = () => {
             </div>
           </div>
           
-          {/* Removed the banner element that was here */}
+          {/* Nature-inspired border element */}
+          <NatureBorder />
         </section>
         
         {/* Feature section with Ghibli styling */}
-        <div id="features">
+        <div id="features" className="pt-6">
           <FeatureSection />
         </div>
         

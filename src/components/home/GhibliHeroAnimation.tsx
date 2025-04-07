@@ -13,7 +13,7 @@ const GhibliHeroAnimation: React.FC = () => {
   const { mounted, clouds, birds, leaves } = useAnimationElements();
 
   return (
-    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-b-3xl">
+    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-b-lg">
       {/* Sky and static elements */}
       <SkyElements />
       

@@ -37,4 +37,35 @@
     animation: leaf-float 20s ease-in-out infinite alternate;
     pointer-events: none;
   }
+  
+  /* Firefly/glowing particle effect */
+  .ghibli-firefly {
+    @apply absolute rounded-full;
+    background-color: rgba(255, 251, 172, 0.8);
+    box-shadow: 0 0 4px 2px rgba(255, 251, 172, 0.4);
+    filter: blur(1px);
+  }
+  
+  /* Nature border elements */
+  .nature-border-wave {
+    @apply w-full h-12 absolute bottom-0 left-0 right-0;
+    background-image: url("data:image/svg+xml,%3Csvg width='1200' height='120' viewBox='0 0 1200 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' fill='%2381c784' opacity='.2'%3E%3C/path%3E%3C/svg%3E");
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+  
+  /* Dandelion seed */
+  .ghibli-dandelion-seed {
+    @apply absolute pointer-events-none;
+  }
+  
+  .ghibli-dandelion-seed circle {
+    fill: white;
+  }
+  
+  .ghibli-dandelion-seed line {
+    stroke: white;
+    stroke-opacity: 0.7;
+    stroke-width: 0.5;
+  }
 }
