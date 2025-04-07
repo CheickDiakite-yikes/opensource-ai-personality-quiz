@@ -13,16 +13,16 @@ const TestimonialSection: React.FC = () => {
       imageSrc: "/lovable-uploads/c036c5f8-27fb-4951-9e53-8358876ebd49.png"
     },
     {
-      quote: "No one has gotten me like SOWAI, fun little app to learn more about yourself.",
-      name: "Dylon Adu-Gyamfi",
-      designation: "Business Development Rep",
-      imageSrc: "/lovable-uploads/7dbee29b-e195-40e9-9276-aa97e44288fb.png"
-    },
-    {
       quote: "I didn't realize AI could read me so well! Sowai was easy, smooth, and surprisingly gave a very detailed report! It was fascinating to see all the career paths aligned with my personality. Loved it!",
       name: "Tiersen Lenois",
       designation: "Legal Administrative Specialist at Massumi + Consoli",
       imageSrc: "/lovable-uploads/40a30885-9182-4bd4-a8fc-7e4a9cc2503a.png"
+    },
+    {
+      quote: "No one has gotten me like SOWAI, fun little app to learn more about yourself.",
+      name: "Dylon Adu-Gyamfi",
+      designation: "Business Development Rep",
+      imageSrc: "/lovable-uploads/7dbee29b-e195-40e9-9276-aa97e44288fb.png"
     }
   ];
 
