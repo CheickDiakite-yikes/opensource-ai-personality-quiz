@@ -22,7 +22,7 @@ const TestimonialSection: React.FC = () => {
       quote: "I didn't realize AI could read me so well! Sowai was easy, smooth, and surprisingly gave a very detailed report! It was fascinating to see all the career paths aligned with my personality. Loved it!",
       name: "Tiersen Lenois",
       designation: "Legal Administrative Specialist at Massumi + Consoli",
-      imageSrc: "/lovable-uploads/935925a4-6895-4fd1-ab6d-38c6112194cc.png"
+      imageSrc: "/lovable-uploads/40a30885-9182-4bd4-a8fc-7e4a9cc2503a.png"
     }
   ];
 
