@@ -7,7 +7,7 @@ import { LeafProps } from './Leaf';
 export interface AnimationElements {
   mounted: boolean;
   clouds: CloudProps[];
-  birds: BirdProps[];
+  birds: (BirdProps & { key: string })[]; // Updated to ensure key exists
   leaves: {
     key: string;
     initialX: number;
@@ -85,7 +85,7 @@ export function useAnimationElements(): AnimationElements {
   );
 
   // Generate birds
-  const birds: BirdProps[] = Array.from(
+  const birds = Array.from(
     {
       length: 5
     },

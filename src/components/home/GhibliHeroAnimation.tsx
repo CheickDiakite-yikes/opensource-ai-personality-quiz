@@ -26,7 +26,7 @@ const GhibliHeroAnimation: React.FC = () => {
       ))}
       
       {/* Birds */}
-      {birds.map(bird => (
+      {birds.map((bird) => (
         <Bird key={bird.key} {...bird} />
       ))}
       

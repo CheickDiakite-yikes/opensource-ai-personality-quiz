@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export interface BirdProps {
+  key?: string; // Added key property
   initialX: number;
   initialY: number;
   size: number;
