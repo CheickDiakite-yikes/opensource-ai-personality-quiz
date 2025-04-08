@@ -31,7 +31,8 @@ export const useAIAnalysis = () => {
     getAnalysisHistory,
     setCurrentAnalysis,
     refreshAnalysis,
-    fetchAnalysesFromSupabase
+    fetchAnalysesFromSupabase,
+    loadAllAnalysesFromSupabase
   } = useAIAnalysisCore();
 
   // Add function to get analysis by ID (for shared profiles)
@@ -157,6 +158,7 @@ export const useAIAnalysis = () => {
     setCurrentAnalysis,
     refreshAnalysis,
     getAnalysisById,
-    fetchAnalysesFromSupabase
+    fetchAnalysesFromSupabase,
+    loadAllAnalysesFromSupabase
   };
 };
