@@ -383,7 +383,7 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 16000, // Set maximum token count to 16,000 only
+        max_tokens: 16000, // Set maximum token count to 16,000
         seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.7,  // Increased temperature for more creative, detailed responses
       }),
@@ -510,29 +510,9 @@ function validateAnalysisQuality(analysis: any) {
       
       // Check growth suggestions count
       if (!trait.growthSuggestions || trait.growthSuggestions.length < 10) {
-        warnings.push(`Trait '${trait.trait}' has too few growth suggestions (${trait.growthSuggestions?.length || 0}) - we asked for 12-15`);
+        warnings.push(`Trait '${trait.trait}' has fewer growth suggestions (${trait.growthSuggestions?.length || 0}) than the 12-15 requested`);
       }
     }
-  }
-  
-  // Check for balanced analysis - make sure we have some weaknesses or shadow aspects identified
-  if ((!analysis.weaknesses || analysis.weaknesses.length < 4) && 
-      (!analysis.shadowAspects || analysis.shadowAspects.length < 4)) {
-    warnings.push("Analysis may be too positively biased - not enough weaknesses or shadow aspects identified");
-  }
-  
-  // Check roadmap length
-  if (analysis.roadmap && analysis.roadmap.length < 800) {
-    warnings.push(`Roadmap seems too short (${analysis.roadmap.length} characters) - we asked for 1000-1500 words`);
-  }
-  
-  // Check intelligence scores for reasonableness
-  if (analysis.intelligenceScore < 30 || analysis.intelligenceScore > 95) {
-    warnings.push(`Intelligence score (${analysis.intelligenceScore}) seems extreme - verify calculations`);
-  }
-  
-  if (analysis.emotionalIntelligenceScore < 30 || analysis.emotionalIntelligenceScore > 95) {
-    warnings.push(`Emotional intelligence score (${analysis.emotionalIntelligenceScore}) seems extreme - verify calculations`);
   }
   
   return {

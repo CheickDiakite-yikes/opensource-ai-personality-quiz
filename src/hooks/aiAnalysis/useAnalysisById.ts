@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,23 +118,24 @@ export const useAnalysisById = () => {
               // Initialize traits as an empty array if it's not already an array
               result.traits = Array.isArray(result.traits) ? [...result.traits] : [];
               
-              // If there's at least one trait, keep it
-              if (result.traits.length === 0) {
-                result.traits = [{
+              const traitCount = result.traits.length;
+              
+              if (traitCount === 0) {
+                result.traits.push({
                   trait: "Analysis Incomplete", 
                   score: 5, 
                   description: "The analysis process didn't generate enough trait data. This typically happens when the AI model doesn't receive enough detailed responses.",
                   strengths: ["Not available - incomplete analysis"],
                   challenges: ["Not available - incomplete analysis"],
                   growthSuggestions: ["Consider retaking the assessment with more detailed answers"]
-                }];
+                });
               }
               
               // Add a note about the analysis being incomplete
               result.traits.push({
                 trait: "Analysis Note", 
                 score: 0, 
-                description: "We expected 8-12 personality traits but only found " + result.traits.length + ". The analysis may be incomplete.",
+                description: `Expected 8-12 traits but found only ${traitCount}. This typically happens when the AI doesn't have enough detailed responses to analyze.`,
                 strengths: ["Try the Fix Analysis button or retake the assessment"],
                 challenges: ["Analysis data is incomplete"],
                 growthSuggestions: ["Provide more detailed answers in your assessment"]
