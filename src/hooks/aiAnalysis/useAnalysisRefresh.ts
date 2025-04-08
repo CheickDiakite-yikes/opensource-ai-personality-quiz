@@ -62,8 +62,41 @@ export const useAnalysisRefresh = (
               throw new Error("No valid analyses after conversion");
             }
             
+            // Validate critical data in analyses
+            const validatedAnalyses = analyses.map(analysis => {
+              // If an analysis has no traits, add a placeholder trait
+              if (!analysis.traits || analysis.traits.length === 0) {
+                console.warn(`Analysis ${analysis.id} has no traits, adding placeholder`);
+                analysis.traits = [{
+                  trait: "Analysis Incomplete", 
+                  score: 5, 
+                  description: "This analysis didn't generate enough trait data. You may want to retake the assessment.",
+                  strengths: ["Not available"],
+                  challenges: ["Not available"],
+                  growthSuggestions: ["Consider retaking the assessment"]
+                }];
+              }
+              
+              // Ensure intelligence data is present
+              if (!analysis.intelligence) {
+                console.warn(`Analysis ${analysis.id} has no intelligence data, adding placeholder`);
+                analysis.intelligence = {
+                  type: "Analysis Incomplete",
+                  score: 5,
+                  description: "Intelligence analysis data was incomplete.",
+                  domains: [{
+                    name: "General Intelligence",
+                    score: 5,
+                    description: "Intelligence data was incomplete in this analysis."
+                  }]
+                };
+              }
+              
+              return analysis;
+            });
+            
             // Sort by date (newest first) and update state
-            const sortedAnalyses = sortAnalysesByDate(analyses);
+            const sortedAnalyses = sortAnalysesByDate(validatedAnalyses);
             actions.setAnalysisHistory(sortedAnalyses);
             
             // Only update current analysis if not already set or if it's different

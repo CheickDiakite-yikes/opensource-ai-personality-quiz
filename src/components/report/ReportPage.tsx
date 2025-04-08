@@ -28,6 +28,7 @@ const ReportPage: React.FC = () => {
   const [hasAttemptedToLoadAnalysis, setHasAttemptedToLoadAnalysis] = useState(false);
   const [forcedRefresh, setForcedRefresh] = useState(false);
   const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
+  const [loadAttempts, setLoadAttempts] = useState(0);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -42,6 +43,11 @@ const ReportPage: React.FC = () => {
       setForcedRefresh(true);
       refreshAnalysis().then(() => {
         console.log("Analysis refreshed after assessment completion");
+      }).catch(error => {
+        console.error("Error refreshing after assessment completion:", error);
+        toast.error("Could not load your latest results", {
+          description: "Please try refreshing the page"
+        });
       });
     }
   }, [location.state, forcedRefresh, refreshAnalysis]);
@@ -52,68 +58,115 @@ const ReportPage: React.FC = () => {
     if ((isLoading && !isChangingAnalysis) || stableAnalysis) return;
     
     const loadAnalysis = async () => {
-      // Force a refresh when the component mounts to ensure we have the latest data
-      if (!forcedRefresh) {
-        await refreshAnalysis();
-        setForcedRefresh(true);
-      }
-      
-      // If we have an ID from the URL, try to load that specific analysis
-      if (id) {
-        const success = setCurrentAnalysis(id);
-        
-        // If setCurrentAnalysis fails, try to fetch the analysis directly
-        if (!success) {
-          console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
-          const directAnalysis = await getAnalysisById(id);
-          
-          if (directAnalysis) {
-            console.log(`Successfully fetched analysis ${id} directly`);
-            setStableAnalysis(directAnalysis);
-            return;
-          }
+      try {
+        // Force a refresh when the component mounts to ensure we have the latest data
+        if (!forcedRefresh) {
+          await refreshAnalysis();
+          setForcedRefresh(true);
         }
         
-        // If we failed to load the specified analysis and haven't already attempted to handle this
-        if (!success && !analysis && !stableAnalysis && !hasAttemptedToLoadAnalysis) {
-          setHasAttemptedToLoadAnalysis(true);
+        // If we have an ID from the URL, try to load that specific analysis
+        if (id) {
+          const success = setCurrentAnalysis(id);
           
-          // If we have other analyses available, redirect to the most recent one
-          if (analysisHistory && analysisHistory.length > 0) {
-            toast.info("Redirecting to your most recent analysis", {
-              duration: 3000
-            });
-            navigate(`/report/${analysisHistory[0].id}`, { replace: true });
-          } else {
-            // No analyses available at all, redirect to assessment
-            toast.error("Could not find the requested analysis", {
-              description: "Please try taking the assessment again or log in to access your saved analyses",
-              duration: 5000
-            });
+          // If setCurrentAnalysis fails, try to fetch the analysis directly
+          if (!success) {
+            console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
+            const directAnalysis = await getAnalysisById(id);
             
-            navigate("/assessment", { replace: true });
+            if (directAnalysis) {
+              console.log(`Successfully fetched analysis ${id} directly`);
+              setStableAnalysis(directAnalysis);
+              return;
+            }
           }
+          
+          // If we failed to load the specified analysis and haven't already attempted to handle this
+          if (!success && !analysis && !stableAnalysis && !hasAttemptedToLoadAnalysis) {
+            setHasAttemptedToLoadAnalysis(true);
+            
+            // If we have other analyses available, redirect to the most recent one
+            if (analysisHistory && analysisHistory.length > 0) {
+              toast.info("Redirecting to your most recent analysis", {
+                duration: 3000
+              });
+              navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+            } else {
+              // No analyses available at all, redirect to assessment
+              toast.error("Could not find the requested analysis", {
+                description: "Please try taking the assessment again or log in to access your saved analyses",
+                duration: 5000
+              });
+              
+              navigate("/assessment", { replace: true });
+            }
+          }
+        } else if (analysisHistory && analysisHistory.length > 0) {
+          // If no ID is provided in the URL but we have analyses, redirect to the latest one
+          navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+        } else if (!hasAttemptedToLoadAnalysis) {
+          // No ID in URL and no analyses available
+          setHasAttemptedToLoadAnalysis(true);
+          toast.error("No analysis reports found", {
+            description: "Please complete the assessment first to view your report",
+            duration: 5000
+          });
+          navigate("/assessment", { replace: true });
         }
-      } else if (analysisHistory && analysisHistory.length > 0) {
-        // If no ID is provided in the URL but we have analyses, redirect to the latest one
-        navigate(`/report/${analysisHistory[0].id}`, { replace: true });
-      } else if (!hasAttemptedToLoadAnalysis) {
-        // No ID in URL and no analyses available
-        setHasAttemptedToLoadAnalysis(true);
-        toast.error("No analysis reports found", {
-          description: "Please complete the assessment first to view your report",
-          duration: 5000
-        });
-        navigate("/assessment", { replace: true });
+      } catch (error) {
+        console.error("Error in loadAnalysis:", error);
+        
+        // Implement retry mechanism for loading analysis data
+        if (loadAttempts < 2) { // Try up to 3 times (initial + 2 retries)
+          setLoadAttempts(prev => prev + 1);
+          const delay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s
+          console.log(`Retrying analysis load (attempt ${loadAttempts + 1}) in ${delay}ms`);
+          
+          setTimeout(loadAnalysis, delay);
+        } else {
+          toast.error("Failed to load analysis after multiple attempts", {
+            description: "Please try refreshing the page",
+            duration: 5000
+          });
+        }
       }
     };
     
     loadAnalysis();
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
+      // Make sure this analysis has the minimum required data structure
+      if (!analysis.traits || analysis.traits.length === 0) {
+        console.warn("Analysis is missing traits data:", analysis.id);
+        // Add a minimal placeholder trait to prevent rendering errors
+        analysis.traits = [{
+          trait: "Analysis Processing",
+          score: 5,
+          description: "Your analysis is still being processed or has incomplete trait data.",
+          strengths: ["Not available yet"],
+          challenges: ["Not available yet"],
+          growthSuggestions: ["Please check back shortly or try regenerating your analysis."]
+        }];
+      }
+      
+      if (!analysis.intelligence) {
+        console.warn("Analysis is missing intelligence data:", analysis.id);
+        // Add minimal placeholder intelligence data
+        analysis.intelligence = {
+          type: "Analysis Processing",
+          score: 5,
+          description: "Intelligence profile is being processed.",
+          domains: [{
+            name: "General Intelligence",
+            score: 5,
+            description: "Intelligence data is incomplete."
+          }]
+        };
+      }
+      
       setStableAnalysis(analysis);
       setIsChangingAnalysis(false);
       // Update the URL if it doesn't already match the current analysis ID
