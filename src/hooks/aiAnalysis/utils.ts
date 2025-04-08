@@ -52,7 +52,6 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       motivators: Array.isArray(item.motivators) ? item.motivators : [],
       inhibitors: Array.isArray(item.inhibitors) ? item.inhibitors : [],
       weaknesses: Array.isArray(item.weaknesses) ? item.weaknesses : [],
-      shadowAspects: Array.isArray(item.shadow_aspects) ? item.shadow_aspects : [],
       growthAreas: Array.isArray(item.growth_areas) ? item.growth_areas : [],
       relationshipPatterns: Array.isArray(item.relationship_patterns) ? item.relationship_patterns : [],
       careerSuggestions: Array.isArray(item.career_suggestions) ? item.career_suggestions : [],

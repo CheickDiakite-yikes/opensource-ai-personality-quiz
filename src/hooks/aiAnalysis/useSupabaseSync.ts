@@ -14,7 +14,7 @@ export const useSupabaseSync = () => {
   const MAX_RETRY_ATTEMPTS = 3;
 
   // Helper function for retrying failed requests with exponential backoff
-  const retryWithBackoff = async (operation: () => Promise<any>, maxRetries = MAX_RETRY_ATTEMPTS) => {
+  const retryWithBackoff = async <T,>(operation: () => Promise<T>, maxRetries = MAX_RETRY_ATTEMPTS): Promise<T> => {
     let attempt = 0;
     
     while (attempt <= maxRetries) {
@@ -31,6 +31,10 @@ export const useSupabaseSync = () => {
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
+    
+    // This should never be reached because of the throw above,
+    // but TypeScript needs this to ensure a return value
+    throw new Error("Max retries exceeded");
   };
 
   // Fetch analyses from Supabase
@@ -41,7 +45,7 @@ export const useSupabaseSync = () => {
       console.log("Fetching all analyses for user:", user.id);
       
       // Try to fetch with retries for better reliability
-      const { data, error } = await retryWithBackoff(() => 
+      const { data, error } = await retryWithBackoff(async () => 
         supabase
           .from('analyses')
           .select('*')
