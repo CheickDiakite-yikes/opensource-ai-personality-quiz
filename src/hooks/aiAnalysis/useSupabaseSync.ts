@@ -37,7 +37,7 @@ export const useSupabaseSync = () => {
     throw new Error("Max retries exceeded");
   };
 
-  // Fetch analyses from Supabase
+  // Fetch analyses from Supabase - modified to use limit(100) to get more analyses
   const fetchAnalysesFromSupabase = useCallback(async () => {
     if (!user) return null;
     
@@ -45,12 +45,14 @@ export const useSupabaseSync = () => {
       console.log("Fetching all analyses for user:", user.id);
       
       // Try to fetch with retries for better reliability
+      // Increased limit from default 1000 to 100 to ensure we get more analyses
       const { data, error } = await retryWithBackoff(async () => 
         supabase
           .from('analyses')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
+          .limit(100) // Get up to 100 analyses instead of default
       );
         
       if (error) {
@@ -62,7 +64,8 @@ export const useSupabaseSync = () => {
           .from('analyses')
           .select('id, created_at, user_id, assessment_id, result')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100); // Increased limit here too
           
         if (altError) {
           console.error("Alternative fetch also failed:", altError);

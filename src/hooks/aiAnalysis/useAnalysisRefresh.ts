@@ -44,11 +44,13 @@ export const useAnalysisRefresh = (
           console.log("Fetching all analyses for user:", user.id);
           
           // Use a more focused query to reduce data transfer
+          // Increased limit to 100 to ensure we get all analyses
           let query = supabase
             .from('analyses')
             .select('*')
             .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(100); // Increased from default to 100
             
           const { data, error } = await query;
             
@@ -61,7 +63,8 @@ export const useAnalysisRefresh = (
               .from('analyses')
               .select('id, created_at, user_id, assessment_id, result')
               .eq('user_id', user.id)
-              .order('created_at', { ascending: false });
+              .order('created_at', { ascending: false })
+              .limit(100); // Increased limit here too
               
             if (altError) {
               console.error("Alternative fetch also failed:", altError);
@@ -105,7 +108,7 @@ export const useAnalysisRefresh = (
             // Validate critical data in analyses
             const validatedAnalyses = analyses.map(analysis => {
               // If an analysis has no traits, add a placeholder trait
-              if (!analysis.traits || analysis.traits.length === 0) {
+              if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length === 0) {
                 console.warn(`Analysis ${analysis.id} has no traits, adding placeholder`);
                 analysis.traits = [{
                   trait: "Analysis Incomplete", 
@@ -115,6 +118,19 @@ export const useAnalysisRefresh = (
                   challenges: ["Not available"],
                   growthSuggestions: ["Consider retaking the assessment"]
                 }];
+              }
+              
+              // If traits array exists but is too small, add an informational trait
+              if (Array.isArray(analysis.traits) && analysis.traits.length < 2) {
+                console.warn(`Analysis ${analysis.id} has only ${analysis.traits.length} traits, adding informational trait`);
+                analysis.traits.push({
+                  trait: "Analysis Note", 
+                  score: 0, 
+                  description: "We expected 8-12 personality traits but only found " + analysis.traits.length + ". The analysis may be incomplete.",
+                  strengths: ["Try the Fix Analysis button or retake the assessment"],
+                  challenges: ["Analysis data is incomplete"],
+                  growthSuggestions: ["Provide more detailed answers in your assessment"]
+                });
               }
               
               // Ensure intelligence data is present

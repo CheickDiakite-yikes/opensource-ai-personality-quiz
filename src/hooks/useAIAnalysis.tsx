@@ -60,7 +60,7 @@ export const useAIAnalysis = () => {
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
           // First try getting data directly from the analyses table
-          let { data, error } = await supabase
+          const { data, error } = await supabase
             .from('analyses')
             .select('*')
             .eq('id', id)

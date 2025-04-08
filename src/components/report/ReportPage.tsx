@@ -36,6 +36,7 @@ const ReportPage: React.FC = () => {
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
     const history = getAnalysisHistory();
+    console.log(`Retrieved ${history.length} analyses in history`);
     return history;
   }, [getAnalysisHistory]);
   
@@ -97,6 +98,14 @@ const ReportPage: React.FC = () => {
             
             if (directAnalysis) {
               console.log(`Successfully fetched analysis ${id} directly`);
+              
+              // Check if analysis is incomplete
+              if (!directAnalysis.traits || !Array.isArray(directAnalysis.traits) || directAnalysis.traits.length < 2) {
+                console.warn("Analysis from direct fetch is incomplete:", 
+                  `traits: ${Array.isArray(directAnalysis.traits) ? directAnalysis.traits.length : 'not an array'}`);
+                setShowErrorHandler(true);
+              }
+              
               setStableAnalysis(directAnalysis);
               return;
             }
@@ -111,6 +120,7 @@ const ReportPage: React.FC = () => {
             
             // After loading all analyses, try again to set the current analysis
             if (allAnalyses && allAnalyses.length > 0) {
+              console.log(`Loaded ${allAnalyses.length} analyses, trying to find ${id} again`);
               const secondAttemptSuccess = setCurrentAnalysis(id);
               
               if (secondAttemptSuccess) {
@@ -118,11 +128,24 @@ const ReportPage: React.FC = () => {
                 return;
               }
               
-              // If we still can't find the specified analysis, redirect to the most recent one
-              toast.info("Redirecting to your most recent analysis", {
-                duration: 3000
-              });
-              navigate(`/report/${allAnalyses[0].id}`, { replace: true });
+              // If we still can't find the specified analysis, look for a complete analysis
+              const completeAnalysis = allAnalyses.find(a => 
+                a.traits && Array.isArray(a.traits) && a.traits.length >= 2
+              );
+              
+              if (completeAnalysis) {
+                console.log(`Found complete analysis with ID ${completeAnalysis.id}, redirecting to it`);
+                toast.info("Redirecting to a more complete analysis", {
+                  duration: 3000
+                });
+                navigate(`/report/${completeAnalysis.id}`, { replace: true });
+              } else {
+                // If there's no complete analysis, use the most recent one
+                toast.info("Redirecting to your most recent analysis", {
+                  duration: 3000
+                });
+                navigate(`/report/${allAnalyses[0].id}`, { replace: true });
+              }
             } else {
               // No analyses available at all, redirect to assessment
               toast.error("Could not find the requested analysis", {
@@ -134,14 +157,33 @@ const ReportPage: React.FC = () => {
             }
           }
         } else if (analysisHistory && analysisHistory.length > 0) {
-          // If no ID is provided in the URL but we have analyses, redirect to the latest one
-          navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+          // If no ID is provided in the URL but we have analyses, try to find a complete one
+          const completeAnalysis = analysisHistory.find(a => 
+            a.traits && Array.isArray(a.traits) && a.traits.length >= 2
+          );
+          
+          if (completeAnalysis) {
+            navigate(`/report/${completeAnalysis.id}`, { replace: true });
+          } else {
+            // If no complete analysis, use the most recent one
+            navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+          }
         } else if (!hasAttemptedToLoadAnalysis) {
           // Try to load all analyses as a last resort
           const allAnalyses = await loadAllAnalysesFromSupabase();
           
           if (allAnalyses && allAnalyses.length > 0) {
-            navigate(`/report/${allAnalyses[0].id}`, { replace: true });
+            // Try to find a complete analysis
+            const completeAnalysis = allAnalyses.find(a => 
+              a.traits && Array.isArray(a.traits) && a.traits.length >= 2
+            );
+            
+            if (completeAnalysis) {
+              navigate(`/report/${completeAnalysis.id}`, { replace: true });
+            } else {
+              // If no complete analysis, use the most recent one
+              navigate(`/report/${allAnalyses[0].id}`, { replace: true });
+            }
             return;
           }
           
@@ -182,8 +224,8 @@ const ReportPage: React.FC = () => {
     if (!analysis) return true;
     
     // Check for critical missing data
-    if (!analysis.traits || analysis.traits.length < 2) {
-      console.warn("Analysis has insufficient traits:", analysis.traits?.length || 0);
+    if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
+      console.warn("Analysis has insufficient traits:", Array.isArray(analysis.traits) ? analysis.traits.length : 'not an array');
       return true;
     }
     
@@ -205,15 +247,26 @@ const ReportPage: React.FC = () => {
           setShowErrorHandler(true);
           
           // Add fallbacks to prevent crashes, even as we show the error handler
-          if (!analysis.traits || analysis.traits.length < 2) {
-            const traitCount = analysis.traits?.length || 0;
-            
+          if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
             // Keep existing traits if any
-            analysis.traits = analysis.traits || [];
+            analysis.traits = Array.isArray(analysis.traits) ? [...analysis.traits] : [];
+            
+            const traitCount = analysis.traits.length;
+            
+            if (traitCount === 0) {
+              analysis.traits.push({
+                trait: "Analysis Incomplete", 
+                score: 5,
+                description: "The analysis process didn't generate enough trait data.",
+                strengths: ["Not available - incomplete analysis"],
+                challenges: ["Not available - incomplete analysis"],
+                growthSuggestions: ["Consider retaking the assessment with more detailed answers"]
+              });
+            }
             
             // Add a note about the analysis being incomplete
             analysis.traits.push({
-              trait: "Analysis Incomplete", 
+              trait: "Analysis Note", 
               score: 0, 
               description: `Expected 8-12 traits but found only ${traitCount}. This typically happens when the AI doesn't have enough detailed responses to analyze.`,
               strengths: ["Try the Fix Analysis button or retake the assessment"],
@@ -234,6 +287,8 @@ const ReportPage: React.FC = () => {
               }]
             };
           }
+        } else {
+          setShowErrorHandler(false);
         }
         
         setStableAnalysis(analysis);
@@ -271,6 +326,14 @@ const ReportPage: React.FC = () => {
       
       if (directAnalysis) {
         console.log(`Successfully fetched analysis ${analysisId} directly`);
+        
+        // Check if the analysis is incomplete
+        if (isAnalysisIncomplete(directAnalysis)) {
+          setShowErrorHandler(true);
+        } else {
+          setShowErrorHandler(false);
+        }
+        
         setStableAnalysis(directAnalysis);
         navigate(`/report/${analysisId}`, { replace: false });
       } else {
@@ -294,7 +357,7 @@ const ReportPage: React.FC = () => {
     } else {
       navigate(`/report/${analysisId}`, { replace: false });
     }
-  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase]);
+  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase, isAnalysisIncomplete]);
   
   // Show loading state only on initial load or when changing analyses
   if ((isLoading && !stableAnalysis) || isChangingAnalysis) {
@@ -308,8 +371,17 @@ const ReportPage: React.FC = () => {
   // Show error handler if we've detected an issue with the analysis
   if (showErrorHandler) {
     // Get trait count from current analysis if available
-    const traitCount = stableAnalysis?.traits?.length || analysis?.traits?.length || 0;
-    const errorDetails = `Analysis ID: ${stableAnalysis?.id || analysis?.id || 'unknown'}\nTraits found: ${traitCount}\nExpected: 8-12 traits`;
+    const traitCount = stableAnalysis?.traits && Array.isArray(stableAnalysis?.traits) 
+      ? stableAnalysis.traits.length 
+      : (analysis?.traits && Array.isArray(analysis?.traits) ? analysis.traits.length : 0);
+    
+    // Get total analyses count
+    const totalAnalyses = analysisHistory ? analysisHistory.length : 0;
+    
+    const errorDetails = `Analysis ID: ${stableAnalysis?.id || analysis?.id || 'unknown'}
+Traits found: ${traitCount}
+Expected: 8-12 traits
+Total analyses available: ${totalAnalyses}`;
     
     return (
       <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'}`}>
