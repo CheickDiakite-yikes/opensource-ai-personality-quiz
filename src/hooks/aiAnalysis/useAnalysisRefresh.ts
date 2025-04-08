@@ -14,6 +14,7 @@ export const useAnalysisRefresh = (
 ) => {
   const { user } = useAuth();
   const refreshInProgressRef = useRef(false);
+  const lastRefreshAttemptRef = useRef<Date | null>(null);
 
   const refreshAnalysis = useCallback(async () => {
     // Prevent concurrent or rapid successive refreshes
@@ -21,43 +22,62 @@ export const useAnalysisRefresh = (
       return;
     }
 
+    // Prevent rapid successive refreshes (limit to once every 2 seconds)
+    const now = new Date();
+    if (lastRefreshAttemptRef.current && 
+        now.getTime() - lastRefreshAttemptRef.current.getTime() < 2000) {
+      return;
+    }
+    lastRefreshAttemptRef.current = now;
+
     try {
       refreshInProgressRef.current = true;
       actions.setIsLoading(true);
       
       // First, try to get analyses from Supabase if user is logged in
       if (user) {
-        const { data, error } = await supabase
-          .from('analyses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          console.error("Error fetching analyses from Supabase:", error);
-          toast.error("Failed to load analysis data from cloud");
-        } else if (data && data.length > 0) {
-          console.log(`Loaded ${data.length} analyses from Supabase`);
-          
-          // Convert Supabase data to PersonalityAnalysis objects
-          const analyses = data.map(convertToPersonalityAnalysis);
-          
-          // Sort by date (newest first) and update state
-          const sortedAnalyses = sortAnalysesByDate(analyses);
-          actions.setAnalysisHistory(sortedAnalyses);
-          
-          // Only update current analysis if not already set or if it's different
-          if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
-            actions.setAnalysis(sortedAnalyses[0]);
-            // Only show toast on initial load or when analysis actually changes
-            if (!state.lastRefresh || new Date().getTime() - state.lastRefresh.getTime() > 5000) {
-              toast.success("Analysis data refreshed from cloud");
+        try {
+          const { data, error } = await supabase
+            .from('analyses')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+            
+          if (error) {
+            console.error("Error fetching analyses from Supabase:", error);
+            toast.error("Failed to load analysis data from cloud", {
+              description: "Falling back to locally stored data"
+            });
+          } else if (data && data.length > 0) {
+            console.log(`Loaded ${data.length} analyses from Supabase`);
+            
+            // Convert Supabase data to PersonalityAnalysis objects
+            const analyses = data.map(convertToPersonalityAnalysis);
+            
+            // Sort by date (newest first) and update state
+            const sortedAnalyses = sortAnalysesByDate(analyses);
+            actions.setAnalysisHistory(sortedAnalyses);
+            
+            // Only update current analysis if not already set or if it's different
+            if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
+              actions.setAnalysis(sortedAnalyses[0]);
+              // Only show toast on initial load or when analysis actually changes
+              if (!state.lastRefresh || new Date().getTime() - state.lastRefresh.getTime() > 5000) {
+                toast.success("Analysis data refreshed from cloud");
+              }
             }
+            
+            actions.setLastRefresh(new Date());
+            actions.setIsLoading(false);
+            return;
+          } else {
+            console.log("No analyses found in Supabase for user:", user.id);
           }
-          
-          actions.setLastRefresh(new Date());
-          actions.setIsLoading(false);
-          return;
+        } catch (fetchError) {
+          console.error("Exception fetching analyses from Supabase:", fetchError);
+          toast.error("Connection error while loading data", {
+            description: "Check your internet connection"
+          });
         }
       }
       
@@ -89,9 +109,11 @@ export const useAnalysisRefresh = (
       // Try to use local analysis as fallback
       const localAnalyses = loadAnalysisHistory();
       if (localAnalyses && localAnalyses.length > 0) {
+        console.log("Using local storage as fallback after error");
         const mostRecentAnalysis = sortAnalysesByDate(localAnalyses)[0];
         actions.setAnalysis(mostRecentAnalysis);
         actions.setAnalysisHistory([mostRecentAnalysis]);
+        toast.info("Using offline data as fallback");
       }
     } finally {
       actions.setIsLoading(false);

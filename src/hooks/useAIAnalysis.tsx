@@ -1,8 +1,9 @@
 
 import { useAIAnalysisCore } from './aiAnalysis/useAIAnalysisCore';
-import { PersonalityAnalysis, PersonalityTrait, IntelligenceType, RelationshipPatterns } from '@/utils/types';
+import { PersonalityAnalysis } from '@/utils/types';
 import { supabase } from '@/integrations/supabase/client';
 import { convertToPersonalityAnalysis } from './aiAnalysis/utils';
+import { toast } from 'sonner';
 
 // Cache for shared analysis to prevent redundant fetches
 const analysisCache: Record<string, PersonalityAnalysis> = {};
@@ -30,40 +31,71 @@ export const useAIAnalysis = () => {
     try {
       console.log("Fetching analysis from Supabase with ID:", id);
       
+      // Using a timeout promise to prevent hanging requests
+      const fetchTimeout = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn("Analysis fetch timed out after 15 seconds");
+          resolve(null);
+        }, 15000);
+      });
+      
       // Fetch analysis directly from Supabase without requiring authentication
-      // This works because we have a policy allowing public SELECT access
-      const { data, error } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();  // Changed from .single() to avoid not_found errors
+      const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
+        try {
+          const { data, error } = await supabase
+            .from('analyses')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+            
+          if (error) {
+            console.error("Error fetching shared analysis:", error);
+            resolve(null);
+            return;
+          }
+          
+          if (!data) {
+            console.log("No data found for analysis ID:", id);
+            resolve(null);
+            return;
+          }
+          
+          console.log("Successfully retrieved analysis data:", data);
+          
+          // Use the utility function to safely convert Supabase data to PersonalityAnalysis
+          const result = convertToPersonalityAnalysis(data);
+          
+          // Additional validation to make sure we have the critical data needed for display
+          if (!result.traits || !result.intelligence) {
+            console.error("Converted analysis is missing critical data:", result);
+            resolve(null);
+            return;
+          }
+          
+          // Store in cache to prevent redundant fetches
+          analysisCache[id] = result;
+          resolve(result);
+        } catch (error) {
+          console.error("Exception in getAnalysisById fetch:", error);
+          resolve(null);
+        }
+      });
       
-      if (error) {
-        console.error("Error fetching shared analysis:", error);
-        return null;
-      }
+      // Race between fetch and timeout
+      const result = await Promise.race([fetchPromise, fetchTimeout]);
       
-      if (!data) {
-        console.log("No data found for analysis ID:", id);
-        return null;
-      }
-      
-      console.log("Successfully retrieved analysis data:", data);
-      
-      // Use the utility function to safely convert Supabase data to PersonalityAnalysis
-      const result = convertToPersonalityAnalysis(data);
-      
-      // Additional validation to make sure we have the critical data needed for display
-      if (!result.traits || !result.intelligence) {
-        console.error("Converted analysis is missing critical data:", result);
-      } else {
-        // Store in cache to prevent redundant fetches
-        analysisCache[id] = result;
+      if (!result) {
+        toast.error("Could not retrieve analysis data", {
+          description: "Please check your connection and try again"
+        });
       }
       
       return result;
     } catch (error) {
       console.error("Exception in getAnalysisById:", error);
+      toast.error("Error retrieving analysis", {
+        description: error.message || "Unknown error"
+      });
       return null;
     }
   };

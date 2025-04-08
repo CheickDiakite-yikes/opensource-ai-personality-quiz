@@ -54,30 +54,38 @@ export const useAnalyzeResponses = (
         }
       }
       
-      // Call the Supabase Edge Function for AI analysis
-      const { data, error } = await supabase.functions.invoke("analyze-responses", {
+      // Call the Supabase Edge Function for AI analysis with timeout handling
+      const functionTimeout = 60000; // 60 seconds timeout
+      
+      // Create a timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Analysis request timed out after 60 seconds"));
+        }, functionTimeout);
+      });
+      
+      // Call Supabase function
+      const functionPromise = supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
           assessmentId 
         }
       });
       
-      if (error) {
-        console.error("Error calling analyze-responses function:", error);
-        throw new Error(`Analysis failed: ${error.message}`);
-      }
+      // Race between function call and timeout
+      const result = await Promise.race([functionPromise, timeoutPromise]);
       
-      if (!data || !data.analysis) {
+      if (!result.data || !result.data.analysis) {
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis from gpt-4o model:", data.analysis);
+      console.log("Received AI analysis from gpt-4o model:", result.data.analysis);
       
       // Add user ID to the analysis if user is logged in
-      let analysisWithUser = data.analysis;
+      let analysisWithUser = result.data.analysis;
       if (user) {
         analysisWithUser = {
-          ...data.analysis,
+          ...result.data.analysis,
           userId: user.id,
           assessmentId: assessmentId
         };
@@ -85,38 +93,40 @@ export const useAnalyzeResponses = (
         // Save analysis to Supabase
         try {
           // Convert all JSON fields to their string representation to ensure compatibility
-          const jsonAnalysis = JSON.parse(JSON.stringify(data.analysis));
+          const jsonAnalysis = JSON.parse(JSON.stringify(result.data.analysis));
           
           const { error: analysisError } = await supabase
             .from('analyses')
             .insert({
-              id: data.analysis.id,
+              id: result.data.analysis.id,
               user_id: user.id,
               assessment_id: assessmentId,
               result: jsonAnalysis,
-              overview: data.analysis.overview,
+              overview: result.data.analysis.overview,
               traits: jsonAnalysis.traits,
               intelligence: jsonAnalysis.intelligence,
-              intelligence_score: data.analysis.intelligenceScore,
-              emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
+              intelligence_score: result.data.analysis.intelligenceScore,
+              emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore,
               cognitive_style: jsonAnalysis.cognitiveStyle,
               value_system: jsonAnalysis.valueSystem,
               motivators: jsonAnalysis.motivators,
               inhibitors: jsonAnalysis.inhibitors,
               weaknesses: jsonAnalysis.weaknesses,
-              shadow_aspects: jsonAnalysis.shadowAspects, // Add new shadow aspects field
+              shadow_aspects: jsonAnalysis.shadowAspects, 
               growth_areas: jsonAnalysis.growthAreas,
               relationship_patterns: jsonAnalysis.relationshipPatterns,
               career_suggestions: jsonAnalysis.careerSuggestions,
               learning_pathways: jsonAnalysis.learningPathways,
-              roadmap: data.analysis.roadmap
+              roadmap: result.data.analysis.roadmap
             });
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
+            throw new Error(`Database error: ${analysisError.message}`);
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
+          throw new Error(`Failed to save analysis: ${err.message}`);
         }
       }
       
@@ -128,7 +138,7 @@ export const useAnalyzeResponses = (
       return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
-      toast.error("Failed to analyze responses. Using fallback analysis.");
+      toast.error(`Analysis failed: ${error.message || "Unknown error"}. Using fallback analysis.`);
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
