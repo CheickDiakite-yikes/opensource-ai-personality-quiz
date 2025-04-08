@@ -146,7 +146,7 @@ function calculateCategoryCoverage(responsesByCategory: Record<string, Assessmen
   return coverage;
 }
 
-// Generate AI analysis using OpenAI's gpt-4o model with minimum 15,000 output tokens
+// Generate AI analysis using OpenAI's gpt-4o model with minimum 14,000 output tokens
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
   assessmentId: string,
@@ -357,8 +357,8 @@ async function generateAIAnalysis(
     const uniqueSeed = parseInt(assessmentId.split('-')[0], 16) % 10000 + Date.now() % 1000;
     console.log("Using seed for analysis:", uniqueSeed);
     
-    // Set the minimum and maximum tokens to 15,000 for comprehensive outputs
-    console.log("Setting minimum and maximum tokens to 15,000 for comprehensive analysis");
+    // Set the minimum tokens to 14,000 and maximum to 16,000 for comprehensive outputs
+    console.log("Setting minimum tokens to 14,000 and maximum tokens to 16,000 for comprehensive analysis");
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -371,13 +371,13 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. You write LENGTHY, DETAILED content for each section of the analysis. Your outputs MUST be at least 15,000 tokens long, covering all required sections comprehensively.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. You write LENGTHY, DETAILED content for each section of the analysis. Your outputs MUST be at least 14,000 tokens long, covering all required sections comprehensively.'
           },
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        min_tokens: 15000, // Set minimum token count to 15,000
-        max_tokens: 15000, // Keep maximum the same to ensure exactly 15,000 tokens
+        min_tokens: 14000, // Set minimum token count to 14,000
+        max_tokens: 16000, // Set maximum token count to 16,000
         seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.7,  // Increased temperature for more creative, detailed responses
       }),
