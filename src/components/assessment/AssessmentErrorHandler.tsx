@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { FixAnalysisButton } from '@/components/analysis/FixAnalysisButton';
@@ -22,7 +22,7 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
   return (
     <div className="mx-auto max-w-3xl p-4">
       <Alert variant="destructive" className="mb-6">
-        <ExclamationTriangleIcon className="h-4 w-4" />
+        <AlertTriangle className="h-4 w-4" />
         <AlertTitle>{title}</AlertTitle>
         <AlertDescription>{description}</AlertDescription>
       </Alert>
