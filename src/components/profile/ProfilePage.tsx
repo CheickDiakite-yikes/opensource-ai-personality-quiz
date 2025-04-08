@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import LoadingProfile from "./LoadingProfile";
 import NoAnalysisFound from "./NoAnalysisFound";
 import ProfileHeader from "./ProfileHeader";
@@ -14,25 +14,40 @@ import GrowthPathwayCard from "./GrowthPathwayCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersonalityAnalysis } from "@/utils/types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { analysis, getAnalysisHistory, isLoading: analysisLoading, refreshAnalysis } = useAIAnalysis();
+  const { 
+    analysis, 
+    getAnalysisHistory, 
+    isLoading: analysisLoading, 
+    refreshAnalysis,
+    loadAllAnalysesFromSupabase 
+  } = useAIAnalysis();
   const navigate = useNavigate();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [refreshed, setRefreshed] = useState(false);
+  const [isRefreshingData, setIsRefreshingData] = useState(false);
   const isMobile = useIsMobile();
   
-  // Refresh analysis data when component mounts or auth state changes, but only once
+  // Refresh analysis data when component mounts or auth state changes
   useEffect(() => {
     let isMounted = true;
     
     const loadAnalysisData = async () => {
-      if (!isMounted || refreshed) return;
+      if (!isMounted || isRefreshingData) return;
       
       try {
-        // Only refresh once when the component mounts
+        setIsRefreshingData(true);
+        
+        // Try to load all analyses first to ensure we have complete history
+        if (user) {
+          await loadAllAnalysesFromSupabase();
+        }
+        
+        // Then refresh to update the state
         await refreshAnalysis();
         setRefreshed(true);
         
@@ -41,18 +56,25 @@ const ProfilePage: React.FC = () => {
         
         if (history && history.length > 0) {
           setStableAnalysis(history[0]);
+          console.log(`Loaded ${history.length} analyses for profile page`);
         } else {
           if (isMounted) setStableAnalysis(null);
         }
       } catch (error) {
         console.error('Error loading analysis data:', error);
         if (isMounted) setStableAnalysis(null);
+        toast.error("Could not load your analysis data", {
+          description: "Please try refreshing the page"
+        });
       } finally {
-        if (isMounted) setProfileLoading(false);
+        if (isMounted) {
+          setProfileLoading(false);
+          setIsRefreshingData(false);
+        }
       }
     };
     
-    // Only fetch data once auth is complete and we haven't refreshed yet
+    // Only fetch data once auth is complete
     if (!authLoading && !refreshed) {
       loadAnalysisData();
     }
@@ -60,7 +82,15 @@ const ProfilePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [getAnalysisHistory, refreshAnalysis, authLoading, user, refreshed]);
+  }, [
+    getAnalysisHistory, 
+    refreshAnalysis, 
+    authLoading, 
+    user, 
+    refreshed, 
+    loadAllAnalysesFromSupabase,
+    isRefreshingData
+  ]);
   
   // Update stable analysis when analysis changes, without triggering a refresh
   useEffect(() => {
@@ -69,6 +99,35 @@ const ProfilePage: React.FC = () => {
       setProfileLoading(false);
     }
   }, [analysis, stableAnalysis]);
+  
+  // Handler for manual refresh
+  const handleRefresh = async () => {
+    if (isRefreshingData) return;
+    
+    setIsRefreshingData(true);
+    try {
+      // Try to load all analyses
+      if (user) {
+        const allAnalyses = await loadAllAnalysesFromSupabase();
+        if (allAnalyses && allAnalyses.length > 0) {
+          toast.success(`Found ${allAnalyses.length} analyses`, {
+            description: "Your profile has been updated with the latest data"
+          });
+          // The latest analysis should be set via the refreshAnalysis call
+        }
+      }
+      
+      // Refresh to update state
+      await refreshAnalysis();
+    } catch (error) {
+      console.error("Error during manual refresh:", error);
+      toast.error("Could not refresh your analysis data", {
+        description: "Please try again later"
+      });
+    } finally {
+      setIsRefreshingData(false);
+    }
+  };
   
   // Render loading state during initial load
   if (authLoading || (analysisLoading && profileLoading)) {
@@ -82,13 +141,25 @@ const ProfilePage: React.FC = () => {
   
   return (
     <div className="container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
-      <Button 
-        variant="ghost" 
-        className="mb-3 md:mb-6 -ml-2" 
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-      </Button>
+      <div className="flex justify-between items-center mb-3 md:mb-6">
+        <Button 
+          variant="ghost" 
+          className="-ml-2" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshingData}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshingData ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
       
       {user && (
         <div className="mb-4 md:mb-6 p-3 md:p-4 bg-secondary/10 rounded-lg">

@@ -21,7 +21,8 @@ const ReportPage: React.FC = () => {
     getAnalysisHistory, 
     setCurrentAnalysis,
     refreshAnalysis,
-    getAnalysisById
+    getAnalysisById,
+    loadAllAnalysesFromSupabase
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
@@ -29,6 +30,7 @@ const ReportPage: React.FC = () => {
   const [forcedRefresh, setForcedRefresh] = useState(false);
   const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
+  const [isLoadingAllAnalyses, setIsLoadingAllAnalyses] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -51,6 +53,24 @@ const ReportPage: React.FC = () => {
       });
     }
   }, [location.state, forcedRefresh, refreshAnalysis]);
+
+  // Load all analyses on first mount to ensure we have all history
+  useEffect(() => {
+    if (!isLoadingAllAnalyses && !forcedRefresh) {
+      setIsLoadingAllAnalyses(true);
+      loadAllAnalysesFromSupabase()
+        .then(analyses => {
+          console.log(`Loaded ${analyses.length} analyses on initial mount`);
+        })
+        .catch(error => {
+          console.error("Error loading all analyses on mount:", error);
+        })
+        .finally(() => {
+          setForcedRefresh(true);
+          setIsLoadingAllAnalyses(false);
+        });
+    }
+  }, [loadAllAnalysesFromSupabase, forcedRefresh, isLoadingAllAnalyses]);
   
   // Handle direct URL access and page refresh by ensuring we load analysis data properly
   useEffect(() => {
@@ -85,12 +105,23 @@ const ReportPage: React.FC = () => {
           if (!success && !analysis && !stableAnalysis && !hasAttemptedToLoadAnalysis) {
             setHasAttemptedToLoadAnalysis(true);
             
-            // If we have other analyses available, redirect to the most recent one
-            if (analysisHistory && analysisHistory.length > 0) {
+            // Try to load all analyses to make sure we have the complete history
+            const allAnalyses = await loadAllAnalysesFromSupabase();
+            
+            // After loading all analyses, try again to set the current analysis
+            if (allAnalyses && allAnalyses.length > 0) {
+              const secondAttemptSuccess = setCurrentAnalysis(id);
+              
+              if (secondAttemptSuccess) {
+                console.log(`Successfully set current analysis to ${id} after loading all analyses`);
+                return;
+              }
+              
+              // If we still can't find the specified analysis, redirect to the most recent one
               toast.info("Redirecting to your most recent analysis", {
                 duration: 3000
               });
-              navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+              navigate(`/report/${allAnalyses[0].id}`, { replace: true });
             } else {
               // No analyses available at all, redirect to assessment
               toast.error("Could not find the requested analysis", {
@@ -105,6 +136,14 @@ const ReportPage: React.FC = () => {
           // If no ID is provided in the URL but we have analyses, redirect to the latest one
           navigate(`/report/${analysisHistory[0].id}`, { replace: true });
         } else if (!hasAttemptedToLoadAnalysis) {
+          // Try to load all analyses as a last resort
+          const allAnalyses = await loadAllAnalysesFromSupabase();
+          
+          if (allAnalyses && allAnalyses.length > 0) {
+            navigate(`/report/${allAnalyses[0].id}`, { replace: true });
+            return;
+          }
+          
           // No ID in URL and no analyses available
           setHasAttemptedToLoadAnalysis(true);
           toast.error("No analysis reports found", {
@@ -133,7 +172,7 @@ const ReportPage: React.FC = () => {
     };
     
     loadAnalysis();
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts, loadAllAnalysesFromSupabase]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {
@@ -200,16 +239,27 @@ const ReportPage: React.FC = () => {
         setStableAnalysis(directAnalysis);
         navigate(`/report/${analysisId}`, { replace: false });
       } else {
-        toast.error("Could not load the selected analysis", {
-          description: "Please try again or select a different report",
-          duration: 3000
-        });
-        setIsChangingAnalysis(false);
+        // Try to load all analyses as a last resort
+        await loadAllAnalysesFromSupabase();
+        
+        // Try one more time to set the current analysis
+        const secondAttemptSuccess = setCurrentAnalysis(analysisId);
+        
+        if (secondAttemptSuccess) {
+          console.log(`Successfully set current analysis to ${analysisId} after loading all analyses`);
+          navigate(`/report/${analysisId}`, { replace: false });
+        } else {
+          toast.error("Could not load the selected analysis", {
+            description: "Please try again or select a different report",
+            duration: 3000
+          });
+          setIsChangingAnalysis(false);
+        }
       }
     } else {
       navigate(`/report/${analysisId}`, { replace: false });
     }
-  }, [id, setCurrentAnalysis, navigate, getAnalysisById]);
+  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase]);
   
   // Show loading state only on initial load or when changing analyses
   if ((isLoading && !stableAnalysis) || isChangingAnalysis) {

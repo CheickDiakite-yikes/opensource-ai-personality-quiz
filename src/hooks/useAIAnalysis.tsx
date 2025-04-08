@@ -6,7 +6,20 @@ import { convertToPersonalityAnalysis } from './aiAnalysis/utils';
 import { toast } from 'sonner';
 
 // Cache for shared analysis to prevent redundant fetches
-const analysisCache: Record<string, PersonalityAnalysis> = {};
+// Using a Map for better memory management with object keys
+const analysisCache = new Map<string, {data: PersonalityAnalysis, timestamp: number}>();
+
+// Helper function to clear old cache entries
+const cleanupCache = () => {
+  const now = Date.now();
+  const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+  
+  for (const [id, entry] of analysisCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      analysisCache.delete(id);
+    }
+  }
+};
 
 // Main hook for accessing AI analysis functionality
 export const useAIAnalysis = () => {
@@ -17,15 +30,19 @@ export const useAIAnalysis = () => {
     analyzeResponses,
     getAnalysisHistory,
     setCurrentAnalysis,
-    refreshAnalysis
+    refreshAnalysis,
+    fetchAnalysesFromSupabase
   } = useAIAnalysisCore();
 
   // Add function to get analysis by ID (for shared profiles)
   const getAnalysisById = async (id: string): Promise<PersonalityAnalysis | null> => {
+    // Clean up old cache entries periodically
+    cleanupCache();
+    
     // Check cache first to prevent redundant fetches
-    if (analysisCache[id]) {
+    if (analysisCache.has(id)) {
       console.log("Returning cached analysis for ID:", id);
-      return analysisCache[id];
+      return analysisCache.get(id)?.data || null;
     }
     
     try {
@@ -103,8 +120,8 @@ export const useAIAnalysis = () => {
           result.intelligenceScore = result.intelligenceScore || 50;
           result.emotionalIntelligenceScore = result.emotionalIntelligenceScore || 50;
           
-          // Store in cache to prevent redundant fetches
-          analysisCache[id] = result;
+          // Store in cache with timestamp to prevent redundant fetches
+          analysisCache.set(id, {data: result, timestamp: Date.now()});
           resolve(result);
         } catch (error) {
           console.error("Exception in getAnalysisById fetch:", error);
@@ -139,6 +156,7 @@ export const useAIAnalysis = () => {
     getAnalysisHistory,
     setCurrentAnalysis,
     refreshAnalysis,
-    getAnalysisById
+    getAnalysisById,
+    fetchAnalysesFromSupabase
   };
 };

@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
-import { Share, Copy, Calendar, History, Check, Twitter, Facebook, Linkedin } from "lucide-react";
+import { Share, Copy, Calendar, History, Check, Twitter, Facebook, Linkedin, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import {
@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 
 interface ReportHeaderProps {
   analysis: PersonalityAnalysis;
@@ -36,6 +37,16 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { loadAllAnalysesFromSupabase } = useAIAnalysis();
+  const [localAnalysisHistory, setLocalAnalysisHistory] = useState<PersonalityAnalysis[]>(analysisHistory);
+  
+  // Update local history when prop changes
+  useEffect(() => {
+    if (analysisHistory && analysisHistory.length > 0) {
+      setLocalAnalysisHistory(analysisHistory);
+    }
+  }, [analysisHistory]);
   
   // Generate a share URL for the current analysis
   const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
@@ -49,6 +60,33 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
       description: "Share this link to let others view your personality analysis"
     });
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  // Handle refreshing all analyses from Supabase
+  const handleRefreshAnalyses = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      const allAnalyses = await loadAllAnalysesFromSupabase();
+      if (allAnalyses && allAnalyses.length > 0) {
+        setLocalAnalysisHistory(allAnalyses);
+        toast.success(`Found ${allAnalyses.length} analysis reports`, {
+          description: "Your analysis history has been updated"
+        });
+      } else {
+        toast.info("No additional analyses found", {
+          description: "We couldn't find any more analysis reports"
+        });
+      }
+    } catch (error) {
+      console.error("Error refreshing analyses:", error);
+      toast.error("Failed to load all analyses", {
+        description: "Please try again later"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
   
   // Handle social sharing
@@ -83,6 +121,14 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     }
   };
 
+  // Define a max number of items to show in dropdown
+  const MAX_HISTORY_ITEMS = 10;
+  
+  // Filter out the current analysis and get only the others
+  const otherAnalyses = localAnalysisHistory
+    .filter(item => item.id !== analysis.id)
+    .slice(0, MAX_HISTORY_ITEMS);
+
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -111,38 +157,54 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={analysisHistory.length <= 1}
                   className="flex-1 px-2"
                 >
                   <History className="h-3 w-3 mr-1" /> Past
+                  {localAnalysisHistory.length > 1 && <span className="ml-1 text-xs">({localAnalysisHistory.length})</span>}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-60">
+                <div className="flex items-center justify-between px-2">
+                  <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRefreshAnalyses();
+                    }}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
                 <DropdownMenuSeparator />
-                {analysisHistory.length <= 1 ? (
-                  <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+                {otherAnalyses.length === 0 ? (
+                  <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
                 ) : (
-                  analysisHistory
-                    .filter(item => item.id !== analysis.id)
-                    .slice(0, 5)
-                    .map((item) => {
-                      let dateLabel = "Unknown date";
-                      try {
-                        dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                      } catch (e) {
-                        console.error("Invalid date format", e);
-                      }
-                      
-                      return (
-                        <DropdownMenuItem 
-                          key={item.id}
-                          onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                        >
-                          {dateLabel}
-                        </DropdownMenuItem>
-                      );
-                    })
+                  otherAnalyses.map((item) => {
+                    let dateLabel = "Unknown date";
+                    try {
+                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                    } catch (e) {
+                      console.error("Invalid date format", e);
+                    }
+                    
+                    return (
+                      <DropdownMenuItem 
+                        key={item.id}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                      >
+                        {dateLabel}
+                      </DropdownMenuItem>
+                    );
+                  })
+                )}
+                {localAnalysisHistory.length > MAX_HISTORY_ITEMS + 1 && (
+                  <DropdownMenuItem disabled className="italic text-xs text-muted-foreground">
+                    + {localAnalysisHistory.length - MAX_HISTORY_ITEMS - 1} more reports
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -205,37 +267,53 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 <Button
                   variant="outline"
                   size={isMobile ? "sm" : "default"}
-                  disabled={analysisHistory.length <= 1}
                 >
                   <History className="h-4 w-4 mr-2" /> Past Reports
+                  {localAnalysisHistory.length > 1 && <span className="ml-1">({localAnalysisHistory.length})</span>}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="flex items-center justify-between px-2">
+                  <DropdownMenuLabel>Your Past Analyses</DropdownMenuLabel>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRefreshAnalyses();
+                    }}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
                 <DropdownMenuSeparator />
-                {analysisHistory.length <= 1 ? (
-                  <DropdownMenuItem disabled>No past reports available</DropdownMenuItem>
+                {otherAnalyses.length === 0 ? (
+                  <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
                 ) : (
-                  analysisHistory
-                    .filter(item => item.id !== analysis.id)
-                    .slice(0, 5)
-                    .map((item) => {
-                      let dateLabel = "Unknown date";
-                      try {
-                        dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
-                      } catch (e) {
-                        console.error("Invalid date format", e);
-                      }
-                      
-                      return (
-                        <DropdownMenuItem 
-                          key={item.id}
-                          onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
-                        >
-                          {dateLabel}
-                        </DropdownMenuItem>
-                      );
-                    })
+                  otherAnalyses.map((item) => {
+                    let dateLabel = "Unknown date";
+                    try {
+                      dateLabel = format(new Date(item.createdAt), "MMM d, yyyy");
+                    } catch (e) {
+                      console.error("Invalid date format", e);
+                    }
+                    
+                    return (
+                      <DropdownMenuItem 
+                        key={item.id}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
+                      >
+                        {dateLabel}
+                      </DropdownMenuItem>
+                    );
+                  })
+                )}
+                {localAnalysisHistory.length > MAX_HISTORY_ITEMS + 1 && (
+                  <DropdownMenuItem disabled className="italic text-xs text-muted-foreground">
+                    + {localAnalysisHistory.length - MAX_HISTORY_ITEMS - 1} more reports
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

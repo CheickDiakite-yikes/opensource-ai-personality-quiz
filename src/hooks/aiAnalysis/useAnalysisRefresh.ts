@@ -39,11 +39,13 @@ export const useAnalysisRefresh = (
       // First, try to get analyses from Supabase if user is logged in
       if (user) {
         try {
+          console.log("Fetching all analyses for user:", user.id);
           const { data, error } = await supabase
             .from('analyses')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
+            // Removed the limit to ensure we get all analyses
             
           if (error) {
             console.error("Error fetching analyses from Supabase:", error);
@@ -98,6 +100,7 @@ export const useAnalysisRefresh = (
             // Sort by date (newest first) and update state
             const sortedAnalyses = sortAnalysesByDate(validatedAnalyses);
             actions.setAnalysisHistory(sortedAnalyses);
+            console.log(`Setting ${sortedAnalyses.length} analyses in history state`);
             
             // Only update current analysis if not already set or if it's different
             if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
@@ -105,7 +108,7 @@ export const useAnalysisRefresh = (
               
               // Only show toast on initial load or when analysis actually changes
               if (!state.lastRefresh || new Date().getTime() - state.lastRefresh.getTime() > 5000) {
-                toast.success("Analysis data refreshed from cloud");
+                toast.success(`Loaded ${sortedAnalyses.length} analyses from cloud`);
               }
             }
             
@@ -136,7 +139,7 @@ export const useAnalysisRefresh = (
           actions.setAnalysis(sortedAnalyses[0]);
           // Only show this toast on initial load
           if (!state.lastRefresh) {
-            toast.success("Analysis data loaded from local storage");
+            toast.success(`Loaded ${sortedAnalyses.length} analyses from local storage`);
           }
         }
       } else {
@@ -153,10 +156,10 @@ export const useAnalysisRefresh = (
       const localAnalyses = loadAnalysisHistory();
       if (localAnalyses && localAnalyses.length > 0) {
         console.log("Using local storage as fallback after error");
-        const mostRecentAnalysis = sortAnalysesByDate(localAnalyses)[0];
-        actions.setAnalysis(mostRecentAnalysis);
-        actions.setAnalysisHistory([mostRecentAnalysis]);
-        toast.info("Using offline data as fallback");
+        const sortedAnalyses = sortAnalysesByDate(localAnalyses);
+        actions.setAnalysisHistory(sortedAnalyses);
+        actions.setAnalysis(sortedAnalyses[0]);
+        toast.info(`Using ${sortedAnalyses.length} offline analyses as fallback`);
       }
     } finally {
       actions.setIsLoading(false);
