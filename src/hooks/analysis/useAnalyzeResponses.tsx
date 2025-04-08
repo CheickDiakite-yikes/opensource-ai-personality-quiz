@@ -204,57 +204,13 @@ export const useAnalyzeResponses = (
         }
       }
       
-      // Validate the analysis before saving it
-      if (!analysisWithUser.traits || !Array.isArray(analysisWithUser.traits) || analysisWithUser.traits.length < 8) {
-        console.warn(`Analysis ${analysisWithUser.id} has insufficient traits: ${analysisWithUser.traits?.length || 0}/8 minimum`);
-        
-        // Add placeholder traits if needed
-        if (!Array.isArray(analysisWithUser.traits)) {
-          analysisWithUser.traits = [];
-        }
-        
-        // Add warning trait if traits are incomplete
-        if (analysisWithUser.traits.length < 8) {
-          analysisWithUser.traits.push({
-            trait: "Analysis Note", 
-            score: 5,
-            description: `This analysis is incomplete, with only ${analysisWithUser.traits.length} traits identified instead of the expected 8-12 traits. This may be due to insufficient detail in assessment responses or an issue with the analysis process.`,
-            strengths: ["The traits that were identified are valid and useful", "You can still gain insights from the available data"],
-            challenges: ["The analysis is not as comprehensive as intended", "Some personality aspects may be missing"],
-            growthSuggestions: [
-              "Consider retaking the assessment with more detailed answers",
-              "Focus on the traits that were successfully identified",
-              "Use the Fix Analysis button to attempt retrieving more complete data",
-              "Provide more in-depth responses, especially for open-ended questions"
-            ]
-          });
-        }
-        
-        // Ensure minimum required data exists
-        if (!analysisWithUser.intelligence) {
-          analysisWithUser.intelligence = {
-            type: "General Processing",
-            score: 6,
-            description: "Complete intelligence analysis data was not generated. This is a placeholder.",
-            domains: [{
-              name: "General Intelligence",
-              score: 6,
-              description: "Intelligence domain data was not fully generated during analysis."
-            }]
-          };
-        }
-      }
-      
       // Save to history and update the current analysis
       console.log("Saving analysis to local history");
       const savedAnalysis = saveToHistory(analysisWithUser);
       setAnalysis(savedAnalysis);
       
-      // Check if the analysis has sufficient traits before showing success message
-      const isComplete = savedAnalysis.traits && Array.isArray(savedAnalysis.traits) && savedAnalysis.traits.length >= 8;
-      
-      toast.success(isComplete ? "AI Analysis complete!" : "Analysis partially complete", {
-        description: isComplete ? "Your personality profile is ready to view" : "Some data may be incomplete"
+      toast.success("AI Analysis complete!", {
+        description: "Your personality profile is ready to view"
       });
       
       return savedAnalysis;

@@ -95,7 +95,6 @@ export const useAnalysisById = () => {
           
           console.log("Successfully retrieved analysis data:", data.id);
           
-          // Safely check if traits exist and is an array before accessing length property
           if (data.traits && Array.isArray(data.traits)) {
             console.log("Analysis traits count:", data.traits.length);
           } else {
@@ -106,59 +105,6 @@ export const useAnalysisById = () => {
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);
-          
-          // Additional validation to make sure we have the critical data needed for display
-          // Add proper type checking for traits to ensure we safely access length property
-          if (!result.traits || !Array.isArray(result.traits) || result.traits.length < 2 || !result.intelligence) {
-            console.warn("Analysis has missing or incomplete critical data:", 
-              `traits: ${Array.isArray(result.traits) ? result.traits.length : 'not an array'}, intelligence present: ${!!result.intelligence}`);
-            
-            // If traits array exists but has fewer than expected items, provide feedback about incomplete analysis
-            if (!result.traits || !Array.isArray(result.traits) || result.traits.length < 2) {
-              // Initialize traits as an empty array if it's not already an array
-              result.traits = Array.isArray(result.traits) ? [...result.traits] : [];
-              
-              const traitCount = result.traits.length;
-              
-              if (traitCount === 0) {
-                result.traits.push({
-                  trait: "Analysis Incomplete", 
-                  score: 5, 
-                  description: "The analysis process didn't generate enough trait data. This typically happens when the AI model doesn't receive enough detailed responses.",
-                  strengths: ["Not available - incomplete analysis"],
-                  challenges: ["Not available - incomplete analysis"],
-                  growthSuggestions: ["Consider retaking the assessment with more detailed answers"]
-                });
-              }
-              
-              // Add a note about the analysis being incomplete
-              result.traits.push({
-                trait: "Analysis Note", 
-                score: 0, 
-                description: `Expected 8-12 traits but found only ${traitCount}. This typically happens when the AI doesn't have enough detailed responses to analyze.`,
-                strengths: ["Try the Fix Analysis button or retake the assessment"],
-                challenges: ["Analysis data is incomplete"],
-                growthSuggestions: ["Provide more detailed answers in your assessment"]
-              });
-              
-              console.log("Added informational trait about incomplete analysis");
-            }
-            
-            // Ensure intelligence object exists
-            if (!result.intelligence) {
-              result.intelligence = {
-                type: "Analysis Incomplete",
-                score: 5,
-                description: "The intelligence analysis was incomplete.",
-                domains: [{
-                  name: "General Intelligence",
-                  score: 5,
-                  description: "Intelligence data was incomplete in this analysis."
-                }]
-              };
-              console.log("Added placeholder intelligence data for incomplete analysis");
-            }
-          }
           
           // Ensure all required fields exist with fallbacks
           result.overview = result.overview || "Analysis overview was not generated properly.";

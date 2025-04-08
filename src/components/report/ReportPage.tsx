@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,7 +10,6 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
-import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +31,6 @@ const ReportPage: React.FC = () => {
   const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [isLoadingAllAnalyses, setIsLoadingAllAnalyses] = useState(false);
-  const [showErrorHandler, setShowErrorHandler] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -98,14 +97,6 @@ const ReportPage: React.FC = () => {
             
             if (directAnalysis) {
               console.log(`Successfully fetched analysis ${id} directly`);
-              
-              // Check if analysis is incomplete
-              if (!directAnalysis.traits || !Array.isArray(directAnalysis.traits) || directAnalysis.traits.length < 2) {
-                console.warn("Analysis from direct fetch is incomplete:", 
-                  `traits: ${Array.isArray(directAnalysis.traits) ? directAnalysis.traits.length : 'not an array'}`);
-                setShowErrorHandler(true);
-              }
-              
               setStableAnalysis(directAnalysis);
               return;
             }
@@ -128,24 +119,11 @@ const ReportPage: React.FC = () => {
                 return;
               }
               
-              // If we still can't find the specified analysis, look for a complete analysis
-              const completeAnalysis = allAnalyses.find(a => 
-                a.traits && Array.isArray(a.traits) && a.traits.length >= 2
-              );
-              
-              if (completeAnalysis) {
-                console.log(`Found complete analysis with ID ${completeAnalysis.id}, redirecting to it`);
-                toast.info("Redirecting to a more complete analysis", {
-                  duration: 3000
-                });
-                navigate(`/report/${completeAnalysis.id}`, { replace: true });
-              } else {
-                // If there's no complete analysis, use the most recent one
-                toast.info("Redirecting to your most recent analysis", {
-                  duration: 3000
-                });
-                navigate(`/report/${allAnalyses[0].id}`, { replace: true });
-              }
+              // Redirect to the most recent analysis
+              toast.info("Redirecting to your most recent analysis", {
+                duration: 3000
+              });
+              navigate(`/report/${allAnalyses[0].id}`, { replace: true });
             } else {
               // No analyses available at all, redirect to assessment
               toast.error("Could not find the requested analysis", {
@@ -157,33 +135,14 @@ const ReportPage: React.FC = () => {
             }
           }
         } else if (analysisHistory && analysisHistory.length > 0) {
-          // If no ID is provided in the URL but we have analyses, try to find a complete one
-          const completeAnalysis = analysisHistory.find(a => 
-            a.traits && Array.isArray(a.traits) && a.traits.length >= 2
-          );
-          
-          if (completeAnalysis) {
-            navigate(`/report/${completeAnalysis.id}`, { replace: true });
-          } else {
-            // If no complete analysis, use the most recent one
-            navigate(`/report/${analysisHistory[0].id}`, { replace: true });
-          }
+          // If no ID is provided in the URL but we have analyses, use the most recent one
+          navigate(`/report/${analysisHistory[0].id}`, { replace: true });
         } else if (!hasAttemptedToLoadAnalysis) {
           // Try to load all analyses as a last resort
           const allAnalyses = await loadAllAnalysesFromSupabase();
           
           if (allAnalyses && allAnalyses.length > 0) {
-            // Try to find a complete analysis
-            const completeAnalysis = allAnalyses.find(a => 
-              a.traits && Array.isArray(a.traits) && a.traits.length >= 2
-            );
-            
-            if (completeAnalysis) {
-              navigate(`/report/${completeAnalysis.id}`, { replace: true });
-            } else {
-              // If no complete analysis, use the most recent one
-              navigate(`/report/${allAnalyses[0].id}`, { replace: true });
-            }
+            navigate(`/report/${allAnalyses[0].id}`, { replace: true });
             return;
           }
           
@@ -210,8 +169,6 @@ const ReportPage: React.FC = () => {
             description: "Please try refreshing the page",
             duration: 5000
           });
-          
-          setShowErrorHandler(true);
         }
       }
     };
@@ -219,88 +176,15 @@ const ReportPage: React.FC = () => {
     loadAnalysis();
   }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts, loadAllAnalysesFromSupabase]);
   
-  // Add this function to detect incomplete analysis data
-  const isAnalysisIncomplete = (analysis: PersonalityAnalysis | null): boolean => {
-    if (!analysis) return true;
-    
-    // Check for critical missing data
-    if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
-      console.warn("Analysis has insufficient traits:", Array.isArray(analysis.traits) ? analysis.traits.length : 'not an array');
-      return true;
-    }
-    
-    if (!analysis.intelligence) {
-      console.warn("Analysis missing intelligence data");
-      return true;
-    }
-    
-    return false;
-  };
-  
   // Update this useEffect to check for incomplete analyses
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
-      // Make sure this analysis has the minimum required data structure
-      try {
-        if (isAnalysisIncomplete(analysis)) {
-          console.warn("Analysis is incomplete, showing error handler:", analysis.id);
-          setShowErrorHandler(true);
-          
-          // Add fallbacks to prevent crashes, even as we show the error handler
-          if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
-            // Keep existing traits if any
-            analysis.traits = Array.isArray(analysis.traits) ? [...analysis.traits] : [];
-            
-            const traitCount = analysis.traits.length;
-            
-            if (traitCount === 0) {
-              analysis.traits.push({
-                trait: "Analysis Incomplete", 
-                score: 5,
-                description: "The analysis process didn't generate enough trait data.",
-                strengths: ["Not available - incomplete analysis"],
-                challenges: ["Not available - incomplete analysis"],
-                growthSuggestions: ["Consider retaking the assessment with more detailed answers"]
-              });
-            }
-            
-            // Add a note about the analysis being incomplete
-            analysis.traits.push({
-              trait: "Analysis Note", 
-              score: 0, 
-              description: `Expected 8-12 traits but found only ${traitCount}. This typically happens when the AI doesn't have enough detailed responses to analyze.`,
-              strengths: ["Try the Fix Analysis button or retake the assessment"],
-              challenges: ["Analysis data is incomplete"],
-              growthSuggestions: ["Provide more detailed answers in your assessment"]
-            });
-          }
-          
-          if (!analysis.intelligence) {
-            analysis.intelligence = {
-              type: "Analysis Processing",
-              score: 5,
-              description: "Intelligence profile is being processed.",
-              domains: [{
-                name: "General Intelligence",
-                score: 5,
-                description: "Intelligence data is incomplete."
-              }]
-            };
-          }
-        } else {
-          setShowErrorHandler(false);
-        }
-        
-        setStableAnalysis(analysis);
-        setIsChangingAnalysis(false);
-        
-        // Update the URL if it doesn't already match the current analysis ID
-        if (id !== analysis.id) {
-          navigate(`/report/${analysis.id}`, { replace: true });
-        }
-      } catch (error) {
-        console.error("Error processing analysis data:", error);
-        setShowErrorHandler(true);
+      setStableAnalysis(analysis);
+      setIsChangingAnalysis(false);
+      
+      // Update the URL if it doesn't already match the current analysis ID
+      if (id !== analysis.id) {
+        navigate(`/report/${analysis.id}`, { replace: true });
       }
     }
   }, [analysis, stableAnalysis, navigate, id]);
@@ -326,14 +210,6 @@ const ReportPage: React.FC = () => {
       
       if (directAnalysis) {
         console.log(`Successfully fetched analysis ${analysisId} directly`);
-        
-        // Check if the analysis is incomplete
-        if (isAnalysisIncomplete(directAnalysis)) {
-          setShowErrorHandler(true);
-        } else {
-          setShowErrorHandler(false);
-        }
-        
         setStableAnalysis(directAnalysis);
         navigate(`/report/${analysisId}`, { replace: false });
       } else {
@@ -357,39 +233,13 @@ const ReportPage: React.FC = () => {
     } else {
       navigate(`/report/${analysisId}`, { replace: false });
     }
-  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase, isAnalysisIncomplete]);
+  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase]);
   
   // Show loading state only on initial load or when changing analyses
   if ((isLoading && !stableAnalysis) || isChangingAnalysis) {
     return (
       <div className={`container ${isMobile ? 'pt-2 pb-16 px-0.5 mx-0 w-full max-w-full overflow-hidden' : 'py-10'}`}>
         <ReportSkeleton />
-      </div>
-    );
-  }
-  
-  // Show error handler if we've detected an issue with the analysis
-  if (showErrorHandler) {
-    // Get trait count from current analysis if available
-    const traitCount = stableAnalysis?.traits && Array.isArray(stableAnalysis?.traits) 
-      ? stableAnalysis.traits.length 
-      : (analysis?.traits && Array.isArray(analysis?.traits) ? analysis.traits.length : 0);
-    
-    // Get total analyses count
-    const totalAnalyses = analysisHistory ? analysisHistory.length : 0;
-    
-    const errorDetails = `Analysis ID: ${stableAnalysis?.id || analysis?.id || 'unknown'}
-Traits found: ${traitCount}
-Expected: 8-12 traits
-Total analyses available: ${totalAnalyses}`;
-    
-    return (
-      <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'}`}>
-        <AssessmentErrorHandler 
-          title="Incomplete Analysis Data"
-          description="Your personality analysis doesn't have enough traits data for a complete report."
-          errorDetails={errorDetails}
-        />
       </div>
     );
   }
@@ -403,10 +253,13 @@ Total analyses available: ${totalAnalyses}`;
     // but this is a fallback just in case
     return (
       <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'} text-center`}>
-        <AssessmentErrorHandler
-          title="No Analysis Found"
-          description="We couldn't find any personality analysis reports. Please try taking the assessment."
-        />
+        <h2 className="text-2xl font-bold">No Analysis Found</h2>
+        <p className="mt-2 text-muted-foreground">
+          We couldn't find any personality analysis reports. Please try taking the assessment.
+        </p>
+        <Button onClick={() => navigate("/assessment")} className="mt-4">
+          Take Assessment
+        </Button>
       </div>
     );
   }

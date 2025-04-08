@@ -59,15 +59,7 @@ const ProfilePage: React.FC = () => {
         
         if (history && history.length > 0) {
           console.log(`Loaded ${history.length} analyses for profile page`);
-          
-          // Check if the most recent analysis is incomplete
-          const mostRecentAnalysis = history[0];
-          if (!mostRecentAnalysis.traits || !Array.isArray(mostRecentAnalysis.traits) || mostRecentAnalysis.traits.length < 2) {
-            console.log("Most recent analysis is incomplete, showing error handler");
-            setShowErrorHandler(true);
-          }
-          
-          setStableAnalysis(mostRecentAnalysis);
+          setStableAnalysis(history[0]);
         } else {
           if (isMounted) setStableAnalysis(null);
         }
@@ -108,14 +100,7 @@ const ProfilePage: React.FC = () => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
       setStableAnalysis(analysis);
       setProfileLoading(false);
-      
-      // Check if analysis is incomplete
-      if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
-        console.log("Current analysis is incomplete, showing error handler");
-        setShowErrorHandler(true);
-      } else {
-        setShowErrorHandler(false);
-      }
+      setShowErrorHandler(false);
     }
   }, [analysis, stableAnalysis]);
   
@@ -137,19 +122,6 @@ const ProfilePage: React.FC = () => {
       
       // Refresh to update state
       await refreshAnalysis();
-      
-      // Get the analysis history to check for incomplete analyses
-      const history = getAnalysisHistory();
-      if (history && history.length > 0) {
-        // Check if the most recent analysis is incomplete
-        const mostRecentAnalysis = history[0];
-        if (!mostRecentAnalysis.traits || !Array.isArray(mostRecentAnalysis.traits) || mostRecentAnalysis.traits.length < 2) {
-          console.log("Most recent analysis is incomplete after refresh, showing error handler");
-          setShowErrorHandler(true);
-        } else {
-          setShowErrorHandler(false);
-        }
-      }
     } catch (error) {
       console.error("Error during manual refresh:", error);
       toast.error("Could not refresh your analysis data", {
@@ -168,53 +140,6 @@ const ProfilePage: React.FC = () => {
   // If there's no analysis after loading, show the NoAnalysisFound component
   if (!stableAnalysis) {
     return <NoAnalysisFound />;
-  }
-  
-  // If the analysis is incomplete, show the error handler
-  if (showErrorHandler) {
-    // Get count of analyses and trait count for display in error message
-    const analysisHistory = getAnalysisHistory();
-    const traitCount = stableAnalysis.traits && Array.isArray(stableAnalysis.traits) ? stableAnalysis.traits.length : 0;
-    const analysisCount = analysisHistory ? analysisHistory.length : 0;
-    
-    return (
-      <div className="container max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto py-4 md:py-8 px-3 md:px-4 min-h-screen">
-        <Button 
-          variant="ghost" 
-          className="-ml-2 mb-6" 
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-        
-        <AssessmentErrorHandler 
-          title="Incomplete Analysis Data"
-          description={`Your latest analysis report has incomplete data. You have ${analysisCount} total analyses.`}
-          showRetry={true}
-          errorDetails={`Analysis ID: ${stableAnalysis.id}\nTraits found: ${traitCount}\nExpected: 8-12 traits\nTotal analyses: ${analysisCount}`}
-        />
-        
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            You can try one of these options to fix the issue:
-          </p>
-          
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <FixAnalysisButton />
-            
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              disabled={isRefreshingData}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshingData ? 'animate-spin' : ''}`} />
-              Refresh Data
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
   }
   
   return (
