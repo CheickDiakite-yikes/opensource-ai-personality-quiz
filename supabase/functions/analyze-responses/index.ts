@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "./types.ts";
@@ -358,7 +357,7 @@ async function generateAIAnalysis(
     const uniqueSeed = parseInt(assessmentId.split('-')[0], 16) % 10000 + Date.now() % 1000;
     console.log("Using seed for analysis:", uniqueSeed);
     
-    // Use the correct parameters supported by the gpt-4o model with maximum tokens
+    // Use the correct parameters supported by the gpt-4o model with increased maximum tokens
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -375,7 +374,7 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 16384, // Maximum output tokens for gpt-4o
+        max_tokens: 15000, // Increased from 16384 to 15000 to ensure we get complete responses
         seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.7,  // Increased temperature for more creative, detailed responses
       }),

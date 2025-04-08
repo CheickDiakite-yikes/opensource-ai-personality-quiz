@@ -52,7 +52,7 @@ export const useSupabaseSync = () => {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(100) // Get up to 100 analyses instead of default
+          .limit(500) // Increased to 500 to ensure we get ALL user analyses
       );
         
       if (error) {
@@ -65,7 +65,7 @@ export const useSupabaseSync = () => {
           .select('id, created_at, user_id, assessment_id, result')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(100); // Increased limit here too
+          .limit(500); // Increased to 500 here too
           
         if (altError) {
           console.error("Alternative fetch also failed:", altError);

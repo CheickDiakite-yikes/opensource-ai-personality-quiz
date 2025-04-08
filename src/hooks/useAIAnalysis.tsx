@@ -1,3 +1,4 @@
+
 import { useAIAnalysisCore } from './aiAnalysis/useAIAnalysisCore';
 import { PersonalityAnalysis } from '@/utils/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,7 +103,7 @@ export const useAIAnalysis = () => {
           
           console.log("Successfully retrieved analysis data:", data.id);
           
-          // Check if traits exist and add type safety for the traits array
+          // Safely check if traits exist and is an array before accessing length property
           if (data.traits && Array.isArray(data.traits)) {
             console.log("Analysis traits count:", data.traits.length);
           } else {
