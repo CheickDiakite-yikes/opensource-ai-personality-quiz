@@ -1,7 +1,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { convertToPersonalityAnalysis } from "./utils";
 import { loadAnalysisHistory } from "../analysis/useLocalStorage";
@@ -11,65 +11,67 @@ export const useSupabaseSync = () => {
   const { user } = useAuth();
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
-  const MAX_RETRY_ATTEMPTS = 3;
-  const MAX_PAGE_SIZE = 50; // Reduced slightly from 100 to avoid potential payload issues
-
-  // Helper function for retrying failed requests with exponential backoff
-  const retryWithBackoff = async <T,>(operation: () => Promise<T>, maxRetries = MAX_RETRY_ATTEMPTS): Promise<T> => {
-    let attempt = 0;
-    
-    while (attempt <= maxRetries) {
-      try {
-        return await operation();
-      } catch (error) {
-        attempt++;
-        if (attempt > maxRetries) {
-          throw error;
-        }
-        
-        const delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
-        console.log(`Retry attempt ${attempt} after ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    
-    // This should never be reached because of the throw above,
-    // but TypeScript needs this to ensure a return value
-    throw new Error("Max retries exceeded");
+  const MAX_RETRY_ATTEMPTS = 5; // Increased from 3 to 5
+  const MAX_PAGE_SIZE = 25; // Optimized page size for better reliability
+  const totalAnalysesCountRef = useRef<number | null>(null);
+  const lastFetchTimeRef = useRef<Date | null>(null);
+  
+  // Helper function to log detailed fetch information
+  const logFetch = (message: string, data?: any) => {
+    console.log(`[SupabaseSync] ${message}`, data || '');
   };
 
-  // Fetch analyses from Supabase with improved error handling and logging
-  const fetchAnalysesFromSupabase = useCallback(async () => {
+  // Fetch analyses from Supabase with improved pagination and error handling
+  const fetchAnalysesFromSupabase = useCallback(async (forceRefresh = false) => {
     if (!user) {
-      console.log("No user found, cannot fetch analyses");
+      logFetch("No user found, cannot fetch analyses");
       return null;
+    }
+    
+    // Prevent concurrent fetches
+    if (syncInProgress && !forceRefresh) {
+      logFetch("Sync already in progress, skipping");
+      return null;
+    }
+    
+    // Check if we've fetched recently (within 5 seconds) and it's not a force refresh
+    if (lastFetchTimeRef.current && !forceRefresh) {
+      const now = new Date();
+      const timeSinceLastFetch = now.getTime() - lastFetchTimeRef.current.getTime();
+      if (timeSinceLastFetch < 5000) { // 5 seconds cooldown
+        logFetch(`Skipping fetch, last fetch was ${timeSinceLastFetch}ms ago`);
+        return null;
+      }
     }
     
     // Set a flag to prevent concurrent fetches
     setSyncInProgress(true);
+    lastFetchTimeRef.current = new Date();
     
     try {
-      console.log("Fetching all analyses for user:", user.id);
+      logFetch(`Fetching all analyses for user: ${user.id}`);
       
-      // First attempt: try to get a count of total analyses to fetch
+      // First get a count of total analyses to fetch
       const { count, error: countError } = await supabase
         .from('analyses')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
-        
+      
       if (countError) {
         console.error("Error getting analyses count:", countError);
       } else {
-        console.log(`Found approximately ${count} analyses to fetch`);
+        totalAnalysesCountRef.current = count || 0;
+        logFetch(`Found approximately ${count} analyses to fetch`);
       }
-      
-      // Try to fetch all analyses in separate small batches to avoid payload size issues
+
+      // Fetch all analyses in batches with pagination
       let allData = [];
       let page = 0;
       let hasMoreData = true;
+      const maxPages = 20; // Safety limit to prevent infinite loop
       
-      while (hasMoreData) {
-        console.log(`Fetching analyses page ${page + 1} (offset: ${page * MAX_PAGE_SIZE})`);
+      while (hasMoreData && page < maxPages) {
+        logFetch(`Fetching analyses page ${page + 1} (offset: ${page * MAX_PAGE_SIZE})`);
         
         try {
           const { data, error } = await supabase
@@ -81,142 +83,150 @@ export const useSupabaseSync = () => {
           
           if (error) {
             console.error(`Error fetching analyses page ${page + 1}:`, error);
-            break;
+            // Don't break, try next page
           }
           
           if (data && data.length > 0) {
-            // Check if we have valid data before adding to result
+            // Filter out invalid records
             const validRecords = data.filter(record => 
-              record && record.id && record.result // Only include records with required fields
+              record && typeof record === 'object' && record.id
             );
             
             if (validRecords.length > 0) {
               allData = [...allData, ...validRecords];
-              console.log(`Retrieved ${validRecords.length} valid analyses for page ${page + 1}`);
+              logFetch(`Retrieved ${validRecords.length} valid analyses for page ${page + 1}`);
             }
             
             if (data.length < MAX_PAGE_SIZE) {
               hasMoreData = false;
-              console.log("No more pages to fetch");
+              logFetch("No more pages to fetch");
             }
           } else {
             hasMoreData = false;
-            console.log("No data found in this page");
+            logFetch("No data found in this page");
           }
         } catch (pageError) {
           console.error(`Exception fetching page ${page + 1}:`, pageError);
-          break;
+          // Don't break, try next page
         }
         
         page++;
-        
-        // Safety check to prevent infinite loops
-        if (page > 10) {
-          console.warn("Reached maximum page limit of 10, stopping fetch");
-          hasMoreData = false;
-        }
       }
       
       if (allData.length === 0) {
-        // No analyses found with pagination, try a direct query with minimal fields
-        console.log("No analyses found with pagination, trying direct query with minimal fields");
+        // Fall back to a direct query with minimal filtering
+        logFetch("No analyses found with pagination, trying direct query");
         
-        const { data: minimalData, error: minimalError } = await supabase
+        const { data: directData, error: directError } = await supabase
           .from('analyses')
-          .select('id, created_at, user_id, assessment_id')
+          .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .limit(1000); // High limit to try to get everything
         
-        if (minimalError) {
-          console.error("Minimal fields query also failed:", minimalError);
-        } else if (minimalData && minimalData.length > 0) {
-          console.log(`Found ${minimalData.length} analyses with minimal fields query`);
+        if (directError) {
+          console.error("Direct query failed:", directError);
+        } else if (directData && directData.length > 0) {
+          logFetch(`Found ${directData.length} analyses with direct query`);
+          allData = directData;
+        }
+      }
+      
+      // Last resort: try to get just the IDs if all else fails
+      if (allData.length === 0) {
+        logFetch("Trying to get just analysis IDs as last resort");
+        
+        const { data: idData, error: idError } = await supabase
+          .from('analyses')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1000);
           
-          // For each minimal record, try to fetch the full data individually
-          const fullRecords = [];
+        if (idError) {
+          console.error("ID-only query failed:", idError);
+        } else if (idData && idData.length > 0) {
+          logFetch(`Found ${idData.length} analysis IDs, fetching full data individually`);
           
-          for (const item of minimalData) {
+          // For each ID, try to fetch the full data individually
+          for (const item of idData.slice(0, 50)) { // Limit to first 50 to avoid overwhelming
             try {
-              console.log(`Fetching full data for analysis ${item.id}`);
-              const { data: fullRecord, error: recordError } = await supabase
+              const { data: fullData } = await supabase
                 .from('analyses')
                 .select('*')
                 .eq('id', item.id)
                 .maybeSingle();
                 
-              if (recordError) {
-                console.error(`Error fetching full data for analysis ${item.id}:`, recordError);
-              } else if (fullRecord) {
-                fullRecords.push(fullRecord);
-                console.log(`Successfully fetched full data for analysis ${item.id}`);
+              if (fullData) {
+                allData.push(fullData);
               }
             } catch (e) {
-              console.error(`Exception fetching analysis ${item.id}:`, e);
+              // Continue with next ID
             }
             
-            // Add a small delay between requests to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
-          
-          if (fullRecords.length > 0) {
-            console.log(`Retrieved ${fullRecords.length} full analyses with individual requests`);
-            return fullRecords;
-          }
-          
-          // If we couldn't get full records, return the minimal data as a last resort
-          return minimalData;
         }
       }
       
-      console.log(`Successfully retrieved ${allData.length} total analyses`);
+      // Compare retrieved count with expected count
+      if (totalAnalysesCountRef.current !== null && allData.length < totalAnalysesCountRef.current) {
+        logFetch(`Warning: Retrieved only ${allData.length} out of ${totalAnalysesCountRef.current} expected analyses`);
+      }
+      
+      logFetch(`Successfully retrieved ${allData.length} total analyses`);
+      setRetryAttempts(0); // Reset retry counter on success
       return allData;
     } catch (error) {
       console.error("Error in fetchAnalysesFromSupabase:", error);
       
-      // Final fallback: try the simplest possible query
-      try {
-        console.log("Trying simplest possible query as last resort");
-        const { data: simpleData } = await supabase
-          .from('analyses')
-          .select('id, assessment_id, created_at')
-          .eq('user_id', user.id)
-          .limit(1000);
-          
-        if (simpleData && simpleData.length > 0) {
-          console.log(`Found ${simpleData.length} analyses with simplest query`);
-          return simpleData;
-        }
-      } catch (fallbackError) {
-        console.error("Even simplest query failed:", fallbackError);
-      }
-      
+      // Implement aggressive retry mechanism
       if (retryAttempts < MAX_RETRY_ATTEMPTS) {
-        setRetryAttempts(prev => prev + 1);
-        const delay = Math.pow(2, retryAttempts) * 1000;
-        console.log(`Will retry fetching analyses in ${delay}ms (attempt ${retryAttempts + 1})`);
+        const newRetryCount = retryAttempts + 1;
+        setRetryAttempts(newRetryCount);
+        const delay = Math.min(Math.pow(2, newRetryCount) * 500, 10000); // Max 10 second delay
         
-        // We'll return null here instead of retrying immediately to prevent UI blocking
-        return null;
+        logFetch(`Will retry fetching analyses in ${delay}ms (attempt ${newRetryCount}/${MAX_RETRY_ATTEMPTS})`);
+        setSyncInProgress(false);
+        
+        // Automatic retry after delay
+        setTimeout(() => {
+          fetchAnalysesFromSupabase(true).catch(console.error);
+        }, delay);
       }
       
       return null;
     } finally {
       setSyncInProgress(false);
     }
-  }, [user, retryAttempts, MAX_PAGE_SIZE]);
+  }, [user, retryAttempts, MAX_RETRY_ATTEMPTS, syncInProgress]);
 
-  // New function to force fetch a specific analysis by ID
+  // Function to force fetch a specific analysis by ID
   const fetchAnalysisById = useCallback(async (analysisId: string): Promise<PersonalityAnalysis | null> => {
     if (!analysisId) return null;
     
     try {
-      console.log(`Directly fetching analysis with ID: ${analysisId}`);
+      logFetch(`Directly fetching analysis with ID: ${analysisId}`);
       
-      const { data, error } = await supabase
+      // Try with exact ID match first
+      let { data, error } = await supabase
         .from('analyses')
         .select('*')
         .eq('id', analysisId)
         .maybeSingle();
+      
+      // If not found, try with assessment_id
+      if (!data && !error) {
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('assessment_id', analysisId)
+          .maybeSingle();
+        
+        if (!assessmentError) {
+          data = assessmentData;
+        }
+      }
       
       if (error) {
         console.error(`Error fetching analysis ${analysisId}:`, error);
@@ -224,7 +234,7 @@ export const useSupabaseSync = () => {
       }
       
       if (!data) {
-        console.log(`No analysis found with ID: ${analysisId}`);
+        logFetch(`No analysis found with ID: ${analysisId}`);
         return null;
       }
       
