@@ -206,6 +206,8 @@ async function generateAIAnalysis(
     "roadmap": "personalized development roadmap with measurable milestones tied to specific traits"
   }
   
+  IMPORTANT: Every trait description MUST include at least one specific Question ID reference to show it was based on actual responses!
+  
   IMPORTANT FINAL CHECKS:
   - Have you referenced specific responses by Question ID to support each major conclusion?
   - Have you avoided generic Barnum statements that could apply to anyone?
@@ -233,7 +235,7 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. EVERY trait description MUST reference at least one specific Question ID to show you're being evidence-based.'
           },
           { role: 'user', content: prompt }
         ],
@@ -260,10 +262,15 @@ async function generateAIAnalysis(
         analysisJson.createdAt = new Date().toISOString();
       }
       
+      // Ensure shadowAspects is always an array
+      if (!analysisJson.shadowAspects) {
+        analysisJson.shadowAspects = [];
+      }
+      
       // Validate analysis quality - ensure it's personalized by checking for specific elements
       const validationResults = validateAnalysisQuality(analysisJson);
       if (!validationResults.isValid) {
-        console.warn("Analysis quality validation warnings:", validationResults.warnings);
+        console.error("Analysis quality validation warnings:", validationResults.warnings);
       }
       
       // Log some key metrics to help verify the quality of the analysis
@@ -295,6 +302,11 @@ function validateAnalysisQuality(analysis: any) {
     const genericPhrases = ["sometimes", "often", "may be", "can be", "tends to"];
     
     for (const trait of analysis.traits) {
+      // Check for Question ID references
+      if (!trait.description.includes("Question") && !trait.description.includes("ID")) {
+        warnings.push(`Trait '${trait.trait}' doesn't reference specific responses`);
+      }
+      
       // Check for generic language
       const hasGenericPhrases = genericPhrases.some(phrase => 
         trait.description.includes(phrase)
@@ -302,11 +314,6 @@ function validateAnalysisQuality(analysis: any) {
       
       if (hasGenericPhrases && trait.description.length < 100) {
         warnings.push(`Trait '${trait.trait}' may contain generic descriptions`);
-      }
-      
-      // Check for specific evidence references
-      if (!trait.description.includes("Question") && !trait.description.includes("response")) {
-        warnings.push(`Trait '${trait.trait}' doesn't reference specific responses`);
       }
     }
   }

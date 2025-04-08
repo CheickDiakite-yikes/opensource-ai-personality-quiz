@@ -40,7 +40,6 @@ export const useAnalyzeResponses = (
       if (user) {
         try {
           // We need to convert AssessmentResponse[] to a JSON-compatible format
-          // by using JSON.stringify and then parsing it back to handle Date objects
           const jsonResponses = JSON.parse(JSON.stringify(responses));
           
           // Check if the assessment already exists
@@ -118,30 +117,35 @@ export const useAnalyzeResponses = (
           // Convert all JSON fields to their string representation to ensure compatibility
           const jsonAnalysis = JSON.parse(JSON.stringify(result.data.analysis));
           
+          // Create a clean insert object with proper null handling
+          const insertObject = {
+            id: result.data.analysis.id,
+            user_id: user.id,
+            assessment_id: assessmentId,
+            result: jsonAnalysis,
+            overview: result.data.analysis.overview,
+            traits: jsonAnalysis.traits,
+            intelligence: jsonAnalysis.intelligence,
+            intelligence_score: result.data.analysis.intelligenceScore,
+            emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore,
+            cognitive_style: jsonAnalysis.cognitiveStyle,
+            value_system: jsonAnalysis.valueSystem,
+            motivators: jsonAnalysis.motivators,
+            inhibitors: jsonAnalysis.inhibitors,
+            weaknesses: jsonAnalysis.weaknesses,
+            shadow_aspects: jsonAnalysis.shadowAspects || [], 
+            growth_areas: jsonAnalysis.growthAreas,
+            relationship_patterns: jsonAnalysis.relationshipPatterns,
+            career_suggestions: jsonAnalysis.careerSuggestions,
+            learning_pathways: jsonAnalysis.learningPathways,
+            roadmap: result.data.analysis.roadmap
+          };
+          
+          console.log("Saving analysis to Supabase with the following structure:", Object.keys(insertObject).join(", "));
+          
           const { error: analysisError } = await supabase
             .from('analyses')
-            .insert({
-              id: result.data.analysis.id,
-              user_id: user.id,
-              assessment_id: assessmentId,
-              result: jsonAnalysis,
-              overview: result.data.analysis.overview,
-              traits: jsonAnalysis.traits,
-              intelligence: jsonAnalysis.intelligence,
-              intelligence_score: result.data.analysis.intelligenceScore,
-              emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore,
-              cognitive_style: jsonAnalysis.cognitiveStyle,
-              value_system: jsonAnalysis.valueSystem,
-              motivators: jsonAnalysis.motivators,
-              inhibitors: jsonAnalysis.inhibitors,
-              weaknesses: jsonAnalysis.weaknesses,
-              shadow_aspects: jsonAnalysis.shadowAspects, 
-              growth_areas: jsonAnalysis.growthAreas,
-              relationship_patterns: jsonAnalysis.relationshipPatterns,
-              career_suggestions: jsonAnalysis.careerSuggestions,
-              learning_pathways: jsonAnalysis.learningPathways,
-              roadmap: result.data.analysis.roadmap
-            });
+            .insert(insertObject);
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
@@ -151,7 +155,7 @@ export const useAnalyzeResponses = (
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
-          throw new Error(`Failed to save analysis: ${err.message}`);
+          throw new Error(`Failed to save analysis: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
       
@@ -163,7 +167,7 @@ export const useAnalyzeResponses = (
       return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
-      toast.error(`Analysis failed: ${error.message || "Unknown error"}. Using fallback analysis.`);
+      toast.error(`Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}. Using fallback analysis.`);
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {

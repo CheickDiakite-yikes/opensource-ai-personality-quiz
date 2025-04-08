@@ -81,7 +81,12 @@ export const useAssessmentState = (allQuestions: AssessmentQuestion[]) => {
         }
       } catch (error) {
         console.error("Error initializing current response:", error);
+        toast.error("Could not restore your previous progress", {
+          description: "Starting a new assessment."
+        });
       }
+    } else {
+      console.log("No saved progress found, starting fresh assessment");
     }
   }, []);
 

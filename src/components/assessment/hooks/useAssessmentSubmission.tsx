@@ -24,11 +24,13 @@ export const useAssessmentSubmission = (
     }
     
     try {
-      // Generate a UUID for assessment
+      // Generate a UUID for assessment - using text format now that our table accepts text IDs
       const assessmentId = `assessment-${uuidv4()}`;
       
       // Convert responses to JSON-compatible format
       const jsonResponses = JSON.parse(JSON.stringify(responses));
+      
+      console.log(`Attempting to save assessment with ID: ${assessmentId} and ${responses.length} responses`);
       
       // Insert into assessments table
       const { data, error } = await supabase
@@ -74,6 +76,10 @@ export const useAssessmentSubmission = (
         });
         return;
       }
+      
+      // Log responses for debugging
+      console.log(`Submitting assessment with ${responses.length} responses`);
+      console.log("First few responses:", responses.slice(0, 3));
       
       // First, save responses directly to Supabase
       const savedAssessmentId = await saveResponsesDirectlyToSupabase(responses);
