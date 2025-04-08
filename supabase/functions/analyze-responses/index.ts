@@ -181,7 +181,7 @@ async function generateAIAnalysis(
     return `CATEGORY: ${category.toUpperCase()}\n${responseSummaries}`;
   }).join('\n\n');
 
-  // Create a more specific and comprehensive prompt for analysis
+  // Create a more specific and comprehensive prompt for analysis with enhanced instructions for detailed output
   const prompt = `
   You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, and reflects both positive traits and potential challenges.
   
@@ -259,13 +259,17 @@ async function generateAIAnalysis(
   
   6. OUTPUT LENGTH AND DETAIL REQUIREMENTS:
      - EXTREMELY IMPORTANT: Write LENGTHY, DETAILED content for each section
-     - Aim for 500-800 words for the overview section
-     - For each trait description, write at least 250-300 words with multiple paragraphs
-     - Include at least 8-12 distinct personality traits
+     - Write at least 1000-2000 words for the overview section
+     - For each trait description, write at least 500-750 words with multiple paragraphs
+     - Include at least 9-12 distinct personality traits with exhaustive descriptions
      - Include 10-15 growth suggestions for each trait
-     - Write lengthy descriptions for cognitive processing styles - at least 300 words
+     - Write lengthy descriptions for cognitive processing styles - at least 800-1000 words
      - Provide extremely detailed explanations with examples for all sections
-     - The total analysis should be comprehensive - aim for 5000-8000 words total
+     - The total analysis should be comprehensive - aim for at least 14000 tokens total
+     - NEVER WRITE SHORT OR CONCISE SECTIONS - BE EXTREMELY VERBOSE AND THOROUGH
+     - MAXIMIZE your use of the available token limit - use at least 14000-15000 tokens
+     - Every section should have multiple paragraphs with rich detail and specific examples
+     - Include extensive supporting evidence from the responses for each conclusion
   
   7. SHADOW ASPECTS AND BLIND SPOTS:
      - Identify potential shadow aspects (unconscious or denied parts of personality)
@@ -286,26 +290,26 @@ async function generateAIAnalysis(
   {
     "id": "${assessmentId}",
     "createdAt": "current timestamp",
-    "overview": "highly specific summary paragraph that cites unique response patterns and avoids generic descriptions - make this at least 500-800 words",
+    "overview": "highly specific summary paragraph that cites unique response patterns and avoids generic descriptions - WRITE AT LEAST 1000-2000 WORDS HERE - BE EXTREMELY DETAILED",
     "traits": [
       {
         "trait": "specific trait name with evidence",
         "score": score (0-10),
-        "description": "detailed description with specific examples - at least 250-300 words per trait",
-        "strengths": ["list", "of", "specific strengths with reference to response patterns - include at least 5-8 items"],
-        "challenges": ["list", "of", "specific challenges with direct supporting evidence - include at least 5-8 items"],
-        "growthSuggestions": ["list", "of", "personalized growth suggestions - include at least 10-15 detailed suggestions"]
+        "description": "detailed description with specific examples - AT LEAST 500-750 WORDS PER TRAIT - MULTIPLE PARAGRAPHS",
+        "strengths": ["list", "of", "specific strengths with reference to response patterns - include at least 8-10 items"],
+        "challenges": ["list", "of", "specific challenges with direct supporting evidence - include at least 8-10 items"],
+        "growthSuggestions": ["list", "of", "personalized growth suggestions - include at least 12-15 detailed suggestions"]
       }
     ],
     "intelligence": {
       "type": "specific cognitive processing style - highly personalized",
       "score": score (0-10),
-      "description": "detailed description of thinking patterns - at least 300 words",
+      "description": "detailed description of thinking patterns - AT LEAST 800-1000 WORDS",
       "domains": [
         {
           "name": "domain name (e.g., 'Pattern Recognition', 'Analytical Processing', etc.)",
           "score": score (0-10),
-          "description": "description with specific supporting evidence - at least 150 words per domain"
+          "description": "description with specific supporting evidence - AT LEAST 300-400 WORDS PER DOMAIN"
         }
       ]
     },
@@ -314,7 +318,7 @@ async function generateAIAnalysis(
     "cognitiveStyle": {
       "primary": "primary style with evidence",
       "secondary": "secondary style with evidence",
-      "description": "detailed explanation citing specific response contradictions and complexities - at least 300 words"
+      "description": "detailed explanation citing specific response contradictions and complexities - AT LEAST 800-1000 WORDS"
     },
     "valueSystem": ["list of core values with specific response evidence - at least 8-10 values with detailed descriptions"],
     "motivators": ["list of motivators with specific response examples - at least 8-10 detailed motivators"],
@@ -325,28 +329,30 @@ async function generateAIAnalysis(
     ],
     "shadowAspects": [
       "list of potential unconscious or denied personality aspects suggested by response patterns - at least 5-8 items",
-      "provide detailed explanations for each shadow aspect - at least 100 words per aspect"
+      "provide detailed explanations for each shadow aspect - at least 200-300 words per aspect"
     ],
-    "growthAreas": ["list of growth areas with specific development suggestions tied to responses - at least 8-10 detailed areas"],
+    "growthAreas": ["list of growth areas with specific development suggestions tied to responses - at least 8-10 detailed areas with extensive recommendations"],
     "relationshipPatterns": {
-      "strengths": ["relationship strengths with evidence - at least 6-8 detailed items"],
-      "challenges": ["relationship challenges with evidence - at least 6-8 detailed items"],
-      "compatibleTypes": ["compatible personality types based on specific patterns - at least 5-7 types with explanations"],
-      "potentialConflictAreas": ["areas that might cause relationship difficulties based on response patterns - at least 6-8 areas"]
+      "strengths": ["relationship strengths with evidence - at least 8-10 detailed items"],
+      "challenges": ["relationship challenges with evidence - at least 8-10 detailed items"],
+      "compatibleTypes": ["compatible personality types based on specific patterns - at least 7-10 types with explanations"],
+      "potentialConflictAreas": ["areas that might cause relationship difficulties based on response patterns - at least 8-10 areas with specific examples"]
     },
-    "careerSuggestions": ["list of career suggestions aligned with identified traits - at least 12-15 detailed career paths"],
-    "learningPathways": ["list of learning approaches suited to cognitive style - at least 8-10 detailed approaches"],
-    "roadmap": "personalized development roadmap with measurable milestones - at least 500 words"
+    "careerSuggestions": ["list of career suggestions aligned with identified traits - at least 15-20 detailed career paths with explanations"],
+    "learningPathways": ["list of learning approaches suited to cognitive style - at least 10-12 detailed approaches with rationales"],
+    "roadmap": "personalized development roadmap with measurable milestones - AT LEAST 1000-1500 WORDS"
   }
   
-  IMPORTANT FINAL CHECKS:
-  - Have you written DETAILED, LENGTHY content for each section?
+  IMPORTANT FINAL CHECKS - ENSURE MAXIMUM CONTENT GENERATION:
+  - Have you written EXTENSIVELY DETAILED, LENGTHY content for each section?
+  - Have you maximized the token usage (aim for at least 14000-15000 tokens)?
+  - Have you written multiple paragraphs for each section?
   - Have you avoided generic Barnum statements that could apply to anyone?
   - Have you identified potential negative traits, weaknesses or shadow aspects honestly?
   - Have you identified unique contradictions or tensions in their response patterns?
   - Would your analysis feel custom-written to the individual based on their specific responses?
   - Is your analysis distinguishable from one you would write for someone with different responses?
-  - Have you provided at least the minimum word count for each section?`;
+  - HAVE YOU WRITTEN THE ABSOLUTE MAXIMUM AMOUNT OF CONTENT POSSIBLE WITHIN TOKEN LIMITS?`;
 
   try {
     console.log("Preparing OpenAI API request for analysis using gpt-4o model");
@@ -358,7 +364,7 @@ async function generateAIAnalysis(
     const uniqueSeed = parseInt(assessmentId.split('-')[0], 16) % 10000 + Date.now() % 1000;
     console.log("Using seed for analysis:", uniqueSeed);
     
-    // Set up the request for a very detailed output without using min_tokens parameter
+    // Set up the request for a very detailed output
     console.log("Setting up request for comprehensive analysis");
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -372,7 +378,7 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. You write LENGTHY, DETAILED content for each section of the analysis. Your outputs MUST be comprehensive, covering all required sections in detail.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. Your primary goal is to write EXTREMELY LENGTHY, DETAILED content for each section of the analysis. You must use a MINIMUM of 14000 tokens in your response, being as verbose and thorough as possible. Provide exhaustive analyses with multiple paragraphs per section, extensive supporting evidence, and the maximum amount of content possible within the token limit. NEVER be concise - always elaborate in extreme detail.'
           },
           { role: 'user', content: prompt }
         ],
@@ -426,6 +432,7 @@ async function generateAIAnalysis(
       // Log some key metrics to help verify the quality of the analysis
       console.log(`Analysis generated with cognitive flexibility score: ${analysisJson.intelligenceScore}, emotional intelligence: ${analysisJson.emotionalIntelligenceScore}`);
       console.log(`Identified ${analysisJson.traits?.length || 0} personality traits and ${analysisJson.weaknesses?.length || 0} potential weaknesses`);
+      console.log(`Total response tokens used: ${data.usage.completion_tokens} out of ${data.usage.total_tokens}`);
       
       return analysisJson as PersonalityAnalysis;
     } catch (error) {
@@ -485,38 +492,38 @@ function validateAnalysisQuality(analysis: any) {
   const warnings: string[] = [];
   
   // Check that the overview isn't too short
-  if (analysis.overview && analysis.overview.length < 300) {
-    warnings.push(`Overview seems too short (${analysis.overview.length} characters) - we asked for 500-800 words`);
+  if (analysis.overview && analysis.overview.length < 800) {
+    warnings.push(`Overview seems too short (${analysis.overview.length} characters) - we asked for 1000-2000 words`);
   }
   
   // Check that we have enough traits
   if (!analysis.traits || analysis.traits.length < 8) {
-    warnings.push(`Not enough traits identified (${analysis.traits?.length || 0}) - we asked for 8-12 traits`);
+    warnings.push(`Not enough traits identified (${analysis.traits?.length || 0}) - we asked for 9-12 traits`);
   }
   
   // Check trait descriptions for length
   if (analysis.traits && analysis.traits.length > 0) {
     for (const trait of analysis.traits) {
-      if (trait.description && trait.description.length < 200) {
-        warnings.push(`Trait '${trait.trait}' has a short description (${trait.description.length} characters) - we asked for 250-300 words`);
+      if (trait.description && trait.description.length < 400) {
+        warnings.push(`Trait '${trait.trait}' has a short description (${trait.description.length} characters) - we asked for 500-750 words`);
       }
       
       // Check growth suggestions count
-      if (!trait.growthSuggestions || trait.growthSuggestions.length < 8) {
-        warnings.push(`Trait '${trait.trait}' has too few growth suggestions (${trait.growthSuggestions?.length || 0}) - we asked for 10-15`);
+      if (!trait.growthSuggestions || trait.growthSuggestions.length < 10) {
+        warnings.push(`Trait '${trait.trait}' has too few growth suggestions (${trait.growthSuggestions?.length || 0}) - we asked for 12-15`);
       }
     }
   }
   
   // Check for balanced analysis - make sure we have some weaknesses or shadow aspects identified
-  if ((!analysis.weaknesses || analysis.weaknesses.length < 3) && 
-      (!analysis.shadowAspects || analysis.shadowAspects.length < 3)) {
+  if ((!analysis.weaknesses || analysis.weaknesses.length < 4) && 
+      (!analysis.shadowAspects || analysis.shadowAspects.length < 4)) {
     warnings.push("Analysis may be too positively biased - not enough weaknesses or shadow aspects identified");
   }
   
   // Check roadmap length
-  if (analysis.roadmap && analysis.roadmap.length < 300) {
-    warnings.push(`Roadmap seems too short (${analysis.roadmap.length} characters) - we asked for at least 500 words`);
+  if (analysis.roadmap && analysis.roadmap.length < 800) {
+    warnings.push(`Roadmap seems too short (${analysis.roadmap.length} characters) - we asked for 1000-1500 words`);
   }
   
   // Check intelligence scores for reasonableness

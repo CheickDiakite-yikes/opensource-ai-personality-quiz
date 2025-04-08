@@ -68,7 +68,7 @@ export const useAssessmentSubmission = (
     
     try {
       toast.info("Analyzing your responses...", {
-        duration: 5000,
+        duration: 15000, // Increased duration to account for longer analysis time
         id: "analyzing-toast"
       });
       
@@ -100,6 +100,8 @@ export const useAssessmentSubmission = (
       
       // Send responses to the analyze function, which will also try to store in Supabase
       console.log("Starting AI analysis with responses:", responses.length);
+      console.log("Analysis may take 1-3 minutes due to comprehensive data generation");
+      
       const analysis = await analyzeResponses(responses).catch(error => {
         console.error("Error during analysis:", error);
         console.error("Error stack:", error.stack);
@@ -124,23 +126,27 @@ export const useAssessmentSubmission = (
         // Continue even if refresh fails, as we still have the analysis object
       });
       
-      // Add delay to ensure analysis is fully processed
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Add increased delay to ensure analysis is fully processed and available
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Check if analysis is sufficiently complete
-      const isComplete = analysis.traits && Array.isArray(analysis.traits) && analysis.traits.length >= 2;
+      const traitsCount = analysis.traits && Array.isArray(analysis.traits) ? analysis.traits.length : 0;
+      const isComplete = traitsCount >= 8;
+      
+      console.log(`Analysis has ${traitsCount} traits, minimum required: 8, complete: ${isComplete}`);
       
       // Update the analyzing toast to show success
       toast.success(isComplete ? "Analysis completed successfully!" : "Analysis partially completed", {
         id: "analyzing-toast",
-        duration: 3000
+        duration: 5000
       });
       
       // Validate that we have sufficient traits for display
-      if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
-        console.warn(`Analysis has insufficient traits: ${analysis.traits?.length || 0}/2 minimum required`);
+      if (!isComplete) {
+        console.warn(`Analysis has insufficient traits: ${traitsCount}/8 minimum required`);
         toast.warning("Analysis data is incomplete", {
-          description: "We'll try to show what we have, but consider retaking the assessment"
+          description: "We'll try to show what we have, but consider retaking the assessment",
+          duration: 8000
         });
       }
       
@@ -155,7 +161,7 @@ export const useAssessmentSubmission = (
       toast.error("Something went wrong during analysis", {
         id: "analyzing-toast",
         description: error instanceof Error ? error.message : "Please try again or check your connection",
-        duration: 5000
+        duration: 8000
       });
     }
   };
