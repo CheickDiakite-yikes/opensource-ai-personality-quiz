@@ -14,10 +14,19 @@ export const useAIAnalysisCore = () => {
   const { refreshAnalysis } = useAnalysisRefresh(state, state);
   const { saveToHistory, getAnalysisHistory, setCurrentAnalysis } = useAnalysisManagement(state, state);
   const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, state.setAnalysis);
-  const { fetchAnalysesFromSupabase, fetchAnalysisById } = useSupabaseSync();
+  const { fetchAnalysesFromSupabase, fetchAnalysisById, syncInProgress } = useSupabaseSync();
   const initialLoadCompletedRef = useRef(false);
   const fetchAttemptsRef = useRef(0);
   const [fetchError, setFetchError] = useState<Error | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
+  
+  // Update local analysis history whenever state analysis history changes
+  useEffect(() => {
+    const history = state.analysisHistory;
+    if (history && history.length > 0) {
+      setAnalysisHistory(history);
+    }
+  }, [state.analysisHistory]);
   
   // Load analysis once on mount - with a guard to prevent multiple loads
   // and add retry logic for more reliability
@@ -30,6 +39,12 @@ export const useAIAnalysisCore = () => {
           console.log("Initial analysis load completed");
           fetchAttemptsRef.current = 0; // Reset attempts on success
           setFetchError(null);
+          
+          // Force a second load of all analyses to ensure we have complete data
+          const allAnalyses = await fetchAnalysesFromSupabase();
+          if (allAnalyses && allAnalyses.length > 0) {
+            console.log(`Second load retrieved ${allAnalyses.length} analyses`);
+          }
         } catch (error) {
           console.error("Error during initial analysis load:", error);
           setFetchError(error instanceof Error ? error : new Error("Unknown error during analysis load"));
@@ -52,13 +67,13 @@ export const useAIAnalysisCore = () => {
       
       attemptRefresh();
     }
-  }, [refreshAnalysis]);
+  }, [refreshAnalysis, fetchAnalysesFromSupabase]);
 
   // Function to manually reload all analyses from Supabase
   const loadAllAnalysesFromSupabase = async (): Promise<PersonalityAnalysis[]> => {
     try {
       console.log("Starting manual reload of all analyses from Supabase");
-      toast.loading("Loading all your analyses...");
+      toast.loading("Loading all your analyses...", { id: "loading-analyses" });
       
       const data = await fetchAnalysesFromSupabase();
       if (!data || data.length === 0) {
@@ -72,13 +87,17 @@ export const useAIAnalysisCore = () => {
       // Re-attempt refresh to update the state with all analyses
       await refreshAnalysis();
       
+      // Get the latest history and update the local state
+      const freshHistory = getAnalysisHistory();
+      setAnalysisHistory(freshHistory);
+      
       toast.success(`Found ${data.length} analyses`, { 
         id: "loading-analyses",
         description: "Your analysis history has been updated"
       });
       
       // Return current analysis history
-      return getAnalysisHistory();
+      return freshHistory;
     } catch (error) {
       console.error("Error during manual load of analyses:", error);
       toast.error("Failed to load all analyses", {
@@ -99,6 +118,7 @@ export const useAIAnalysisCore = () => {
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
     fetchAnalysisById,
-    fetchError
+    fetchError,
+    analysisHistory
   };
 };

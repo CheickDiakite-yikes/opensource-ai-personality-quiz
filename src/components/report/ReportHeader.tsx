@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Share, Copy, Calendar, History, Check, Twitter, Facebook, Linkedin, RefreshCw } from "lucide-react";
@@ -41,6 +42,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { loadAllAnalysesFromSupabase } = useAIAnalysis();
   const [localAnalysisHistory, setLocalAnalysisHistory] = useState<PersonalityAnalysis[]>(analysisHistory);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Update local history when prop changes
   useEffect(() => {
@@ -126,12 +128,23 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   };
 
   // Define a max number of items to show in dropdown
-  const MAX_HISTORY_ITEMS = 10;
+  const MAX_HISTORY_ITEMS = 30; // Increased from 10 to show more reports
   
   // Filter out the current analysis and get only the others
   const otherAnalyses = localAnalysisHistory
     .filter(item => item.id !== analysis.id)
     .slice(0, MAX_HISTORY_ITEMS);
+    
+  // Load more analyses when dropdown opens
+  const handleDropdownOpen = useCallback(async (open: boolean) => {
+    setIsDropdownOpen(open);
+    
+    // When dropdown opens, check if we need to load more analyses
+    if (open && localAnalysisHistory.length < 2 && !isRefreshing) {
+      console.log("Dropdown opened with few analyses, refreshing...");
+      handleRefreshAnalyses();
+    }
+  }, [localAnalysisHistory.length, isRefreshing]);
 
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
@@ -141,6 +154,11 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
             {renderDate()}
+            {localAnalysisHistory.length > 1 && (
+              <span className="ml-2 text-xs">
+                ({localAnalysisHistory.length} reports available)
+              </span>
+            )}
           </div>
         </div>
 
@@ -156,7 +174,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               Copy
             </Button>
             
-            <DropdownMenu>
+            <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -185,7 +203,12 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 </div>
                 <DropdownMenuSeparator />
                 {otherAnalyses.length === 0 ? (
-                  <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
+                    <DropdownMenuItem disabled className="italic text-xs text-muted-foreground">
+                      Click refresh to try loading more reports
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   otherAnalyses.map((item) => {
                     let dateLabel = "Unknown date";
@@ -210,6 +233,19 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                     + {localAnalysisHistory.length - MAX_HISTORY_ITEMS - 1} more reports
                   </DropdownMenuItem>
                 )}
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRefreshAnalyses();
+                  }}
+                  disabled={isRefreshing}
+                  className="flex items-center justify-center"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? "Loading..." : "Load All Reports"}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -266,7 +302,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               {copied ? "Copied" : "Copy Link"}
             </Button>
             
-            <DropdownMenu>
+            <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -294,7 +330,12 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                 </div>
                 <DropdownMenuSeparator />
                 {otherAnalyses.length === 0 ? (
-                  <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem disabled>No other reports available</DropdownMenuItem>
+                    <DropdownMenuItem disabled className="italic text-xs text-muted-foreground">
+                      Click refresh to try loading more reports
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   otherAnalyses.map((item) => {
                     let dateLabel = "Unknown date";
@@ -319,6 +360,19 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                     + {localAnalysisHistory.length - MAX_HISTORY_ITEMS - 1} more reports
                   </DropdownMenuItem>
                 )}
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRefreshAnalyses();
+                  }}
+                  disabled={isRefreshing}
+                  className="flex items-center justify-center"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? "Loading..." : "Load All Reports"}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 

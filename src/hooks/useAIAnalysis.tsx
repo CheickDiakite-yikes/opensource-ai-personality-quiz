@@ -15,7 +15,9 @@ export const useAIAnalysis = () => {
     refreshAnalysis,
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
-    fetchAnalysisById
+    fetchAnalysisById,
+    fetchError,
+    analysisHistory
   } = useAIAnalysisCore();
   
   const { getAnalysisById, isLoadingAnalysisById } = useAnalysisById();
@@ -31,6 +33,8 @@ export const useAIAnalysis = () => {
     getAnalysisById,
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
-    fetchAnalysisById
+    fetchAnalysisById,
+    fetchError,
+    analysisHistory
   };
 };
