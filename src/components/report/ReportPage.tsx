@@ -10,6 +10,7 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
+import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +32,7 @@ const ReportPage: React.FC = () => {
   const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [isLoadingAllAnalyses, setIsLoadingAllAnalyses] = useState(false);
+  const [showErrorHandler, setShowErrorHandler] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -167,6 +169,8 @@ const ReportPage: React.FC = () => {
             description: "Please try refreshing the page",
             duration: 5000
           });
+          
+          setShowErrorHandler(true);
         }
       }
     };
@@ -178,39 +182,53 @@ const ReportPage: React.FC = () => {
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
       // Make sure this analysis has the minimum required data structure
-      if (!analysis.traits || analysis.traits.length === 0) {
-        console.warn("Analysis is missing traits data:", analysis.id);
-        // Add a minimal placeholder trait to prevent rendering errors
-        analysis.traits = [{
-          trait: "Analysis Processing",
-          score: 5,
-          description: "Your analysis is still being processed or has incomplete trait data.",
-          strengths: ["Not available yet"],
-          challenges: ["Not available yet"],
-          growthSuggestions: ["Please check back shortly or try regenerating your analysis."]
-        }];
-      }
-      
-      if (!analysis.intelligence) {
-        console.warn("Analysis is missing intelligence data:", analysis.id);
-        // Add minimal placeholder intelligence data
-        analysis.intelligence = {
-          type: "Analysis Processing",
-          score: 5,
-          description: "Intelligence profile is being processed.",
-          domains: [{
-            name: "General Intelligence",
-            score: 5,
-            description: "Intelligence data is incomplete."
-          }]
-        };
-      }
-      
-      setStableAnalysis(analysis);
-      setIsChangingAnalysis(false);
-      // Update the URL if it doesn't already match the current analysis ID
-      if (id !== analysis.id) {
-        navigate(`/report/${analysis.id}`, { replace: true });
+      try {
+        // Check for critical missing data that could cause rendering issues
+        if (!analysis.traits || analysis.traits.length === 0 ||
+            !analysis.intelligence) {
+          
+          console.warn("Analysis is missing critical data:", analysis.id);
+          console.log("Traits:", analysis.traits ? analysis.traits.length : 'none');
+          console.log("Intelligence data present:", !!analysis.intelligence);
+          
+          // Show error handler for insufficient data
+          setShowErrorHandler(true);
+          
+          // Add fallbacks to prevent crashes, even as we show the error handler
+          if (!analysis.traits || analysis.traits.length === 0) {
+            analysis.traits = [{
+              trait: "Analysis Processing",
+              score: 5,
+              description: "Your analysis is still being processed or has incomplete trait data.",
+              strengths: ["Not available yet"],
+              challenges: ["Not available yet"],
+              growthSuggestions: ["Please check back shortly or try regenerating your analysis."]
+            }];
+          }
+          
+          if (!analysis.intelligence) {
+            analysis.intelligence = {
+              type: "Analysis Processing",
+              score: 5,
+              description: "Intelligence profile is being processed.",
+              domains: [{
+                name: "General Intelligence",
+                score: 5,
+                description: "Intelligence data is incomplete."
+              }]
+            };
+          }
+        }
+        
+        setStableAnalysis(analysis);
+        setIsChangingAnalysis(false);
+        // Update the URL if it doesn't already match the current analysis ID
+        if (id !== analysis.id) {
+          navigate(`/report/${analysis.id}`, { replace: true });
+        }
+      } catch (error) {
+        console.error("Error processing analysis data:", error);
+        setShowErrorHandler(true);
       }
     }
   }, [analysis, stableAnalysis, navigate, id]);
@@ -270,6 +288,15 @@ const ReportPage: React.FC = () => {
     );
   }
   
+  // Show error handler if we've detected an issue with the analysis
+  if (showErrorHandler) {
+    return (
+      <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'}`}>
+        <AssessmentErrorHandler />
+      </div>
+    );
+  }
+  
   // Use stableAnalysis if available, otherwise use analysis from the hook
   const displayAnalysis = stableAnalysis || analysis;
   
@@ -279,14 +306,10 @@ const ReportPage: React.FC = () => {
     // but this is a fallback just in case
     return (
       <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'} text-center`}>
-        <h2 className="text-2xl font-bold mb-4">No Analysis Found</h2>
-        <p className="mb-6">We couldn't find any personality analysis reports.</p>
-        <button
-          onClick={() => navigate("/assessment")}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-        >
-          Take Assessment
-        </button>
+        <AssessmentErrorHandler
+          title="No Analysis Found"
+          description="We couldn't find any personality analysis reports. Please try taking the assessment."
+        />
       </div>
     );
   }
