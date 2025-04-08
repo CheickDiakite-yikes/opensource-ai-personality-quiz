@@ -42,7 +42,7 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
           {errorDetails && (
             <div className="mt-4 p-3 bg-muted/30 rounded text-xs">
               <p className="font-medium mb-1">Technical Details:</p>
-              <p className="font-mono whitespace-pre-wrap">{errorDetails}</p>
+              <p className="font-mono whitespace-pre-wrap overflow-auto max-h-32">{errorDetails}</p>
             </div>
           )}
           
@@ -62,7 +62,7 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
         
         <p className="text-sm text-muted-foreground">
           Note: The AI analysis requires detailed responses to generate complete personality insights. 
-          Based on the logs, your analysis only found 1 trait when we expected 8-12 traits.
+          If the analysis is incomplete, try providing more information in your responses.
         </p>
       </div>
     </div>

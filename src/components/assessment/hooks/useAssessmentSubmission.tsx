@@ -124,8 +124,14 @@ export const useAssessmentSubmission = (
         // Continue even if refresh fails, as we still have the analysis object
       });
       
+      // Add delay to ensure analysis is fully processed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check if analysis is sufficiently complete
+      const isComplete = analysis.traits && Array.isArray(analysis.traits) && analysis.traits.length >= 2;
+      
       // Update the analyzing toast to show success
-      toast.success("Analysis completed successfully!", {
+      toast.success(isComplete ? "Analysis completed successfully!" : "Analysis partially completed", {
         id: "analyzing-toast",
         duration: 3000
       });

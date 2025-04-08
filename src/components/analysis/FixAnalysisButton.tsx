@@ -32,14 +32,24 @@ export const FixAnalysisButton: React.FC = () => {
           console.log(`Analysis ${index + 1}: ID: ${analysis.id}, Traits: ${analysis.traits?.length || 0}`);
         });
         
+        // Wait a moment to ensure data is fully loaded
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         // Find an analysis with sufficient traits (at least 2)
-        const completeAnalysis = analyses.find(a => a.traits && a.traits.length >= 2);
+        const completeAnalysis = analyses.find(a => a.traits && Array.isArray(a.traits) && a.traits.length >= 8);
+        const partialAnalysis = analyses.find(a => a.traits && Array.isArray(a.traits) && a.traits.length >= 2);
         
         if (completeAnalysis) {
           console.log(`Found complete analysis with ${completeAnalysis.traits?.length} traits, navigating to it`);
           navigate(`/report/${completeAnalysis.id}`);
-          toast.success("Found a more complete analysis", {
+          toast.success("Found a complete analysis", {
             description: "Displaying your best analysis results"
+          });
+        } else if (partialAnalysis) {
+          console.log(`Found partial analysis with ${partialAnalysis.traits?.length} traits, navigating to it`);
+          navigate(`/report/${partialAnalysis.id}`);
+          toast.info("Found a partial analysis", {
+            description: "Some data may be incomplete but viewable"
           });
         } else {
           // Navigate to the most recent analysis
