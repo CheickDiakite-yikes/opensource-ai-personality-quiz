@@ -7,8 +7,6 @@ import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();

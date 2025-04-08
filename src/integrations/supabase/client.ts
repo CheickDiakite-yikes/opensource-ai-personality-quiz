@@ -9,73 +9,118 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Create Supabase client with enhanced realtime configuration
+// Create Supabase client with enhanced reliability configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
   {
     realtime: {
       params: {
-        eventsPerSecond: 5 // Reduced from 10 to prevent excessive updates
+        eventsPerSecond: 3 // Reduced from 5 to prevent rate limiting issues
       }
     },
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false // Changed to false to prevent URL detection causing re-renders
+      detectSessionInUrl: false
+    },
+    global: {
+      fetch: (...args) => {
+        // Enhanced fetch with longer timeout (30 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        // Fixed TypeScript error - Create a new options object with signal
+        const [url, options = {}] = args;
+        const fetchOptions = { 
+          ...options, 
+          signal: controller.signal 
+        };
+        
+        return fetch(url, fetchOptions).finally(() => {
+          clearTimeout(timeoutId);
+        });
+      }
     }
   }
 );
 
-// Set up realtime subscriptions for the main tables but with cleanup to prevent duplication
+// Set up realtime subscriptions for the main tables with improved error handling
 const setupRealtimeSubscriptions = () => {
-  // Check if subscriptions already exist by adding a global flag
-  if ((window as any).__supabaseSubscriptionsActive) {
+  try {
+    // Check if subscriptions already exist by adding a global flag
+    if ((window as any).__supabaseSubscriptionsActive) {
+      return [];
+    }
+    
+    (window as any).__supabaseSubscriptionsActive = true;
+    
+    // Subscribe to analyses table changes
+    const analysesChannel = supabase.channel('analyses-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'analyses' 
+      }, payload => {
+        console.log('Realtime update from analyses table:', payload);
+      })
+      .subscribe(status => {
+        if (status !== 'SUBSCRIBED') {
+          console.warn('Failed to subscribe to analyses table updates:', status);
+        }
+      });
+
+    // Subscribe to activities table changes with error handling
+    const activitiesChannel = supabase.channel('activities-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'activities' 
+      }, payload => {
+        console.log('Realtime update from activities table:', payload);
+      })
+      .subscribe(status => {
+        if (status !== 'SUBSCRIBED') {
+          console.warn('Failed to subscribe to activities table updates:', status);
+        }
+      });
+
+    // Subscribe to assessments table changes
+    const assessmentsChannel = supabase.channel('assessments-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'assessments' 
+      }, payload => {
+        console.log('Realtime update from assessments table:', payload);
+      })
+      .subscribe(status => {
+        if (status !== 'SUBSCRIBED') {
+          console.warn('Failed to subscribe to assessments table updates:', status);
+        }
+      });
+
+    return [analysesChannel, activitiesChannel, assessmentsChannel];
+  } catch (error) {
+    console.error("Error setting up realtime subscriptions:", error);
     return [];
   }
-  
-  (window as any).__supabaseSubscriptionsActive = true;
-  
-  // Subscribe to analyses table changes
-  const analysesChannel = supabase.channel('analyses-realtime')
-    .on('postgres_changes', { 
-      event: '*', 
-      schema: 'public', 
-      table: 'analyses' 
-    }, payload => {
-      console.log('Realtime update from analyses table:', payload);
-    })
-    .subscribe();
-
-  // Subscribe to activities table changes
-  const activitiesChannel = supabase.channel('activities-realtime')
-    .on('postgres_changes', { 
-      event: '*', 
-      schema: 'public', 
-      table: 'activities' 
-    }, payload => {
-      console.log('Realtime update from activities table:', payload);
-    })
-    .subscribe();
-
-  // Subscribe to assessments table changes
-  const assessmentsChannel = supabase.channel('assessments-realtime')
-    .on('postgres_changes', { 
-      event: '*', 
-      schema: 'public', 
-      table: 'assessments' 
-    }, payload => {
-      console.log('Realtime update from assessments table:', payload);
-    })
-    .subscribe();
-
-  return [analysesChannel, activitiesChannel, assessmentsChannel];
 };
 
-// Initialize realtime subscriptions
-// Use a try-catch to prevent any errors here from breaking the app
+// Initialize realtime subscriptions with retry mechanism
 try {
-  setupRealtimeSubscriptions();
+  const initSubscriptions = () => {
+    try {
+      const channels = setupRealtimeSubscriptions();
+      console.log(`Initialized ${channels.length} realtime subscription channels`);
+    } catch (error) {
+      console.error("Failed to initialize realtime subscriptions:", error);
+      // Retry after 10 seconds if it fails
+      setTimeout(initSubscriptions, 10000);
+    }
+  };
+  
+  initSubscriptions();
 } catch (error) {
-  console.error("Error setting up realtime subscriptions:", error);
+  console.error("Error in subscription initialization block:", error);
 }
