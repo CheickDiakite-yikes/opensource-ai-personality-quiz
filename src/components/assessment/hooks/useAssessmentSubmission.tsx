@@ -107,18 +107,49 @@ export const useAssessmentSubmission = (
         duration: 60000
       });
       
-      const analysis = await analyzeResponses(responses).catch(error => {
-        console.error("Error during analysis:", error);
-        console.error("Error stack:", error.stack);
-        throw new Error(`Analysis failed: ${error.message}`);
-      });
+      // Add retry mechanism for analysis
+      let analysis = null;
+      let retryCount = 0;
+      const maxRetries = 2;
       
-      if (!analysis || !analysis.id) {
-        console.error("Invalid analysis result:", analysis);
-        throw new Error("Invalid analysis result");
+      while (retryCount <= maxRetries && !analysis) {
+        try {
+          if (retryCount > 0) {
+            console.log(`Retry attempt ${retryCount} for analysis...`);
+            toast.loading(`Retrying analysis (attempt ${retryCount} of ${maxRetries})...`, {
+              id: "analyzing-toast",
+              duration: 60000
+            });
+            
+            // Wait a bit longer between retries
+            await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+          }
+          
+          analysis = await analyzeResponses(responses);
+          
+          if (!analysis || !analysis.id) {
+            console.error(`Attempt ${retryCount}: Invalid analysis result:`, analysis);
+            throw new Error("Invalid analysis result");
+          }
+          
+          console.log(`Analysis completed successfully on attempt ${retryCount} with ID:`, analysis.id);
+          break; // Exit the loop if successful
+          
+        } catch (error) {
+          console.error(`Analysis attempt ${retryCount} failed:`, error);
+          console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
+          
+          if (retryCount >= maxRetries) {
+            throw new Error(`Analysis failed after ${maxRetries} attempts: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          
+          retryCount++;
+        }
       }
       
-      console.log("Analysis completed successfully with ID:", analysis.id);
+      if (!analysis) {
+        throw new Error("All analysis attempts failed");
+      }
       
       // Clear saved progress after successful submission
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);

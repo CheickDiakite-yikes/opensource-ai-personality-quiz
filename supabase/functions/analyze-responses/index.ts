@@ -29,6 +29,18 @@ serve(async (req) => {
     console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}`);
     console.log(`Response categories: ${[...new Set(responses.map(r => r.category))].join(', ')}`);
     
+    // Add additional logging for debugging
+    try {
+      const categorySummary = [...new Set(responses.map(r => r.category))].map(category => {
+        const count = responses.filter(r => r.category === category).length;
+        const percentage = Math.round((count / responses.length) * 100);
+        return `${category}: ${count} (${percentage}%)`;
+      }).join(', ');
+      console.log(`Category distribution: ${categorySummary}`);
+    } catch (logError) {
+      console.error("Error generating category summary:", logError);
+    }
+    
     // Clean and serialize responses for analysis
     const cleanedResponses = responses.map(r => ({
       ...r,
@@ -43,8 +55,33 @@ serve(async (req) => {
     const categoryCoverage = calculateCategoryCoverage(responsesByCategory);
     console.log("Category coverage:", JSON.stringify(categoryCoverage));
     
-    // Generate the AI analysis using OpenAI's API
-    const analysis = await generateAIAnalysis(responsesByCategory, assessmentId, categoryCoverage);
+    // Add additional resilience to generateAIAnalysis
+    let attempts = 0;
+    let analysis = null;
+    let lastError = null;
+    
+    while (attempts < 3 && !analysis) {
+      try {
+        if (attempts > 0) {
+          console.log(`Retry attempt ${attempts} for AI analysis`);
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+        }
+        
+        // Generate the AI analysis using OpenAI's API
+        analysis = await generateAIAnalysis(responsesByCategory, assessmentId, categoryCoverage);
+        break;
+      } catch (error) {
+        lastError = error;
+        console.error(`Error in AI analysis attempt ${attempts}:`, error);
+        attempts++;
+      }
+    }
+    
+    if (!analysis) {
+      console.error("All analysis attempts failed, last error:", lastError);
+      throw new Error(`Failed to generate analysis after ${attempts} attempts: ${lastError?.message}`);
+    }
     
     console.log("Analysis completed successfully");
     console.log("Analysis ID:", analysis.id);

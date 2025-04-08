@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AssessmentQuestion, AssessmentResponse } from "@/utils/types";
 
@@ -57,7 +57,16 @@ const AssessmentControls: React.FC<AssessmentControlsProps> = ({
           disabled={!hasResponse || isAnalyzing}
           className="flex items-center bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
         >
-          {isAnalyzing ? "Analyzing..." : "Submit"} <Send className="ml-2 h-4 w-4" />
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              Submit <Send className="ml-2 h-4 w-4" />
+            </>
+          )}
         </Button>
       )}
     </motion.div>

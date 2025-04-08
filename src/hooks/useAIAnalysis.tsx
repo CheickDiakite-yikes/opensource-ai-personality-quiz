@@ -86,11 +86,40 @@ export const useAIAnalysis = () => {
     }
   };
 
+  // Fix for the analysis generation process
+  const enhancedAnalyzeResponses = async (responses: any) => {
+    console.log("[useAIAnalysis] Starting enhanced analysis with responses:", responses.length);
+    try {
+      // First try the standard analysis method
+      const result = await analyzeResponses(responses);
+      console.log("[useAIAnalysis] Analysis completed successfully:", result?.id);
+      return result;
+    } catch (error) {
+      console.error("[useAIAnalysis] Error in first analysis attempt:", error);
+      
+      // If the first attempt failed, wait and try again
+      toast.loading("First analysis attempt failed, retrying...", { id: "retry-analysis" });
+      
+      try {
+        // Wait 3 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const secondAttempt = await analyzeResponses(responses);
+        console.log("[useAIAnalysis] Second analysis attempt succeeded:", secondAttempt?.id);
+        toast.success("Analysis completed on retry", { id: "retry-analysis" });
+        return secondAttempt;
+      } catch (secondError) {
+        console.error("[useAIAnalysis] Second analysis attempt also failed:", secondError);
+        toast.error("Analysis failed after multiple attempts", { id: "retry-analysis" });
+        throw secondError;
+      }
+    }
+  };
+
   return {
     analysis,
     isLoading: isLoading || isLoadingAnalysisById,
     isAnalyzing,
-    analyzeResponses,
+    analyzeResponses: enhancedAnalyzeResponses,
     getAnalysisHistory,
     setCurrentAnalysis,
     refreshAnalysis,
@@ -100,6 +129,6 @@ export const useAIAnalysis = () => {
     fetchAnalysisById,
     fetchError,
     analysisHistory,
-    forceFetchAllAnalyses  // New function to force fetch all analyses
+    forceFetchAllAnalyses
   };
 };
