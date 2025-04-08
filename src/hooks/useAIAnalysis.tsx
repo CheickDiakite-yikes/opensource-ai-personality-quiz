@@ -101,20 +101,29 @@ export const useAIAnalysis = () => {
           }
           
           console.log("Successfully retrieved analysis data:", data.id);
-          console.log("Analysis traits count:", data.traits?.length || 0);
+          
+          // Check if traits exist and add type safety for the traits array
+          if (data.traits && Array.isArray(data.traits)) {
+            console.log("Analysis traits count:", data.traits.length);
+          } else {
+            console.log("Analysis traits are missing or not an array");
+          }
+          
           console.log("Intelligence data present:", !!data.intelligence);
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);
           
           // Additional validation to make sure we have the critical data needed for display
-          if (!result.traits || result.traits.length < 2 || !result.intelligence) {
+          // Add proper type checking for traits to ensure we safely access length property
+          if (!result.traits || !Array.isArray(result.traits) || result.traits.length < 2 || !result.intelligence) {
             console.warn("Analysis has missing or incomplete critical data:", 
-              `traits: ${result.traits?.length || 0}, intelligence present: ${!!result.intelligence}`);
+              `traits: ${Array.isArray(result.traits) ? result.traits.length : 'not an array'}, intelligence present: ${!!result.intelligence}`);
             
             // If traits array exists but has fewer than expected items, provide feedback about incomplete analysis
-            if (!result.traits || result.traits.length < 2) {
-              result.traits = result.traits || [];
+            if (!result.traits || !Array.isArray(result.traits) || result.traits.length < 2) {
+              // Initialize traits as an empty array if it's not already an array
+              result.traits = Array.isArray(result.traits) ? [...result.traits] : [];
               
               // If there's at least one trait, keep it
               if (result.traits.length === 0) {
