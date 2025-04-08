@@ -19,11 +19,13 @@ const ReportPage: React.FC = () => {
     analysis, 
     isLoading, 
     getAnalysisHistory, 
-    setCurrentAnalysis 
+    setCurrentAnalysis,
+    refreshAnalysis 
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [hasAttemptedToLoadAnalysis, setHasAttemptedToLoadAnalysis] = useState(false);
+  const [forcedRefresh, setForcedRefresh] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -31,12 +33,29 @@ const ReportPage: React.FC = () => {
     return history;
   }, [getAnalysisHistory]);
   
+  // Force a refresh when coming from assessment completion
+  useEffect(() => {
+    if (location.state?.fromAssessment && !forcedRefresh) {
+      console.log("Detected navigation from assessment completion, forcing refresh");
+      setForcedRefresh(true);
+      refreshAnalysis().then(() => {
+        console.log("Analysis refreshed after assessment completion");
+      });
+    }
+  }, [location.state, forcedRefresh, refreshAnalysis]);
+  
   // Handle direct URL access and page refresh by ensuring we load analysis data properly
   useEffect(() => {
     // Skip if we're still loading or have already successfully loaded an analysis
     if (isLoading || stableAnalysis) return;
     
     const loadAnalysis = async () => {
+      // Force a refresh when the component mounts to ensure we have the latest data
+      if (!forcedRefresh) {
+        await refreshAnalysis();
+        setForcedRefresh(true);
+      }
+      
       // If we have an ID from the URL, try to load that specific analysis
       if (id) {
         const success = setCurrentAnalysis(id);
@@ -76,7 +95,7 @@ const ReportPage: React.FC = () => {
     };
     
     loadAnalysis();
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {

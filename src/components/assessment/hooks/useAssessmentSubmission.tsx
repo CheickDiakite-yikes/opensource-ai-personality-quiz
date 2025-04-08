@@ -117,8 +117,8 @@ export const useAssessmentSubmission = (
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
       console.log("Cleared assessment progress from localStorage");
       
-      // Refresh the analysis data to ensure we have the latest from Supabase
-      console.log("Refreshing analysis data...");
+      // Force refresh the analysis data to ensure we have the latest from Supabase
+      console.log("Refreshing analysis data before navigation...");
       await refreshAnalysis().catch(error => {
         console.error("Failed to refresh analysis data:", error);
         // Continue even if refresh fails, as we still have the analysis object
@@ -130,9 +130,11 @@ export const useAssessmentSubmission = (
         duration: 3000
       });
       
-      // Navigate to the report page with the ID to ensure it can be loaded in the future
+      // Navigate to the report page with the ID and state to indicate it's from assessment
       console.log("Navigating to report page with ID:", analysis.id);
-      navigate(`/report/${analysis.id}`);
+      navigate(`/report/${analysis.id}`, { 
+        state: { fromAssessment: true }
+      });
     } catch (error) {
       console.error("Error submitting assessment:", error);
       console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
