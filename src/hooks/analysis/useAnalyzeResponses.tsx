@@ -21,7 +21,15 @@ export const useAnalyzeResponses = (
       // Save responses to localStorage and get assessment ID
       const assessmentId = saveAssessmentToStorage(responses);
       
-      console.log("Sending responses to AI for analysis using o3-mini model...", responses);
+      console.log(`Sending ${responses.length} responses to AI for analysis using gpt-4o model...`);
+      console.log("Response distribution by category:", 
+        Object.entries(
+          responses.reduce((acc: Record<string, number>, curr) => {
+            acc[curr.category] = (acc[curr.category] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([category, count]) => `${category}: ${count}`).join(', ')
+      );
       
       // Store assessment responses in Supabase if user is logged in
       if (user) {
@@ -63,7 +71,7 @@ export const useAnalyzeResponses = (
         throw new Error("Invalid response from analysis function");
       }
       
-      console.log("Received AI analysis from o3-mini model:", data.analysis);
+      console.log("Received AI analysis from gpt-4o model:", data.analysis);
       
       // Add user ID to the analysis if user is logged in
       let analysisWithUser = data.analysis;
