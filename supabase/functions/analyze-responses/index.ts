@@ -87,7 +87,7 @@ async function generateAIAnalysis(
 
   // Create a more specific and comprehensive prompt for analysis
   const prompt = `
-  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that avoids generic descriptions and feels genuinely specific to this person.
+  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, and reflects both positive traits and potential challenges.
   
   ## Assessment Data
   The user has answered questions across ${Object.keys(responsesByCategory).length} categories (${categoryCounts}):
@@ -102,32 +102,45 @@ async function generateAIAnalysis(
      - Explicitly reference specific responses by their Question IDs when providing evidence for traits
      - Identify unique combinations of traits that would not apply to most people
      - If you cite a pattern, give at least 2-3 specific response examples that support it
+     
+  2. BE OBJECTIVELY BALANCED:
+     - Do NOT portray the individual as only positive or idealized
+     - Identify and describe potential negative traits, character flaws, or challenges revealed through responses
+     - Be honest about limitations or weaknesses, but phrase them constructively
+     - Don't sugarcoat responses that reveal difficult traits like arrogance, selfishness, manipulative tendencies, etc.
+     - Look for patterns of cognitive biases, defense mechanisms, or blind spots in their thinking
   
-  2. IDENTIFY CONTRADICTIONS AND TENSIONS:
+  3. IDENTIFY CONTRADICTIONS AND TENSIONS:
      - Look for contradictory or seemingly inconsistent answers
      - Identify and explain these tensions as part of the personality complexity
      - When finding contradictions, cite the specific responses that contradict each other
      - Explain what these contradictions reveal about the person's nuanced personality
   
-  3. AVOID GENERIC DESCRIPTIONS:
+  4. AVOID GENERIC DESCRIPTIONS:
      - NEVER use vague statements that could apply to anyone (e.g., "you are sometimes outgoing and sometimes shy")
      - Each trait description must include specific behaviors or thought patterns unique to this individual
      - Provide concrete examples from their responses that showcase uniqueness
      - Do not use Barnum statements or generalities that most people would agree with
   
-  4. PERSONALIZATION REQUIREMENTS:
+  5. PERSONALIZATION REQUIREMENTS:
      - Your analysis must feel custom-tailored to this specific individual
      - Include specific percentile rankings where appropriate (e.g., "Your analytical thinking is in the top 12% of respondents")
      - Reference the specific content of their responses, not just the patterns
      - Use the same vocabulary and communication style evident in their written responses
   
-  5. BALANCE DETAIL AND INSIGHT:
+  6. BALANCE DETAIL AND INSIGHT:
      - Provide enough detail to feel personalized but maintain readability
      - For each major insight, cite at least one specific response as evidence
      - Include "insight blocks" that reveal deeper understanding beyond obvious traits
      - Connect individual responses to broader patterns in an evidence-based way
   
-  6. COGNITIVE PROCESSING PROFILE:
+  7. SHADOW ASPECTS AND BLIND SPOTS:
+     - Identify potential shadow aspects (unconscious or denied parts of personality)
+     - Describe possible blind spots based on response patterns
+     - Note any defense mechanisms or cognitive biases evident in responses
+     - Highlight areas where self-perception might differ from reality based on response inconsistencies
+  
+  8. COGNITIVE PROCESSING PROFILE:
      - When analyzing cognitive patterns, examine specific examples of problem-solving approaches from their responses
      - Use response content to evaluate their communication style and thought organization
      - Look for tensions between different cognitive approaches in their answers
@@ -173,12 +186,20 @@ async function generateAIAnalysis(
     "valueSystem": ["list of core values with specific response evidence"],
     "motivators": ["list of motivators with specific response examples"],
     "inhibitors": ["list of inhibitors with supporting evidence from responses"],
-    "weaknesses": ["list of weaknesses with evidence from responses"],
+    "weaknesses": [
+      "list of weaknesses with evidence from responses - be honest but constructive about legitimate weaknesses",
+      "don't sugarcoat genuine issues revealed in their responses"
+    ],
+    "shadowAspects": [
+      "list of potential unconscious or denied personality aspects suggested by response patterns",
+      "cite specific response patterns that hint at these shadow aspects"
+    ],
     "growthAreas": ["list of growth areas with specific development suggestions tied to responses"],
     "relationshipPatterns": {
       "strengths": ["relationship strengths with evidence"],
       "challenges": ["relationship challenges with evidence"],
-      "compatibleTypes": ["compatible personality types based on specific patterns"]
+      "compatibleTypes": ["compatible personality types based on specific patterns"],
+      "potentialConflictAreas": ["areas that might cause relationship difficulties based on response patterns"]
     },
     "careerSuggestions": ["list of career suggestions aligned with identified traits and specific responses"],
     "learningPathways": ["list of learning approaches suited to cognitive style with evidence"],
@@ -188,6 +209,7 @@ async function generateAIAnalysis(
   IMPORTANT FINAL CHECKS:
   - Have you referenced specific responses by Question ID to support each major conclusion?
   - Have you avoided generic Barnum statements that could apply to anyone?
+  - Have you identified potential negative traits, weaknesses or shadow aspects honestly?
   - Have you identified unique contradictions or tensions in their response patterns?
   - Would your analysis feel custom-written to the individual based on their specific responses?
   - Is your analysis distinguishable from one you would write for someone with different responses?`;
@@ -211,7 +233,7 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide detailed, specific analyses that avoid generic descriptions and Barnum statements. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions.'
           },
           { role: 'user', content: prompt }
         ],
@@ -246,7 +268,7 @@ async function generateAIAnalysis(
       
       // Log some key metrics to help verify the quality of the analysis
       console.log(`Analysis generated with cognitive flexibility score: ${analysisJson.intelligenceScore}, emotional intelligence: ${analysisJson.emotionalIntelligenceScore}`);
-      console.log(`Identified ${analysisJson.traits?.length || 0} personality traits`);
+      console.log(`Identified ${analysisJson.traits?.length || 0} personality traits and ${analysisJson.weaknesses?.length || 0} potential weaknesses`);
       
       return analysisJson as PersonalityAnalysis;
     } catch (error) {
@@ -287,6 +309,12 @@ function validateAnalysisQuality(analysis: any) {
         warnings.push(`Trait '${trait.trait}' doesn't reference specific responses`);
       }
     }
+  }
+  
+  // Check for balanced analysis - make sure we have some weaknesses or shadow aspects identified
+  if ((!analysis.weaknesses || analysis.weaknesses.length === 0) && 
+      (!analysis.shadowAspects || analysis.shadowAspects.length === 0)) {
+    warnings.push("Analysis may be too positively biased - no weaknesses or shadow aspects identified");
   }
   
   return {

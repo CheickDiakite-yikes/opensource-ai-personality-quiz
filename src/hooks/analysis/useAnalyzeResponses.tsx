@@ -104,6 +104,7 @@ export const useAnalyzeResponses = (
               motivators: jsonAnalysis.motivators,
               inhibitors: jsonAnalysis.inhibitors,
               weaknesses: jsonAnalysis.weaknesses,
+              shadow_aspects: jsonAnalysis.shadowAspects, // Add new shadow aspects field
               growth_areas: jsonAnalysis.growthAreas,
               relationship_patterns: jsonAnalysis.relationshipPatterns,
               career_suggestions: jsonAnalysis.careerSuggestions,
