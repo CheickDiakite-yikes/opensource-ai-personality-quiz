@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
@@ -20,12 +20,14 @@ const ReportPage: React.FC = () => {
     isLoading, 
     getAnalysisHistory, 
     setCurrentAnalysis,
-    refreshAnalysis 
+    refreshAnalysis,
+    getAnalysisById
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [hasAttemptedToLoadAnalysis, setHasAttemptedToLoadAnalysis] = useState(false);
   const [forcedRefresh, setForcedRefresh] = useState(false);
+  const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -47,7 +49,7 @@ const ReportPage: React.FC = () => {
   // Handle direct URL access and page refresh by ensuring we load analysis data properly
   useEffect(() => {
     // Skip if we're still loading or have already successfully loaded an analysis
-    if (isLoading || stableAnalysis) return;
+    if ((isLoading && !isChangingAnalysis) || stableAnalysis) return;
     
     const loadAnalysis = async () => {
       // Force a refresh when the component mounts to ensure we have the latest data
@@ -59,6 +61,18 @@ const ReportPage: React.FC = () => {
       // If we have an ID from the URL, try to load that specific analysis
       if (id) {
         const success = setCurrentAnalysis(id);
+        
+        // If setCurrentAnalysis fails, try to fetch the analysis directly
+        if (!success) {
+          console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
+          const directAnalysis = await getAnalysisById(id);
+          
+          if (directAnalysis) {
+            console.log(`Successfully fetched analysis ${id} directly`);
+            setStableAnalysis(directAnalysis);
+            return;
+          }
+        }
         
         // If we failed to load the specified analysis and haven't already attempted to handle this
         if (!success && !analysis && !stableAnalysis && !hasAttemptedToLoadAnalysis) {
@@ -95,12 +109,13 @@ const ReportPage: React.FC = () => {
     };
     
     loadAnalysis();
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis]);
   
   // Update stable analysis when the analysis from the hook changes
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
       setStableAnalysis(analysis);
+      setIsChangingAnalysis(false);
       // Update the URL if it doesn't already match the current analysis ID
       if (id !== analysis.id) {
         navigate(`/report/${analysis.id}`, { replace: true });
@@ -108,8 +123,43 @@ const ReportPage: React.FC = () => {
     }
   }, [analysis, stableAnalysis, navigate, id]);
   
-  // Show loading state only on initial load
-  if (isLoading && !stableAnalysis) {
+  // Handle switching between analyses
+  const handleAnalysisChange = useCallback(async (analysisId: string) => {
+    console.log(`Changing analysis to ${analysisId}`);
+    
+    if (analysisId === id) {
+      console.log("Already viewing this analysis, no change needed");
+      return;
+    }
+    
+    setIsChangingAnalysis(true);
+    
+    // First try to set the current analysis using the normal method
+    const success = setCurrentAnalysis(analysisId);
+    
+    // If that fails, try to fetch it directly
+    if (!success) {
+      console.log(`Failed to set current analysis to ${analysisId}, trying direct fetch`);
+      const directAnalysis = await getAnalysisById(analysisId);
+      
+      if (directAnalysis) {
+        console.log(`Successfully fetched analysis ${analysisId} directly`);
+        setStableAnalysis(directAnalysis);
+        navigate(`/report/${analysisId}`, { replace: false });
+      } else {
+        toast.error("Could not load the selected analysis", {
+          description: "Please try again or select a different report",
+          duration: 3000
+        });
+        setIsChangingAnalysis(false);
+      }
+    } else {
+      navigate(`/report/${analysisId}`, { replace: false });
+    }
+  }, [id, setCurrentAnalysis, navigate, getAnalysisById]);
+  
+  // Show loading state only on initial load or when changing analyses
+  if ((isLoading && !stableAnalysis) || isChangingAnalysis) {
     return (
       <div className={`container ${isMobile ? 'pt-2 pb-16 px-0.5 mx-0 w-full max-w-full overflow-hidden' : 'py-10'}`}>
         <ReportSkeleton />
@@ -137,10 +187,6 @@ const ReportPage: React.FC = () => {
       </div>
     );
   }
-  
-  const handleAnalysisChange = (analysisId: string) => {
-    navigate(`/report/${analysisId}`, { replace: false });
-  };
   
   return (
     <div className={`mx-auto ${isMobile ? 'p-0 pt-1 pb-16 px-0 max-w-full w-full overflow-hidden' : 'py-6 space-y-8 max-w-4xl container'}`}>

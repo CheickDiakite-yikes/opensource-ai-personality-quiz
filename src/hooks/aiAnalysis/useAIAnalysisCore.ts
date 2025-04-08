@@ -18,6 +18,7 @@ export const useAIAnalysisCore = () => {
     if (!initialLoadCompletedRef.current) {
       refreshAnalysis().then(() => {
         initialLoadCompletedRef.current = true;
+        console.log("Initial analysis load completed");
       });
     }
   }, [refreshAnalysis]);

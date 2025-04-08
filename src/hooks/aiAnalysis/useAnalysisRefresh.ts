@@ -19,6 +19,7 @@ export const useAnalysisRefresh = (
   const refreshAnalysis = useCallback(async () => {
     // Prevent concurrent or rapid successive refreshes
     if (refreshInProgressRef.current) {
+      console.log("Refresh already in progress, skipping");
       return;
     }
 
@@ -26,6 +27,7 @@ export const useAnalysisRefresh = (
     const now = new Date();
     if (lastRefreshAttemptRef.current && 
         now.getTime() - lastRefreshAttemptRef.current.getTime() < 2000) {
+      console.log("Refresh attempted too soon after last refresh, skipping");
       return;
     }
     lastRefreshAttemptRef.current = now;
@@ -52,7 +54,13 @@ export const useAnalysisRefresh = (
             console.log(`Loaded ${data.length} analyses from Supabase`);
             
             // Convert Supabase data to PersonalityAnalysis objects
-            const analyses = data.map(convertToPersonalityAnalysis);
+            const analyses = data.map(convertToPersonalityAnalysis).filter(Boolean);
+            
+            // Ensure we have valid data
+            if (analyses.length === 0) {
+              console.error("No valid analyses after conversion, falling back to local storage");
+              throw new Error("No valid analyses after conversion");
+            }
             
             // Sort by date (newest first) and update state
             const sortedAnalyses = sortAnalysesByDate(analyses);
@@ -61,6 +69,7 @@ export const useAnalysisRefresh = (
             // Only update current analysis if not already set or if it's different
             if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
               actions.setAnalysis(sortedAnalyses[0]);
+              
               // Only show toast on initial load or when analysis actually changes
               if (!state.lastRefresh || new Date().getTime() - state.lastRefresh.getTime() > 5000) {
                 toast.success("Analysis data refreshed from cloud");
@@ -69,6 +78,7 @@ export const useAnalysisRefresh = (
             
             actions.setLastRefresh(new Date());
             actions.setIsLoading(false);
+            refreshInProgressRef.current = false;
             return;
           } else {
             console.log("No analyses found in Supabase for user:", user.id);

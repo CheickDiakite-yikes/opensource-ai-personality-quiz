@@ -94,7 +94,7 @@ export const useAIAnalysis = () => {
     } catch (error) {
       console.error("Exception in getAnalysisById:", error);
       toast.error("Error retrieving analysis", {
-        description: error.message || "Unknown error"
+        description: error instanceof Error ? error.message : "Unknown error"
       });
       return null;
     }
