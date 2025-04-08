@@ -52,15 +52,16 @@ export const useAIAnalysis = () => {
       // Using a timeout promise to prevent hanging requests
       const fetchTimeout = new Promise<null>((resolve) => {
         setTimeout(() => {
-          console.warn("Analysis fetch timed out after 15 seconds");
+          console.warn("Analysis fetch timed out after 30 seconds");
           resolve(null);
-        }, 15000);
+        }, 30000); // Increased timeout from 15s to 30s
       });
       
       // Fetch analysis directly from Supabase without requiring authentication
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
-          const { data, error } = await supabase
+          // First try getting data directly from the analyses table
+          let { data, error } = await supabase
             .from('analyses')
             .select('*')
             .eq('id', id)
@@ -68,8 +69,27 @@ export const useAIAnalysis = () => {
             
           if (error) {
             console.error("Error fetching shared analysis:", error);
-            resolve(null);
-            return;
+            
+            // If there's an error, try a second approach with the raw result field
+            const { data: rawData, error: rawError } = await supabase
+              .from('analyses')
+              .select('id, created_at, user_id, assessment_id, result')
+              .eq('id', id)
+              .maybeSingle();
+              
+            if (rawError) {
+              console.error("Failed with second approach too:", rawError);
+              resolve(null);
+              return;
+            }
+            
+            if (rawData && rawData.result) {
+              console.log("Retrieved analysis using raw result field");
+              data = rawData;
+            } else {
+              resolve(null);
+              return;
+            }
           }
           
           if (!data) {
@@ -78,7 +98,7 @@ export const useAIAnalysis = () => {
             return;
           }
           
-          console.log("Successfully retrieved analysis data:", data);
+          console.log("Successfully retrieved analysis data:", data.id);
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);
@@ -116,10 +136,14 @@ export const useAIAnalysis = () => {
             }
           }
           
-          // Ensure all required fields exist
+          // Ensure all required fields exist with fallbacks
           result.overview = result.overview || "Analysis overview was not generated properly.";
           result.intelligenceScore = result.intelligenceScore || 50;
           result.emotionalIntelligenceScore = result.emotionalIntelligenceScore || 50;
+          result.valueSystem = result.valueSystem || [];
+          result.motivators = result.motivators || [];
+          result.careerSuggestions = result.careerSuggestions || [];
+          result.growthAreas = result.growthAreas || [];
           
           // Store in cache with timestamp to prevent redundant fetches
           analysisCache.set(id, {data: result, timestamp: Date.now()});

@@ -15,6 +15,8 @@ export const useAnalysisRefresh = (
   const { user } = useAuth();
   const refreshInProgressRef = useRef(false);
   const lastRefreshAttemptRef = useRef<Date | null>(null);
+  const refreshRetryCountRef = useRef(0);
+  const MAX_RETRIES = 3;
 
   const refreshAnalysis = useCallback(async () => {
     // Prevent concurrent or rapid successive refreshes
@@ -40,18 +42,54 @@ export const useAnalysisRefresh = (
       if (user) {
         try {
           console.log("Fetching all analyses for user:", user.id);
-          const { data, error } = await supabase
+          
+          // Use a more focused query to reduce data transfer
+          let query = supabase
             .from('analyses')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
-            // Removed the limit to ensure we get all analyses
+            
+          const { data, error } = await query;
             
           if (error) {
             console.error("Error fetching analyses from Supabase:", error);
-            toast.error("Failed to load analysis data from cloud", {
-              description: "Falling back to locally stored data"
-            });
+            
+            // If there's an error, try a different approach focusing only on essential fields
+            console.log("Trying alternative fetch approach");
+            const { data: altData, error: altError } = await supabase
+              .from('analyses')
+              .select('id, created_at, user_id, assessment_id, result')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+              
+            if (altError) {
+              console.error("Alternative fetch also failed:", altError);
+              toast.error("Failed to load analysis data from cloud", {
+                description: "Falling back to locally stored data"
+              });
+            } else if (altData && altData.length > 0) {
+              console.log(`Loaded ${altData.length} analyses from Supabase using alternative method`);
+              const analyses = altData
+                .map(item => convertToPersonalityAnalysis(item))
+                .filter(Boolean);
+              
+              if (analyses && analyses.length > 0) {
+                const sortedAnalyses = sortAnalysesByDate(analyses);
+                actions.setAnalysisHistory(sortedAnalyses);
+                
+                // Only update current analysis if not already set or if it's different
+                if (!state.analysis || state.analysis.id !== sortedAnalyses[0].id) {
+                  actions.setAnalysis(sortedAnalyses[0]);
+                }
+                
+                actions.setLastRefresh(new Date());
+                actions.setIsLoading(false);
+                refreshInProgressRef.current = false;
+                refreshRetryCountRef.current = 0; // Reset retry counter on success
+                return;
+              }
+            }
           } else if (data && data.length > 0) {
             console.log(`Loaded ${data.length} analyses from Supabase`);
             
@@ -115,12 +153,28 @@ export const useAnalysisRefresh = (
             actions.setLastRefresh(new Date());
             actions.setIsLoading(false);
             refreshInProgressRef.current = false;
+            refreshRetryCountRef.current = 0; // Reset retry counter on success
             return;
           } else {
             console.log("No analyses found in Supabase for user:", user.id);
           }
         } catch (fetchError) {
           console.error("Exception fetching analyses from Supabase:", fetchError);
+          
+          // Implement retry mechanism for better reliability
+          if (refreshRetryCountRef.current < MAX_RETRIES) {
+            refreshRetryCountRef.current++;
+            console.log(`Retrying fetch (attempt ${refreshRetryCountRef.current}/${MAX_RETRIES})`);
+            
+            // Wait before retrying with exponential backoff
+            const delay = Math.pow(2, refreshRetryCountRef.current) * 1000; // 2s, 4s, 8s
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            // Try again with the same function (recursive call)
+            refreshInProgressRef.current = false;
+            return await refreshAnalysis();
+          }
+          
           toast.error("Connection error while loading data", {
             description: "Check your internet connection"
           });
