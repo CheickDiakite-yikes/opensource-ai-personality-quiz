@@ -100,7 +100,12 @@ export const useAssessmentSubmission = (
       
       // Send responses to the analyze function, which will also try to store in Supabase
       console.log("Starting AI analysis with responses:", responses.length);
-      console.log("Analysis may take 1-3 minutes due to comprehensive data generation");
+      console.log("Analysis may take 2-5 minutes due to comprehensive data generation");
+      
+      toast.loading("Analysis in progress. This may take a few minutes as our AI generates comprehensive insights for you.", {
+        id: "analyzing-toast",
+        duration: 60000
+      });
       
       const analysis = await analyzeResponses(responses).catch(error => {
         console.error("Error during analysis:", error);
