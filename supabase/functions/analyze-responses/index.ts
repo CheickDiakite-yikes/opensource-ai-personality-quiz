@@ -22,10 +22,15 @@ serve(async (req) => {
     const { responses, assessmentId } = await req.json();
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
+      console.error("Invalid responses data:", JSON.stringify(responses));
       throw new Error("Invalid or missing responses data");
     }
 
     console.log(`Processing ${responses.length} responses for assessment ID: ${assessmentId}`);
+    console.log(`Response categories: ${[...new Set(responses.map(r => r.category))].join(', ')}`);
+    
+    // Log a sample of the responses to verify data structure
+    console.log("Sample responses (first 2):", JSON.stringify(responses.slice(0, 2)));
     
     // Clean and serialize responses for analysis
     const cleanedResponses = responses.map(r => ({
@@ -35,18 +40,26 @@ serve(async (req) => {
     
     // Group responses by category for analysis
     const responsesByCategory = categorizeResponses(cleanedResponses);
+    console.log(`Categorized into ${Object.keys(responsesByCategory).length} categories`);
     
     // Generate the AI analysis using OpenAI's API
     const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
     
     console.log("Analysis completed successfully");
+    console.log("Analysis ID:", analysis.id);
+    console.log("Analysis contains traits:", analysis.traits?.length || 0);
     
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error("Error in analyze-responses function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Error stack:", error.stack);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      errorType: error.constructor.name,
+      timestamp: new Date().toISOString()
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -224,11 +237,14 @@ async function generateAIAnalysis(
   - Is your analysis distinguishable from one you would write for someone with different responses?`;
 
   try {
-    console.log("Sending request to OpenAI API using gpt-4o model");
+    console.log("Preparing OpenAI API request for analysis using gpt-4o model");
+    console.log("Number of categories to analyze:", Object.keys(responsesByCategory).length);
+    console.log("Total prompt length:", prompt.length);
     
     // Create a unique seed based on assessment ID and timestamp for consistent but unique results
     // This ensures two users with similar answers won't get identical results
     const uniqueSeed = parseInt(assessmentId.split('-')[0], 16) % 10000 + Date.now() % 1000;
+    console.log("Using seed for analysis:", uniqueSeed);
     
     // Use the correct parameters supported by the gpt-4o model with maximum tokens
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -255,15 +271,25 @@ async function generateAIAnalysis(
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      console.error("OpenAI API error:", JSON.stringify(errorData));
+      console.error("OpenAI API error status:", response.status);
+      console.error("OpenAI API error headers:", Object.fromEntries(response.headers.entries()));
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText || 'Unknown error'}`);
     }
 
     const data = await response.json();
     console.log("Received response from OpenAI gpt-4o model");
+    console.log("Response token usage:", data.usage);
     
     try {
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        console.error("Unexpected OpenAI response format:", JSON.stringify(data));
+        throw new Error("Invalid response format from OpenAI");
+      }
+      
       const analysisJson = JSON.parse(data.choices[0].message.content);
+      console.log("Successfully parsed OpenAI response to JSON");
+      
       // Make sure createdAt is set correctly
       if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
         analysisJson.createdAt = new Date().toISOString();
@@ -278,6 +304,7 @@ async function generateAIAnalysis(
       const validationResults = validateAnalysisQuality(analysisJson);
       if (!validationResults.isValid) {
         console.error("Analysis quality validation warnings:", validationResults.warnings);
+        // Continue anyway but log the warnings
       }
       
       // Log some key metrics to help verify the quality of the analysis
@@ -287,10 +314,12 @@ async function generateAIAnalysis(
       return analysisJson as PersonalityAnalysis;
     } catch (error) {
       console.error("Error parsing OpenAI response:", error);
-      throw new Error("Failed to parse AI analysis results");
+      console.error("Raw OpenAI response content:", data.choices?.[0]?.message?.content);
+      throw new Error("Failed to parse AI analysis results: " + error.message);
     }
   } catch (error) {
     console.error("Error generating AI analysis:", error);
+    console.error("Error stack:", error.stack);
     throw new Error(`Failed to generate AI analysis: ${error.message}`);
   }
 }
