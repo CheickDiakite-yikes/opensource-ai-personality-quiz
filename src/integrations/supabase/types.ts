@@ -69,6 +69,7 @@ export type Database = {
           relationship_patterns: Json | null
           result: Json
           roadmap: string | null
+          shadow_aspects: Json | null
           traits: Json | null
           user_id: string
           value_system: Json | null
@@ -91,6 +92,7 @@ export type Database = {
           relationship_patterns?: Json | null
           result: Json
           roadmap?: string | null
+          shadow_aspects?: Json | null
           traits?: Json | null
           user_id: string
           value_system?: Json | null
@@ -113,6 +115,7 @@ export type Database = {
           relationship_patterns?: Json | null
           result?: Json
           roadmap?: string | null
+          shadow_aspects?: Json | null
           traits?: Json | null
           user_id?: string
           value_system?: Json | null

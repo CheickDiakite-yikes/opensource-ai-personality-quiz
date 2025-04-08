@@ -24,7 +24,7 @@ export const useAssessmentSubmission = (
     }
     
     try {
-      // Generate a UUID for assessment - using text format now that our table accepts text IDs
+      // Generate a simple ID for assessment - text format now works with our updated table
       const assessmentId = `assessment-${uuidv4()}`;
       
       // Convert responses to JSON-compatible format

@@ -60,7 +60,7 @@ export const useAnalyzeResponses = (
               
             if (assessmentError) {
               console.error("Error saving assessment to Supabase:", assessmentError);
-              throw new Error(`Failed to save assessment: ${assessmentError.message}`);
+              console.warn(`Failed to save assessment: ${assessmentError.message}`);
             } else {
               savedToSupabase = true;
               console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
@@ -149,13 +149,13 @@ export const useAnalyzeResponses = (
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
-            throw new Error(`Database error: ${analysisError.message}`);
+            console.warn(`Database error: ${analysisError.message}`);
           } else {
             console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
-          throw new Error(`Failed to save analysis: ${err instanceof Error ? err.message : String(err)}`);
+          console.warn(`Failed to save analysis: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
       

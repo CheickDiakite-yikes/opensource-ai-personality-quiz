@@ -146,6 +146,13 @@ async function generateAIAnalysis(
      - Look for tensions between different cognitive approaches in their answers
      - Base cognitive assessments on specific response patterns, not generic typing
      - Label this as "Cognitive Processing Style" rather than intelligence
+
+  9. TRAIT REFERENCE REQUIREMENT:
+     - CRITICAL: Every trait description MUST explicitly reference at least one specific Question ID
+     - Format references as "Question ID: xyz" within the trait description
+     - Show exactly how you derived each trait conclusion from specific responses
+     - If a trait is based on multiple responses, cite at least 2-3 different Question IDs
+     - Failure to reference specific Question IDs for each trait will result in reduced analysis quality
   
   ## Output Format
   Return your analysis as a structured JSON object with the following properties:
