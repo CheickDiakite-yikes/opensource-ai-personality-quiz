@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { AssessmentResponse } from "@/utils/types";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 const ASSESSMENT_STORAGE_KEY = "assessment_progress";
 
@@ -12,6 +15,47 @@ export const useAssessmentSubmission = (
 ) => {
   const { analyzeResponses, isAnalyzing, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const saveResponsesDirectlyToSupabase = async (responses: AssessmentResponse[]) => {
+    if (!user) {
+      console.log("No user logged in, skipping direct Supabase save");
+      return null;
+    }
+    
+    try {
+      // Generate a UUID for assessment
+      const assessmentId = `assessment-${uuidv4()}`;
+      
+      // Convert responses to JSON-compatible format
+      const jsonResponses = JSON.parse(JSON.stringify(responses));
+      
+      // Insert into assessments table
+      const { data, error } = await supabase
+        .from('assessments')
+        .insert({
+          id: assessmentId,
+          user_id: user.id,
+          responses: jsonResponses
+        })
+        .select('id')
+        .single();
+        
+      if (error) {
+        console.error("Failed to save assessment to Supabase:", error);
+        toast.error("Failed to save your assessment", {
+          description: "Your results will still be analyzed but may not be saved to your account"
+        });
+        return null;
+      }
+      
+      console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
+      return assessmentId;
+    } catch (error) {
+      console.error("Exception saving assessment to Supabase:", error);
+      return null;
+    }
+  };
   
   const handleSubmitAssessment = async () => {
     // Save the final response
@@ -31,7 +75,16 @@ export const useAssessmentSubmission = (
         return;
       }
       
-      // Send responses to the analyze function, which will store in Supabase if user is logged in
+      // First, save responses directly to Supabase
+      const savedAssessmentId = await saveResponsesDirectlyToSupabase(responses);
+      
+      if (savedAssessmentId) {
+        console.log("Assessment saved with ID:", savedAssessmentId);
+      } else {
+        console.warn("Could not save assessment directly, continuing with analysis only");
+      }
+      
+      // Send responses to the analyze function, which will also try to store in Supabase
       const analysis = await analyzeResponses(responses).catch(error => {
         console.error("Error during analysis:", error);
         throw new Error(`Analysis failed: ${error.message}`);

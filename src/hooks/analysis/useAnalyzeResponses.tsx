@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { saveAssessmentToStorage } from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 export const useAnalyzeResponses = (
   saveToHistory: (analysis: PersonalityAnalysis) => PersonalityAnalysis, 
@@ -18,8 +19,11 @@ export const useAnalyzeResponses = (
     toast.info("Analyzing your responses with AI...");
 
     try {
-      // Save responses to localStorage and get assessment ID
-      const assessmentId = saveAssessmentToStorage(responses);
+      // Generate a unique assessment ID
+      const assessmentId = `assessment-${uuidv4()}`;
+      
+      // Save responses to localStorage
+      saveAssessmentToStorage(responses);
       
       console.log(`Sending ${responses.length} responses to AI for analysis using gpt-4o model...`);
       console.log("Response distribution by category:", 
@@ -32,26 +36,45 @@ export const useAnalyzeResponses = (
       );
       
       // Store assessment responses in Supabase if user is logged in
+      let savedToSupabase = false;
       if (user) {
         try {
           // We need to convert AssessmentResponse[] to a JSON-compatible format
           // by using JSON.stringify and then parsing it back to handle Date objects
           const jsonResponses = JSON.parse(JSON.stringify(responses));
           
-          const { error: assessmentError } = await supabase
+          // Check if the assessment already exists
+          const { data: existingAssessment } = await supabase
             .from('assessments')
-            .insert({
-              id: assessmentId,
-              user_id: user.id,
-              responses: jsonResponses
-            });
-            
-          if (assessmentError) {
-            console.error("Error saving assessment to Supabase:", assessmentError);
+            .select('id')
+            .eq('id', assessmentId)
+            .maybeSingle();
+          
+          if (!existingAssessment) {
+            const { error: assessmentError } = await supabase
+              .from('assessments')
+              .insert({
+                id: assessmentId,
+                user_id: user.id,
+                responses: jsonResponses
+              });
+              
+            if (assessmentError) {
+              console.error("Error saving assessment to Supabase:", assessmentError);
+              throw new Error(`Failed to save assessment: ${assessmentError.message}`);
+            } else {
+              savedToSupabase = true;
+              console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
+            }
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
+          // Continue with analysis even if saving fails
         }
+      }
+      
+      if (!savedToSupabase) {
+        console.warn("Assessment was not saved to Supabase, continuing with local analysis");
       }
       
       // Call the Supabase Edge Function for AI analysis with timeout handling
@@ -123,6 +146,8 @@ export const useAnalyzeResponses = (
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
             throw new Error(`Database error: ${analysisError.message}`);
+          } else {
+            console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
@@ -142,7 +167,7 @@ export const useAnalyzeResponses = (
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
-        const assessmentId = saveAssessmentToStorage(responses);
+        const assessmentId = `fallback-${uuidv4()}`;
         return module.generateMockAnalysis(assessmentId);
       });
       
