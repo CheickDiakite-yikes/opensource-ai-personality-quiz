@@ -48,40 +48,19 @@ export const useAnalyzeResponses = (
             
           if (assessmentError) {
             console.error("Error saving assessment to Supabase:", assessmentError);
-            // Continue with analysis even if saving assessment fails
-            toast.error("Could not save assessment to cloud, but will continue with analysis", {
-              duration: 3000,
-            });
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
-          // Continue with analysis even if saving assessment fails
         }
       }
       
       // Call the Supabase Edge Function for AI analysis
-      console.log("Calling analyze-responses edge function with assessment ID:", assessmentId);
-      
-      // Set up a timeout promise that rejects after 60 seconds
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Function call timed out after 60 seconds')), 60000);
-      });
-      
-      // Call the edge function
-      const functionPromise = supabase.functions.invoke("analyze-responses", {
+      const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
           assessmentId 
         }
       });
-      
-      // Race the function call against the timeout
-      const { data, error } = await Promise.race([
-        functionPromise,
-        timeoutPromise.then(() => {
-          throw new Error('Function call timed out after 60 seconds');
-        })
-      ]) as typeof functionPromise;
       
       if (error) {
         console.error("Error calling analyze-responses function:", error);
@@ -89,7 +68,6 @@ export const useAnalyzeResponses = (
       }
       
       if (!data || !data.analysis) {
-        console.error("Invalid response structure from analysis function:", data);
         throw new Error("Invalid response from analysis function");
       }
       
@@ -126,7 +104,7 @@ export const useAnalyzeResponses = (
               motivators: jsonAnalysis.motivators,
               inhibitors: jsonAnalysis.inhibitors,
               weaknesses: jsonAnalysis.weaknesses,
-              shadow_aspects: jsonAnalysis.shadowAspects,
+              shadow_aspects: jsonAnalysis.shadowAspects, // Add new shadow aspects field
               growth_areas: jsonAnalysis.growthAreas,
               relationship_patterns: jsonAnalysis.relationshipPatterns,
               career_suggestions: jsonAnalysis.careerSuggestions,
@@ -136,15 +114,9 @@ export const useAnalyzeResponses = (
             
           if (analysisError) {
             console.error("Error saving analysis to Supabase:", analysisError);
-            toast.error("Could not save analysis to cloud storage, but analysis is available locally", {
-              duration: 5000,
-            });
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
-          toast.error("Failed to save analysis to cloud storage, using local storage instead", {
-            duration: 5000,
-          });
         }
       }
       
@@ -156,10 +128,7 @@ export const useAnalyzeResponses = (
       return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
-      toast.error("Failed to analyze responses. Using fallback analysis.", {
-        description: "We're experiencing issues with our AI service. Using locally generated analysis instead.",
-        duration: 8000,
-      });
+      toast.error("Failed to analyze responses. Using fallback analysis.");
       
       // Fallback to local mock analysis if the API fails
       const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
