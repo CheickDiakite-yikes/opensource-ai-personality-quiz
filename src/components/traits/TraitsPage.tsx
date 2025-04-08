@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,26 +12,73 @@ import { toast } from "sonner";
 
 const TraitsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { analysis, isLoading, fetchAnalysisById } = useAIAnalysis();
+  const { 
+    analysis, 
+    isLoading, 
+    fetchAnalysisById,
+    forceFetchAllAnalyses // New function from our updated hook
+  } = useAIAnalysis();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [directAnalysis, setDirectAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // Log current route and analysis ID for debugging
+  useEffect(() => {
+    console.log(`[TraitsPage] Route analysis ID: ${id}`);
+    console.log(`[TraitsPage] Current analysis: ${analysis?.id || 'none'}`);
+  }, [id, analysis]);
+  
   // Try to load the analysis directly if we have an ID but no analysis
   useEffect(() => {
     if (id && !analysis && !directAnalysis && !isLoading) {
       const loadAnalysisDirectly = async () => {
-        console.log(`Attempting to load analysis directly with ID: ${id}`);
-        const fetchedAnalysis = await fetchAnalysisById(id);
-        if (fetchedAnalysis) {
-          console.log(`Successfully loaded analysis with ID: ${id}`);
-          setDirectAnalysis(fetchedAnalysis);
-        } else {
-          console.log(`Failed to load analysis directly with ID: ${id}`);
+        console.log(`[TraitsPage] Attempting to load analysis directly with ID: ${id}`);
+        
+        try {
+          // First try the direct fetch
+          const fetchedAnalysis = await fetchAnalysisById(id);
+          
+          if (fetchedAnalysis) {
+            console.log(`[TraitsPage] Successfully loaded analysis with ID: ${id}`);
+            setDirectAnalysis(fetchedAnalysis);
+            return;
+          }
+          
+          console.log(`[TraitsPage] Direct fetch failed, trying force fetch`);
+          
+          // If direct fetch fails, try force fetching all analyses
+          const allAnalyses = await forceFetchAllAnalyses();
+          
+          if (allAnalyses && allAnalyses.length > 0) {
+            console.log(`[TraitsPage] Force fetch found ${allAnalyses.length} analyses`);
+            
+            // Try to find the matching analysis
+            const matchingAnalysis = allAnalyses.find(a => a.id === id);
+            
+            if (matchingAnalysis) {
+              console.log(`[TraitsPage] Found matching analysis in force fetch results`);
+              setDirectAnalysis(matchingAnalysis);
+              return;
+            }
+            
+            // If we found analyses but none match the ID, redirect to the first one
+            console.log(`[TraitsPage] No matching analysis found, redirecting to first analysis`);
+            toast.info("Redirecting to available analysis");
+            navigate(`/traits/${allAnalyses[0].id}`);
+            return;
+          }
+          
           // If we couldn't load the analysis, redirect to assessment
+          console.log(`[TraitsPage] Failed to load any analyses, redirecting to assessment`);
           toast.error("Could not find the requested analysis", {
             description: "Please try taking the assessment again"
+          });
+          navigate("/assessment");
+        } catch (error) {
+          console.error(`[TraitsPage] Error loading analysis:`, error);
+          toast.error("Error loading analysis", {
+            description: "Please try again later or take a new assessment"
           });
           navigate("/assessment");
         }
@@ -40,7 +86,7 @@ const TraitsPage: React.FC = () => {
       
       loadAnalysisDirectly();
     }
-  }, [id, analysis, directAnalysis, isLoading, fetchAnalysisById, navigate]);
+  }, [id, analysis, directAnalysis, isLoading, fetchAnalysisById, navigate, forceFetchAllAnalyses]);
   
   // Handle manual refresh
   const handleRefresh = async () => {
@@ -50,10 +96,35 @@ const TraitsPage: React.FC = () => {
     toast.loading("Refreshing analysis data...", { id: "traits-refresh" });
     
     try {
+      // First try normal refresh
       const refreshedAnalysis = await fetchAnalysisById(id);
+      
       if (refreshedAnalysis) {
         setDirectAnalysis(refreshedAnalysis);
         toast.success("Analysis data refreshed", { id: "traits-refresh" });
+        setIsRefreshing(false);
+        return;
+      }
+      
+      // If that fails, try force refresh of all analyses
+      console.log("[TraitsPage] Normal refresh failed, trying force refresh");
+      const allAnalyses = await forceFetchAllAnalyses();
+      
+      if (allAnalyses && allAnalyses.length > 0) {
+        const matchingAnalysis = allAnalyses.find(a => a.id === id);
+        
+        if (matchingAnalysis) {
+          setDirectAnalysis(matchingAnalysis);
+          toast.success("Analysis data refreshed", { id: "traits-refresh" });
+        } else {
+          toast.error("Could not find this specific analysis", { 
+            id: "traits-refresh",
+            description: "We found other analyses you can view"
+          });
+          
+          // Redirect to first available analysis
+          navigate(`/traits/${allAnalyses[0].id}`);
+        }
       } else {
         toast.error("Could not refresh analysis data", { 
           id: "traits-refresh",
@@ -129,7 +200,7 @@ const TraitsPage: React.FC = () => {
             <CardDescription className="text-foreground/80">Detailed view of all your personality traits from the assessment</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? "p-3 pt-2" : "pt-6"}>
-            {displayAnalysis.traits && displayAnalysis.traits.length > 0 ? (
+            {displayAnalysis?.traits && displayAnalysis.traits.length > 0 ? (
               <TraitsDetail traits={displayAnalysis.traits} />
             ) : (
               <div className="text-center py-8">
