@@ -14,7 +14,7 @@ export const useAIAnalysisCore = () => {
   const { refreshAnalysis } = useAnalysisRefresh(state, state);
   const { saveToHistory, getAnalysisHistory, setCurrentAnalysis } = useAnalysisManagement(state, state);
   const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, state.setAnalysis);
-  const { fetchAnalysesFromSupabase } = useSupabaseSync();
+  const { fetchAnalysesFromSupabase, fetchAnalysisById } = useSupabaseSync();
   const initialLoadCompletedRef = useRef(false);
   const fetchAttemptsRef = useRef(0);
   const [fetchError, setFetchError] = useState<Error | null>(null);
@@ -57,9 +57,13 @@ export const useAIAnalysisCore = () => {
   // Function to manually reload all analyses from Supabase
   const loadAllAnalysesFromSupabase = async (): Promise<PersonalityAnalysis[]> => {
     try {
+      console.log("Starting manual reload of all analyses from Supabase");
+      toast.loading("Loading all your analyses...");
+      
       const data = await fetchAnalysesFromSupabase();
       if (!data || data.length === 0) {
         console.log("No analyses found in Supabase during manual load");
+        toast.error("No analyses found", { id: "loading-analyses" });
         return [];
       }
       
@@ -68,11 +72,17 @@ export const useAIAnalysisCore = () => {
       // Re-attempt refresh to update the state with all analyses
       await refreshAnalysis();
       
+      toast.success(`Found ${data.length} analyses`, { 
+        id: "loading-analyses",
+        description: "Your analysis history has been updated"
+      });
+      
       // Return current analysis history
       return getAnalysisHistory();
     } catch (error) {
       console.error("Error during manual load of analyses:", error);
       toast.error("Failed to load all analyses", {
+        id: "loading-analyses",
         description: "Please try again later"
       });
       return [];
@@ -88,6 +98,7 @@ export const useAIAnalysisCore = () => {
     setCurrentAnalysis,
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
+    fetchAnalysisById,
     fetchError
   };
 };

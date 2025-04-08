@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
+import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +24,8 @@ const ReportPage: React.FC = () => {
     setCurrentAnalysis,
     refreshAnalysis,
     getAnalysisById,
-    loadAllAnalysesFromSupabase
+    loadAllAnalysesFromSupabase,
+    fetchAnalysisById
   } = useAIAnalysis();
   const isMobile = useIsMobile();
   const [stableAnalysis, setStableAnalysis] = useState<PersonalityAnalysis | null>(null);
@@ -31,6 +34,7 @@ const ReportPage: React.FC = () => {
   const [isChangingAnalysis, setIsChangingAnalysis] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [isLoadingAllAnalyses, setIsLoadingAllAnalyses] = useState(false);
+  const [directlyFetchedAnalysis, setDirectlyFetchedAnalysis] = useState<PersonalityAnalysis | null>(null);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -55,6 +59,26 @@ const ReportPage: React.FC = () => {
     }
   }, [location.state, forcedRefresh, refreshAnalysis]);
 
+  // Emergency load if coming directly to URL with ID
+  useEffect(() => {
+    // If we have an ID but no analysis or analysis history, try direct fetch
+    if (id && !analysis && !stableAnalysis && !directlyFetchedAnalysis && analysisHistory.length === 0 && !isChangingAnalysis) {
+      const directFetch = async () => {
+        console.log(`No analysis history found, trying direct fetch for ID: ${id}`);
+        const directAnalysis = await fetchAnalysisById(id);
+        
+        if (directAnalysis) {
+          console.log(`Directly fetched analysis for ID: ${id}`);
+          setDirectlyFetchedAnalysis(directAnalysis);
+        } else {
+          console.log(`Direct fetch failed for ID: ${id}`);
+        }
+      };
+      
+      directFetch();
+    }
+  }, [id, analysis, stableAnalysis, directlyFetchedAnalysis, analysisHistory, isChangingAnalysis, fetchAnalysisById]);
+
   // Load all analyses on first mount to ensure we have all history
   useEffect(() => {
     if (!isLoadingAllAnalyses && !forcedRefresh) {
@@ -76,7 +100,7 @@ const ReportPage: React.FC = () => {
   // Handle direct URL access and page refresh by ensuring we load analysis data properly
   useEffect(() => {
     // Skip if we're still loading or have already successfully loaded an analysis
-    if ((isLoading && !isChangingAnalysis) || stableAnalysis) return;
+    if ((isLoading && !isChangingAnalysis) || stableAnalysis || directlyFetchedAnalysis) return;
     
     const loadAnalysis = async () => {
       try {
@@ -100,10 +124,18 @@ const ReportPage: React.FC = () => {
               setStableAnalysis(directAnalysis);
               return;
             }
+            
+            // Try last resort direct fetch from Supabase
+            const supabaseDirectFetch = await fetchAnalysisById(id);
+            if (supabaseDirectFetch) {
+              console.log(`Direct Supabase fetch successful for ${id}`);
+              setDirectlyFetchedAnalysis(supabaseDirectFetch);
+              return;
+            }
           }
           
           // If we failed to load the specified analysis and haven't already attempted to handle this
-          if (!success && !analysis && !stableAnalysis && !hasAttemptedToLoadAnalysis) {
+          if (!success && !analysis && !stableAnalysis && !directlyFetchedAnalysis && !hasAttemptedToLoadAnalysis) {
             setHasAttemptedToLoadAnalysis(true);
             
             // Try to load all analyses to make sure we have the complete history
@@ -174,7 +206,7 @@ const ReportPage: React.FC = () => {
     };
     
     loadAnalysis();
-  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts, loadAllAnalysesFromSupabase]);
+  }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts, loadAllAnalysesFromSupabase, directlyFetchedAnalysis, fetchAnalysisById]);
   
   // Update this useEffect to check for incomplete analyses
   useEffect(() => {
@@ -213,6 +245,17 @@ const ReportPage: React.FC = () => {
         setStableAnalysis(directAnalysis);
         navigate(`/report/${analysisId}`, { replace: false });
       } else {
+        // Try direct Supabase fetch
+        const supabaseDirectFetch = await fetchAnalysisById(analysisId);
+        
+        if (supabaseDirectFetch) {
+          console.log(`Direct Supabase fetch successful for ${analysisId}`);
+          setDirectlyFetchedAnalysis(supabaseDirectFetch);
+          navigate(`/report/${analysisId}`, { replace: false });
+          setIsChangingAnalysis(false);
+          return;
+        }
+        
         // Try to load all analyses as a last resort
         await loadAllAnalysesFromSupabase();
         
@@ -233,10 +276,33 @@ const ReportPage: React.FC = () => {
     } else {
       navigate(`/report/${analysisId}`, { replace: false });
     }
-  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase]);
+  }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase, fetchAnalysisById]);
+
+  // Handle manual reload of analyses
+  const handleManualRefresh = async () => {
+    toast.loading("Refreshing your analyses...", { id: "refresh-toast" });
+    try {
+      await loadAllAnalysesFromSupabase();
+      toast.success("Successfully refreshed your analyses", { id: "refresh-toast" });
+      
+      // If we have an ID but no analysis, try to load it again
+      if (id && !analysis && !stableAnalysis && !directlyFetchedAnalysis) {
+        const directAnalysis = await fetchAnalysisById(id);
+        if (directAnalysis) {
+          setDirectlyFetchedAnalysis(directAnalysis);
+        }
+      }
+    } catch (error) {
+      console.error("Error manually refreshing analyses:", error);
+      toast.error("Failed to refresh analyses", { 
+        id: "refresh-toast",
+        description: "Please try again later"
+      });
+    }
+  };
   
   // Show loading state only on initial load or when changing analyses
-  if ((isLoading && !stableAnalysis) || isChangingAnalysis) {
+  if ((isLoading && !stableAnalysis && !directlyFetchedAnalysis) || isChangingAnalysis) {
     return (
       <div className={`container ${isMobile ? 'pt-2 pb-16 px-0.5 mx-0 w-full max-w-full overflow-hidden' : 'py-10'}`}>
         <ReportSkeleton />
@@ -245,21 +311,31 @@ const ReportPage: React.FC = () => {
   }
   
   // Use stableAnalysis if available, otherwise use analysis from the hook
-  const displayAnalysis = stableAnalysis || analysis;
+  const displayAnalysis = directlyFetchedAnalysis || stableAnalysis || analysis;
   
   // Handle case where no analysis is available after loading
   if (!displayAnalysis && !isLoading && hasAttemptedToLoadAnalysis) {
-    // This shouldn't happen often since we redirect in the useEffect,
-    // but this is a fallback just in case
     return (
       <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'} text-center`}>
         <h2 className="text-2xl font-bold">No Analysis Found</h2>
         <p className="mt-2 text-muted-foreground">
           We couldn't find any personality analysis reports. Please try taking the assessment.
         </p>
-        <Button onClick={() => navigate("/assessment")} className="mt-4">
-          Take Assessment
-        </Button>
+        <div className="space-y-4 mt-6">
+          <Button onClick={() => navigate("/assessment")} className="w-full sm:w-auto">
+            Take Assessment
+          </Button>
+          <Button onClick={handleManualRefresh} variant="outline" className="w-full sm:w-auto">
+            Manually Refresh Analyses
+          </Button>
+        </div>
+        
+        <AssessmentErrorHandler 
+          title="Data Loading Issue"
+          description="We're having trouble retrieving your analysis data from the server."
+          showRetry={false}
+          errorDetails={`Analysis ID: ${id}, History Size: ${analysisHistory.length}, Load Attempts: ${loadAttempts}`}
+        />
       </div>
     );
   }
@@ -272,6 +348,7 @@ const ReportPage: React.FC = () => {
             analysis={displayAnalysis} 
             analysisHistory={analysisHistory || []}
             onAnalysisChange={handleAnalysisChange}
+            onManualRefresh={handleManualRefresh}
           />
           
           <Tabs defaultValue="overview" className="w-full overflow-hidden max-w-full">

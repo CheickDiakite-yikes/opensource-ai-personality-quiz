@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -28,12 +27,14 @@ interface ReportHeaderProps {
   analysis: PersonalityAnalysis;
   analysisHistory?: PersonalityAnalysis[];
   onAnalysisChange?: (analysisId: string) => void;
+  onManualRefresh?: () => Promise<void>;
 }
 
 const ReportHeader: React.FC<ReportHeaderProps> = ({ 
   analysis,
   analysisHistory = [],
-  onAnalysisChange
+  onAnalysisChange,
+  onManualRefresh
 }) => {
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
@@ -68,16 +69,20 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     
     setIsRefreshing(true);
     try {
-      const allAnalyses = await loadAllAnalysesFromSupabase();
-      if (allAnalyses && allAnalyses.length > 0) {
-        setLocalAnalysisHistory(allAnalyses);
-        toast.success(`Found ${allAnalyses.length} analysis reports`, {
-          description: "Your analysis history has been updated"
-        });
+      if (onManualRefresh) {
+        await onManualRefresh();
       } else {
-        toast.info("No additional analyses found", {
-          description: "We couldn't find any more analysis reports"
-        });
+        const allAnalyses = await loadAllAnalysesFromSupabase();
+        if (allAnalyses && allAnalyses.length > 0) {
+          setLocalAnalysisHistory(allAnalyses);
+          toast.success(`Found ${allAnalyses.length} analysis reports`, {
+            description: "Your analysis history has been updated"
+          });
+        } else {
+          toast.info("No additional analyses found", {
+            description: "We couldn't find any more analysis reports"
+          });
+        }
       }
     } catch (error) {
       console.error("Error refreshing analyses:", error);
@@ -89,10 +94,9 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     }
   };
   
-  // Handle social sharing
   const handleShare = (platform: string) => {
     let shareLink = '';
-    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
+    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits && analysis.traits[0]?.trait || 'Personality'}`;
     
     switch (platform) {
       case 'twitter':

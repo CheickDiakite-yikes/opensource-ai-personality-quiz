@@ -37,82 +37,173 @@ export const useSupabaseSync = () => {
     throw new Error("Max retries exceeded");
   };
 
-  // Fetch analyses from Supabase - modified to use limit(100) to get more analyses
+  // Fetch analyses from Supabase with improved error handling and logging
   const fetchAnalysesFromSupabase = useCallback(async () => {
     if (!user) return null;
     
     try {
       console.log("Fetching all analyses for user:", user.id);
       
-      // Try to fetch with retries for better reliability
-      // Increased limit from default 1000 to 100 to ensure we get more analyses
-      const { data, error } = await retryWithBackoff(async () => 
-        supabase
+      // First attempt: try to fetch with pagination to get ALL analyses
+      let allData = [];
+      let page = 0;
+      const PAGE_SIZE = 100;
+      let hasMoreData = true;
+      
+      while (hasMoreData) {
+        console.log(`Fetching analyses page ${page} (offset: ${page * PAGE_SIZE})`);
+        
+        const { data, error } = await supabase
           .from('analyses')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(500) // Increased to 500 to ensure we get ALL user analyses
-      );
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
         
-      if (error) {
-        console.error("Error fetching analysis from Supabase:", error);
+        if (error) {
+          console.error(`Error fetching analyses page ${page}:`, error);
+          break;
+        }
         
-        // Try alternate approach focusing only on essential fields
-        console.log("Trying alternative fetch approach for analyses");
-        const { data: altData, error: altError } = await supabase
-          .from('analyses')
-          .select('id, created_at, user_id, assessment_id, result')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(500); // Increased to 500 here too
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          console.log(`Retrieved ${data.length} analyses for page ${page}`);
           
-        if (altError) {
-          console.error("Alternative fetch also failed:", altError);
-          return null;
+          if (data.length < PAGE_SIZE) {
+            hasMoreData = false;
+          }
+        } else {
+          hasMoreData = false;
         }
         
-        if (!altData || altData.length === 0) {
-          console.log("No analyses found with alternative fetch method");
-          return null;
+        page++;
+      }
+      
+      if (allData.length === 0) {
+        // Fallback to direct query without pagination as last resort
+        console.log("No data found with pagination, trying direct query");
+        
+        const { data: directData, error: directError } = await supabase
+          .from('analyses')
+          .select('id, created_at, user_id, assessment_id, result, traits')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (directError) {
+          console.error("Direct query also failed:", directError);
+          throw new Error(`Failed to fetch analyses: ${directError.message}`);
         }
         
-        console.log(`Retrieved ${altData.length} analyses with alternative method`);
-        return altData;
+        if (directData && directData.length > 0) {
+          console.log(`Retrieved ${directData.length} analyses with direct query`);
+          return directData;
+        } else {
+          console.log("No analyses found for user with any query method");
+          return [];
+        }
       }
       
-      if (!data || data.length === 0) {
-        console.log("No analyses found for user");
-        return null;
-      }
-      
-      setRetryAttempts(0); // Reset retry counter on success
-      console.log(`Retrieved ${data.length} analyses from Supabase`);
-      return data;
+      console.log(`Successfully retrieved ${allData.length} total analyses`);
+      return allData;
     } catch (error) {
       console.error("Error in fetchAnalysesFromSupabase:", error);
       
-      // Implement retry mechanism
-      if (retryAttempts < MAX_RETRY_ATTEMPTS) {
-        setRetryAttempts(prev => prev + 1);
-        toast.error("Connection issue, retrying...", {
-          description: `Attempt ${retryAttempts + 1} of ${MAX_RETRY_ATTEMPTS}`
-        });
+      // Try one last fallback approach focusing only on ID and assessment_id
+      try {
+        console.log("Trying minimal fields fallback query");
+        const { data: minimalData, error: minimalError } = await supabase
+          .from('analyses')
+          .select('id, assessment_id, created_at, user_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
         
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return await fetchAnalysesFromSupabase(); // Recursive retry
+        if (minimalError) {
+          console.error("Minimal fields query also failed:", minimalError);
+          throw error; // Re-throw the original error
+        }
+        
+        if (minimalData && minimalData.length > 0) {
+          console.log(`Retrieved ${minimalData.length} minimal analyses records`);
+          
+          // Now fetch each analysis individually to work around potential data size issues
+          const fullAnalyses = [];
+          
+          for (const item of minimalData) {
+            try {
+              const { data: singleAnalysis, error: singleError } = await supabase
+                .from('analyses')
+                .select('*')
+                .eq('id', item.id)
+                .single();
+              
+              if (!singleError && singleAnalysis) {
+                fullAnalyses.push(singleAnalysis);
+              } else {
+                console.warn(`Could not fetch full data for analysis ${item.id}:`, singleError);
+              }
+            } catch (e) {
+              console.error(`Exception fetching analysis ${item.id}:`, e);
+            }
+          }
+          
+          console.log(`Retrieved ${fullAnalyses.length} full analyses from individual queries`);
+          return fullAnalyses;
+        }
+      } catch (fallbackError) {
+        console.error("All fallback approaches failed:", fallbackError);
       }
       
-      toast.error("Could not fetch analyses after multiple attempts", {
-        description: "Please check your connection and try again later"
+      toast.error("Failed to load your analyses", {
+        description: "Please check your connection and try again"
       });
+      
+      if (retryAttempts < MAX_RETRY_ATTEMPTS) {
+        setRetryAttempts(prev => prev + 1);
+        const delay = Math.pow(2, retryAttempts) * 1000;
+        console.log(`Will retry fetching analyses in ${delay}ms (attempt ${retryAttempts + 1})`);
+        
+        // We'll return null here instead of retrying immediately to prevent UI blocking
+        // The caller should handle retries
+        return null;
+      }
+      
       return null;
     }
   }, [user, retryAttempts]);
 
+  // New function to force fetch a specific analysis by ID
+  const fetchAnalysisById = useCallback(async (analysisId: string): Promise<PersonalityAnalysis | null> => {
+    if (!analysisId) return null;
+    
+    try {
+      console.log(`Directly fetching analysis with ID: ${analysisId}`);
+      
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', analysisId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error(`Error fetching analysis ${analysisId}:`, error);
+        return null;
+      }
+      
+      if (!data) {
+        console.log(`No analysis found with ID: ${analysisId}`);
+        return null;
+      }
+      
+      return convertToPersonalityAnalysis(data);
+    } catch (error) {
+      console.error(`Exception fetching analysis ${analysisId}:`, error);
+      return null;
+    }
+  }, []);
+
   return {
     fetchAnalysesFromSupabase,
+    fetchAnalysisById,
     syncInProgress, 
     setSyncInProgress,
     user
