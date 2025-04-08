@@ -42,12 +42,18 @@ serve(async (req) => {
     const responsesByCategory = categorizeResponses(cleanedResponses);
     console.log(`Categorized into ${Object.keys(responsesByCategory).length} categories`);
     
+    // Calculate category coverage - how many questions were answered in each category
+    const categoryCoverage = calculateCategoryCoverage(responsesByCategory);
+    console.log("Category coverage:", JSON.stringify(categoryCoverage));
+    
     // Generate the AI analysis using OpenAI's API
-    const analysis = await generateAIAnalysis(responsesByCategory, assessmentId);
+    const analysis = await generateAIAnalysis(responsesByCategory, assessmentId, categoryCoverage);
     
     console.log("Analysis completed successfully");
     console.log("Analysis ID:", analysis.id);
     console.log("Analysis contains traits:", analysis.traits?.length || 0);
+    console.log("Intelligence score:", analysis.intelligenceScore);
+    console.log("Emotional intelligence score:", analysis.emotionalIntelligenceScore);
     
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -80,15 +86,92 @@ function categorizeResponses(responses: AssessmentResponse[]) {
   return categorized;
 }
 
+// Calculate how comprehensively each category was covered
+function calculateCategoryCoverage(responsesByCategory: Record<string, AssessmentResponse[]>) {
+  // Define expected number of questions per category (ideal coverage)
+  const expectedQuestionCounts: Record<string, number> = {
+    personality: 5,
+    emotional: 5, 
+    cognitive: 5,
+    values: 5,
+    motivation: 5,
+    resilience: 5,
+    social: 5,
+    decision: 5,
+    creativity: 5,
+    leadership: 5
+  };
+  
+  const coverage: Record<string, { 
+    count: number, 
+    expected: number, 
+    percentage: number,
+    responseQuality: number // 0-1 based on average response quality
+  }> = {};
+  
+  for (const [category, responses] of Object.entries(responsesByCategory)) {
+    const expected = expectedQuestionCounts[category] || 5;
+    const count = responses.length;
+    const percentage = Math.min(100, Math.round((count / expected) * 100));
+    
+    // Calculate response quality based on whether custom responses were provided
+    // and how substantive they appear to be
+    const responseQuality = responses.reduce((sum, response) => {
+      let quality = 0.5; // Default quality
+      
+      // Higher quality for custom responses with substantial content
+      if (response.customResponse && response.customResponse.trim().length > 0) {
+        quality = 0.7; // Base score for any custom response
+        
+        // If response includes detailed explanations (more than 100 chars)
+        if (response.customResponse.length > 100) {
+          quality = 0.9;
+        }
+        // If response is very detailed (more than 200 chars)
+        if (response.customResponse.length > 200) {
+          quality = 1.0;
+        }
+      }
+      
+      return sum + quality;
+    }, 0) / responses.length;
+    
+    coverage[category] = {
+      count,
+      expected,
+      percentage,
+      responseQuality
+    };
+  }
+  
+  return coverage;
+}
+
 // Generate AI analysis using OpenAI's gpt-4o model with maximum output tokens
 async function generateAIAnalysis(
   responsesByCategory: Record<string, AssessmentResponse[]>,
-  assessmentId: string
+  assessmentId: string,
+  categoryCoverage: Record<string, { 
+    count: number, 
+    expected: number, 
+    percentage: number,
+    responseQuality: number
+  }>
 ): Promise<PersonalityAnalysis> {
   // Count the total number of questions answered in each category
   const categoryCounts = Object.entries(responsesByCategory).map(([category, responses]) => {
     return `${category}: ${responses.length} questions`;
   }).join(', ');
+  
+  // Calculate cognitive and emotional intelligence base metrics based on coverage
+  const cognitiveRelevantCategories = ['cognitive', 'decision', 'creativity'];
+  const emotionalRelevantCategories = ['emotional', 'social', 'resilience'];
+  
+  const cognitiveBaseScore = calculateBaseScore(categoryCoverage, cognitiveRelevantCategories);
+  const emotionalBaseScore = calculateBaseScore(categoryCoverage, emotionalRelevantCategories);
+  
+  console.log("Base cognitive score from coverage:", cognitiveBaseScore);
+  console.log("Base emotional intelligence score from coverage:", emotionalBaseScore);
 
   // Generate detailed summaries of individual responses to reference in the analysis
   const categoryDetailedResponses = Object.entries(responsesByCategory).map(([category, responses]) => {
@@ -107,6 +190,40 @@ async function generateAIAnalysis(
   
   ## DETAILED RESPONSES - USE THESE FOR SPECIFIC EVIDENCE IN YOUR ANALYSIS
   ${categoryDetailedResponses}
+  
+  ## Cognitive and Emotional Intelligence Scoring Requirements
+  
+  1. COGNITIVE FLEXIBILITY SCORE CALCULATION:
+     - Base score begins at ${cognitiveBaseScore}/100 based on question coverage
+     - Evaluate specific cognitive indicators:
+       * Ability to consider multiple perspectives simultaneously (+10-20 points)
+       * Pattern recognition across disparate domains (+5-15 points)
+       * Comfort with ambiguity and uncertainty (+5-15 points) 
+       * Strategic thinking and mental simulation abilities (+5-10 points)
+       * Information processing speed and efficiency (+5-10 points)
+       * Analytical depth demonstrated in responses (+5-15 points)
+       * Creative problem-solving approaches (+5-15 points)
+     - Identify cognitive rigidity or fixed thinking patterns (-5 to -15 points)
+     - Consider evidence of cognitive biases and their awareness (-5 to +10 points)
+     - Use concrete examples from their responses as evidence for your scoring
+     - SCORING MUST BE CONSISTENT and evidence-based with clear reasoning
+     - Final score should be 0-100, normalized based on all factors
+  
+  2. EMOTIONAL INTELLIGENCE SCORE CALCULATION:
+     - Base score begins at ${emotionalBaseScore}/100 based on question coverage
+     - Evaluate specific emotional intelligence indicators:
+       * Self-awareness of own emotional states (+10-20 points)
+       * Recognition of emotions in others (+5-15 points)
+       * Emotional regulation capabilities (+10-20 points) 
+       * Empathy demonstrated in responses (+5-15 points)
+       * Social awareness and relationship management (+5-15 points)
+       * Ability to articulate complex emotional experiences (+5-10 points)
+       * Integration of emotion with reasoning (+5-15 points)
+     - Identify emotional regulation challenges or blind spots (-5 to -15 points)
+     - Consider evidence of emotional depth versus superficiality (-10 to +10 points)
+     - Use concrete examples from their responses as evidence for your scoring
+     - SCORING MUST BE CONSISTENT and evidence-based with clear reasoning
+     - Final score should be 0-100, normalized based on all factors
   
   ## Analysis Requirements - FOLLOW THESE EXACTLY
   
@@ -321,6 +438,46 @@ async function generateAIAnalysis(
   }
 }
 
+// Helper function to calculate base score for cognitive/emotional intelligence from category coverage
+function calculateBaseScore(
+  categoryCoverage: Record<string, {
+    count: number,
+    expected: number,
+    percentage: number,
+    responseQuality: number
+  }>,
+  relevantCategories: string[]
+): number {
+  // Get average coverage percentage and quality across relevant categories
+  let totalPercentage = 0;
+  let totalQuality = 0;
+  let categoriesFound = 0;
+
+  for (const category of relevantCategories) {
+    if (categoryCoverage[category]) {
+      totalPercentage += categoryCoverage[category].percentage;
+      totalQuality += categoryCoverage[category].responseQuality;
+      categoriesFound++;
+    }
+  }
+
+  // Default base score if no relevant categories were found
+  if (categoriesFound === 0) {
+    return 50; // Neutral starting point
+  }
+
+  // Calculate averages
+  const avgPercentage = totalPercentage / categoriesFound;
+  const avgQuality = totalQuality / categoriesFound;
+
+  // Calculate base score: 70% weight on coverage, 30% on quality
+  // Scale to 40-70 range as base score (allows room for specific factor adjustments)
+  const baseScore = Math.round(((avgPercentage * 0.7) + (avgQuality * 100 * 0.3)) * 0.3) + 40;
+  
+  // Clamp score between 40 and 70
+  return Math.min(70, Math.max(40, baseScore));
+}
+
 // Validate the quality of the analysis to ensure it's personalized and not generic
 function validateAnalysisQuality(analysis: any) {
   const warnings: string[] = [];
@@ -360,9 +517,17 @@ function validateAnalysisQuality(analysis: any) {
     warnings.push(`Roadmap seems too short (${analysis.roadmap.length} characters) - we asked for at least 500 words`);
   }
   
+  // Check intelligence scores for reasonableness
+  if (analysis.intelligenceScore < 30 || analysis.intelligenceScore > 95) {
+    warnings.push(`Intelligence score (${analysis.intelligenceScore}) seems extreme - verify calculations`);
+  }
+  
+  if (analysis.emotionalIntelligenceScore < 30 || analysis.emotionalIntelligenceScore > 95) {
+    warnings.push(`Emotional intelligence score (${analysis.emotionalIntelligenceScore}) seems extreme - verify calculations`);
+  }
+  
   return {
     isValid: warnings.length === 0,
     warnings
   };
 }
-
