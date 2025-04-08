@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import ReportHeader from "./ReportHeader";
 import ReportTabs from "./ReportTabs";
 import ReportTabContent from "./ReportTabContent";
