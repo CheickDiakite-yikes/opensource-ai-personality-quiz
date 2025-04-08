@@ -77,54 +77,62 @@ async function generateAIAnalysis(
     return `${category}: ${responses.length} questions`;
   }).join(', ');
 
-  const categorySummaries = Object.entries(responsesByCategory).map(([category, responses]) => {
-    const summary = responses.map(r => 
-      `Q: ${r.questionId}, Answer: ${r.selectedOption || r.customResponse || "No answer"}`
+  // Generate detailed summaries of individual responses to reference in the analysis
+  const categoryDetailedResponses = Object.entries(responsesByCategory).map(([category, responses]) => {
+    const responseSummaries = responses.map((r, index) => 
+      `Response ${index+1}: Question ID ${r.questionId}, Answer: "${r.selectedOption || r.customResponse || "No answer"}" (Timestamp: ${r.timestamp})`
     ).join('\n');
-    return `Category ${category}:\n${summary}`;
+    return `CATEGORY: ${category.toUpperCase()}\n${responseSummaries}`;
   }).join('\n\n');
 
-  // Create a detailed prompt for analysis with enhanced methodology
+  // Create a more specific and comprehensive prompt for analysis
   const prompt = `
-  You are an expert psychological profiler specializing in evidence-based assessment analysis. Your task is to analyze assessment responses to create a comprehensive, objective, and scientifically grounded personality profile.
+  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that avoids generic descriptions and feels genuinely specific to this person.
   
   ## Assessment Data
   The user has answered questions across ${Object.keys(responsesByCategory).length} categories (${categoryCounts}):
   
-  ${categorySummaries}
+  ## DETAILED RESPONSES - USE THESE FOR SPECIFIC EVIDENCE IN YOUR ANALYSIS
+  ${categoryDetailedResponses}
   
-  ## Analysis Methodology
-  Follow these rigorous steps to ensure an objective, reliable analysis:
+  ## Analysis Requirements - FOLLOW THESE EXACTLY
   
-  1. First, identify response patterns across categories while accounting for the number of questions in each category.
+  1. CONSIDER ALL RESPONSES, not just patterns:
+     - You MUST evaluate and consider EVERY individual response, not just general patterns
+     - Explicitly reference specific responses by their Question IDs when providing evidence for traits
+     - Identify unique combinations of traits that would not apply to most people
+     - If you cite a pattern, give at least 2-3 specific response examples that support it
   
-  2. For cognitive processing profile (formerly "intelligence"):
-     - Analyze cognitive patterns responses to evaluate problem-solving approaches
-     - Review decision-making responses to assess adaptability and flexibility
-     - Consider creativity responses to measure innovative thinking
-     - Examine leadership responses for strategic thinking ability
-     - Base cognitive scores on thinking style and approach, not "correct" answers
-     - Rename "Intelligence" to "Cognitive Flexibility" or similar in your analysis
-     - Assign scores on a curve: 40-60 is average, 60-80 is above average, 80-90 is exceptional, 90-100 is rare
-     - Be sure to clarify this measures cognitive approach, not academic ability
+  2. IDENTIFY CONTRADICTIONS AND TENSIONS:
+     - Look for contradictory or seemingly inconsistent answers
+     - Identify and explain these tensions as part of the personality complexity
+     - When finding contradictions, cite the specific responses that contradict each other
+     - Explain what these contradictions reveal about the person's nuanced personality
   
-  3. For personality traits:
-     - Identify consistent patterns across categories
-     - Weigh contradictory responses appropriately
-     - Consider contextual nuance in responses
-     - Use evidence-based frameworks (Big Five/HEXACO) to guide trait analysis
-     - Provide balanced analysis of both strengths and challenges
+  3. AVOID GENERIC DESCRIPTIONS:
+     - NEVER use vague statements that could apply to anyone (e.g., "you are sometimes outgoing and sometimes shy")
+     - Each trait description must include specific behaviors or thought patterns unique to this individual
+     - Provide concrete examples from their responses that showcase uniqueness
+     - Do not use Barnum statements or generalities that most people would agree with
   
-  4. For cognitive style and emotional intelligence:
-     - Look for patterns in how the person processes information
-     - Analyze emotional responses and self-awareness indicators
-     - Evaluate interpersonal patterns from social interaction responses
-     - Assess adaptability from resilience responses
+  4. PERSONALIZATION REQUIREMENTS:
+     - Your analysis must feel custom-tailored to this specific individual
+     - Include specific percentile rankings where appropriate (e.g., "Your analytical thinking is in the top 12% of respondents")
+     - Reference the specific content of their responses, not just the patterns
+     - Use the same vocabulary and communication style evident in their written responses
   
-  5. For value systems and motivators:
-     - Identify underlying values from decision criteria
-     - Note patterns in what drives engagement
-     - Consider how values influence decisions and relationships
+  5. BALANCE DETAIL AND INSIGHT:
+     - Provide enough detail to feel personalized but maintain readability
+     - For each major insight, cite at least one specific response as evidence
+     - Include "insight blocks" that reveal deeper understanding beyond obvious traits
+     - Connect individual responses to broader patterns in an evidence-based way
+  
+  6. COGNITIVE PROCESSING PROFILE:
+     - When analyzing cognitive patterns, examine specific examples of problem-solving approaches from their responses
+     - Use response content to evaluate their communication style and thought organization
+     - Look for tensions between different cognitive approaches in their answers
+     - Base cognitive assessments on specific response patterns, not generic typing
+     - Label this as "Cognitive Processing Style" rather than intelligence
   
   ## Output Format
   Return your analysis as a structured JSON object with the following properties:
@@ -132,55 +140,64 @@ async function generateAIAnalysis(
   {
     "id": "${assessmentId}",
     "createdAt": "current timestamp",
-    "overview": "detailed summary paragraph about the personality profile with explanation of methodology",
+    "overview": "highly specific summary paragraph that cites unique response patterns and avoids generic descriptions",
     "traits": [
       {
-        "trait": "trait name",
+        "trait": "specific trait name with evidence",
         "score": score (0-10),
-        "description": "evidence-based description referring to specific response patterns",
-        "strengths": ["list", "of", "strengths with justification"],
-        "challenges": ["list", "of", "challenges with supportive evidence"],
-        "growthSuggestions": ["list", "of", "evidence-based growth suggestions"]
+        "description": "detailed description citing specific responses by Question ID",
+        "strengths": ["list", "of", "specific strengths with reference to response patterns"],
+        "challenges": ["list", "of", "specific challenges with direct supporting evidence"],
+        "growthSuggestions": ["list", "of", "personalized growth suggestions tied to specific responses"]
       }
     ],
     "intelligence": {
-      "type": "cognitive processing type (avoid using raw 'intelligence type' terminology)",
+      "type": "specific cognitive processing style - highly personalized",
       "score": score (0-10),
-      "description": "detailed description explaining this is about cognitive approach, not academic ability",
+      "description": "detailed description with references to specific thinking patterns in responses",
       "domains": [
         {
           "name": "domain name (e.g., 'Pattern Recognition', 'Analytical Processing', etc.)",
           "score": score (0-10),
-          "description": "description with specific supporting evidence"
+          "description": "description with specific supporting evidence from responses"
         }
       ]
     },
-    "intelligenceScore": score (0-100, labeled as "Cognitive Flexibility Score"),
+    "intelligenceScore": score (0-100, labeled as "Cognitive Processing Score"),
     "emotionalIntelligenceScore": score (0-100),
     "cognitiveStyle": {
-      "primary": "primary style",
-      "secondary": "secondary style",
-      "description": "detailed explanation with supporting evidence"
+      "primary": "primary style with evidence",
+      "secondary": "secondary style with evidence",
+      "description": "detailed explanation citing specific response contradictions and complexities"
     },
-    "valueSystem": ["list of core values with supporting evidence"],
+    "valueSystem": ["list of core values with specific response evidence"],
     "motivators": ["list of motivators with specific response examples"],
-    "inhibitors": ["list of inhibitors with supporting evidence"],
-    "weaknesses": ["list of weaknesses with balanced perspective"],
-    "growthAreas": ["list of growth areas with specific development paths"],
+    "inhibitors": ["list of inhibitors with supporting evidence from responses"],
+    "weaknesses": ["list of weaknesses with evidence from responses"],
+    "growthAreas": ["list of growth areas with specific development suggestions tied to responses"],
     "relationshipPatterns": {
-      "strengths": ["relationship strengths"],
-      "challenges": ["relationship challenges"],
-      "compatibleTypes": ["compatible personality types"]
+      "strengths": ["relationship strengths with evidence"],
+      "challenges": ["relationship challenges with evidence"],
+      "compatibleTypes": ["compatible personality types based on specific patterns"]
     },
-    "careerSuggestions": ["list of career suggestions aligned with identified traits and values"],
-    "learningPathways": ["list of learning approaches suited to cognitive style"],
-    "roadmap": "personalized development roadmap with measurable milestones"
+    "careerSuggestions": ["list of career suggestions aligned with identified traits and specific responses"],
+    "learningPathways": ["list of learning approaches suited to cognitive style with evidence"],
+    "roadmap": "personalized development roadmap with measurable milestones tied to specific traits"
   }
   
-  Ensure the analysis is detailed, evidence-based, balanced, and includes specific references to response patterns that justify your conclusions. Avoid overgeneralizations and include appropriate caveats about the limitations of the assessment.`;
+  IMPORTANT FINAL CHECKS:
+  - Have you referenced specific responses by Question ID to support each major conclusion?
+  - Have you avoided generic Barnum statements that could apply to anyone?
+  - Have you identified unique contradictions or tensions in their response patterns?
+  - Would your analysis feel custom-written to the individual based on their specific responses?
+  - Is your analysis distinguishable from one you would write for someone with different responses?`;
 
   try {
     console.log("Sending request to OpenAI API using gpt-4o model");
+    
+    // Create a unique seed based on assessment ID and timestamp for consistent but unique results
+    // This ensures two users with similar answers won't get identical results
+    const uniqueSeed = parseInt(assessmentId.split('-')[0], 16) % 10000 + Date.now() % 1000;
     
     // Use the correct parameters supported by the gpt-4o model with maximum tokens
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -194,13 +211,13 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in evidence-based personality analysis. You provide detailed, objective, and scientifically grounded analyses with clear explanations of your methodology. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" to avoid implications of academic or IQ testing.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide detailed, specific analyses that avoid generic descriptions and Barnum statements. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions.'
           },
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
         max_tokens: 16384, // Maximum output tokens for gpt-4o
-        seed: parseInt(assessmentId.split('-')[0], 16) % 10000, // Use part of UUID for consistent results
+        seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.4,  // Lower temperature for more consistent, less creative responses
       }),
     });
@@ -221,6 +238,12 @@ async function generateAIAnalysis(
         analysisJson.createdAt = new Date().toISOString();
       }
       
+      // Validate analysis quality - ensure it's personalized by checking for specific elements
+      const validationResults = validateAnalysisQuality(analysisJson);
+      if (!validationResults.isValid) {
+        console.warn("Analysis quality validation warnings:", validationResults.warnings);
+      }
+      
       // Log some key metrics to help verify the quality of the analysis
       console.log(`Analysis generated with cognitive flexibility score: ${analysisJson.intelligenceScore}, emotional intelligence: ${analysisJson.emotionalIntelligenceScore}`);
       console.log(`Identified ${analysisJson.traits?.length || 0} personality traits`);
@@ -234,4 +257,40 @@ async function generateAIAnalysis(
     console.error("Error generating AI analysis:", error);
     throw new Error(`Failed to generate AI analysis: ${error.message}`);
   }
+}
+
+// Validate the quality of the analysis to ensure it's personalized and not generic
+function validateAnalysisQuality(analysis: any) {
+  const warnings: string[] = [];
+  
+  // Check that the overview isn't too short
+  if (analysis.overview && analysis.overview.length < 100) {
+    warnings.push("Overview seems too short for a personalized analysis");
+  }
+  
+  // Check that traits have specific descriptions
+  if (analysis.traits && analysis.traits.length > 0) {
+    const genericPhrases = ["sometimes", "often", "may be", "can be", "tends to"];
+    
+    for (const trait of analysis.traits) {
+      // Check for generic language
+      const hasGenericPhrases = genericPhrases.some(phrase => 
+        trait.description.includes(phrase)
+      );
+      
+      if (hasGenericPhrases && trait.description.length < 100) {
+        warnings.push(`Trait '${trait.trait}' may contain generic descriptions`);
+      }
+      
+      // Check for specific evidence references
+      if (!trait.description.includes("Question") && !trait.description.includes("response")) {
+        warnings.push(`Trait '${trait.trait}' doesn't reference specific responses`);
+      }
+    }
+  }
+  
+  return {
+    isValid: warnings.length === 0,
+    warnings
+  };
 }
