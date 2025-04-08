@@ -61,16 +61,22 @@ export const useAnalyzeResponses = (
       
       // Call the Supabase Edge Function for AI analysis
       console.log("Calling analyze-responses edge function with assessment ID:", assessmentId);
+      
+      // Create a controller to handle timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout
+      
+      // Call the edge function with the abort controller
       const { data, error } = await supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
           assessmentId 
         },
-        // Add timeout configuration to allow more time for analysis
-        options: {
-          timeout: 60000 // 60 seconds timeout
-        }
+        signal: controller.signal,
       });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
       
       if (error) {
         console.error("Error calling analyze-responses function:", error);
