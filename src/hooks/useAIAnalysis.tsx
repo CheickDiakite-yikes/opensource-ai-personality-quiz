@@ -85,10 +85,14 @@ export const useAIAnalysis = () => {
             
             if (rawData && rawData.result) {
               console.log("Retrieved analysis using raw result field");
-              // Use the convertToPersonalityAnalysis utility to properly convert
-              // the raw data into the required PersonalityAnalysis type
+              // Instead of assigning directly to data, convert it to PersonalityAnalysis
+              // and then use that for downstream processing
               const convertedAnalysis = convertToPersonalityAnalysis(rawData);
-              data = convertedAnalysis;
+              
+              // We don't need to assign back to data variable, as we'll work with
+              // convertedAnalysis directly
+              resolve(convertedAnalysis);
+              return;
             } else {
               resolve(null);
               return;
