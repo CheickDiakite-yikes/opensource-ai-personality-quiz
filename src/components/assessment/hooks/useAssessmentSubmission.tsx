@@ -136,6 +136,14 @@ export const useAssessmentSubmission = (
         duration: 3000
       });
       
+      // Validate that we have sufficient traits for display
+      if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length < 2) {
+        console.warn(`Analysis has insufficient traits: ${analysis.traits?.length || 0}/2 minimum required`);
+        toast.warning("Analysis data is incomplete", {
+          description: "We'll try to show what we have, but consider retaking the assessment"
+        });
+      }
+      
       // Navigate to the report page with the ID and state to indicate it's from assessment
       console.log("Navigating to report page with ID:", analysis.id);
       navigate(`/report/${analysis.id}`, { 
