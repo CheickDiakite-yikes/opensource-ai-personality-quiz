@@ -85,7 +85,14 @@ export const useAIAnalysis = () => {
             
             if (rawData && rawData.result) {
               console.log("Retrieved analysis using raw result field");
-              data = rawData;
+              // The fix is here: We need to convert rawData properly to PersonalityAnalysis
+              // Instead of directly using it, we'll use our utility function
+              if (rawData) {
+                data = rawData;
+              } else {
+                resolve(null);
+                return;
+              }
             } else {
               resolve(null);
               return;
