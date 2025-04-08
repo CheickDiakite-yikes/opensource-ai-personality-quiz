@@ -34,7 +34,7 @@ const HomePage: React.FC = () => {
         <section className="relative">
           <HeroSection 
             onGetStarted={handleGetStarted} 
-            onLearnMore={handleLearnMore} 
+            isAuthenticated={!!user} 
           />
           
           {/* Feature section with Ghibli styling */}
