@@ -52,7 +52,6 @@ const SharedProfile: React.FC = () => {
       setError(null);
       
       if (!id) {
-        console.error("No profile ID provided in URL parameters");
         setLoading(false);
         setError("No profile ID provided");
         if (!toastShown.current) {
@@ -69,10 +68,7 @@ const SharedProfile: React.FC = () => {
         const fetchedAnalysis = await getAnalysisById(id);
         
         if (fetchedAnalysis) {
-          console.log("Successfully fetched shared analysis:", fetchedAnalysis.id);
-          console.log("Analysis overview length:", fetchedAnalysis.overview?.length || 0);
-          console.log("Analysis traits count:", fetchedAnalysis.traits?.length || 0);
-          
+          console.log("Successfully fetched shared analysis:", fetchedAnalysis);
           setAnalysis(fetchedAnalysis);
           // Show success toast only once
           if (!toastShown.current) {
@@ -89,10 +85,9 @@ const SharedProfile: React.FC = () => {
         }
       } catch (error) {
         console.error("Error fetching shared analysis:", error);
-        console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
         setError("Error loading the shared profile");
         if (!toastShown.current) {
-          toast.error(`Error loading the shared profile: ${error instanceof Error ? error.message : "Unknown error"}`);
+          toast.error("Error loading the shared profile");
           toastShown.current = true;
         }
       } finally {
