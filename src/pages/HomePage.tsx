@@ -3,12 +3,10 @@ import React from "react";
 import FeatureSection from "@/components/home/FeatureSection";
 import TestimonialSection from "@/components/home/TestimonialSection";
 import CTASection from "@/components/home/CTASection";
-import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
+import HeroSection from "@/components/home/HeroSection";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -34,7 +32,10 @@ const HomePage: React.FC = () => {
       <div className="relative overflow-hidden bg-ghibli-gradient">
         {/* Hero section with animated Ghibli-style scene */}
         <section className="relative">
-          <GhibliHeroAnimation />
+          <HeroSection 
+            onGetStarted={handleGetStarted} 
+            onLearnMore={handleLearnMore} 
+          />
           
           {/* Feature section with Ghibli styling */}
           <div id="features">

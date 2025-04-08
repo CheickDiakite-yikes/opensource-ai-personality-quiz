@@ -93,7 +93,7 @@ async function generateAIAnalysis(
   // Generate detailed summaries of individual responses to reference in the analysis
   const categoryDetailedResponses = Object.entries(responsesByCategory).map(([category, responses]) => {
     const responseSummaries = responses.map((r, index) => 
-      `Response ${index+1}: Question ID ${r.questionId}, Answer: "${r.selectedOption || r.customResponse || "No answer"}" (Timestamp: ${r.timestamp})`
+      `Response ${index+1}: "${r.selectedOption || r.customResponse || "No answer"}" (Timestamp: ${r.timestamp})`
     ).join('\n');
     return `CATEGORY: ${category.toUpperCase()}\n${responseSummaries}`;
   }).join('\n\n');
@@ -112,7 +112,6 @@ async function generateAIAnalysis(
   
   1. CONSIDER ALL RESPONSES, not just patterns:
      - You MUST evaluate and consider EVERY individual response, not just general patterns
-     - Explicitly reference specific responses by their Question IDs when providing evidence for traits
      - Identify unique combinations of traits that would not apply to most people
      - If you cite a pattern, give at least 2-3 specific response examples that support it
      
@@ -141,11 +140,15 @@ async function generateAIAnalysis(
      - Reference the specific content of their responses, not just the patterns
      - Use the same vocabulary and communication style evident in their written responses
   
-  6. BALANCE DETAIL AND INSIGHT:
-     - Provide enough detail to feel personalized but maintain readability
-     - For each major insight, cite at least one specific response as evidence
-     - Include "insight blocks" that reveal deeper understanding beyond obvious traits
-     - Connect individual responses to broader patterns in an evidence-based way
+  6. OUTPUT LENGTH AND DETAIL REQUIREMENTS:
+     - EXTREMELY IMPORTANT: Write LENGTHY, DETAILED content for each section
+     - Aim for 500-800 words for the overview section
+     - For each trait description, write at least 250-300 words with multiple paragraphs
+     - Include at least 8-12 distinct personality traits
+     - Include 10-15 growth suggestions for each trait
+     - Write lengthy descriptions for cognitive processing styles - at least 300 words
+     - Provide extremely detailed explanations with examples for all sections
+     - The total analysis should be comprehensive - aim for 5000-8000 words total
   
   7. SHADOW ASPECTS AND BLIND SPOTS:
      - Identify potential shadow aspects (unconscious or denied parts of personality)
@@ -159,13 +162,6 @@ async function generateAIAnalysis(
      - Look for tensions between different cognitive approaches in their answers
      - Base cognitive assessments on specific response patterns, not generic typing
      - Label this as "Cognitive Processing Style" rather than intelligence
-
-  9. TRAIT REFERENCE REQUIREMENT:
-     - CRITICAL: Every trait description MUST explicitly reference at least one specific Question ID
-     - Format references as "Question ID: xyz" within the trait description
-     - Show exactly how you derived each trait conclusion from specific responses
-     - If a trait is based on multiple responses, cite at least 2-3 different Question IDs
-     - Failure to reference specific Question IDs for each trait will result in reduced analysis quality
   
   ## Output Format
   Return your analysis as a structured JSON object with the following properties:
@@ -173,26 +169,26 @@ async function generateAIAnalysis(
   {
     "id": "${assessmentId}",
     "createdAt": "current timestamp",
-    "overview": "highly specific summary paragraph that cites unique response patterns and avoids generic descriptions",
+    "overview": "highly specific summary paragraph that cites unique response patterns and avoids generic descriptions - make this at least 500-800 words",
     "traits": [
       {
         "trait": "specific trait name with evidence",
         "score": score (0-10),
-        "description": "detailed description citing specific responses by Question ID",
-        "strengths": ["list", "of", "specific strengths with reference to response patterns"],
-        "challenges": ["list", "of", "specific challenges with direct supporting evidence"],
-        "growthSuggestions": ["list", "of", "personalized growth suggestions tied to specific responses"]
+        "description": "detailed description with specific examples - at least 250-300 words per trait",
+        "strengths": ["list", "of", "specific strengths with reference to response patterns - include at least 5-8 items"],
+        "challenges": ["list", "of", "specific challenges with direct supporting evidence - include at least 5-8 items"],
+        "growthSuggestions": ["list", "of", "personalized growth suggestions - include at least 10-15 detailed suggestions"]
       }
     ],
     "intelligence": {
       "type": "specific cognitive processing style - highly personalized",
       "score": score (0-10),
-      "description": "detailed description with references to specific thinking patterns in responses",
+      "description": "detailed description of thinking patterns - at least 300 words",
       "domains": [
         {
           "name": "domain name (e.g., 'Pattern Recognition', 'Analytical Processing', etc.)",
           "score": score (0-10),
-          "description": "description with specific supporting evidence from responses"
+          "description": "description with specific supporting evidence - at least 150 words per domain"
         }
       ]
     },
@@ -201,40 +197,39 @@ async function generateAIAnalysis(
     "cognitiveStyle": {
       "primary": "primary style with evidence",
       "secondary": "secondary style with evidence",
-      "description": "detailed explanation citing specific response contradictions and complexities"
+      "description": "detailed explanation citing specific response contradictions and complexities - at least 300 words"
     },
-    "valueSystem": ["list of core values with specific response evidence"],
-    "motivators": ["list of motivators with specific response examples"],
-    "inhibitors": ["list of inhibitors with supporting evidence from responses"],
+    "valueSystem": ["list of core values with specific response evidence - at least 8-10 values with detailed descriptions"],
+    "motivators": ["list of motivators with specific response examples - at least 8-10 detailed motivators"],
+    "inhibitors": ["list of inhibitors with supporting evidence from responses - at least 6-8 detailed inhibitors"],
     "weaknesses": [
-      "list of weaknesses with evidence from responses - be honest but constructive about legitimate weaknesses",
+      "list of weaknesses with evidence from responses - be honest but constructive about legitimate weaknesses - include at least 6-8 items",
       "don't sugarcoat genuine issues revealed in their responses"
     ],
     "shadowAspects": [
-      "list of potential unconscious or denied personality aspects suggested by response patterns",
-      "cite specific response patterns that hint at these shadow aspects"
+      "list of potential unconscious or denied personality aspects suggested by response patterns - at least 5-8 items",
+      "provide detailed explanations for each shadow aspect - at least 100 words per aspect"
     ],
-    "growthAreas": ["list of growth areas with specific development suggestions tied to responses"],
+    "growthAreas": ["list of growth areas with specific development suggestions tied to responses - at least 8-10 detailed areas"],
     "relationshipPatterns": {
-      "strengths": ["relationship strengths with evidence"],
-      "challenges": ["relationship challenges with evidence"],
-      "compatibleTypes": ["compatible personality types based on specific patterns"],
-      "potentialConflictAreas": ["areas that might cause relationship difficulties based on response patterns"]
+      "strengths": ["relationship strengths with evidence - at least 6-8 detailed items"],
+      "challenges": ["relationship challenges with evidence - at least 6-8 detailed items"],
+      "compatibleTypes": ["compatible personality types based on specific patterns - at least 5-7 types with explanations"],
+      "potentialConflictAreas": ["areas that might cause relationship difficulties based on response patterns - at least 6-8 areas"]
     },
-    "careerSuggestions": ["list of career suggestions aligned with identified traits and specific responses"],
-    "learningPathways": ["list of learning approaches suited to cognitive style with evidence"],
-    "roadmap": "personalized development roadmap with measurable milestones tied to specific traits"
+    "careerSuggestions": ["list of career suggestions aligned with identified traits - at least 12-15 detailed career paths"],
+    "learningPathways": ["list of learning approaches suited to cognitive style - at least 8-10 detailed approaches"],
+    "roadmap": "personalized development roadmap with measurable milestones - at least 500 words"
   }
   
-  IMPORTANT: Every trait description MUST include at least one specific Question ID reference to show it was based on actual responses!
-  
   IMPORTANT FINAL CHECKS:
-  - Have you referenced specific responses by Question ID to support each major conclusion?
+  - Have you written DETAILED, LENGTHY content for each section?
   - Have you avoided generic Barnum statements that could apply to anyone?
   - Have you identified potential negative traits, weaknesses or shadow aspects honestly?
   - Have you identified unique contradictions or tensions in their response patterns?
   - Would your analysis feel custom-written to the individual based on their specific responses?
-  - Is your analysis distinguishable from one you would write for someone with different responses?`;
+  - Is your analysis distinguishable from one you would write for someone with different responses?
+  - Have you provided at least the minimum word count for each section?`;
 
   try {
     console.log("Preparing OpenAI API request for analysis using gpt-4o model");
@@ -258,14 +253,14 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. EVERY trait description MUST reference at least one specific Question ID to show you are being evidence-based.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. You write LENGTHY, DETAILED content for each section of the analysis.'
           },
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
         max_tokens: 16384, // Maximum output tokens for gpt-4o
         seed: uniqueSeed, // Use unique seed for unique but consistent results
-        temperature: 0.4,  // Lower temperature for more consistent, less creative responses
+        temperature: 0.7,  // Increased temperature for more creative, detailed responses
       }),
     });
 
@@ -289,6 +284,8 @@ async function generateAIAnalysis(
       
       const analysisJson = JSON.parse(data.choices[0].message.content);
       console.log("Successfully parsed OpenAI response to JSON");
+      console.log("Analysis overview length:", analysisJson.overview?.length || 0);
+      console.log("Analysis traits count:", analysisJson.traits?.length || 0);
       
       // Make sure createdAt is set correctly
       if (!analysisJson.createdAt || analysisJson.createdAt === "current timestamp") {
@@ -329,35 +326,38 @@ function validateAnalysisQuality(analysis: any) {
   const warnings: string[] = [];
   
   // Check that the overview isn't too short
-  if (analysis.overview && analysis.overview.length < 100) {
-    warnings.push("Overview seems too short for a personalized analysis");
+  if (analysis.overview && analysis.overview.length < 300) {
+    warnings.push(`Overview seems too short (${analysis.overview.length} characters) - we asked for 500-800 words`);
   }
   
-  // Check that traits have specific descriptions
+  // Check that we have enough traits
+  if (!analysis.traits || analysis.traits.length < 8) {
+    warnings.push(`Not enough traits identified (${analysis.traits?.length || 0}) - we asked for 8-12 traits`);
+  }
+  
+  // Check trait descriptions for length
   if (analysis.traits && analysis.traits.length > 0) {
-    const genericPhrases = ["sometimes", "often", "may be", "can be", "tends to"];
-    
     for (const trait of analysis.traits) {
-      // Check for Question ID references
-      if (!trait.description.includes("Question") && !trait.description.includes("ID")) {
-        warnings.push(`Trait '${trait.trait}' doesn't reference specific responses`);
+      if (trait.description && trait.description.length < 200) {
+        warnings.push(`Trait '${trait.trait}' has a short description (${trait.description.length} characters) - we asked for 250-300 words`);
       }
       
-      // Check for generic language
-      const hasGenericPhrases = genericPhrases.some(phrase => 
-        trait.description.includes(phrase)
-      );
-      
-      if (hasGenericPhrases && trait.description.length < 100) {
-        warnings.push(`Trait '${trait.trait}' may contain generic descriptions`);
+      // Check growth suggestions count
+      if (!trait.growthSuggestions || trait.growthSuggestions.length < 8) {
+        warnings.push(`Trait '${trait.trait}' has too few growth suggestions (${trait.growthSuggestions?.length || 0}) - we asked for 10-15`);
       }
     }
   }
   
   // Check for balanced analysis - make sure we have some weaknesses or shadow aspects identified
-  if ((!analysis.weaknesses || analysis.weaknesses.length === 0) && 
-      (!analysis.shadowAspects || analysis.shadowAspects.length === 0)) {
-    warnings.push("Analysis may be too positively biased - no weaknesses or shadow aspects identified");
+  if ((!analysis.weaknesses || analysis.weaknesses.length < 3) && 
+      (!analysis.shadowAspects || analysis.shadowAspects.length < 3)) {
+    warnings.push("Analysis may be too positively biased - not enough weaknesses or shadow aspects identified");
+  }
+  
+  // Check roadmap length
+  if (analysis.roadmap && analysis.roadmap.length < 300) {
+    warnings.push(`Roadmap seems too short (${analysis.roadmap.length} characters) - we asked for at least 500 words`);
   }
   
   return {
@@ -365,3 +365,4 @@ function validateAnalysisQuality(analysis: any) {
     warnings
   };
 }
+
