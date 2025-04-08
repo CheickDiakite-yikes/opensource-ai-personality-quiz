@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -178,32 +177,49 @@ const ReportPage: React.FC = () => {
     loadAnalysis();
   }, [id, isLoading, setCurrentAnalysis, navigate, analysis, stableAnalysis, analysisHistory, hasAttemptedToLoadAnalysis, forcedRefresh, refreshAnalysis, getAnalysisById, isChangingAnalysis, loadAttempts, loadAllAnalysesFromSupabase]);
   
-  // Update stable analysis when the analysis from the hook changes
+  // Add this function to detect incomplete analysis data
+  const isAnalysisIncomplete = (analysis: PersonalityAnalysis | null): boolean => {
+    if (!analysis) return true;
+    
+    // Check for critical missing data
+    if (!analysis.traits || analysis.traits.length < 2) {
+      console.warn("Analysis has insufficient traits:", analysis.traits?.length || 0);
+      return true;
+    }
+    
+    if (!analysis.intelligence) {
+      console.warn("Analysis missing intelligence data");
+      return true;
+    }
+    
+    return false;
+  };
+  
+  // Update this useEffect to check for incomplete analyses
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
       // Make sure this analysis has the minimum required data structure
       try {
-        // Check for critical missing data that could cause rendering issues
-        if (!analysis.traits || analysis.traits.length === 0 ||
-            !analysis.intelligence) {
-          
-          console.warn("Analysis is missing critical data:", analysis.id);
-          console.log("Traits:", analysis.traits ? analysis.traits.length : 'none');
-          console.log("Intelligence data present:", !!analysis.intelligence);
-          
-          // Show error handler for insufficient data
+        if (isAnalysisIncomplete(analysis)) {
+          console.warn("Analysis is incomplete, showing error handler:", analysis.id);
           setShowErrorHandler(true);
           
           // Add fallbacks to prevent crashes, even as we show the error handler
-          if (!analysis.traits || analysis.traits.length === 0) {
-            analysis.traits = [{
-              trait: "Analysis Processing",
-              score: 5,
-              description: "Your analysis is still being processed or has incomplete trait data.",
-              strengths: ["Not available yet"],
-              challenges: ["Not available yet"],
-              growthSuggestions: ["Please check back shortly or try regenerating your analysis."]
-            }];
+          if (!analysis.traits || analysis.traits.length < 2) {
+            const traitCount = analysis.traits?.length || 0;
+            
+            // Keep existing traits if any
+            analysis.traits = analysis.traits || [];
+            
+            // Add a note about the analysis being incomplete
+            analysis.traits.push({
+              trait: "Analysis Incomplete", 
+              score: 0, 
+              description: `Expected 8-12 traits but found only ${traitCount}. This typically happens when the AI doesn't have enough detailed responses to analyze.`,
+              strengths: ["Try the Fix Analysis button or retake the assessment"],
+              challenges: ["Analysis data is incomplete"],
+              growthSuggestions: ["Provide more detailed answers in your assessment"]
+            });
           }
           
           if (!analysis.intelligence) {
@@ -222,6 +238,7 @@ const ReportPage: React.FC = () => {
         
         setStableAnalysis(analysis);
         setIsChangingAnalysis(false);
+        
         // Update the URL if it doesn't already match the current analysis ID
         if (id !== analysis.id) {
           navigate(`/report/${analysis.id}`, { replace: true });
@@ -290,9 +307,17 @@ const ReportPage: React.FC = () => {
   
   // Show error handler if we've detected an issue with the analysis
   if (showErrorHandler) {
+    // Get trait count from current analysis if available
+    const traitCount = stableAnalysis?.traits?.length || analysis?.traits?.length || 0;
+    const errorDetails = `Analysis ID: ${stableAnalysis?.id || analysis?.id || 'unknown'}\nTraits found: ${traitCount}\nExpected: 8-12 traits`;
+    
     return (
       <div className={`container ${isMobile ? 'py-4 px-2 mx-auto' : 'py-10'}`}>
-        <AssessmentErrorHandler />
+        <AssessmentErrorHandler 
+          title="Incomplete Analysis Data"
+          description="Your personality analysis doesn't have enough traits data for a complete report."
+          errorDetails={errorDetails}
+        />
       </div>
     );
   }

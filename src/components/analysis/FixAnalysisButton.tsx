@@ -26,8 +26,28 @@ export const FixAnalysisButton: React.FC = () => {
         await loadAllAnalysesFromSupabase();
         await refreshAnalysis();
         
-        // Navigate to the most recent analysis
-        navigate(`/report/${analyses[0].id}`);
+        // Log details about the fetched analyses for debugging
+        console.log(`Fetched ${analyses.length} analyses`);
+        analyses.forEach((analysis, index) => {
+          console.log(`Analysis ${index + 1}: ID: ${analysis.id}, Traits: ${analysis.traits?.length || 0}`);
+        });
+        
+        // Find an analysis with sufficient traits (at least 2)
+        const completeAnalysis = analyses.find(a => a.traits && a.traits.length >= 2);
+        
+        if (completeAnalysis) {
+          console.log(`Found complete analysis with ${completeAnalysis.traits?.length} traits, navigating to it`);
+          navigate(`/report/${completeAnalysis.id}`);
+          toast.success("Found a more complete analysis", {
+            description: "Displaying your best analysis results"
+          });
+        } else {
+          // Navigate to the most recent analysis
+          navigate(`/report/${analyses[0].id}`);
+          toast.warning("Your analyses all appear to be incomplete", {
+            description: "Consider retaking the assessment with more detailed answers"
+          });
+        }
       } else {
         toast.error("No analyses found to fix");
       }

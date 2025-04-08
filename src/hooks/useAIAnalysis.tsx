@@ -1,4 +1,3 @@
-
 import { useAIAnalysisCore } from './aiAnalysis/useAIAnalysisCore';
 import { PersonalityAnalysis } from '@/utils/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,12 +84,8 @@ export const useAIAnalysis = () => {
             
             if (rawData && rawData.result) {
               console.log("Retrieved analysis using raw result field");
-              // Instead of assigning directly to data, convert it to PersonalityAnalysis
-              // and then use that for downstream processing
+              // Convert raw data to PersonalityAnalysis
               const convertedAnalysis = convertToPersonalityAnalysis(rawData);
-              
-              // We don't need to assign back to data variable, as we'll work with
-              // convertedAnalysis directly
               resolve(convertedAnalysis);
               return;
             } else {
@@ -106,25 +101,44 @@ export const useAIAnalysis = () => {
           }
           
           console.log("Successfully retrieved analysis data:", data.id);
+          console.log("Analysis traits count:", data.traits?.length || 0);
+          console.log("Intelligence data present:", !!data.intelligence);
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);
           
           // Additional validation to make sure we have the critical data needed for display
-          if (!result.traits || !result.traits.length || !result.intelligence) {
-            console.error("Analysis has missing or incomplete critical data:", result);
+          if (!result.traits || result.traits.length < 2 || !result.intelligence) {
+            console.warn("Analysis has missing or incomplete critical data:", 
+              `traits: ${result.traits?.length || 0}, intelligence present: ${!!result.intelligence}`);
             
-            // If traits array exists but is empty or has fewer than expected items, initialize with placeholder
-            if (!result.traits || result.traits.length < 1) {
-              result.traits = [{
-                trait: "Analysis Incomplete", 
-                score: 5, 
-                description: "The analysis process didn't generate enough trait data. Consider retaking the assessment.",
-                strengths: ["Not available"],
-                challenges: ["Not available"],
-                growthSuggestions: ["Consider retaking the assessment"]
-              }];
-              console.log("Added placeholder trait for incomplete analysis");
+            // If traits array exists but has fewer than expected items, provide feedback about incomplete analysis
+            if (!result.traits || result.traits.length < 2) {
+              result.traits = result.traits || [];
+              
+              // If there's at least one trait, keep it
+              if (result.traits.length === 0) {
+                result.traits = [{
+                  trait: "Analysis Incomplete", 
+                  score: 5, 
+                  description: "The analysis process didn't generate enough trait data. This typically happens when the AI model doesn't receive enough detailed responses.",
+                  strengths: ["Not available - incomplete analysis"],
+                  challenges: ["Not available - incomplete analysis"],
+                  growthSuggestions: ["Consider retaking the assessment with more detailed answers"]
+                }];
+              }
+              
+              // Add a note about the analysis being incomplete
+              result.traits.push({
+                trait: "Analysis Note", 
+                score: 0, 
+                description: "We expected 8-12 personality traits but only found " + result.traits.length + ". The analysis may be incomplete.",
+                strengths: ["Try the Fix Analysis button or retake the assessment"],
+                challenges: ["Analysis data is incomplete"],
+                growthSuggestions: ["Provide more detailed answers in your assessment"]
+              });
+              
+              console.log("Added informational trait about incomplete analysis");
             }
             
             // Ensure intelligence object exists

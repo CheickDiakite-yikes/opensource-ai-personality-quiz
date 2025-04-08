@@ -10,12 +10,14 @@ interface AssessmentErrorProps {
   title?: string;
   description?: string;
   showRetry?: boolean;
+  errorDetails?: string;
 }
 
 export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({ 
   title = "Analysis Display Issue", 
   description = "We're having trouble displaying your analysis results. This can happen when the AI generates incomplete data.",
-  showRetry = true
+  showRetry = true,
+  errorDetails
 }) => {
   const navigate = useNavigate();
   
@@ -32,10 +34,17 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
           <h3 className="font-medium mb-2">Possible Solutions:</h3>
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>Try the Fix Analysis button below to reload your data</li>
-            <li>Take the assessment again (sometimes the AI generates more complete data on subsequent attempts)</li>
+            <li>Take the assessment again with more detailed responses</li>
             <li>Check that you answered all assessment questions thoroughly</li>
-            <li>Try using different responses for key questions</li>
+            <li>Try providing more in-depth responses for key questions</li>
           </ol>
+          
+          {errorDetails && (
+            <div className="mt-4 p-3 bg-muted/30 rounded text-xs">
+              <p className="font-medium mb-1">Technical Details:</p>
+              <p className="font-mono whitespace-pre-wrap">{errorDetails}</p>
+            </div>
+          )}
           
           <div className="mt-6 space-x-4 flex">
             <FixAnalysisButton />
@@ -52,7 +61,8 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
         </div>
         
         <p className="text-sm text-muted-foreground">
-          Note: The AI analysis occasionally produces incomplete data when responses are too brief or don't provide enough personality information.
+          Note: The AI analysis requires detailed responses to generate complete personality insights. 
+          Based on the logs, your analysis only found 1 trait when we expected 8-12 traits.
         </p>
       </div>
     </div>

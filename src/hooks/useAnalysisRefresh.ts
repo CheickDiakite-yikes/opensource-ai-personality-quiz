@@ -23,7 +23,8 @@ export const useAnalysisRefresh = () => {
         const { data: analysesData, error: analysesError } = await supabase
           .from('analyses')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
           
         if (analysesError) {
           console.error("Error fetching analyses:", analysesError);
@@ -33,8 +34,12 @@ export const useAnalysisRefresh = () => {
         console.log(`Found ${analysesData?.length || 0} analyses in database`);
         
         if (analysesData && analysesData.length > 0) {
+          // Map data and log trait counts for debugging
           const mappedAnalyses = analysesData.map(convertToPersonalityAnalysis);
-          console.log("Mapped analyses:", mappedAnalyses.map(a => a.id));
+          console.log("Mapped analyses trait counts:", mappedAnalyses.map(a => ({
+            id: a.id,
+            traitCount: a.traits?.length || 0
+          })));
           
           toast.success(`Successfully loaded ${mappedAnalyses.length} analyses`, {
             description: "Your data has been refreshed"
