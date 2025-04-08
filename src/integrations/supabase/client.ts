@@ -30,10 +30,14 @@ export const supabase = createClient<Database>(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
         
-        // @ts-ignore - TypeScript doesn't know about AbortSignal
-        args[1] = { ...args[1], signal: controller.signal };
+        // Fixed TypeScript error - Create a new options object with signal
+        const [url, options = {}] = args;
+        const fetchOptions = { 
+          ...options, 
+          signal: controller.signal 
+        };
         
-        return fetch(...args).finally(() => {
+        return fetch(url, fetchOptions).finally(() => {
           clearTimeout(timeoutId);
         });
       }
@@ -120,4 +124,3 @@ try {
 } catch (error) {
   console.error("Error in subscription initialization block:", error);
 }
-
