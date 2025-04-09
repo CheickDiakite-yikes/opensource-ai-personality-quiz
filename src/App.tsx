@@ -52,6 +52,13 @@ function App() {
   return (
     <>
       <Routes>
+        {/* Publicly accessible shared profile route outside of Layout to avoid auth problems */}
+        <Route path="shared/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <SharedProfile />
+          </Suspense>
+        } />
+        
         <Route path="/" element={<Layout />}>
           <Route index element={
             <Suspense fallback={<PageLoader />}>
@@ -95,18 +102,12 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          <Route path="traits" element={
+          <Route path="traits/:id?" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <TraitsPage />
               </Suspense>
             </PrivateRoute>
-          } />
-          {/* Publicly accessible shared profile route - NOT wrapped in PrivateRoute */}
-          <Route path="shared/:id" element={
-            <Suspense fallback={<PageLoader />}>
-              <SharedProfile />
-            </Suspense>
           } />
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>

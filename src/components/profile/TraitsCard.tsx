@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { UserIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useViewport } from "@/hooks/use-mobile";
 
 interface TraitsCardProps {
   analysis: PersonalityAnalysis;
@@ -17,6 +17,10 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
   // Get top 5 traits
   const topTraits = analysis.traits?.slice(0, 5) || [];
   const isMobile = useIsMobile();
+  const { width } = useViewport();
+  
+  // Use a more specific check for very small screens
+  const isVerySmallScreen = width < 380;
   
   return (
     <Card className="overflow-hidden gradient-border">
@@ -37,8 +41,8 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{trait.trait}</span>
-                    <Badge variant="outline" className={`${isMobile ? 'text-xs px-1.5 py-0' : ''}`}>
+                    <span className={`font-medium ${isVerySmallScreen ? 'text-xs' : isMobile ? 'text-sm' : ''}`}>{trait.trait}</span>
+                    <Badge variant="outline" className={`${isVerySmallScreen ? 'text-xs px-1.5 py-0' : isMobile ? 'text-xs px-1.5 py-0' : ''}`}>
                       {Math.round(trait.score * 100)}/100
                     </Badge>
                   </div>
@@ -48,7 +52,7 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                   className="h-2"
                   indicatorClassName="bg-primary"
                 />
-                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>{trait.description}</p>
+                <p className={`${isVerySmallScreen ? 'text-2xs' : isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>{trait.description}</p>
               </motion.div>
             ))}
           </div>

@@ -34,32 +34,14 @@ export const useAnalysisById = () => {
         return cachedEntry.data;
       }
 
-      // First approach: try getting the analysis directly with no auth required
-      // This table should have public RLS policies for viewing shared profiles
-      const { data: analysisData, error: analysisError } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (!analysisError && analysisData) {
-        console.log("Successfully retrieved analysis:", analysisData.id);
-        const analysis = convertToPersonalityAnalysis(analysisData);
-        
-        if (analysis && analysis.id) {
-          // Cache the result
-          analysisCache.set(id, {data: analysis, timestamp: now});
-          setIsLoading(false);
-          return analysis;
-        }
-      }
-      
-      // Second approach: use get_analysis_by_id function which should be public
+      // MAIN APPROACH: Use the publicly available get_analysis_by_id function
+      // This is specifically designed to work without authentication
       const { data: functionData, error: functionError } = await supabase
-        .rpc('get_analysis_by_id', { analysis_id: id });
+        .rpc('get_analysis_by_id', { analysis_id: id })
+        .single();
         
       if (!functionError && functionData) {
-        console.log("Retrieved analysis via function:", id);
+        console.log("Retrieved analysis via public function:", id);
         const analysis = convertToPersonalityAnalysis(functionData);
         
         if (analysis && analysis.id) {
@@ -68,18 +50,21 @@ export const useAnalysisById = () => {
           setIsLoading(false);
           return analysis;
         }
+      } else if (functionError) {
+        console.error("Public function error:", functionError);
       }
       
-      // Last resort - try anonymous/public matching
-      const { data, error: publicError } = await supabase
+      // FALLBACK APPROACH: Direct table access with anonymous user
+      // This should work if proper RLS policies are in place
+      const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
         .select('*')
         .eq('id', id)
         .maybeSingle();
       
-      if (!publicError && data) {
-        console.log("Retrieved public analysis:", id);
-        const analysis = convertToPersonalityAnalysis(data);
+      if (!analysisError && analysisData) {
+        console.log("Successfully retrieved analysis via direct table access:", analysisData.id);
+        const analysis = convertToPersonalityAnalysis(analysisData);
         
         if (analysis && analysis.id) {
           // Cache the result
@@ -87,14 +72,43 @@ export const useAnalysisById = () => {
           setIsLoading(false);
           return analysis;
         }
+      } else if (analysisError) {
+        console.error("Direct table access error:", analysisError);
       }
       
-      // If we reach here, log all errors to help diagnose
-      if (analysisError) console.error("Direct query error:", analysisError);
-      if (functionError) console.error("Function error:", functionError);
-      if (publicError) console.error("Public query error:", publicError);
+      // EMERGENCY APPROACH: Try anonymous viewing endpoint
+      // This is a last resort if other methods fail
+      const anonKey = supabase.supabaseKey;
+      const url = supabase.supabaseUrl;
       
-      throw new Error("Analysis data not found or not accessible");
+      try {
+        // Make a direct REST API call as a last resort
+        const response = await fetch(`${url}/rest/v1/analyses?id=eq.${id}&select=*`, {
+          headers: {
+            'apikey': anonKey,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            console.log("Retrieved analysis via emergency API access:", id);
+            const analysis = convertToPersonalityAnalysis(data[0]);
+            
+            if (analysis && analysis.id) {
+              // Cache the result
+              analysisCache.set(id, {data: analysis, timestamp: now});
+              setIsLoading(false);
+              return analysis;
+            }
+          }
+        }
+      } catch (restError) {
+        console.error("Emergency REST API error:", restError);
+      }
+      
+      throw new Error("Analysis data not found or not publicly accessible");
       
     } catch (error) {
       console.error("Error fetching analysis by ID:", error);

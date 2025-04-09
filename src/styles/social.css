@@ -109,3 +109,48 @@
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* Critical fixes for mobile/accessibility issues */
+@media (max-width: 480px) {
+  /* Better touch targets for mobile */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Fix overflow issues on small screens */
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  /* Fix font sizes for extremely small screens */
+  @media (max-width: 360px) {
+    body {
+      font-size: 14px;
+    }
+    
+    h1 {
+      font-size: 1.5rem !important;
+    }
+    
+    h2 {
+      font-size: 1.25rem !important;
+    }
+  }
+}
+
+/* Fix for iOS Safari issues */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific fixes */
+  .container {
+    width: 100%;
+  }
+  
+  input, button, a {
+    /* Prevent zoom on tap */
+    font-size: 16px;
+  }
+}

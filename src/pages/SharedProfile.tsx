@@ -7,10 +7,10 @@ import { useAnalysisById } from "@/hooks/aiAnalysis/useAnalysisById";
 import IntelligenceProfileCard from "@/components/profile/IntelligenceProfileCard";
 import ProfileStats from "@/components/profile/ProfileStats";
 import TraitsCard from "@/components/profile/TraitsCard";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useViewport } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Share2 } from "lucide-react";
+import { RefreshCw, Share2, ExternalLink } from "lucide-react";
 import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
 import TopTraitsTable from "@/components/profile/TopTraitsTable";
 
@@ -22,6 +22,7 @@ const SharedProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const isMobile = useIsMobile();
+  const { width } = useViewport();
   
   // Animation variants
   const containerVariants = {
@@ -79,22 +80,37 @@ const SharedProfile: React.FC = () => {
 
   // Initial fetch on component mount
   useEffect(() => {
+    document.title = `Shared Personality Profile | Who Am I?`;
     fetchAnalysis();
+    
+    // Add meta tags for better sharing
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'View this shared personality analysis profile');
+    }
+    
+    return () => {
+      document.title = 'Who Am I?';
+      if (metaDescription) {
+        metaDescription.setAttribute('content', 'Discover your personality traits with AI-powered analysis');
+      }
+    };
   }, [id]);
   
   // Implement retry mechanism
   useEffect(() => {
-    if (error && loadAttempts < 2 && !analysis) {
-      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s
+    if (error && loadAttempts < 3 && !analysis) {
+      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s, 4s
       
       const timer = setTimeout(() => {
         setLoadAttempts(prev => prev + 1);
+        console.log(`Retry attempt ${loadAttempts + 1} for profile ID: ${id}`);
         fetchAnalysis();
       }, retryDelay);
       
       return () => clearTimeout(timer);
     }
-  }, [error, loadAttempts, analysis]);
+  }, [error, loadAttempts, analysis, id]);
   
   const handleRetry = () => {
     setLoadAttempts(0);
@@ -110,7 +126,7 @@ const SharedProfile: React.FC = () => {
     if (navigator.share) {
       navigator.share({
         title: "Personality Analysis - Who Am I?",
-        text: "Check out this personality analysis from Who Am I?",
+        text: `Check out this personality analysis from Who Am I? Top trait: ${analysis.traits?.[0]?.trait || "Personality Analysis"}`,
         url: shareUrl,
       }).catch(err => {
         console.error("Error sharing:", err);
@@ -127,6 +143,20 @@ const SharedProfile: React.FC = () => {
     }).catch(err => {
       console.error("Failed to copy:", err);
       toast.error("Failed to copy link");
+      
+      // Fallback for iOS
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success("Link copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy link - try manually copying the URL");
+      }
+      document.body.removeChild(textArea);
     });
   };
   
@@ -144,7 +174,7 @@ const SharedProfile: React.FC = () => {
   }
   
   if (error || !analysis) {
-    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}\nError: ${error || "No data returned"}`;
+    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}\nError: ${error || "No data returned"}\nUser Agent: ${navigator.userAgent}`;
     
     return (
       <AssessmentErrorHandler
@@ -156,6 +186,9 @@ const SharedProfile: React.FC = () => {
       />
     );
   }
+  
+  // Use a more specific check for very small screens
+  const isVerySmallScreen = width < 380;
   
   return (
     <div className={`container ${isMobile ? 'py-4 px-2' : 'py-16'}`}>
@@ -211,8 +244,19 @@ const SharedProfile: React.FC = () => {
         
         <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground pt-2 pb-8">
           <p>Want to discover your own personality traits?</p>
-          <a href="/" className="text-primary hover:underline">Take the assessment at Who Am I?</a>
+          <a href="/" className="text-primary hover:underline flex items-center justify-center gap-1">
+            Take the assessment at Who Am I? <ExternalLink className="h-3 w-3" />
+          </a>
         </motion.div>
+        
+        {/* Debug info visible only in development mode */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-muted-foreground border-t pt-2 mt-4">
+            <p>Debug: Profile ID: {id}</p>
+            <p>Debug: Load Attempts: {loadAttempts}</p>
+            <p>Debug: Is Mobile: {isMobile ? 'Yes' : 'No'}</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );
