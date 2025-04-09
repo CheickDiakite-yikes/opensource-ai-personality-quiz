@@ -72,14 +72,23 @@ const SharedProfile: React.FC = () => {
       
       if (fetchedAnalysis) {
         console.log("Successfully fetched shared analysis:", fetchedAnalysis.id);
-        console.log("Analysis overview length:", fetchedAnalysis.overview?.length || 0);
-        console.log("Analysis traits count:", fetchedAnalysis.traits?.length || 0);
+        console.log("Analysis overview:", fetchedAnalysis.overview?.substring(0, 50) + "...");
+        console.log("Analysis traits:", fetchedAnalysis.traits?.length || 0, "traits found");
         
-        setAnalysis(fetchedAnalysis);
-        // Show success toast only once
-        if (!toastShown.current) {
-          toast.success("Profile loaded successfully");
-          toastShown.current = true;
+        // Validate that we have the minimum required data
+        if (!fetchedAnalysis.traits || fetchedAnalysis.traits.length === 0) {
+          console.warn("Analysis has no traits data, showing error");
+          setError("Incomplete analysis data");
+          toast.error("This shared analysis is incomplete", {
+            description: "It may have been generated incorrectly"
+          });
+        } else {
+          setAnalysis(fetchedAnalysis);
+          // Show success toast only once
+          if (!toastShown.current) {
+            toast.success("Profile loaded successfully");
+            toastShown.current = true;
+          }
         }
       } else {
         console.error("No analysis found with ID:", id);
@@ -105,6 +114,7 @@ const SharedProfile: React.FC = () => {
 
   // Initial fetch
   useEffect(() => {
+    console.log("SharedProfile mounted with ID:", id);
     fetchAnalysis();
     
     // Cleanup function to prevent memory leaks
@@ -115,8 +125,8 @@ const SharedProfile: React.FC = () => {
   
   // Implement retry mechanism with exponential backoff
   useEffect(() => {
-    if (error && loadAttempts < 2 && !analysis) {
-      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, then 2s
+    if (error && loadAttempts < 3 && !analysis) {
+      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s, 4s
       console.log(`Retrying fetch (attempt ${loadAttempts + 1}) in ${retryDelay}ms`);
       
       const timer = setTimeout(() => {
@@ -131,8 +141,10 @@ const SharedProfile: React.FC = () => {
   
   const handleRetry = () => {
     fetchStarted.current = false;
+    toastShown.current = false;
     setLoadAttempts(0);
     fetchAnalysis();
+    toast.loading("Retrying profile load...");
   };
   
   if (loading) {
@@ -143,6 +155,7 @@ const SharedProfile: React.FC = () => {
           <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
           <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
         </div>
+        <p className="mt-4 text-muted-foreground">Loading shared profile...</p>
       </div>
     );
   }
@@ -158,6 +171,9 @@ const SharedProfile: React.FC = () => {
           <RefreshCw className="h-4 w-4" />
           Try Again
         </Button>
+        <p className="mt-8 text-sm text-muted-foreground">
+          Profile ID: {id || "None provided"}
+        </p>
       </div>
     );
   }

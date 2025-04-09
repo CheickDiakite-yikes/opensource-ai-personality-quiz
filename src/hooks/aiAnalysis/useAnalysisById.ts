@@ -52,42 +52,8 @@ export const useAnalysisById = () => {
       // Fetch analysis directly from Supabase without requiring authentication
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
-          // First try the RPC function approach - most reliable for public access
-          console.log("Trying RPC function first for better public access");
-          const { data: rpcData, error: rpcError } = await supabase
-            .rpc<any, { analysis_id: string }>('get_analysis_by_id', { analysis_id: id });
-          
-          if (!rpcError && rpcData) {
-            // The rpcData is of type 'unknown', so we need to safely access its properties
-            const rpcId = typeof rpcData === 'object' && rpcData !== null ? (rpcData as any).id || id : id;
-            console.log("Successfully retrieved analysis via RPC:", rpcId);
-            
-            // Check if the data is empty or invalid
-            if (!rpcData || (typeof rpcData === 'object' && Object.keys(rpcData).length === 0)) {
-              console.error("RPC returned empty data");
-              resolve(null);
-              return;
-            }
-            
-            try {
-              const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
-              console.log("Successfully converted analysis from RPC", convertedAnalysis.id);
-              
-              // Store in cache with timestamp
-              analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
-              resolve(convertedAnalysis);
-              return;
-            } catch (conversionError) {
-              console.error("Error converting RPC data:", conversionError);
-              // Continue to next approach rather than failing
-            }
-          } else if (rpcError) {
-            console.error("RPC error:", rpcError);
-          }
-          
-          console.log("RPC approach failed, trying direct table query");
-          
-          // Try getting data directly from the analyses table
+          // Direct approach - fetch from the analyses table without RPC
+          console.log("Trying direct table query first");
           const { data, error } = await supabase
             .from('analyses')
             .select('*')
@@ -97,37 +63,74 @@ export const useAnalysisById = () => {
           if (error) {
             console.error("Error fetching shared analysis:", error);
             
-            // If there's an error, try a second approach with the raw result field
-            const { data: rawData, error: rawError } = await supabase
-              .from('analyses')
-              .select('id, created_at, user_id, assessment_id, result')
-              .eq('id', id)
-              .maybeSingle();
+            // If there's an error, try a second approach with the RPC function
+            console.log("Direct query failed, trying RPC function");
+            const { data: rpcData, error: rpcError } = await supabase
+              .rpc('get_analysis_by_id', { analysis_id: id });
+            
+            if (rpcError) {
+              console.error("RPC error:", rpcError);
+              // Try one last approach with raw result field
+              console.log("RPC approach failed, trying raw result field query");
               
-            if (rawError) {
-              console.error("Failed with second approach too:", rawError);
-              resolve(null);
-              return;
+              const { data: rawData, error: rawError } = await supabase
+                .from('analyses')
+                .select('id, created_at, user_id, assessment_id, result')
+                .eq('id', id)
+                .maybeSingle();
+                
+              if (rawError) {
+                console.error("Failed with all approaches:", rawError);
+                resolve(null);
+                return;
+              }
+              
+              if (rawData && rawData.result) {
+                console.log("Retrieved analysis using raw result field");
+                try {
+                  // Convert raw data to PersonalityAnalysis
+                  const convertedAnalysis = convertToPersonalityAnalysis(rawData);
+                  console.log("Successfully converted raw data:", convertedAnalysis.id);
+                  
+                  // Store in cache with timestamp
+                  analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
+                  resolve(convertedAnalysis);
+                  return;
+                } catch (conversionError) {
+                  console.error("Error converting raw data:", conversionError);
+                  resolve(null);
+                  return;
+                }
+              } else {
+                console.log("No raw data found for ID:", id);
+                resolve(null);
+                return;
+              }
             }
             
-            if (rawData && rawData.result) {
-              console.log("Retrieved analysis using raw result field");
+            // If RPC succeeded but direct query failed
+            if (rpcData) {
+              console.log("RPC returned data:", rpcData);
+              // Check if the data is empty or invalid
+              if (!rpcData || (typeof rpcData === 'object' && Object.keys(rpcData).length === 0)) {
+                console.error("RPC returned empty data");
+                resolve(null);
+                return;
+              }
+              
               try {
-                // Convert raw data to PersonalityAnalysis
-                const convertedAnalysis = convertToPersonalityAnalysis(rawData);
+                const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
+                console.log("Successfully converted analysis from RPC", convertedAnalysis.id);
                 
                 // Store in cache with timestamp
                 analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
                 resolve(convertedAnalysis);
                 return;
               } catch (conversionError) {
-                console.error("Error converting raw data:", conversionError);
+                console.error("Error converting RPC data:", conversionError);
                 resolve(null);
                 return;
               }
-            } else {
-              resolve(null);
-              return;
             }
           }
           
@@ -142,6 +145,7 @@ export const useAnalysisById = () => {
           try {
             // Use the utility function to safely convert Supabase data to PersonalityAnalysis
             const result = convertToPersonalityAnalysis(data);
+            console.log("Successfully converted analysis data:", result.id);
             
             // Ensure all required fields exist with fallbacks
             result.overview = result.overview || "Analysis overview was not generated properly.";
@@ -170,7 +174,7 @@ export const useAnalysisById = () => {
       
       if (!result) {
         toast.error("Could not retrieve analysis data", {
-          description: "Please check your connection and try again"
+          description: "Please check the analysis ID and try again"
         });
       }
       
