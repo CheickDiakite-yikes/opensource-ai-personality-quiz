@@ -78,23 +78,22 @@ export const useAnalysisById = () => {
       
       // EMERGENCY APPROACH: Try anonymous viewing endpoint
       // This is a last resort if other methods fail
-      const anonKey = supabase.supabaseKey;
-      const url = supabase.supabaseUrl;
-      
       try {
         // Make a direct REST API call as a last resort
-        const response = await fetch(`${url}/rest/v1/analyses?id=eq.${id}&select=*`, {
+        // Instead of using protected properties, use environment variables or public URL
+        const url = `${window.location.origin}/.supabase/functions/get-public-analysis`;
+        const response = await fetch(`${url}?id=${id}`, {
+          method: 'GET',
           headers: {
-            'apikey': anonKey,
             'Content-Type': 'application/json'
           }
         });
         
         if (response.ok) {
           const data = await response.json();
-          if (data && data.length > 0) {
+          if (data) {
             console.log("Retrieved analysis via emergency API access:", id);
-            const analysis = convertToPersonalityAnalysis(data[0]);
+            const analysis = convertToPersonalityAnalysis(data);
             
             if (analysis && analysis.id) {
               // Cache the result

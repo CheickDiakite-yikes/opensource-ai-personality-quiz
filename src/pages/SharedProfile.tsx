@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -57,7 +56,7 @@ const SharedProfile: React.FC = () => {
     setError(null);
 
     try {
-      console.log(`Attempting to load shared analysis with ID: ${id}`);
+      console.log(`Attempting to load shared analysis with ID: ${id}, attempt #${loadAttempts + 1}`);
       const fetchedAnalysis = await getAnalysisById(id);
       
       if (fetchedAnalysis && fetchedAnalysis.id) {
@@ -97,14 +96,17 @@ const SharedProfile: React.FC = () => {
     };
   }, [id]);
   
-  // Implement retry mechanism
+  // Enhanced automatic retry mechanism with exponential backoff
   useEffect(() => {
     if (error && loadAttempts < 3 && !analysis) {
       const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s, 4s
       
+      console.log(`Scheduling retry attempt ${loadAttempts + 1} for profile ID: ${id} in ${retryDelay}ms`);
+      toast.loading(`Retrying profile load... (${loadAttempts + 1}/3)`);
+      
       const timer = setTimeout(() => {
         setLoadAttempts(prev => prev + 1);
-        console.log(`Retry attempt ${loadAttempts + 1} for profile ID: ${id}`);
+        console.log(`Executing retry attempt ${loadAttempts + 1} for profile ID: ${id}`);
         fetchAnalysis();
       }, retryDelay);
       
