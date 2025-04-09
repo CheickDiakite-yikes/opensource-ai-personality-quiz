@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
 import { convertToPersonalityAnalysis } from './utils';
@@ -47,34 +47,34 @@ export const useAnalysisById = () => {
         setIsLoading(false);
         return analysisCache.get(id)?.data || null;
       }
-      
-      // DIRECT FETCH - most reliable with new RLS policy
-      console.log("SHARED PROFILE: Trying direct query with public access");
-      const { data: directData, error: directError } = await supabase
+
+      // APPROACH 1: Direct public query with no auth requirements
+      console.log("SHARED PROFILE: Trying public direct query");
+      const { data: publicData, error: publicError } = await supabase
         .from('analyses')
         .select('*')
         .eq('id', id)
         .maybeSingle();
       
-      if (directError) {
-        console.error("SHARED PROFILE: Direct query error:", directError);
-      } else if (directData) {
-        console.log("SHARED PROFILE: Direct query success with data");
+      if (publicError) {
+        console.error("SHARED PROFILE: Public direct query error:", publicError);
+      } else if (publicData) {
+        console.log("SHARED PROFILE: Public direct query success with data:", publicData.id);
         try {
           // Use the utility function to safely convert Supabase data
-          const analysis = convertToPersonalityAnalysis(directData);
+          const analysis = convertToPersonalityAnalysis(publicData);
           if (analysis && analysis.id) {
-            console.log("SHARED PROFILE: Successfully converted direct query data");
+            console.log("SHARED PROFILE: Successfully converted public query data");
             analysisCache.set(id, {data: analysis, timestamp: Date.now()});
             setIsLoading(false);
             return analysis;
           }
         } catch (conversionError) {
-          console.error("SHARED PROFILE: Error converting direct query data:", conversionError);
+          console.error("SHARED PROFILE: Error converting public query data:", conversionError);
         }
       }
       
-      // APPROACH 1: Try with public access function
+      // APPROACH 2: Try with the public function approach as backup
       console.log("SHARED PROFILE: Trying public function approach");
       const { data: publicFnData, error: publicFnError } = await supabase
         .rpc('get_analysis_by_id', { analysis_id: id });
@@ -97,40 +97,33 @@ export const useAnalysisById = () => {
         }
       }
       
-      // APPROACH 3: Try with minimal fields and process raw data
+      // APPROACH 3: Try with minimal fields as last resort
       console.log("SHARED PROFILE: Trying minimal fields approach");
       const { data: minimalData, error: minimalError } = await supabase
         .from('analyses')
-        .select('id, created_at, result, traits')
+        .select('id, created_at, result, traits, intelligence, intelligence_score')
         .eq('id', id)
         .maybeSingle();
       
       if (minimalError) {
         console.error("SHARED PROFILE: Minimal query error:", minimalError);
-      } else if (minimalData && minimalData.result) {
-        console.log("SHARED PROFILE: Minimal query success with result data");
+      } else if (minimalData) {
+        console.log("SHARED PROFILE: Minimal query success with data:", minimalData.id);
         try {
           // For raw result data, we might need to modify the conversion
-          const rawResult = minimalData.result;
-          if (typeof rawResult === 'object') {
-            const analysis = convertToPersonalityAnalysis({
-              id: minimalData.id,
-              created_at: minimalData.created_at,
-              traits: minimalData.traits || [],
-              ...rawResult
-            });
-            if (analysis && analysis.id) {
-              console.log("SHARED PROFILE: Successfully converted minimal query data");
-              analysisCache.set(id, {data: analysis, timestamp: Date.now()});
-              setIsLoading(false);
-              return analysis;
-            }
+          const analysis = convertToPersonalityAnalysis(minimalData);
+          if (analysis && analysis.id) {
+            console.log("SHARED PROFILE: Successfully converted minimal query data");
+            analysisCache.set(id, {data: analysis, timestamp: Date.now()});
+            setIsLoading(false);
+            return analysis;
           }
         } catch (conversionError) {
           console.error("SHARED PROFILE: Error converting minimal query data:", conversionError);
         }
       }
       
+      // If all approaches fail, report the error
       console.log("SHARED PROFILE: All approaches failed for ID:", id);
       setError(`No analysis found with ID: ${id}`);
       setIsLoading(false);

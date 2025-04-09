@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Share } from "lucide-react";
 import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
+import { supabase } from "@/integrations/supabase/client";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,6 +58,36 @@ const SharedProfile: React.FC = () => {
     
     return true;
   };
+
+  // Direct fetch method to access Supabase directly
+  const directFetchAnalysis = async (analysisId: string) => {
+    try {
+      console.log("SHARED PROFILE: Attempting emergency direct fetch for ID:", analysisId);
+      
+      // Try direct public query 
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', analysisId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("SHARED PROFILE: Emergency direct fetch error:", error);
+        return null;
+      }
+      
+      if (!data) {
+        console.log("SHARED PROFILE: No data found in emergency fetch");
+        return null;
+      }
+      
+      console.log("SHARED PROFILE: Emergency direct fetch succeeded:", data.id);
+      return data;
+    } catch (err) {
+      console.error("SHARED PROFILE: Exception in emergency fetch:", err);
+      return null;
+    }
+  };
   
   const fetchAnalysis = async () => {
     // Prevent multiple fetches
@@ -74,6 +105,7 @@ const SharedProfile: React.FC = () => {
         toast.error("No profile ID provided");
         toastShown.current = true;
       }
+      fetchStarted.current = false;
       return;
     }
     
@@ -88,19 +120,51 @@ const SharedProfile: React.FC = () => {
         console.log("SHARED PROFILE: Analysis has", fetchedAnalysis.traits?.length || 0, "traits");
         
         setAnalysis(fetchedAnalysis);
+        
         // Show success toast only once
         if (!toastShown.current) {
           toast.success("Profile loaded successfully");
           toastShown.current = true;
         }
-      } else {
-        console.error("SHARED PROFILE: Retrieved invalid or null analysis for ID:", id);
-        setError(analysisError || "Could not load the shared profile data");
-        if (!toastShown.current) {
-          toast.error("Could not load the shared profile");
-          toastShown.current = true;
+        
+        setLoading(false);
+        fetchStarted.current = false;
+        return;
+      } 
+      
+      // If regular method fails, try emergency direct fetch
+      console.log("SHARED PROFILE: Regular fetch failed, attempting emergency direct fetch");
+      const emergencyData = await directFetchAnalysis(id);
+      
+      if (emergencyData) {
+        try {
+          // Use the utility function to convert the data
+          const { convertToPersonalityAnalysis } = await import('@/hooks/aiAnalysis/utils');
+          const emergencyAnalysis = convertToPersonalityAnalysis(emergencyData);
+          
+          if (emergencyAnalysis && emergencyAnalysis.id) {
+            console.log("SHARED PROFILE: Emergency fetch successful:", emergencyAnalysis.id);
+            setAnalysis(emergencyAnalysis);
+            if (!toastShown.current) {
+              toast.success("Profile loaded successfully (emergency method)");
+              toastShown.current = true;
+            }
+            setLoading(false);
+            fetchStarted.current = false;
+            return;
+          }
+        } catch (conversionError) {
+          console.error("SHARED PROFILE: Error converting emergency data:", conversionError);
         }
       }
+      
+      console.error("SHARED PROFILE: Retrieved invalid or null analysis for ID:", id);
+      setError(analysisError || "Could not load the shared profile data");
+      if (!toastShown.current) {
+        toast.error("Could not load the shared profile");
+        toastShown.current = true;
+      }
+      
     } catch (error) {
       console.error("SHARED PROFILE: Error fetching shared analysis:", error);
       setError("Error loading the shared profile");
@@ -171,6 +235,7 @@ const SharedProfile: React.FC = () => {
         description="We couldn't retrieve the personality analysis. This profile may not exist or has been removed."
         showRetry={true}
         errorDetails={errorDetails}
+        onRetry={handleRetry}
       />
     );
   }
