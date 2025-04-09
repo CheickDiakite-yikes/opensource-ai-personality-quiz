@@ -61,9 +61,28 @@ export const useAnalysisById = () => {
             // The rpcData is of type 'unknown', so we need to safely access its properties
             const rpcId = typeof rpcData === 'object' && rpcData !== null ? (rpcData as any).id || id : id;
             console.log("Successfully retrieved analysis via RPC:", rpcId);
-            const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
-            resolve(convertedAnalysis);
-            return;
+            
+            // Check if the data is empty or invalid
+            if (!rpcData || (typeof rpcData === 'object' && Object.keys(rpcData).length === 0)) {
+              console.error("RPC returned empty data");
+              resolve(null);
+              return;
+            }
+            
+            try {
+              const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
+              console.log("Successfully converted analysis from RPC", convertedAnalysis.id);
+              
+              // Store in cache with timestamp
+              analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
+              resolve(convertedAnalysis);
+              return;
+            } catch (conversionError) {
+              console.error("Error converting RPC data:", conversionError);
+              // Continue to next approach rather than failing
+            }
+          } else if (rpcError) {
+            console.error("RPC error:", rpcError);
           }
           
           console.log("RPC approach failed, trying direct table query");
@@ -93,10 +112,19 @@ export const useAnalysisById = () => {
             
             if (rawData && rawData.result) {
               console.log("Retrieved analysis using raw result field");
-              // Convert raw data to PersonalityAnalysis
-              const convertedAnalysis = convertToPersonalityAnalysis(rawData);
-              resolve(convertedAnalysis);
-              return;
+              try {
+                // Convert raw data to PersonalityAnalysis
+                const convertedAnalysis = convertToPersonalityAnalysis(rawData);
+                
+                // Store in cache with timestamp
+                analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
+                resolve(convertedAnalysis);
+                return;
+              } catch (conversionError) {
+                console.error("Error converting raw data:", conversionError);
+                resolve(null);
+                return;
+              }
             } else {
               resolve(null);
               return;
@@ -111,21 +139,26 @@ export const useAnalysisById = () => {
           
           console.log("Successfully retrieved analysis data:", data.id);
           
-          // Use the utility function to safely convert Supabase data to PersonalityAnalysis
-          const result = convertToPersonalityAnalysis(data);
-          
-          // Ensure all required fields exist with fallbacks
-          result.overview = result.overview || "Analysis overview was not generated properly.";
-          result.intelligenceScore = result.intelligenceScore || 50;
-          result.emotionalIntelligenceScore = result.emotionalIntelligenceScore || 50;
-          result.valueSystem = result.valueSystem || [];
-          result.motivators = result.motivators || [];
-          result.careerSuggestions = result.careerSuggestions || [];
-          result.growthAreas = result.growthAreas || [];
-          
-          // Store in cache with timestamp to prevent redundant fetches
-          analysisCache.set(id, {data: result, timestamp: Date.now()});
-          resolve(result);
+          try {
+            // Use the utility function to safely convert Supabase data to PersonalityAnalysis
+            const result = convertToPersonalityAnalysis(data);
+            
+            // Ensure all required fields exist with fallbacks
+            result.overview = result.overview || "Analysis overview was not generated properly.";
+            result.intelligenceScore = result.intelligenceScore || 50;
+            result.emotionalIntelligenceScore = result.emotionalIntelligenceScore || 50;
+            result.valueSystem = result.valueSystem || [];
+            result.motivators = result.motivators || [];
+            result.careerSuggestions = result.careerSuggestions || [];
+            result.growthAreas = result.growthAreas || [];
+            
+            // Store in cache with timestamp to prevent redundant fetches
+            analysisCache.set(id, {data: result, timestamp: Date.now()});
+            resolve(result);
+          } catch (conversionError) {
+            console.error("Error converting analysis data:", conversionError);
+            resolve(null);
+          }
         } catch (error) {
           console.error("Exception in getAnalysisById fetch:", error);
           resolve(null);
