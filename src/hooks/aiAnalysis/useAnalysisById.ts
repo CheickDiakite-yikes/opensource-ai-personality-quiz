@@ -58,7 +58,9 @@ export const useAnalysisById = () => {
             .rpc<any, { analysis_id: string }>('get_analysis_by_id', { analysis_id: id });
           
           if (!rpcError && rpcData) {
-            console.log("Successfully retrieved analysis via RPC:", rpcData.id || id);
+            // The rpcData is of type 'unknown', so we need to safely access its properties
+            const rpcId = typeof rpcData === 'object' && rpcData !== null ? (rpcData as any).id || id : id;
+            console.log("Successfully retrieved analysis via RPC:", rpcId);
             const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
             resolve(convertedAnalysis);
             return;
