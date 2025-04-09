@@ -10,8 +10,9 @@ import TraitsCard from "@/components/profile/TraitsCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Share2 } from "lucide-react";
 import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
+import TopTraitsTable from "@/components/profile/TopTraitsTable";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,13 +102,41 @@ const SharedProfile: React.FC = () => {
     toast.loading("Retrying profile load...");
   };
   
+  const handleShareProfile = () => {
+    if (!analysis) return;
+    
+    const shareUrl = `${window.location.origin}/shared/${id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: "Personality Analysis - Who Am I?",
+        text: "Check out this personality analysis from Who Am I?",
+        url: shareUrl,
+      }).catch(err => {
+        console.error("Error sharing:", err);
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success("Link copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy:", err);
+      toast.error("Failed to copy link");
+    });
+  };
+  
   if (loading || isLoadingAnalysisById) {
     return (
-      <div className="container py-16 text-center">
-        <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-primary/10 rounded-md max-w-md mx-auto"></div>
-          <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
-          <div className="h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
+      <div className="container py-6 md:py-16 text-center">
+        <div className="animate-pulse space-y-4 md:space-y-6">
+          <div className="h-8 md:h-12 bg-primary/10 rounded-md max-w-md mx-auto"></div>
+          <div className="h-48 md:h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
+          <div className="h-48 md:h-64 bg-primary/5 rounded-lg max-w-4xl mx-auto"></div>
         </div>
         <p className="mt-4 text-muted-foreground">Loading shared profile...</p>
       </div>
@@ -129,23 +158,29 @@ const SharedProfile: React.FC = () => {
   }
   
   return (
-    <div className={`container ${isMobile ? 'py-6' : 'py-16'}`}>
+    <div className={`container ${isMobile ? 'py-4 px-2' : 'py-16'}`}>
       <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-8 max-w-4xl mx-auto"
+        className="space-y-6 md:space-y-8 max-w-4xl mx-auto"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="text-center mb-8 shared-profile-header">
-          <h1 className="text-3xl font-bold mb-2">Shared Personality Analysis</h1>
-          <p className="text-muted-foreground">
+        <motion.div variants={itemVariants} className="text-center mb-4 md:mb-8 shared-profile-header p-4 md:p-6">
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2`}>Shared Personality Analysis</h1>
+          <p className="text-muted-foreground mb-4">
             This is a shared view of someone's personality analysis from Who Am I?
           </p>
-          <Button onClick={handleRetry} className="mt-4 flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh Profile
-          </Button>
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+            <Button onClick={handleRetry} className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={handleShareProfile} variant="outline" className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              Share This Profile
+            </Button>
+          </div>
         </motion.div>
         
         {/* Intelligence Profile Card */}
@@ -160,13 +195,21 @@ const SharedProfile: React.FC = () => {
           </motion.div>
         )}
         
+        {/* Additional Traits Table (showing more traits) */}
+        {analysis.traits && analysis.traits.length > 5 && (
+          <motion.div variants={itemVariants} className="bg-card p-4 md:p-6 rounded-lg shadow-sm">
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold mb-4`}>All Personality Traits</h2>
+            <TopTraitsTable traits={analysis.traits} />
+          </motion.div>
+        )}
+        
         {/* Profile Stats */}
-        <motion.div variants={itemVariants} className="bg-card p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl font-bold mb-4">Profile Statistics</h2>
+        <motion.div variants={itemVariants} className="bg-card p-4 md:p-6 rounded-lg shadow-sm">
+          <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold mb-4`}>Profile Statistics</h2>
           <ProfileStats analysis={analysis} />
         </motion.div>
         
-        <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground">
+        <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground pt-2 pb-8">
           <p>Want to discover your own personality traits?</p>
           <a href="/" className="text-primary hover:underline">Take the assessment at Who Am I?</a>
         </motion.div>

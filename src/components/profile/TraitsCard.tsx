@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { UserIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TraitsCardProps {
   analysis: PersonalityAnalysis;
@@ -15,6 +16,7 @@ interface TraitsCardProps {
 const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
   // Get top 5 traits
   const topTraits = analysis.traits?.slice(0, 5) || [];
+  const isMobile = useIsMobile();
   
   return (
     <Card className="overflow-hidden gradient-border">
@@ -24,7 +26,7 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
         </CardTitle>
         <CardDescription>Your most prominent personality characteristics</CardDescription>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className={`${isMobile ? 'pt-3 px-3' : 'pt-6'}`}>
         {topTraits.length > 0 ? (
           <div className="space-y-4">
             {topTraits.map((trait, index) => (
@@ -34,9 +36,9 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                 className="space-y-2"
               >
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <span className="font-medium">{trait.trait}</span>
-                    <Badge variant="outline" className="ml-2">
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{trait.trait}</span>
+                    <Badge variant="outline" className={`${isMobile ? 'text-xs px-1.5 py-0' : ''}`}>
                       {Math.round(trait.score * 100)}/100
                     </Badge>
                   </div>
@@ -46,7 +48,7 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                   className="h-2"
                   indicatorClassName="bg-primary"
                 />
-                <p className="text-sm text-muted-foreground">{trait.description}</p>
+                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>{trait.description}</p>
               </motion.div>
             ))}
           </div>

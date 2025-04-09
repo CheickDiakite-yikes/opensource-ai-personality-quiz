@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Share, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react";
+import { Share, Copy, Check, Twitter, Facebook, Linkedin, QrCode } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +13,7 @@ interface ShareProfileProps {
 
 const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   
   // Make sure we have a valid analysis ID for sharing
@@ -36,6 +37,31 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
       console.error("Failed to copy link:", err);
       toast.error("Failed to copy link to clipboard");
     });
+  };
+  
+  // Handle native mobile sharing
+  const handleNativeShare = () => {
+    if (!analysisId) {
+      toast.error("Cannot share - missing analysis ID");
+      return;
+    }
+    
+    if (navigator.share) {
+      navigator.share({
+        title: "My Who Am I? Personality Analysis",
+        text: `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits?.[0]?.trait || 'Personality'}`,
+        url: shareUrl,
+      })
+      .then(() => {
+        toast.success("Shared successfully!");
+        setShareDialogOpen(false);
+      })
+      .catch((error) => {
+        console.error("Error sharing:", error);
+      });
+    } else {
+      handleCopy();
+    }
   };
   
   // Handle social sharing
@@ -70,7 +96,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const isSharingDisabled = !analysisId;
   
   return (
-    <Dialog>
+    <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
       <DialogTrigger asChild>
         <Button className="hover-glow w-full" disabled={isSharingDisabled}>
           <Share className="mr-2 h-4 w-4" /> Share Profile
@@ -93,6 +119,17 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
           </Button>
         </div>
         
+        {/* Mobile native sharing */}
+        {navigator.share && (
+          <Button 
+            onClick={handleNativeShare} 
+            className="w-full mt-4"
+          >
+            <Share className="mr-2 h-4 w-4" />
+            Share Now
+          </Button>
+        )}
+        
         <div className="mt-4">
           <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
           <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
@@ -106,6 +143,15 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
               <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
             </Button>
           </div>
+        </div>
+        
+        <div className="mt-4 border-t pt-4">
+          <p className="text-sm text-center text-muted-foreground">
+            Your shared profile link is always accessible at:
+          </p>
+          <p className="text-xs text-center mt-1 font-mono bg-muted p-2 rounded">
+            {shareUrl}
+          </p>
         </div>
       </DialogContent>
     </Dialog>

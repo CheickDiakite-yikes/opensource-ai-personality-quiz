@@ -49,6 +49,40 @@
   }
 }
 
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  .shared-profile-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .shared-profile-container {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Share button design */
+.share-button {
+  transition: all 0.3s ease;
+}
+
+.share-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* QR Code for profile sharing */
+.profile-qr-code {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  margin: 1rem auto;
+  max-width: 200px;
+}
+
 .shared-trait-bubble {
   display: inline-block;
   padding: 0.5rem 1rem;
@@ -68,4 +102,10 @@
   50% {
     transform: translateY(-5px);
   }
+}
+
+/* Fix for mobile overflow issues */
+.shared-profile-content {
+  max-width: 100%;
+  overflow-x: hidden;
 }

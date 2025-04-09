@@ -34,22 +34,17 @@ export const useAnalysisById = () => {
         return cachedEntry.data;
       }
 
-      // Try to get analysis directly from the analyses table
+      // First approach: try getting the analysis directly with no auth required
       // This table should have public RLS policies for viewing shared profiles
-      const { data, error: queryError } = await supabase
+      const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
         .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .single();
       
-      if (queryError) {
-        console.error("Error fetching analysis:", queryError);
-        throw queryError;
-      }
-      
-      if (data) {
-        console.log("Successfully retrieved analysis:", data.id);
-        const analysis = convertToPersonalityAnalysis(data);
+      if (!analysisError && analysisData) {
+        console.log("Successfully retrieved analysis:", analysisData.id);
+        const analysis = convertToPersonalityAnalysis(analysisData);
         
         if (analysis && analysis.id) {
           // Cache the result
@@ -59,16 +54,11 @@ export const useAnalysisById = () => {
         }
       }
       
-      // If we reach here, try using the get_analysis_by_id function as fallback
+      // Second approach: use get_analysis_by_id function which should be public
       const { data: functionData, error: functionError } = await supabase
         .rpc('get_analysis_by_id', { analysis_id: id });
         
-      if (functionError) {
-        console.error("Function error:", functionError);
-        throw functionError;
-      }
-      
-      if (functionData && typeof functionData === 'object') {
+      if (!functionError && functionData) {
         console.log("Retrieved analysis via function:", id);
         const analysis = convertToPersonalityAnalysis(functionData);
         
@@ -80,7 +70,31 @@ export const useAnalysisById = () => {
         }
       }
       
-      throw new Error("Analysis data not found or invalid");
+      // Last resort - try anonymous/public matching
+      const { data, error: publicError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (!publicError && data) {
+        console.log("Retrieved public analysis:", id);
+        const analysis = convertToPersonalityAnalysis(data);
+        
+        if (analysis && analysis.id) {
+          // Cache the result
+          analysisCache.set(id, {data: analysis, timestamp: now});
+          setIsLoading(false);
+          return analysis;
+        }
+      }
+      
+      // If we reach here, log all errors to help diagnose
+      if (analysisError) console.error("Direct query error:", analysisError);
+      if (functionError) console.error("Function error:", functionError);
+      if (publicError) console.error("Public query error:", publicError);
+      
+      throw new Error("Analysis data not found or not accessible");
       
     } catch (error) {
       console.error("Error fetching analysis by ID:", error);
