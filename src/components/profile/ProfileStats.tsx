@@ -21,16 +21,12 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
     return { rating: "Developing", color: "text-red-600" };
   };
   
-  // Convert scores to percentages for display (0-100 scale)
-  const intelligenceScoreNormalized = analysis.intelligenceScore;
-  const emotionalScoreNormalized = analysis.emotionalIntelligenceScore;
+  const intelligenceRating = getCreditRating(analysis.intelligenceScore);
+  const emotionalRating = getCreditRating(analysis.emotionalIntelligenceScore);
   
-  const intelligenceRating = getCreditRating(intelligenceScoreNormalized);
-  const emotionalRating = getCreditRating(emotionalScoreNormalized);
-  
-  // Calculate the average score of all traits (traits are already on a 0-1 scale)
+  // Calculate the average score of all traits
   const avgTraitScore = analysis.traits.reduce((acc, trait) => acc + trait.score, 0) / analysis.traits.length;
-  const traitRating = getCreditRating(avgTraitScore * 100);
+  const traitRating = getCreditRating(avgTraitScore * 10);
   
   // Type guards
   const isValueSystemArray = (value: ValueSystemType): value is string[] => {
@@ -70,7 +66,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={analysis.intelligenceScore} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            {analysis.intelligence.type} - {Math.round(intelligenceScoreNormalized)}/100
+            {analysis.intelligence.type}
           </div>
         </div>
         
@@ -96,7 +92,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={analysis.emotionalIntelligenceScore} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Based on relational patterns and empathy - {Math.round(emotionalScoreNormalized)}/100
+            Based on relational patterns and empathy
           </div>
         </div>
         
@@ -108,9 +104,9 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
               {traitRating.rating}
             </div>
           </div>
-          <Progress value={avgTraitScore * 100} className="h-2" />
+          <Progress value={avgTraitScore * 10} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Average of all trait scores - {Math.round(avgTraitScore * 100)}/100
+            Average of all trait scores
           </div>
         </div>
       </div>

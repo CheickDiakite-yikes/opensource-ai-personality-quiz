@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PersonalityTrait } from "@/utils/types";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useViewport } from "@/hooks/use-mobile";
 
 interface TopTraitsTableProps {
   traits: PersonalityTrait[];
@@ -12,10 +11,6 @@ interface TopTraitsTableProps {
 
 const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
   const isMobile = useIsMobile();
-  const { width } = useViewport();
-  
-  // Use a more specific check for very small screens
-  const isVerySmallScreen = width < 380;
   
   if (isMobile) {
     // Single column layout for mobile
@@ -24,23 +19,21 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className={`w-[28px] ${isVerySmallScreen ? 'text-xs' : ''}`}>Rank</TableHead>
-              <TableHead className={isVerySmallScreen ? 'text-xs' : ''}>Trait</TableHead>
-              <TableHead className={`text-right w-[50px] ${isVerySmallScreen ? 'text-xs' : ''}`}>Score</TableHead>
+              <TableHead className="w-[40px]">Rank</TableHead>
+              <TableHead>Trait</TableHead>
+              <TableHead className="text-right w-[60px]">Score</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {traits.map((trait, index) => (
               <TableRow key={index} className="hover-lift">
-                <TableCell className={`font-medium py-1.5 ${isVerySmallScreen ? 'text-xs px-1' : 'py-2'}`}>
-                  {index + 1}
+                <TableCell className="font-medium py-2">{index + 1}</TableCell>
+                <TableCell className="py-2">
+                  <div className="font-semibold">{trait.trait}</div>
                 </TableCell>
-                <TableCell className={`${isVerySmallScreen ? 'text-xs px-2 py-1.5' : 'py-2'}`}>
-                  <div className={`font-semibold ${isVerySmallScreen ? 'text-xs' : ''}`}>{trait.trait}</div>
-                </TableCell>
-                <TableCell className={`text-right ${isVerySmallScreen ? 'text-xs px-1 py-1.5' : 'py-2'}`}>
-                  <div className={`inline-flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold ${isVerySmallScreen ? 'text-xs h-5 w-5' : 'text-sm h-7 w-7'}`}>
-                    {Math.round(trait.score * 100)}
+                <TableCell className="text-right py-2">
+                  <div className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                    {trait.score.toFixed(1)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -77,7 +70,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                  {Math.round(trait.score * 100)}
+                  {trait.score.toFixed(1)}
                 </div>
               </TableCell>
               
@@ -90,7 +83,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                      {Math.round(rightColumn[index].score * 100)}
+                      {rightColumn[index].score.toFixed(1)}
                     </div>
                   </TableCell>
                 </>

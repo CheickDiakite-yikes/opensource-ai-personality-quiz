@@ -11,15 +11,13 @@ interface AssessmentErrorProps {
   description?: string;
   showRetry?: boolean;
   errorDetails?: string;
-  onRetry?: () => void;  // Added this prop to fix the TypeScript error
 }
 
 export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({ 
   title = "Analysis Display Issue", 
   description = "We're having trouble displaying your analysis results. This can happen when the AI generates incomplete data.",
   showRetry = true,
-  errorDetails,
-  onRetry
+  errorDetails
 }) => {
   const navigate = useNavigate();
   
@@ -52,21 +50,12 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
             <FixAnalysisButton />
             
             {showRetry && (
-              onRetry ? (
-                <Button 
-                  variant="default" 
-                  onClick={onRetry}
-                >
-                  Retry Loading
-                </Button>
-              ) : (
-                <Button 
-                  variant="default" 
-                  onClick={() => navigate("/assessment")}
-                >
-                  Retake Assessment
-                </Button>
-              )
+              <Button 
+                variant="default" 
+                onClick={() => navigate("/assessment")}
+              >
+                Retake Assessment
+              </Button>
             )}
           </div>
         </div>

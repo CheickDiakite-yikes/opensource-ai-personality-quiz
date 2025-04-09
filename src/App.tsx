@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -52,13 +51,6 @@ function App() {
   return (
     <>
       <Routes>
-        {/* Publicly accessible shared profile route outside of Layout to avoid auth problems */}
-        <Route path="shared/:id" element={
-          <Suspense fallback={<PageLoader />}>
-            <SharedProfile />
-          </Suspense>
-        } />
-        
         <Route path="/" element={<Layout />}>
           <Route index element={
             <Suspense fallback={<PageLoader />}>
@@ -102,12 +94,18 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          <Route path="traits/:id?" element={
+          <Route path="traits" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <TraitsPage />
               </Suspense>
             </PrivateRoute>
+          } />
+          {/* Publicly accessible shared profile route */}
+          <Route path="shared/:id" element={
+            <Suspense fallback={<PageLoader />}>
+              <SharedProfile />
+            </Suspense>
           } />
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>

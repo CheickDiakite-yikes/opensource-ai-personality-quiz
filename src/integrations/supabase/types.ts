@@ -173,10 +173,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_analysis_by_id: {
-        Args: { analysis_id: string }
-        Returns: Json
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
