@@ -74,8 +74,9 @@ export const useAnalysisById = () => {
               console.error("Failed with second approach too:", rawError);
               
               // Last try: use the most direct approach possible with our RPC function
+              // Fix the TypeScript error by properly typing the RPC function call
               const { data: lastAttemptData, error: lastAttemptError } = await supabase
-                .rpc('get_analysis_by_id', { analysis_id: id });
+                .rpc<any>('get_analysis_by_id', { analysis_id: id });
               
               if (lastAttemptError || !lastAttemptData) {
                 console.error("All approaches failed:", lastAttemptError);
