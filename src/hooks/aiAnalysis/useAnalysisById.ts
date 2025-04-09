@@ -73,7 +73,7 @@ export const useAnalysisById = () => {
             if (rawError) {
               console.error("Failed with second approach too:", rawError);
               
-              // Last try: use the most direct approach possible
+              // Last try: use the most direct approach possible with our RPC function
               const { data: lastAttemptData, error: lastAttemptError } = await supabase
                 .rpc('get_analysis_by_id', { analysis_id: id });
               
