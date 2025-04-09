@@ -52,8 +52,21 @@ export const useAnalysisById = () => {
       // Fetch analysis directly from Supabase without requiring authentication
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
-          // First try getting data directly from the analyses table
-          // Important: We're using the public client here without auth requirements
+          // First try the RPC function approach - most reliable for public access
+          console.log("Trying RPC function first for better public access");
+          const { data: rpcData, error: rpcError } = await supabase
+            .rpc<any, { analysis_id: string }>('get_analysis_by_id', { analysis_id: id });
+          
+          if (!rpcError && rpcData) {
+            console.log("Successfully retrieved analysis via RPC:", rpcData.id || id);
+            const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
+            resolve(convertedAnalysis);
+            return;
+          }
+          
+          console.log("RPC approach failed, trying direct table query");
+          
+          // Try getting data directly from the analyses table
           const { data, error } = await supabase
             .from('analyses')
             .select('*')
@@ -72,21 +85,7 @@ export const useAnalysisById = () => {
               
             if (rawError) {
               console.error("Failed with second approach too:", rawError);
-              
-              // Last try: use the most direct approach possible with our RPC function
-              // Fix the TypeScript error by properly typing the RPC function call with both type parameters
-              const { data: lastAttemptData, error: lastAttemptError } = await supabase
-                .rpc<any, { analysis_id: string }>('get_analysis_by_id', { analysis_id: id });
-              
-              if (lastAttemptError || !lastAttemptData) {
-                console.error("All approaches failed:", lastAttemptError);
-                resolve(null);
-                return;
-              }
-              
-              // Try to use the RPC result
-              const convertedAnalysis = convertToPersonalityAnalysis(lastAttemptData);
-              resolve(convertedAnalysis);
+              resolve(null);
               return;
             }
             
