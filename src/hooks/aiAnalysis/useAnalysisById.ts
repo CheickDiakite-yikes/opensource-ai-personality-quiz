@@ -46,13 +46,14 @@ export const useAnalysisById = () => {
         setTimeout(() => {
           console.warn("Analysis fetch timed out after 30 seconds");
           resolve(null);
-        }, 30000); // Increased timeout from 15s to 30s
+        }, 30000); // 30 second timeout
       });
       
       // Fetch analysis directly from Supabase without requiring authentication
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
           // First try getting data directly from the analyses table
+          // Important: We're using the public client here without auth requirements
           const { data, error } = await supabase
             .from('analyses')
             .select('*')
@@ -71,7 +72,20 @@ export const useAnalysisById = () => {
               
             if (rawError) {
               console.error("Failed with second approach too:", rawError);
-              resolve(null);
+              
+              // Last try: use the most direct approach possible
+              const { data: lastAttemptData, error: lastAttemptError } = await supabase
+                .rpc('get_analysis_by_id', { analysis_id: id });
+              
+              if (lastAttemptError || !lastAttemptData) {
+                console.error("All approaches failed:", lastAttemptError);
+                resolve(null);
+                return;
+              }
+              
+              // Try to use the RPC result
+              const convertedAnalysis = convertToPersonalityAnalysis(lastAttemptData);
+              resolve(convertedAnalysis);
               return;
             }
             
@@ -94,14 +108,6 @@ export const useAnalysisById = () => {
           }
           
           console.log("Successfully retrieved analysis data:", data.id);
-          
-          if (data.traits && Array.isArray(data.traits)) {
-            console.log("Analysis traits count:", data.traits.length);
-          } else {
-            console.log("Analysis traits are missing or not an array");
-          }
-          
-          console.log("Intelligence data present:", !!data.intelligence);
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);

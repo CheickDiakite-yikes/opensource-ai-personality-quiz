@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -101,7 +102,7 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          {/* Publicly accessible shared profile route */}
+          {/* Publicly accessible shared profile route - NOT wrapped in PrivateRoute */}
           <Route path="shared/:id" element={
             <Suspense fallback={<PageLoader />}>
               <SharedProfile />
