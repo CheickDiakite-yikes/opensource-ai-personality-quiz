@@ -13,24 +13,24 @@ interface ProfileStatsProps {
 const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
   // Create a credit rating based on the intelligence and emotional intelligence
   const getCreditRating = (score: number): { rating: string; color: string } => {
-    if (score >= 9) return { rating: "Exceptional", color: "text-emerald-600" };
-    if (score >= 8) return { rating: "Excellent", color: "text-blue-600" };
-    if (score >= 7) return { rating: "Very Good", color: "text-green-600" };
-    if (score >= 6) return { rating: "Good", color: "text-yellow-600" };
-    if (score >= 5) return { rating: "Average", color: "text-orange-600" };
+    if (score >= 90) return { rating: "Exceptional", color: "text-emerald-600" };
+    if (score >= 80) return { rating: "Excellent", color: "text-blue-600" };
+    if (score >= 70) return { rating: "Very Good", color: "text-green-600" };
+    if (score >= 60) return { rating: "Good", color: "text-yellow-600" };
+    if (score >= 50) return { rating: "Average", color: "text-orange-600" };
     return { rating: "Developing", color: "text-red-600" };
   };
   
-  // Convert scores to 1-10 scale for display
-  const intelligenceScoreNormalized = analysis.intelligenceScore / 10;
-  const emotionalScoreNormalized = analysis.emotionalIntelligenceScore / 10;
+  // Convert scores to percentages for display (0-100 scale)
+  const intelligenceScoreNormalized = analysis.intelligenceScore;
+  const emotionalScoreNormalized = analysis.emotionalIntelligenceScore;
   
   const intelligenceRating = getCreditRating(intelligenceScoreNormalized);
   const emotionalRating = getCreditRating(emotionalScoreNormalized);
   
   // Calculate the average score of all traits (traits are already on a 0-1 scale)
   const avgTraitScore = analysis.traits.reduce((acc, trait) => acc + trait.score, 0) / analysis.traits.length;
-  const traitRating = getCreditRating(avgTraitScore * 10);
+  const traitRating = getCreditRating(avgTraitScore * 100);
   
   // Type guards
   const isValueSystemArray = (value: ValueSystemType): value is string[] => {
@@ -70,7 +70,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={analysis.intelligenceScore} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            {analysis.intelligence.type} - {intelligenceScoreNormalized.toFixed(1)}/10
+            {analysis.intelligence.type} - {Math.round(intelligenceScoreNormalized)}/100
           </div>
         </div>
         
@@ -96,7 +96,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={analysis.emotionalIntelligenceScore} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Based on relational patterns and empathy - {emotionalScoreNormalized.toFixed(1)}/10
+            Based on relational patterns and empathy - {Math.round(emotionalScoreNormalized)}/100
           </div>
         </div>
         
@@ -110,7 +110,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={avgTraitScore * 100} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Average of all trait scores - {(avgTraitScore * 10).toFixed(1)}/10
+            Average of all trait scores - {Math.round(avgTraitScore * 100)}/100
           </div>
         </div>
       </div>

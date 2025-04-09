@@ -52,7 +52,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
             </div>
             <div className="flex items-center">
               <Badge variant="outline" className={`${isMobile ? 'text-[0.6rem] mr-1 px-1 py-0' : 'mr-3'}`}>
-                {(trait.score * 10).toFixed(1)}
+                {Math.round(trait.score * 100)}/100
               </Badge>
               {expanded ? (
                 <ChevronUp className={`${isMobile ? 'h-3 w-3' : 'h-5 w-5'} text-muted-foreground`} />

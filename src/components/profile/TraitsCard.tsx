@@ -37,7 +37,7 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                   <div className="flex items-center">
                     <span className="font-medium">{trait.trait}</span>
                     <Badge variant="outline" className="ml-2">
-                      {(trait.score * 10).toFixed(1)}/10
+                      {Math.round(trait.score * 100)}/100
                     </Badge>
                   </div>
                 </div>

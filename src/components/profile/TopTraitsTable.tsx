@@ -33,7 +33,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className="text-right py-2">
                   <div className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                    {(trait.score * 10).toFixed(1)}
+                    {Math.round(trait.score * 100)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -70,7 +70,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                  {(trait.score * 10).toFixed(1)}
+                  {Math.round(trait.score * 100)}
                 </div>
               </TableCell>
               
@@ -83,7 +83,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                      {(rightColumn[index].score * 10).toFixed(1)}
+                      {Math.round(rightColumn[index].score * 100)}
                     </div>
                   </TableCell>
                 </>
