@@ -10,12 +10,12 @@ import TraitsCard from "@/components/profile/TraitsCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Share } from "lucide-react";
 import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAnalysisById } = useAnalysisById();
+  const { getAnalysisById, isLoadingAnalysisById, analysisError } = useAnalysisById();
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ const SharedProfile: React.FC = () => {
         }
       } else {
         console.error("SHARED PROFILE: Retrieved invalid or null analysis for ID:", id);
-        setError("Could not load the shared profile data");
+        setError(analysisError || "Could not load the shared profile data");
         if (!toastShown.current) {
           toast.error("Could not load the shared profile");
           toastShown.current = true;
@@ -163,13 +163,13 @@ const SharedProfile: React.FC = () => {
   }
   
   if (error || !analysis) {
-    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}`;
+    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}\nError: ${error || "No data returned"}\nAccess: Public`;
     
     return (
       <AssessmentErrorHandler
         title="Could Not Load Shared Profile"
         description="We couldn't retrieve the personality analysis. This profile may not exist or has been removed."
-        showRetry={false}
+        showRetry={true}
         errorDetails={errorDetails}
       />
     );
@@ -183,7 +183,7 @@ const SharedProfile: React.FC = () => {
         animate="visible"
         className="space-y-8 max-w-4xl mx-auto"
       >
-        {/* Add social media meta tags for sharing */}
+        {/* Social media meta tags for sharing */}
         <div className="social-share-image">
           <img src="/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png" alt="Personality analysis" />
         </div>

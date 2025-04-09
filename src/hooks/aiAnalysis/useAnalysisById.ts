@@ -22,10 +22,18 @@ const cleanupCache = () => {
 
 export const useAnalysisById = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Function to get analysis by ID (for shared profiles)
   const getAnalysisById = async (id: string): Promise<PersonalityAnalysis | null> => {
+    if (!id) {
+      console.error("SHARED PROFILE: No ID provided");
+      setError("Missing analysis ID");
+      return null;
+    }
+
     setIsLoading(true);
+    setError(null);
     
     try {
       console.log("SHARED PROFILE: Starting fetch for ID:", id);
@@ -40,31 +48,8 @@ export const useAnalysisById = () => {
         return analysisCache.get(id)?.data || null;
       }
       
-      // APPROACH 1: Try with public access function (no RLS constraints)
-      console.log("SHARED PROFILE: Trying public function approach");
-      const { data: publicFnData, error: publicFnError } = await supabase
-        .rpc('get_analysis_by_id', { analysis_id: id });
-      
-      if (publicFnError) {
-        console.error("SHARED PROFILE: Public function error:", publicFnError);
-      } else if (publicFnData && typeof publicFnData === 'object') {
-        console.log("SHARED PROFILE: Public function success with data:", publicFnData);
-        try {
-          // Safe conversion with type checking
-          const analysis = convertToPersonalityAnalysis(publicFnData);
-          if (analysis && analysis.id) {
-            console.log("SHARED PROFILE: Successfully converted public function data");
-            analysisCache.set(id, {data: analysis, timestamp: Date.now()});
-            setIsLoading(false);
-            return analysis;
-          }
-        } catch (conversionError) {
-          console.error("SHARED PROFILE: Error converting public function data:", conversionError);
-        }
-      }
-      
-      // APPROACH 2: Direct database query
-      console.log("SHARED PROFILE: Trying direct database query");
+      // DIRECT FETCH - most reliable with new RLS policy
+      console.log("SHARED PROFILE: Trying direct query with public access");
       const { data: directData, error: directError } = await supabase
         .from('analyses')
         .select('*')
@@ -89,11 +74,34 @@ export const useAnalysisById = () => {
         }
       }
       
+      // APPROACH 1: Try with public access function
+      console.log("SHARED PROFILE: Trying public function approach");
+      const { data: publicFnData, error: publicFnError } = await supabase
+        .rpc('get_analysis_by_id', { analysis_id: id });
+      
+      if (publicFnError) {
+        console.error("SHARED PROFILE: Public function error:", publicFnError);
+      } else if (publicFnData && typeof publicFnData === 'object') {
+        console.log("SHARED PROFILE: Public function success with data:", publicFnData);
+        try {
+          // Safe conversion with type checking
+          const analysis = convertToPersonalityAnalysis(publicFnData);
+          if (analysis && analysis.id) {
+            console.log("SHARED PROFILE: Successfully converted public function data");
+            analysisCache.set(id, {data: analysis, timestamp: Date.now()});
+            setIsLoading(false);
+            return analysis;
+          }
+        } catch (conversionError) {
+          console.error("SHARED PROFILE: Error converting public function data:", conversionError);
+        }
+      }
+      
       // APPROACH 3: Try with minimal fields and process raw data
       console.log("SHARED PROFILE: Trying minimal fields approach");
       const { data: minimalData, error: minimalError } = await supabase
         .from('analyses')
-        .select('id, created_at, result')
+        .select('id, created_at, result, traits')
         .eq('id', id)
         .maybeSingle();
       
@@ -108,6 +116,7 @@ export const useAnalysisById = () => {
             const analysis = convertToPersonalityAnalysis({
               id: minimalData.id,
               created_at: minimalData.created_at,
+              traits: minimalData.traits || [],
               ...rawResult
             });
             if (analysis && analysis.id) {
@@ -123,10 +132,12 @@ export const useAnalysisById = () => {
       }
       
       console.log("SHARED PROFILE: All approaches failed for ID:", id);
+      setError(`No analysis found with ID: ${id}`);
       setIsLoading(false);
       return null;
     } catch (error) {
       console.error("SHARED PROFILE: Exception in getAnalysisById:", error);
+      setError("Failed to retrieve analysis data");
       setIsLoading(false);
       return null;
     }
@@ -134,6 +145,7 @@ export const useAnalysisById = () => {
 
   return {
     getAnalysisById,
-    isLoadingAnalysisById: isLoading
+    isLoadingAnalysisById: isLoading,
+    analysisError: error
   };
 };
