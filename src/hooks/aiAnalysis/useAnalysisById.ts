@@ -34,28 +34,7 @@ export const useAnalysisById = () => {
         return cachedEntry.data;
       }
 
-      // MAIN APPROACH: Use the publicly available get_analysis_by_id function
-      // This is specifically designed to work without authentication
-      const { data: functionData, error: functionError } = await supabase
-        .rpc('get_analysis_by_id', { analysis_id: id })
-        .single();
-        
-      if (!functionError && functionData) {
-        console.log("Retrieved analysis via public function:", id);
-        const analysis = convertToPersonalityAnalysis(functionData);
-        
-        if (analysis && analysis.id) {
-          // Cache the result
-          analysisCache.set(id, {data: analysis, timestamp: now});
-          setIsLoading(false);
-          return analysis;
-        }
-      } else if (functionError) {
-        console.error("Public function error:", functionError);
-      }
-      
-      // FALLBACK APPROACH: Direct table access with anonymous user
-      // This should work if proper RLS policies are in place
+      // APPROACH 1: Try direct table access with anonymous user
       const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
         .select('*')
@@ -76,35 +55,50 @@ export const useAnalysisById = () => {
         console.error("Direct table access error:", analysisError);
       }
       
-      // EMERGENCY APPROACH: Try anonymous viewing endpoint
-      // This is a last resort if other methods fail
+      // APPROACH 2: Try the public Edge Function
       try {
-        // Make a direct REST API call as a last resort
-        // Instead of using protected properties, use environment variables or public URL
-        const url = `${window.location.origin}/.supabase/functions/get-public-analysis`;
-        const response = await fetch(`${url}?id=${id}`, {
+        // Get the base URL for Edge Functions
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        const projectId = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || '';
+        
+        if (!projectId) {
+          console.error("Could not determine project ID from Supabase URL");
+          throw new Error("Invalid Supabase configuration");
+        }
+        
+        // Construct the URL for the Edge Function
+        const edgeFunctionUrl = `https://${projectId}.functions.supabase.co/get-public-analysis?id=${id}`;
+        
+        console.log("Calling Edge Function at:", edgeFunctionUrl);
+        
+        const response = await fetch(edgeFunctionUrl, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`
           }
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          if (data) {
-            console.log("Retrieved analysis via emergency API access:", id);
-            const analysis = convertToPersonalityAnalysis(data);
-            
-            if (analysis && analysis.id) {
-              // Cache the result
-              analysisCache.set(id, {data: analysis, timestamp: now});
-              setIsLoading(false);
-              return analysis;
-            }
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Edge function returned error:", response.status, errorText);
+          throw new Error(`Edge function returned ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        if (data) {
+          console.log("Retrieved analysis via Edge Function:", id);
+          const analysis = convertToPersonalityAnalysis(data);
+          
+          if (analysis && analysis.id) {
+            // Cache the result
+            analysisCache.set(id, {data: analysis, timestamp: now});
+            setIsLoading(false);
+            return analysis;
           }
         }
       } catch (restError) {
-        console.error("Emergency REST API error:", restError);
+        console.error("Edge Function error:", restError);
       }
       
       throw new Error("Analysis data not found or not publicly accessible");

@@ -25,19 +25,7 @@ Deno.serve(async (req) => {
 
     console.log(`Getting public analysis with ID: ${id}`);
 
-    // First try using the RPC function specifically designed for public access
-    let { data: functionData, error: functionError } = await supabase
-      .rpc('get_analysis_by_id', { analysis_id: id })
-      .single();
-      
-    if (!functionError && functionData) {
-      return new Response(
-        JSON.stringify(functionData),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // If that fails, try direct table access
+    // Try direct table access first (simplified approach)
     const { data: analysisData, error: analysisError } = await supabase
       .from('analyses')
       .select('*')
@@ -45,10 +33,30 @@ Deno.serve(async (req) => {
       .maybeSingle();
     
     if (analysisError) {
+      console.error("Error fetching analysis:", analysisError);
       throw analysisError;
     }
     
     if (!analysisData) {
+      // If not found by id, try looking by assessment_id
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('assessment_id', id)
+        .maybeSingle();
+        
+      if (assessmentError) {
+        console.error("Error fetching by assessment_id:", assessmentError);
+        throw assessmentError;
+      }
+      
+      if (assessmentData) {
+        return new Response(
+          JSON.stringify(assessmentData),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Analysis not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Share, Copy, Check, Twitter, Facebook, Linkedin, QrCode } from "lucide-react";
+import { Share, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,7 +16,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   
-  // Make sure we have a valid analysis ID for sharing
+  // Make sure we have a valid analysis ID for sharing - this is critical
   const analysisId = analysis?.id || "";
   
   // Generate the shareable URL using the analysis ID as a unique identifier
