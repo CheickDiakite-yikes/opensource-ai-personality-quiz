@@ -15,20 +15,36 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
   const isMobile = useIsMobile();
   
-  // Generate the shareable URL
-  const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
+  // Make sure we have a valid analysis ID for sharing
+  const analysisId = analysis?.id || "";
+  
+  // Generate the shareable URL using the analysis ID as a unique identifier
+  const shareUrl = `${window.location.origin}/shared/${analysisId}`;
   
   // Handle copy to clipboard
   const handleCopy = () => {
+    if (!analysisId) {
+      toast.error("Cannot create share link - missing analysis ID");
+      return;
+    }
+    
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       toast.success("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error("Failed to copy link:", err);
+      toast.error("Failed to copy link to clipboard");
     });
   };
   
   // Handle social sharing
   const handleShare = (platform: string) => {
+    if (!analysisId) {
+      toast.error("Cannot share - missing analysis ID");
+      return;
+    }
+    
     let shareLink = '';
     const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits?.[0]?.trait || 'Personality'}`;
     
@@ -50,10 +66,13 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
     }
   };
   
+  // Disable sharing if there's no valid analysis ID
+  const isSharingDisabled = !analysisId;
+  
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="hover-glow w-full">
+        <Button className="hover-glow w-full" disabled={isSharingDisabled}>
           <Share className="mr-2 h-4 w-4" /> Share Profile
         </Button>
       </DialogTrigger>

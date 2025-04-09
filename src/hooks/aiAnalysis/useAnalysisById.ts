@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
 import { convertToPersonalityAnalysis } from './utils';
-import { toast } from "sonner";
 
 // Cache for shared analyses to improve performance
 const analysisCache = new Map<string, {data: PersonalityAnalysis, timestamp: number}>();
@@ -35,7 +34,8 @@ export const useAnalysisById = () => {
         return cachedEntry.data;
       }
 
-      // Try direct public query first (simplest approach)
+      // Try to get analysis directly from the analyses table
+      // This table should have public RLS policies for viewing shared profiles
       const { data, error: queryError } = await supabase
         .from('analyses')
         .select('*')
@@ -43,7 +43,7 @@ export const useAnalysisById = () => {
         .maybeSingle();
       
       if (queryError) {
-        console.error("Public query error:", queryError);
+        console.error("Error fetching analysis:", queryError);
         throw queryError;
       }
       
@@ -59,7 +59,27 @@ export const useAnalysisById = () => {
         }
       }
       
-      // If we get here, we couldn't retrieve the analysis
+      // If we reach here, try using the get_analysis_by_id function as fallback
+      const { data: functionData, error: functionError } = await supabase
+        .rpc('get_analysis_by_id', { analysis_id: id });
+        
+      if (functionError) {
+        console.error("Function error:", functionError);
+        throw functionError;
+      }
+      
+      if (functionData && typeof functionData === 'object') {
+        console.log("Retrieved analysis via function:", id);
+        const analysis = convertToPersonalityAnalysis(functionData);
+        
+        if (analysis && analysis.id) {
+          // Cache the result
+          analysisCache.set(id, {data: analysis, timestamp: now});
+          setIsLoading(false);
+          return analysis;
+        }
+      }
+      
       throw new Error("Analysis data not found or invalid");
       
     } catch (error) {

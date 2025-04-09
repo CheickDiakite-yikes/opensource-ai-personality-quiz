@@ -55,7 +55,7 @@ const SharedProfile: React.FC = () => {
     setError(null);
 
     try {
-      // Get the analysis by ID 
+      console.log(`Attempting to load shared analysis with ID: ${id}`);
       const fetchedAnalysis = await getAnalysisById(id);
       
       if (fetchedAnalysis && fetchedAnalysis.id) {
