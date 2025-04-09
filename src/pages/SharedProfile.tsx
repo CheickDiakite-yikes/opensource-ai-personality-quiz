@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PersonalityAnalysis } from "@/utils/types";
@@ -10,20 +10,17 @@ import TraitsCard from "@/components/profile/TraitsCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Share } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
-import { supabase } from "@/integrations/supabase/client";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAnalysisById, isLoadingAnalysisById, analysisError } = useAnalysisById();
+  const { getAnalysisById, isLoadingAnalysisById } = useAnalysisById();
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const isMobile = useIsMobile();
-  const fetchStarted = useRef(false);
-  const toastShown = useRef(false);
   
   // Animation variants
   const containerVariants = {
@@ -46,157 +43,50 @@ const SharedProfile: React.FC = () => {
       }
     }
   };
-  
-  const validateAnalysis = (data: PersonalityAnalysis | null): boolean => {
-    if (!data) return false;
-    
-    // Check for essential properties
-    if (!data.id || !data.traits || data.traits.length === 0) {
-      console.log("SHARED PROFILE: Invalid analysis data - missing essential properties");
-      return false;
-    }
-    
-    return true;
-  };
 
-  // Direct fetch method to access Supabase directly
-  const directFetchAnalysis = async (analysisId: string) => {
-    try {
-      console.log("SHARED PROFILE: Attempting emergency direct fetch for ID:", analysisId);
-      
-      // Try direct public query 
-      const { data, error } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', analysisId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error("SHARED PROFILE: Emergency direct fetch error:", error);
-        return null;
-      }
-      
-      if (!data) {
-        console.log("SHARED PROFILE: No data found in emergency fetch");
-        return null;
-      }
-      
-      console.log("SHARED PROFILE: Emergency direct fetch succeeded:", data.id);
-      return data;
-    } catch (err) {
-      console.error("SHARED PROFILE: Exception in emergency fetch:", err);
-      return null;
-    }
-  };
-  
   const fetchAnalysis = async () => {
-    // Prevent multiple fetches
-    if (fetchStarted.current) return;
-    fetchStarted.current = true;
-    
-    setLoading(true);
-    setError(null);
-    
     if (!id) {
-      console.error("SHARED PROFILE: No profile ID provided in URL parameters");
-      setLoading(false);
       setError("No profile ID provided");
-      if (!toastShown.current) {
-        toast.error("No profile ID provided");
-        toastShown.current = true;
-      }
-      fetchStarted.current = false;
+      setLoading(false);
       return;
     }
     
+    setLoading(true);
+    setError(null);
+
     try {
-      console.log("SHARED PROFILE: Attempting to fetch shared analysis with ID:", id);
-      
-      // Get the analysis by ID without requiring login
+      // Get the analysis by ID 
       const fetchedAnalysis = await getAnalysisById(id);
       
-      if (fetchedAnalysis && validateAnalysis(fetchedAnalysis)) {
-        console.log("SHARED PROFILE: Successfully fetched valid analysis:", fetchedAnalysis.id);
-        console.log("SHARED PROFILE: Analysis has", fetchedAnalysis.traits?.length || 0, "traits");
-        
+      if (fetchedAnalysis && fetchedAnalysis.id) {
+        console.log("Successfully loaded shared analysis:", fetchedAnalysis.id);
         setAnalysis(fetchedAnalysis);
-        
-        // Show success toast only once
-        if (!toastShown.current) {
-          toast.success("Profile loaded successfully");
-          toastShown.current = true;
-        }
-        
-        setLoading(false);
-        fetchStarted.current = false;
-        return;
-      } 
-      
-      // If regular method fails, try emergency direct fetch
-      console.log("SHARED PROFILE: Regular fetch failed, attempting emergency direct fetch");
-      const emergencyData = await directFetchAnalysis(id);
-      
-      if (emergencyData) {
-        try {
-          // Use the utility function to convert the data
-          const { convertToPersonalityAnalysis } = await import('@/hooks/aiAnalysis/utils');
-          const emergencyAnalysis = convertToPersonalityAnalysis(emergencyData);
-          
-          if (emergencyAnalysis && emergencyAnalysis.id) {
-            console.log("SHARED PROFILE: Emergency fetch successful:", emergencyAnalysis.id);
-            setAnalysis(emergencyAnalysis);
-            if (!toastShown.current) {
-              toast.success("Profile loaded successfully (emergency method)");
-              toastShown.current = true;
-            }
-            setLoading(false);
-            fetchStarted.current = false;
-            return;
-          }
-        } catch (conversionError) {
-          console.error("SHARED PROFILE: Error converting emergency data:", conversionError);
-        }
-      }
-      
-      console.error("SHARED PROFILE: Retrieved invalid or null analysis for ID:", id);
-      setError(analysisError || "Could not load the shared profile data");
-      if (!toastShown.current) {
+        toast.success("Profile loaded successfully");
+      } else {
+        console.error("Failed to load shared analysis with ID:", id);
+        setError("Could not load the shared profile");
         toast.error("Could not load the shared profile");
-        toastShown.current = true;
       }
-      
-    } catch (error) {
-      console.error("SHARED PROFILE: Error fetching shared analysis:", error);
+    } catch (err) {
+      console.error("Error loading shared profile:", err);
       setError("Error loading the shared profile");
-      if (!toastShown.current) {
-        toast.error(`Error loading the shared profile: ${error instanceof Error ? error.message : "Unknown error"}`);
-        toastShown.current = true;
-      }
+      toast.error("Error loading the shared profile");
     } finally {
       setLoading(false);
-      fetchStarted.current = false;
     }
   };
 
-  // Initial fetch
+  // Initial fetch on component mount
   useEffect(() => {
-    console.log("SHARED PROFILE: Component mounted with ID:", id);
     fetchAnalysis();
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      toastShown.current = false;
-    };
   }, [id]);
   
-  // Implement retry mechanism with exponential backoff
+  // Implement retry mechanism
   useEffect(() => {
-    if (error && loadAttempts < 3 && !analysis) {
-      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s, 4s
-      console.log(`SHARED PROFILE: Retrying fetch (attempt ${loadAttempts + 1}) in ${retryDelay}ms`);
+    if (error && loadAttempts < 2 && !analysis) {
+      const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s
       
       const timer = setTimeout(() => {
-        fetchStarted.current = false; // Reset the flag so we can try again
         setLoadAttempts(prev => prev + 1);
         fetchAnalysis();
       }, retryDelay);
@@ -206,14 +96,12 @@ const SharedProfile: React.FC = () => {
   }, [error, loadAttempts, analysis]);
   
   const handleRetry = () => {
-    fetchStarted.current = false;
-    toastShown.current = false;
     setLoadAttempts(0);
     fetchAnalysis();
     toast.loading("Retrying profile load...");
   };
   
-  if (loading) {
+  if (loading || isLoadingAnalysisById) {
     return (
       <div className="container py-16 text-center">
         <div className="animate-pulse space-y-6">
@@ -227,7 +115,7 @@ const SharedProfile: React.FC = () => {
   }
   
   if (error || !analysis) {
-    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}\nError: ${error || "No data returned"}\nAccess: Public`;
+    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}\nError: ${error || "No data returned"}`;
     
     return (
       <AssessmentErrorHandler
@@ -248,11 +136,6 @@ const SharedProfile: React.FC = () => {
         animate="visible"
         className="space-y-8 max-w-4xl mx-auto"
       >
-        {/* Social media meta tags for sharing */}
-        <div className="social-share-image">
-          <img src="/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png" alt="Personality analysis" />
-        </div>
-        
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center mb-8 shared-profile-header">
           <h1 className="text-3xl font-bold mb-2">Shared Personality Analysis</h1>

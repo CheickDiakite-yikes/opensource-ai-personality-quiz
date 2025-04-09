@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,11 +15,8 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
   const isMobile = useIsMobile();
   
-  // Generate a proper shareable URL
-  const shareUrl = `${window.location.origin}/shared/${analysis.id || 'demo'}`;
-  
-  // Update the image URL for social media previews
-  const shareImageUrl = "/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png";
+  // Generate the shareable URL
+  const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
   
   // Handle copy to clipboard
   const handleCopy = () => {
@@ -32,7 +30,7 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   // Handle social sharing
   const handleShare = (platform: string) => {
     let shareLink = '';
-    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
+    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits?.[0]?.trait || 'Personality'}`;
     
     switch (platform) {
       case 'twitter':

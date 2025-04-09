@@ -3,32 +3,60 @@ import React from "react";
 import { motion } from "framer-motion";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Award } from "lucide-react";
-import TopTraitsTable from "./TopTraitsTable";
+import { UserIcon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 interface TraitsCardProps {
   analysis: PersonalityAnalysis;
-  itemVariants?: any; // Make itemVariants optional
+  itemVariants: any;
 }
 
 const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
-  // If itemVariants is provided, wrap with motion.div, otherwise use regular div
-  const Wrapper = itemVariants ? motion.div : 'div';
-
+  // Get top 5 traits
+  const topTraits = analysis.traits?.slice(0, 5) || [];
+  
   return (
-    <Wrapper {...(itemVariants ? { variants: itemVariants } : {})}>
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
-          <CardTitle className="flex items-center">
-            <Award className="h-5 w-5 mr-2 text-primary" /> Your Top 10 Personality Traits
-          </CardTitle>
-          <CardDescription>Based on your assessment results</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <TopTraitsTable traits={analysis.traits.slice(0, 10)} />
-        </CardContent>
-      </Card>
-    </Wrapper>
+    <Card className="overflow-hidden gradient-border">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
+        <CardTitle className="flex items-center">
+          <UserIcon className="h-5 w-5 mr-2 text-primary" /> Top Personality Traits
+        </CardTitle>
+        <CardDescription>Your most prominent personality characteristics</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {topTraits.length > 0 ? (
+          <div className="space-y-4">
+            {topTraits.map((trait, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                className="space-y-2"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <span className="font-medium">{trait.trait}</span>
+                    <Badge variant="outline" className="ml-2">
+                      {Math.round(trait.score * 100)}%
+                    </Badge>
+                  </div>
+                </div>
+                <Progress
+                  value={trait.score * 100}
+                  className="h-2"
+                  indicatorClassName="bg-primary"
+                />
+                <p className="text-sm text-muted-foreground">{trait.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No trait data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
