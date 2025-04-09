@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
 
 const SharedProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +46,18 @@ const SharedProfile: React.FC = () => {
     }
   };
   
+  const validateAnalysis = (data: PersonalityAnalysis | null): boolean => {
+    if (!data) return false;
+    
+    // Check for essential properties
+    if (!data.id || !data.traits || data.traits.length === 0) {
+      console.log("SHARED PROFILE: Invalid analysis data - missing essential properties");
+      return false;
+    }
+    
+    return true;
+  };
+  
   const fetchAnalysis = async () => {
     // Prevent multiple fetches
     if (fetchStarted.current) return;
@@ -54,7 +67,7 @@ const SharedProfile: React.FC = () => {
     setError(null);
     
     if (!id) {
-      console.error("No profile ID provided in URL parameters");
+      console.error("SHARED PROFILE: No profile ID provided in URL parameters");
       setLoading(false);
       setError("No profile ID provided");
       if (!toastShown.current) {
@@ -65,42 +78,31 @@ const SharedProfile: React.FC = () => {
     }
     
     try {
-      console.log("Attempting to fetch shared analysis with ID:", id);
+      console.log("SHARED PROFILE: Attempting to fetch shared analysis with ID:", id);
       
       // Get the analysis by ID without requiring login
       const fetchedAnalysis = await getAnalysisById(id);
       
-      if (fetchedAnalysis) {
-        console.log("Successfully fetched shared analysis:", fetchedAnalysis.id);
-        console.log("Analysis overview:", fetchedAnalysis.overview?.substring(0, 50) + "...");
-        console.log("Analysis traits:", fetchedAnalysis.traits?.length || 0, "traits found");
+      if (fetchedAnalysis && validateAnalysis(fetchedAnalysis)) {
+        console.log("SHARED PROFILE: Successfully fetched valid analysis:", fetchedAnalysis.id);
+        console.log("SHARED PROFILE: Analysis has", fetchedAnalysis.traits?.length || 0, "traits");
         
-        // Validate that we have the minimum required data
-        if (!fetchedAnalysis.traits || fetchedAnalysis.traits.length === 0) {
-          console.warn("Analysis has no traits data, showing error");
-          setError("Incomplete analysis data");
-          toast.error("This shared analysis is incomplete", {
-            description: "It may have been generated incorrectly"
-          });
-        } else {
-          setAnalysis(fetchedAnalysis);
-          // Show success toast only once
-          if (!toastShown.current) {
-            toast.success("Profile loaded successfully");
-            toastShown.current = true;
-          }
+        setAnalysis(fetchedAnalysis);
+        // Show success toast only once
+        if (!toastShown.current) {
+          toast.success("Profile loaded successfully");
+          toastShown.current = true;
         }
       } else {
-        console.error("No analysis found with ID:", id);
-        setError("Could not load the shared profile");
+        console.error("SHARED PROFILE: Retrieved invalid or null analysis for ID:", id);
+        setError("Could not load the shared profile data");
         if (!toastShown.current) {
           toast.error("Could not load the shared profile");
           toastShown.current = true;
         }
       }
     } catch (error) {
-      console.error("Error fetching shared analysis:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
+      console.error("SHARED PROFILE: Error fetching shared analysis:", error);
       setError("Error loading the shared profile");
       if (!toastShown.current) {
         toast.error(`Error loading the shared profile: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -114,7 +116,7 @@ const SharedProfile: React.FC = () => {
 
   // Initial fetch
   useEffect(() => {
-    console.log("SharedProfile mounted with ID:", id);
+    console.log("SHARED PROFILE: Component mounted with ID:", id);
     fetchAnalysis();
     
     // Cleanup function to prevent memory leaks
@@ -127,7 +129,7 @@ const SharedProfile: React.FC = () => {
   useEffect(() => {
     if (error && loadAttempts < 3 && !analysis) {
       const retryDelay = Math.pow(2, loadAttempts) * 1000; // 1s, 2s, 4s
-      console.log(`Retrying fetch (attempt ${loadAttempts + 1}) in ${retryDelay}ms`);
+      console.log(`SHARED PROFILE: Retrying fetch (attempt ${loadAttempts + 1}) in ${retryDelay}ms`);
       
       const timer = setTimeout(() => {
         fetchStarted.current = false; // Reset the flag so we can try again
@@ -161,20 +163,15 @@ const SharedProfile: React.FC = () => {
   }
   
   if (error || !analysis) {
+    const errorDetails = `Profile ID: ${id || "None"}\nAttempts: ${loadAttempts}`;
+    
     return (
-      <div className="container py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
-        <p className="text-muted-foreground mb-6">
-          {error || "The shared profile you're looking for doesn't exist or may have been removed."}
-        </p>
-        <Button onClick={handleRetry} className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Try Again
-        </Button>
-        <p className="mt-8 text-sm text-muted-foreground">
-          Profile ID: {id || "None provided"}
-        </p>
-      </div>
+      <AssessmentErrorHandler
+        title="Could Not Load Shared Profile"
+        description="We couldn't retrieve the personality analysis. This profile may not exist or has been removed."
+        showRetry={false}
+        errorDetails={errorDetails}
+      />
     );
   }
   
@@ -197,6 +194,10 @@ const SharedProfile: React.FC = () => {
           <p className="text-muted-foreground">
             This is a shared view of someone's personality analysis from Who Am I?
           </p>
+          <Button onClick={handleRetry} className="mt-4 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh Profile
+          </Button>
         </motion.div>
         
         {/* Intelligence Profile Card */}

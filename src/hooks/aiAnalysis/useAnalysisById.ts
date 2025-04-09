@@ -6,7 +6,6 @@ import { convertToPersonalityAnalysis } from './utils';
 import { toast } from "sonner";
 
 // Cache for shared analysis to prevent redundant fetches
-// Using a Map for better memory management with object keys
 const analysisCache = new Map<string, {data: PersonalityAnalysis, timestamp: number}>();
 
 // Helper function to clear old cache entries
@@ -29,162 +28,105 @@ export const useAnalysisById = () => {
     setIsLoading(true);
     
     try {
+      console.log("SHARED PROFILE: Starting fetch for ID:", id);
+      
       // Clean up old cache entries periodically
       cleanupCache();
       
       // Check cache first to prevent redundant fetches
       if (analysisCache.has(id)) {
-        console.log("Returning cached analysis for ID:", id);
+        console.log("SHARED PROFILE: Returning cached analysis for ID:", id);
         setIsLoading(false);
         return analysisCache.get(id)?.data || null;
       }
       
-      console.log("Fetching analysis from Supabase with ID:", id);
+      // APPROACH 1: Try with public access function (no RLS constraints)
+      console.log("SHARED PROFILE: Trying public function approach");
+      const { data: publicFnData, error: publicFnError } = await supabase
+        .rpc('get_analysis_by_id', { analysis_id: id });
       
-      // Using a timeout promise to prevent hanging requests
-      const fetchTimeout = new Promise<null>((resolve) => {
-        setTimeout(() => {
-          console.warn("Analysis fetch timed out after 30 seconds");
-          resolve(null);
-        }, 30000); // 30 second timeout
-      });
-      
-      // Fetch analysis directly from Supabase without requiring authentication
-      const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
+      if (publicFnError) {
+        console.error("SHARED PROFILE: Public function error:", publicFnError);
+      } else if (publicFnData && typeof publicFnData === 'object') {
+        console.log("SHARED PROFILE: Public function success with data:", publicFnData);
         try {
-          // Direct approach - fetch from the analyses table without RPC
-          console.log("Trying direct table query first");
-          const { data, error } = await supabase
-            .from('analyses')
-            .select('*')
-            .eq('id', id)
-            .maybeSingle();
-            
-          if (error) {
-            console.error("Error fetching shared analysis:", error);
-            
-            // If there's an error, try a second approach with the RPC function
-            console.log("Direct query failed, trying RPC function");
-            const { data: rpcData, error: rpcError } = await supabase
-              .rpc('get_analysis_by_id', { analysis_id: id });
-            
-            if (rpcError) {
-              console.error("RPC error:", rpcError);
-              // Try one last approach with raw result field
-              console.log("RPC approach failed, trying raw result field query");
-              
-              const { data: rawData, error: rawError } = await supabase
-                .from('analyses')
-                .select('id, created_at, user_id, assessment_id, result')
-                .eq('id', id)
-                .maybeSingle();
-                
-              if (rawError) {
-                console.error("Failed with all approaches:", rawError);
-                resolve(null);
-                return;
-              }
-              
-              if (rawData && rawData.result) {
-                console.log("Retrieved analysis using raw result field");
-                try {
-                  // Convert raw data to PersonalityAnalysis
-                  const convertedAnalysis = convertToPersonalityAnalysis(rawData);
-                  console.log("Successfully converted raw data:", convertedAnalysis.id);
-                  
-                  // Store in cache with timestamp
-                  analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
-                  resolve(convertedAnalysis);
-                  return;
-                } catch (conversionError) {
-                  console.error("Error converting raw data:", conversionError);
-                  resolve(null);
-                  return;
-                }
-              } else {
-                console.log("No raw data found for ID:", id);
-                resolve(null);
-                return;
-              }
-            }
-            
-            // If RPC succeeded but direct query failed
-            if (rpcData) {
-              console.log("RPC returned data:", rpcData);
-              // Check if the data is empty or invalid
-              if (!rpcData || (typeof rpcData === 'object' && Object.keys(rpcData).length === 0)) {
-                console.error("RPC returned empty data");
-                resolve(null);
-                return;
-              }
-              
-              try {
-                const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
-                console.log("Successfully converted analysis from RPC", convertedAnalysis.id);
-                
-                // Store in cache with timestamp
-                analysisCache.set(id, {data: convertedAnalysis, timestamp: Date.now()});
-                resolve(convertedAnalysis);
-                return;
-              } catch (conversionError) {
-                console.error("Error converting RPC data:", conversionError);
-                resolve(null);
-                return;
-              }
-            }
+          // Safe conversion with type checking
+          const analysis = convertToPersonalityAnalysis(publicFnData);
+          if (analysis && analysis.id) {
+            console.log("SHARED PROFILE: Successfully converted public function data");
+            analysisCache.set(id, {data: analysis, timestamp: Date.now()});
+            setIsLoading(false);
+            return analysis;
           }
-          
-          if (!data) {
-            console.log("No data found for analysis ID:", id);
-            resolve(null);
-            return;
-          }
-          
-          console.log("Successfully retrieved analysis data:", data.id);
-          
-          try {
-            // Use the utility function to safely convert Supabase data to PersonalityAnalysis
-            const result = convertToPersonalityAnalysis(data);
-            console.log("Successfully converted analysis data:", result.id);
-            
-            // Ensure all required fields exist with fallbacks
-            result.overview = result.overview || "Analysis overview was not generated properly.";
-            result.intelligenceScore = result.intelligenceScore || 50;
-            result.emotionalIntelligenceScore = result.emotionalIntelligenceScore || 50;
-            result.valueSystem = result.valueSystem || [];
-            result.motivators = result.motivators || [];
-            result.careerSuggestions = result.careerSuggestions || [];
-            result.growthAreas = result.growthAreas || [];
-            
-            // Store in cache with timestamp to prevent redundant fetches
-            analysisCache.set(id, {data: result, timestamp: Date.now()});
-            resolve(result);
-          } catch (conversionError) {
-            console.error("Error converting analysis data:", conversionError);
-            resolve(null);
-          }
-        } catch (error) {
-          console.error("Exception in getAnalysisById fetch:", error);
-          resolve(null);
+        } catch (conversionError) {
+          console.error("SHARED PROFILE: Error converting public function data:", conversionError);
         }
-      });
-      
-      // Race between fetch and timeout
-      const result = await Promise.race([fetchPromise, fetchTimeout]);
-      
-      if (!result) {
-        toast.error("Could not retrieve analysis data", {
-          description: "Please check the analysis ID and try again"
-        });
       }
       
+      // APPROACH 2: Direct database query
+      console.log("SHARED PROFILE: Trying direct database query");
+      const { data: directData, error: directError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (directError) {
+        console.error("SHARED PROFILE: Direct query error:", directError);
+      } else if (directData) {
+        console.log("SHARED PROFILE: Direct query success with data");
+        try {
+          // Use the utility function to safely convert Supabase data
+          const analysis = convertToPersonalityAnalysis(directData);
+          if (analysis && analysis.id) {
+            console.log("SHARED PROFILE: Successfully converted direct query data");
+            analysisCache.set(id, {data: analysis, timestamp: Date.now()});
+            setIsLoading(false);
+            return analysis;
+          }
+        } catch (conversionError) {
+          console.error("SHARED PROFILE: Error converting direct query data:", conversionError);
+        }
+      }
+      
+      // APPROACH 3: Try with minimal fields and process raw data
+      console.log("SHARED PROFILE: Trying minimal fields approach");
+      const { data: minimalData, error: minimalError } = await supabase
+        .from('analyses')
+        .select('id, created_at, result')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (minimalError) {
+        console.error("SHARED PROFILE: Minimal query error:", minimalError);
+      } else if (minimalData && minimalData.result) {
+        console.log("SHARED PROFILE: Minimal query success with result data");
+        try {
+          // For raw result data, we might need to modify the conversion
+          const rawResult = minimalData.result;
+          if (typeof rawResult === 'object') {
+            const analysis = convertToPersonalityAnalysis({
+              id: minimalData.id,
+              created_at: minimalData.created_at,
+              ...rawResult
+            });
+            if (analysis && analysis.id) {
+              console.log("SHARED PROFILE: Successfully converted minimal query data");
+              analysisCache.set(id, {data: analysis, timestamp: Date.now()});
+              setIsLoading(false);
+              return analysis;
+            }
+          }
+        } catch (conversionError) {
+          console.error("SHARED PROFILE: Error converting minimal query data:", conversionError);
+        }
+      }
+      
+      console.log("SHARED PROFILE: All approaches failed for ID:", id);
       setIsLoading(false);
-      return result;
+      return null;
     } catch (error) {
-      console.error("Exception in getAnalysisById:", error);
-      toast.error("Error retrieving analysis", {
-        description: error instanceof Error ? error.message : "Unknown error"
-      });
+      console.error("SHARED PROFILE: Exception in getAnalysisById:", error);
       setIsLoading(false);
       return null;
     }
