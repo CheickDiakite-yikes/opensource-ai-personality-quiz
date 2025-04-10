@@ -13,8 +13,22 @@ export const FixAnalysisButton: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const navigate = useNavigate();
   
+  // CRITICAL FIX: Add state to track ongoing requests and avoid duplicates
+  const [activeRequestId, setActiveRequestId] = React.useState<string | null>(null);
+  
   const handleFix = async () => {
+    // CRITICAL FIX: Prevent multiple simultaneous requests
+    if (isRefreshing) {
+      console.log("Fix already in progress, ignoring duplicate request");
+      toast.info("Analysis recovery already in progress, please wait...");
+      return;
+    }
+    
+    // Generate unique request ID to track this specific recovery attempt
+    const requestId = `fix-${Date.now()}`;
+    setActiveRequestId(requestId);
     setIsRefreshing(true);
+    
     try {
       toast.info("Attempting to fix analysis display issues...", { id: "fix-analysis" });
       
@@ -27,6 +41,12 @@ export const FixAnalysisButton: React.FC = () => {
         return null;
       });
       
+      // CRITICAL FIX: Verify this is still the active request
+      if (activeRequestId !== requestId) {
+        console.log("Request superseded by a newer request, aborting");
+        return;
+      }
+      
       // If that didn't work, try the direct Supabase approach
       if (!analyses || analyses.length === 0) {
         console.log("First approach failed, trying forceAnalysisRefresh");
@@ -35,6 +55,12 @@ export const FixAnalysisButton: React.FC = () => {
           return null;
         });
         
+        // CRITICAL FIX: Check again if this is still the active request
+        if (activeRequestId !== requestId) {
+          console.log("Request superseded by a newer request, aborting");
+          return;
+        }
+        
         if (!directAnalyses || directAnalyses.length === 0) {
           console.log("Second approach failed, trying loadAllAnalysesFromSupabase");
           // Try the loadAllAnalysesFromSupabase approach as fallback
@@ -42,6 +68,12 @@ export const FixAnalysisButton: React.FC = () => {
             console.error("Error in loadAllAnalysesFromSupabase:", err);
             return null;
           });
+          
+          // CRITICAL FIX: One more check
+          if (activeRequestId !== requestId) {
+            console.log("Request superseded by a newer request, aborting");
+            return;
+          }
           
           if (!allAnalyses || allAnalyses.length === 0) {
             toast.error("Could not find any analyses", {
@@ -127,6 +159,7 @@ export const FixAnalysisButton: React.FC = () => {
       }, 3000);
     } finally {
       setIsRefreshing(false);
+      setActiveRequestId(null);
     }
   };
 

@@ -99,7 +99,7 @@ export const useAnalyzeResponses = (
       }
 
       // Enhanced error handling and retry logic for edge function calls
-      const MAX_RETRIES = 3;
+      const MAX_RETRIES = 2;
       const functionTimeout = 180000; // 3 minutes timeout for analysis
       let result = null;
       let lastError = null;
@@ -130,7 +130,7 @@ export const useAnalyzeResponses = (
             }, functionTimeout);
           });
           
-          // Call Supabase function with detailed request info and proper retries
+          // Call Supabase function with detailed request info
           console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
           
           const functionPromise = supabase.functions.invoke("analyze-responses", {
@@ -145,6 +145,7 @@ export const useAnalyzeResponses = (
           result = await Promise.race([functionPromise, timeoutPromise]);
           console.timeEnd(`analyze-responses-call-${retryCount}`);
           
+          // CRITICAL FIX: Properly validate the response before proceeding
           if (!result) {
             throw new Error("Empty response from Supabase function");
           }
@@ -157,7 +158,7 @@ export const useAnalyzeResponses = (
             throw new Error("Invalid response structure from analysis function - missing analysis data");
           }
           
-          // Success! Break the retry loop
+          // CRITICAL FIX: Only if we have a valid result, we break here
           console.log(`Analysis successful on attempt ${retryCount+1}`);
           toast.success("Analysis complete!", { id: "analyze-responses" });
           break;
@@ -175,6 +176,11 @@ export const useAnalyzeResponses = (
             throw error;
           }
         }
+      }
+      
+      // CRITICAL FIX: Double check that we have a valid result before proceeding
+      if (!result || !result.data || !result.data.analysis) {
+        throw new Error("Failed to get valid analysis after all attempts");
       }
       
       console.log("Received AI analysis:", result?.data?.analysis?.id);

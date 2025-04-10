@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { AssessmentResponse } from "@/utils/types";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -107,48 +106,41 @@ export const useAssessmentSubmission = (
         duration: 60000
       });
       
-      // Add retry mechanism for analysis
+      // CRITICAL FIX: Modify retry mechanism for analysis to avoid duplicate calls
       let analysis = null;
-      let retryCount = 0;
-      const maxRetries = 2;
       
-      while (retryCount <= maxRetries && !analysis) {
-        try {
-          if (retryCount > 0) {
-            console.log(`Retry attempt ${retryCount} for analysis...`);
-            toast.loading(`Retrying analysis (attempt ${retryCount} of ${maxRetries})...`, {
-              id: "analyzing-toast",
-              duration: 60000
-            });
-            
-            // Wait a bit longer between retries
-            await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
-          }
+      try {
+        analysis = await analyzeResponses(responses);
+        
+        if (!analysis || !analysis.id) {
+          console.error("Invalid analysis result:", analysis);
+          throw new Error("Invalid analysis result");
+        }
+        
+        console.log("Analysis completed successfully with ID:", analysis.id);
+      } catch (error) {
+        console.error("Analysis failed:", error);
+        console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
+        
+        // CRITICAL FIX: Get the last analysis from history as a fallback
+        await refreshAnalysis();
+        const analysisHistory = await supabase
+          .from('analyses')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1);
           
-          analysis = await analyzeResponses(responses);
-          
-          if (!analysis || !analysis.id) {
-            console.error(`Attempt ${retryCount}: Invalid analysis result:`, analysis);
-            throw new Error("Invalid analysis result");
-          }
-          
-          console.log(`Analysis completed successfully on attempt ${retryCount} with ID:`, analysis.id);
-          break; // Exit the loop if successful
-          
-        } catch (error) {
-          console.error(`Analysis attempt ${retryCount} failed:`, error);
-          console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
-          
-          if (retryCount >= maxRetries) {
-            throw new Error(`Analysis failed after ${maxRetries} attempts: ${error instanceof Error ? error.message : String(error)}`);
-          }
-          
-          retryCount++;
+        if (!analysisHistory.error && analysisHistory.data && analysisHistory.data.length > 0) {
+          console.log("Found fallback analysis from database:", analysisHistory.data[0].id);
+          analysis = analysisHistory.data[0];
+        } else {
+          console.error("No fallback analysis available");
+          throw new Error(`Analysis failed and no fallback available: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
       
       if (!analysis) {
-        throw new Error("All analysis attempts failed");
+        throw new Error("Analysis attempt failed and no fallback available");
       }
       
       // Clear saved progress after successful submission

@@ -19,7 +19,13 @@ serve(async (req) => {
 
   try {
     console.log("Received request to analyze-responses");
-    const { responses, assessmentId } = await req.json();
+    const requestData = await req.json();
+    const { responses, assessmentId, retryCount = 0 } = requestData;
+    
+    // CRITICAL FIX: Check for retry information and log it
+    if (retryCount > 0) {
+      console.log(`⚠️ This is retry attempt #${retryCount} for assessment ID: ${assessmentId}`);
+    }
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       console.error("Invalid responses data:", JSON.stringify(responses));
@@ -60,7 +66,7 @@ serve(async (req) => {
     let analysis = null;
     let lastError = null;
     
-    while (attempts < 3 && !analysis) {
+    while (attempts < 1 && !analysis) {  // CRITICAL FIX: Only try once in the edge function
       try {
         if (attempts > 0) {
           console.log(`Retry attempt ${attempts} for AI analysis`);
@@ -79,8 +85,8 @@ serve(async (req) => {
     }
     
     if (!analysis) {
-      console.error("All analysis attempts failed, last error:", lastError);
-      throw new Error(`Failed to generate analysis after ${attempts} attempts: ${lastError?.message}`);
+      console.error("Analysis attempt failed, last error:", lastError);
+      throw new Error(`Failed to generate analysis: ${lastError?.message}`);
     }
     
     console.log("Analysis completed successfully");

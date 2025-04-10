@@ -28,6 +28,7 @@ export const useAIAnalysis = () => {
   
   // Track last total count for debugging
   const [lastHistoryCount, setLastHistoryCount] = useState<number>(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   
   // Log changes to analysis history for debugging
   useEffect(() => {
@@ -86,9 +87,16 @@ export const useAIAnalysis = () => {
     }
   };
 
-  // Fix for the analysis generation process
+  // FIXED: Fix for the analysis generation process to avoid multiple retries
   const enhancedAnalyzeResponses = async (responses: any) => {
     console.log("[useAIAnalysis] Starting enhanced analysis with responses:", responses.length);
+    
+    // CRITICAL FIX: Prevent double retries
+    if (isRetrying) {
+      console.warn("[useAIAnalysis] Analysis is already being retried, skipping redundant retry");
+      throw new Error("Analysis is already being retried");
+    }
+    
     try {
       // First try the standard analysis method
       const result = await analyzeResponses(responses);
@@ -97,8 +105,9 @@ export const useAIAnalysis = () => {
     } catch (error) {
       console.error("[useAIAnalysis] Error in first analysis attempt:", error);
       
-      // If the first attempt failed, wait and try again
-      toast.loading("First analysis attempt failed, retrying...", { id: "retry-analysis" });
+      // If the first attempt failed, wait and try again ONLY IF we aren't already retrying
+      setIsRetrying(true);
+      toast.loading("First analysis attempt failed, retrying once...", { id: "retry-analysis" });
       
       try {
         // Wait 3 seconds before retrying
@@ -111,6 +120,8 @@ export const useAIAnalysis = () => {
         console.error("[useAIAnalysis] Second analysis attempt also failed:", secondError);
         toast.error("Analysis failed after multiple attempts", { id: "retry-analysis" });
         throw secondError;
+      } finally {
+        setIsRetrying(false);
       }
     }
   };
