@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { AssessmentResponse } from "@/utils/types";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -30,7 +31,6 @@ export const useAssessmentSubmission = (
       const jsonResponses = JSON.parse(JSON.stringify(responses));
       
       console.log(`Attempting to save assessment with ID: ${assessmentId} and ${responses.length} responses`);
-      console.log("First few responses:", JSON.stringify(responses.slice(0, 2)));
       
       // Insert into assessments table
       const { data, error } = await supabase
@@ -45,7 +45,6 @@ export const useAssessmentSubmission = (
         
       if (error) {
         console.error("Failed to save assessment to Supabase:", error);
-        console.error("Error details:", JSON.stringify(error));
         toast.error("Failed to save your assessment", {
           description: "Your results will still be analyzed but may not be saved to your account"
         });
@@ -56,7 +55,6 @@ export const useAssessmentSubmission = (
       return assessmentId;
     } catch (error) {
       console.error("Exception saving assessment to Supabase:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
       return null;
     }
   };
@@ -67,7 +65,7 @@ export const useAssessmentSubmission = (
     
     try {
       toast.info("Analyzing your responses...", {
-        duration: 15000, // Increased duration to account for longer analysis time
+        duration: 15000,
         id: "analyzing-toast"
       });
       
@@ -80,13 +78,7 @@ export const useAssessmentSubmission = (
         return;
       }
       
-      // Log responses for debugging
       console.log(`Submitting assessment with ${responses.length} responses`);
-      console.log("Response categories distribution:", 
-        [...new Set(responses.map(r => r.category))].map(category => 
-          `${category}: ${responses.filter(r => r.category === category).length}`
-        ).join(', ')
-      );
       
       // First, save responses directly to Supabase
       const savedAssessmentId = await saveResponsesDirectlyToSupabase(responses);
@@ -97,16 +89,12 @@ export const useAssessmentSubmission = (
         console.warn("Could not save assessment directly, continuing with analysis only");
       }
       
-      // Send responses to the analyze function, which will also try to store in Supabase
-      console.log("Starting AI analysis with responses:", responses.length);
-      console.log("Analysis may take 2-5 minutes due to comprehensive data generation");
-      
       toast.loading("Analysis in progress. This may take a few minutes as our AI generates comprehensive insights for you.", {
         id: "analyzing-toast",
         duration: 60000
       });
       
-      // CRITICAL FIX: Modify retry mechanism for analysis to avoid duplicate calls
+      // Send responses to AI for analysis
       let analysis = null;
       
       try {
@@ -120,10 +108,10 @@ export const useAssessmentSubmission = (
         console.log("Analysis completed successfully with ID:", analysis.id);
       } catch (error) {
         console.error("Analysis failed:", error);
-        console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
         
-        // CRITICAL FIX: Get the last analysis from history as a fallback
+        // Attempt to refresh and get the latest analysis as fallback
         await refreshAnalysis();
+        
         const analysisHistory = await supabase
           .from('analyses')
           .select('*')
@@ -134,61 +122,50 @@ export const useAssessmentSubmission = (
           console.log("Found fallback analysis from database:", analysisHistory.data[0].id);
           analysis = analysisHistory.data[0];
         } else {
-          console.error("No fallback analysis available");
-          throw new Error(`Analysis failed and no fallback available: ${error instanceof Error ? error.message : String(error)}`);
+          toast.error("Analysis failed", {
+            id: "analyzing-toast",
+            description: "Please try again or check your connection",
+            duration: 8000
+          });
+          return;
         }
       }
       
       if (!analysis) {
-        throw new Error("Analysis attempt failed and no fallback available");
+        toast.error("Analysis failed", {
+          id: "analyzing-toast",
+          description: "Unable to generate your personality profile",
+          duration: 8000
+        });
+        return;
       }
       
       // Clear saved progress after successful submission
       localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
       console.log("Cleared assessment progress from localStorage");
       
-      // Force refresh the analysis data to ensure we have the latest from Supabase
-      console.log("Refreshing analysis data before navigation...");
-      await refreshAnalysis().catch(error => {
-        console.error("Failed to refresh analysis data:", error);
-        // Continue even if refresh fails, as we still have the analysis object
-      });
+      // Force refresh the analysis data
+      await refreshAnalysis();
       
-      // Add increased delay to ensure analysis is fully processed and available
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Add a short delay to ensure analysis is available
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Check if analysis is sufficiently complete
-      const traitsCount = analysis.traits && Array.isArray(analysis.traits) ? analysis.traits.length : 0;
-      const isComplete = traitsCount >= 8;
-      
-      console.log(`Analysis has ${traitsCount} traits, minimum required: 8, complete: ${isComplete}`);
-      
-      // Update the analyzing toast to show success
-      toast.success(isComplete ? "Analysis completed successfully!" : "Analysis partially completed", {
+      // Update the toast to show success
+      toast.success("Analysis completed successfully!", {
         id: "analyzing-toast",
         duration: 5000
       });
       
-      // Validate that we have sufficient traits for display
-      if (!isComplete) {
-        console.warn(`Analysis has insufficient traits: ${traitsCount}/8 minimum required`);
-        toast.warning("Analysis data is incomplete", {
-          description: "We'll try to show what we have, but consider retaking the assessment",
-          duration: 8000
-        });
-      }
-      
-      // Navigate to the report page with the ID and state to indicate it's from assessment
+      // Navigate to the report page with the ID
       console.log("Navigating to report page with ID:", analysis.id);
       navigate(`/report/${analysis.id}`, { 
         state: { fromAssessment: true }
       });
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
       toast.error("Something went wrong during analysis", {
         id: "analyzing-toast",
-        description: error instanceof Error ? error.message : "Please try again or check your connection",
+        description: error instanceof Error ? error.message : "Please try again",
         duration: 8000
       });
     }

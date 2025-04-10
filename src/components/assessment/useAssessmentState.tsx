@@ -56,28 +56,34 @@ export const useAssessmentState = (allQuestions: AssessmentQuestion[]) => {
     allQuestions
   );
   
-  // Add debug logging for responses
-  useEffect(() => {
-    console.log(`Assessment has ${responses.length} responses and ${completedQuestions.length} completed questions`);
-  }, [responses, completedQuestions]);
-  
   // Handle restoring the current response when loaded from storage
   useEffect(() => {
-    const savedProgress = localStorage.getItem("assessment_progress");
-    if (savedProgress) {
+    const attemptProgressRestore = () => {
       try {
-        const parsedProgress = JSON.parse(savedProgress);
-        if (parsedProgress && parsedProgress.responses) {
-          const restoredQuestionIndex = parsedProgress.currentQuestionIndex || 0;
-          initializeFromExistingResponses(parsedProgress.responses, restoredQuestionIndex);
-          
-          console.log(`Restored assessment progress with ${parsedProgress.responses.length} responses`);
-          
-          if (user) {
-            toast.info("Your progress has been restored", {
-              description: "Continue your assessment where you left off."
-            });
+        const savedProgress = localStorage.getItem("assessment_progress");
+        if (savedProgress) {
+          const parsedProgress = JSON.parse(savedProgress);
+          if (parsedProgress && parsedProgress.responses) {
+            const restoredQuestionIndex = parsedProgress.currentQuestionIndex || 0;
+            if (restoredQuestionIndex >= 0 && restoredQuestionIndex < allQuestions.length) {
+              initializeFromExistingResponses(parsedProgress.responses, restoredQuestionIndex);
+              setCurrentQuestionIndex(restoredQuestionIndex);
+              setResponses(parsedProgress.responses);
+              setCompletedQuestions(parsedProgress.completedQuestions || []);
+              
+              console.log(`Restored assessment progress with ${parsedProgress.responses.length} responses at question ${restoredQuestionIndex}`);
+              
+              if (user) {
+                toast.info("Your progress has been restored", {
+                  description: "Continue your assessment where you left off."
+                });
+              }
+            } else {
+              console.log("Invalid question index in saved progress, starting fresh");
+            }
           }
+        } else {
+          console.log("No saved progress found, starting fresh assessment");
         }
       } catch (error) {
         console.error("Error initializing current response:", error);
@@ -85,9 +91,10 @@ export const useAssessmentState = (allQuestions: AssessmentQuestion[]) => {
           description: "Starting a new assessment."
         });
       }
-    } else {
-      console.log("No saved progress found, starting fresh assessment");
-    }
+    };
+    
+    // Delay the progress restoration slightly to ensure component is fully mounted
+    setTimeout(attemptProgressRestore, 100);
   }, []);
 
   return {

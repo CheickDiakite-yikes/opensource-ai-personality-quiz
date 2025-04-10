@@ -110,7 +110,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={avgTraitScore * 100} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Average of all trait scores - {Math.round(avgTraitScore * 10)}/10
+            Average of all trait scores - {Math.round(avgTraitScore * 100)}/100
           </div>
         </div>
       </div>
