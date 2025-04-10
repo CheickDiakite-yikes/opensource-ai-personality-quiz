@@ -97,52 +97,89 @@ export const useAnalyzeResponses = (
       if (!savedToSupabase) {
         console.warn("Assessment was not saved to Supabase, continuing with local analysis");
       }
+
+      // Enhanced error handling and retry logic for edge function calls
+      const MAX_RETRIES = 3;
+      const functionTimeout = 180000; // 3 minutes timeout for analysis
+      let result = null;
+      let lastError = null;
       
-      // Call the Supabase Edge Function for AI analysis with timeout handling
-      const functionTimeout = 120000; // Increase timeout to 120 seconds (2 minutes) since GPT-4 analysis can take time
-      console.log(`Setting timeout for analysis function to ${functionTimeout/1000} seconds`);
-      
-      // Create a timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Analysis request timed out after ${functionTimeout/1000} seconds`));
-        }, functionTimeout);
-      });
-      
-      // Call Supabase function with detailed request info
-      console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
-      console.time('analyze-responses-call');
-      
-      const functionPromise = supabase.functions.invoke("analyze-responses", {
-        body: { 
-          responses, 
-          assessmentId 
+      for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
+        try {
+          if (retryCount > 0) {
+            console.log(`Retry attempt ${retryCount}/${MAX_RETRIES} for analysis function call...`);
+            toast.loading(`Retry ${retryCount}/${MAX_RETRIES}: Analyzing your responses...`, { 
+              id: "analyze-responses",
+              duration: 30000
+            });
+            // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+          } else {
+            toast.loading("Analyzing your responses with AI...", { 
+              id: "analyze-responses",
+              duration: 30000
+            });
+          }
+
+          console.time(`analyze-responses-call-${retryCount}`);
+          
+          // Create a timeout promise
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => {
+              reject(new Error(`Analysis request timed out after ${functionTimeout/1000} seconds`));
+            }, functionTimeout);
+          });
+          
+          // Call Supabase function with detailed request info and proper retries
+          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
+          
+          const functionPromise = supabase.functions.invoke("analyze-responses", {
+            body: { 
+              responses, 
+              assessmentId,
+              retryCount // Pass retry count for logging purposes
+            }
+          });
+          
+          // Race between function call and timeout
+          result = await Promise.race([functionPromise, timeoutPromise]);
+          console.timeEnd(`analyze-responses-call-${retryCount}`);
+          
+          if (!result) {
+            throw new Error("Empty response from Supabase function");
+          }
+          
+          if (result.error) {
+            throw new Error(`Supabase function error: ${result.error}`);
+          }
+          
+          if (!result.data || !result.data.analysis) {
+            throw new Error("Invalid response structure from analysis function - missing analysis data");
+          }
+          
+          // Success! Break the retry loop
+          console.log(`Analysis successful on attempt ${retryCount+1}`);
+          toast.success("Analysis complete!", { id: "analyze-responses" });
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`Analysis attempt ${retryCount+1} failed:`, error);
+          
+          if (retryCount === MAX_RETRIES) {
+            // All retries exhausted
+            console.error(`All ${MAX_RETRIES+1} attempts failed. Last error:`, error);
+            toast.error("Analysis failed after multiple attempts", { 
+              id: "analyze-responses",
+              description: "Falling back to local analysis"
+            });
+            throw error;
+          }
         }
-      });
-      
-      // Race between function call and timeout
-      const result = await Promise.race([functionPromise, timeoutPromise]);
-      console.timeEnd('analyze-responses-call');
-      console.log("Supabase function analyze-responses completed");
-      
-      if (!result) {
-        console.error("Empty result from Supabase function");
-        throw new Error("Empty response from Supabase function");
       }
       
-      if (result.error) {
-        console.error("Supabase function error:", result.error);
-        throw new Error(`Supabase function error: ${result.error}`);
-      }
-      
-      if (!result.data || !result.data.analysis) {
-        console.error("Invalid response structure from analysis function:", JSON.stringify(result));
-        throw new Error("Invalid response from analysis function - missing analysis data");
-      }
-      
-      console.log("Received AI analysis from gpt-4o model:", result.data.analysis.id);
-      console.log("Analysis overview length:", result.data.analysis.overview?.length || 0);
-      console.log("Analysis traits count:", result.data.analysis.traits?.length || 0);
+      console.log("Received AI analysis:", result?.data?.analysis?.id);
+      console.log("Analysis overview length:", result?.data?.analysis?.overview?.length || 0);
+      console.log("Analysis traits count:", result?.data?.analysis?.traits?.length || 0);
       
       // Add user ID to the analysis if user is logged in
       let analysisWithUser = result.data.analysis;
@@ -153,7 +190,7 @@ export const useAnalyzeResponses = (
           assessmentId: assessmentId
         };
         
-        // Save analysis to Supabase
+        // Save analysis to Supabase with enhanced error handling
         try {
           // Convert all JSON fields to their string representation to ensure compatibility
           const jsonAnalysis = JSON.parse(JSON.stringify(result.data.analysis));
@@ -184,22 +221,33 @@ export const useAnalyzeResponses = (
             roadmap: result.data.analysis.roadmap || ""
           };
           
-          console.log("Saving analysis to Supabase structure:", Object.keys(insertObject).join(", "));
+          // Try up to 3 times to save to the database
+          let saveSuccess = false;
+          for (let i = 0; i < 3; i++) {
+            try {
+              const { error: analysisError } = await supabase
+                .from('analyses')
+                .insert(insertObject);
+                
+              if (analysisError) {
+                console.error(`Save attempt ${i+1} failed:`, analysisError);
+                if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
+              } else {
+                console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
+                saveSuccess = true;
+                break;
+              }
+            } catch (err) {
+              console.error(`Save attempt ${i+1} exception:`, err);
+              if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
+            }
+          }
           
-          const { error: analysisError } = await supabase
-            .from('analyses')
-            .insert(insertObject);
-            
-          if (analysisError) {
-            console.error("Error saving analysis to Supabase:", analysisError);
-            console.error("Error details:", JSON.stringify(analysisError));
-            console.warn(`Database error: ${analysisError.message}`);
-          } else {
-            console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
+          if (!saveSuccess) {
+            console.warn("Failed to save analysis to Supabase after multiple attempts");
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
-          console.error("Error stack:", err instanceof Error ? err.stack : "No stack available");
           console.warn(`Failed to save analysis: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
@@ -217,21 +265,145 @@ export const useAnalyzeResponses = (
     } catch (error) {
       console.error("Error analyzing responses:", error);
       console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
-      toast.error(`Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}. Using fallback analysis.`);
-      
-      // Fallback to local mock analysis if the API fails
-      console.log("Using fallback mock analysis generator");
-      const fallbackAnalysis = await import("./mockAnalysisGenerator").then(module => {
-        const assessmentId = `fallback-${uuidv4()}`;
-        return module.generateMockAnalysis(assessmentId);
+      toast.error(`Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`, {
+        description: "Using fallback analysis instead"
       });
       
-      console.log("Generated fallback analysis with ID:", fallbackAnalysis.id);
+      // Generate a more detailed fallback analysis
+      const fallbackAnalysis = await generateFallbackAnalysis(responses);
       const savedAnalysis = saveToHistory(fallbackAnalysis);
       setAnalysis(savedAnalysis);
       return savedAnalysis;
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Enhanced fallback analysis generator that attempts to create a more useful analysis
+  // when the AI analysis fails
+  const generateFallbackAnalysis = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
+    console.log("Generating fallback analysis from responses");
+    
+    try {
+      // Generate a unique ID for the fallback analysis
+      const fallbackId = `fallback-${uuidv4()}`;
+      
+      // Extract some basic insights from the responses
+      const topCategories = Object.entries(
+        responses.reduce((acc: Record<string, number>, curr) => {
+          acc[curr.category] = (acc[curr.category] || 0) + 1;
+          return acc;
+        }, {})
+      )
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([category]) => category);
+      
+      // Count detailed responses
+      const detailedResponses = responses.filter(r => 
+        r.customResponse && r.customResponse.trim().length > 50
+      ).length;
+      
+      const responseQuality = detailedResponses > 5 ? "detailed" : "brief";
+      
+      // Create a simple fallback analysis with some basic traits
+      return {
+        id: fallbackId,
+        createdAt: new Date().toISOString(),
+        overview: `This is a fallback analysis generated when the AI analysis couldn't be completed. Based on your ${responses.length} responses, you seem most interested in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}.`,
+        traits: [
+          {
+            trait: "Analytical Thinking",
+            score: 0.75,
+            description: "You show a tendency to analyze situations carefully before making decisions.",
+            strengths: ["Problem solving", "Critical thinking", "Attention to detail"],
+            challenges: ["May overthink simple situations", "Could take longer to decide"],
+            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"]
+          },
+          {
+            trait: "Adaptability",
+            score: 0.7,
+            description: "You demonstrate ability to adjust to new situations and changing environments.",
+            strengths: ["Flexibility", "Resilience", "Open to new experiences"],
+            challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions"],
+            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"]
+          },
+          {
+            trait: "Empathy",
+            score: 0.8,
+            description: "You show strong ability to understand and share feelings of others.",
+            strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives"],
+            challenges: ["May take on others' emotional burdens", "Could be affected by negative environments"],
+            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"]
+          }
+        ],
+        intelligence: {
+          type: "Balanced Intelligence",
+          score: 0.65,
+          description: "You demonstrate a balanced profile across different types of intelligence.",
+          domains: [
+            {
+              name: "Analytical Intelligence",
+              score: 0.68,
+              description: "Your ability to solve problems, analyze information and think critically."
+            },
+            {
+              name: "Emotional Intelligence",
+              score: 0.72,
+              description: "Your ability to understand and manage emotions, both yours and others'."
+            }
+          ]
+        },
+        intelligenceScore: 65,
+        emotionalIntelligenceScore: 72,
+        cognitiveStyle: "Balanced Thinker",
+        valueSystem: ["Growth", "Connection", "Understanding"],
+        motivators: ["Learning new things", "Helping others", "Personal development"],
+        inhibitors: ["Self-doubt", "Perfectionism"],
+        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries"],
+        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action"],
+        relationshipPatterns: ["Tends to be supportive", "Values deep connections over many superficial ones"],
+        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers"],
+        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments"],
+        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important."
+      };
+    } catch (error) {
+      console.error("Error generating fallback analysis:", error);
+      
+      // If even the fallback generation fails, return an absolute minimal analysis
+      return {
+        id: `minimal-fallback-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        overview: "This is a minimal fallback analysis created when the AI analysis couldn't be completed.",
+        traits: [
+          {
+            trait: "Resilience",
+            score: 0.7,
+            description: "You show ability to recover from setbacks and adapt to challenges.",
+            strengths: ["Persistence", "Adaptability"],
+            challenges: ["May push too hard sometimes"],
+            growthSuggestions: ["Balance effort with rest"]
+          }
+        ],
+        intelligence: {
+          type: "General Intelligence",
+          score: 0.5,
+          description: "A balanced set of cognitive capabilities.",
+          domains: []
+        },
+        intelligenceScore: 50,
+        emotionalIntelligenceScore: 50,
+        cognitiveStyle: "Balanced",
+        valueSystem: ["Growth"],
+        motivators: ["Learning"],
+        inhibitors: [],
+        weaknesses: [],
+        growthAreas: [],
+        relationshipPatterns: [],
+        careerSuggestions: [],
+        learningPathways: [],
+        roadmap: ""
+      };
     }
   };
 
