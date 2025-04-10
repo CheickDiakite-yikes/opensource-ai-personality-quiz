@@ -25,6 +25,22 @@ interface TraitsDetailProps {
 const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
   const isMobile = useIsMobile();
   
+  // Helper function to format trait scores consistently
+  const formatTraitScore = (score: number): number => {
+    // If score is already between 0 and 10, use it directly
+    if (score >= 0 && score <= 10 && score > 1) {
+      return Math.round(score);
+    }
+    // If score is between 0 and 1, scale to 0-10
+    else if (score >= 0 && score <= 1) {
+      return Math.round(score * 10);
+    }
+    // If score is greater than 10 (e.g., 0-100 scale), convert to 0-10
+    else {
+      return Math.round((score / 100) * 10);
+    }
+  };
+  
   return (
     <div className="space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
       {!isMobile ? (
@@ -49,7 +65,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className="py-2 md:py-4">
                   <div className="inline-flex items-center justify-center h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                    {Math.round(trait.score * 10)}/10
+                    {formatTraitScore(trait.score)}/10
                   </div>
                 </TableCell>
                 <TableCell className="text-right py-2 md:py-4">
@@ -115,7 +131,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                       <span className="truncate max-w-[160px] text-sm">{trait.trait}</span>
                     </div>
                     <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
-                      {Math.round(trait.score * 10)}
+                      {formatTraitScore(trait.score)}
                     </div>
                   </div>
                 </AccordionTrigger>

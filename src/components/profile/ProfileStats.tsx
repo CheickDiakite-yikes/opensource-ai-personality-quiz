@@ -28,8 +28,19 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
   const intelligenceRating = getCreditRating(intelligenceScoreNormalized);
   const emotionalRating = getCreditRating(emotionalScoreNormalized);
   
-  // Calculate the average score of all traits (traits are already on a 0-1 scale)
-  const avgTraitScore = analysis.traits.reduce((acc, trait) => acc + trait.score, 0) / analysis.traits.length;
+  // Calculate the average score of all traits
+  // Handle trait scores that might be on a 0-1 scale or a 0-10 scale
+  const avgTraitScore = analysis.traits.length > 0 
+    ? analysis.traits.reduce((acc, trait) => {
+        const normalizedTraitScore = trait.score >= 0 && trait.score <= 1 
+          ? trait.score 
+          : (trait.score >= 0 && trait.score <= 10) 
+            ? trait.score / 10 
+            : trait.score / 100;
+        return acc + normalizedTraitScore;
+      }, 0) / analysis.traits.length
+    : 0.5;
+    
   const traitRating = getCreditRating(avgTraitScore * 100);
   
   // Type guards

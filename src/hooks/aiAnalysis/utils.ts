@@ -13,12 +13,13 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
         assessmentId: item.assessment_id || item.result.assessmentId || ''
       };
       
-      // If traits exist, normalize their scores
+      // If traits exist, ensure their scores are properly formatted
       let normalizedTraits = item.result.traits;
       if (normalizedTraits && Array.isArray(normalizedTraits)) {
         normalizedTraits = normalizedTraits.map(trait => ({
           ...trait,
-          score: normalizeScore(trait.score)
+          // Keep the original score to preserve the data format
+          score: trait.score
         }));
       }
       
@@ -26,17 +27,20 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       return {
         ...item.result,
         ...baseAnalysis,
-        traits: normalizedTraits || item.result.traits
+        traits: normalizedTraits || item.result.traits,
+        // Keep intelligence scores as-is (0-100 scale)
+        intelligenceScore: item.result.intelligenceScore || item.intelligence_score || 50,
+        emotionalIntelligenceScore: item.result.emotionalIntelligenceScore || item.emotional_intelligence_score || 50
       } as PersonalityAnalysis;
     }
     
     // Otherwise construct from individual fields with type safety and fallbacks
-    // Normalize traits scores if they exist
     let normalizedTraits = item.traits;
     if (normalizedTraits && Array.isArray(normalizedTraits) && normalizedTraits.length > 0) {
       normalizedTraits = normalizedTraits.map(trait => ({
         ...trait,
-        score: normalizeScore(trait.score)
+        // Keep the original score to preserve the data format
+        score: trait.score
       }));
     } else {
       normalizedTraits = [{
@@ -64,8 +68,9 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
           description: "Intelligence data was incomplete in this analysis."
         }]
       },
-      intelligenceScore: normalizeScore(item.intelligence_score) * 100,
-      emotionalIntelligenceScore: normalizeScore(item.emotional_intelligence_score) * 100,
+      // Keep intelligence scores as-is (0-100 scale)
+      intelligenceScore: item.intelligence_score || 50,
+      emotionalIntelligenceScore: item.emotional_intelligence_score || 50,
       cognitiveStyle: item.cognitive_style || 'Not determined',
       valueSystem: Array.isArray(item.value_system) ? item.value_system : [],
       motivators: Array.isArray(item.motivators) ? item.motivators : [],
@@ -111,20 +116,21 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
 };
 
 // Helper to normalize scores to ensure they're always in the 0-1 range
+// IMPORTANT: This function is only used for internal calculations that need a 0-1 scale
 export const normalizeScore = (score: any): number => {
   // If the score is already between 0 and 1, return it
   if (typeof score === 'number' && score >= 0 && score <= 1) {
     return score;
   }
   
-  // If the score is a number greater than 1 but less than or equal to 100, normalize to 0-1
-  if (typeof score === 'number' && score > 1 && score <= 100) {
-    return score / 100;
+  // If the score is a number greater than 1 but less than or equal to 10, normalize to 0-1
+  if (typeof score === 'number' && score > 1 && score <= 10) {
+    return score / 10;
   }
   
-  // If the score is a number greater than 100, cap at 1
-  if (typeof score === 'number' && score > 100) {
-    return 1;
+  // If the score is a number greater than 10, assume it's on a 0-100 scale
+  if (typeof score === 'number' && score > 10) {
+    return score / 100;
   }
   
   // If the score is a string, try to parse and normalize

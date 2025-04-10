@@ -23,6 +23,13 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
   const [expanded, setExpanded] = React.useState(false);
   const isMobile = useIsMobile();
 
+  // Handle different score formats - if score is already 0-10, use directly, otherwise normalize from 0-1
+  const displayScore = trait.score >= 0 && trait.score <= 1 
+    ? Math.round(trait.score * 10) 
+    : (trait.score >= 0 && trait.score <= 10) 
+      ? Math.round(trait.score) 
+      : Math.round((trait.score / 100) * 10);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,7 +59,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
             </div>
             <div className="flex items-center">
               <Badge variant="outline" className={`${isMobile ? 'text-[0.6rem] mr-1 px-1 py-0' : 'mr-3'}`}>
-                {Math.round(trait.score * 10)}/10
+                {displayScore}/10
               </Badge>
               {expanded ? (
                 <ChevronUp className={`${isMobile ? 'h-3 w-3' : 'h-5 w-5'} text-muted-foreground`} />
@@ -61,7 +68,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
               )}
             </div>
           </div>
-          <Progress value={trait.score * 100} className={`h-1.5 ${isMobile ? 'mt-1' : 'mt-2'}`} />
+          <Progress value={trait.score <= 1 ? trait.score * 100 : trait.score <= 10 ? trait.score * 10 : trait.score} className={`h-1.5 ${isMobile ? 'mt-1' : 'mt-2'}`} />
         </CardHeader>
         
         {expanded && (
