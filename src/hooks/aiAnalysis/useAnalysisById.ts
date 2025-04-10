@@ -57,35 +57,19 @@ export const useAnalysisById = () => {
       
       // APPROACH 2: Try the public Edge Function
       try {
-        // Get the base URL for Edge Functions
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-        const projectId = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || '';
+        // Call the edge function using Supabase functions.invoke
+        console.log("Calling Edge Function for analysis:", id);
         
-        if (!projectId) {
-          console.error("Could not determine project ID from Supabase URL");
-          throw new Error("Invalid Supabase configuration");
-        }
-        
-        // Construct the URL for the Edge Function
-        const edgeFunctionUrl = `https://${projectId}.functions.supabase.co/get-public-analysis?id=${id}`;
-        
-        console.log("Calling Edge Function at:", edgeFunctionUrl);
-        
-        const response = await fetch(edgeFunctionUrl, {
+        const { data, error } = await supabase.functions.invoke('get-public-analysis', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`
-          }
+          query: { id }
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Edge function returned error:", response.status, errorText);
-          throw new Error(`Edge function returned ${response.status}: ${errorText}`);
+        if (error) {
+          console.error("Edge function error:", error);
+          throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
         }
         
-        const data = await response.json();
         if (data) {
           console.log("Retrieved analysis via Edge Function:", id);
           const analysis = convertToPersonalityAnalysis(data);
@@ -108,6 +92,8 @@ export const useAnalysisById = () => {
       setError(error instanceof Error ? error.message : "Failed to retrieve analysis");
       setIsLoading(false);
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 

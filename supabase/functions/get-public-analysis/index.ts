@@ -25,21 +25,21 @@ Deno.serve(async (req) => {
 
     console.log(`Getting public analysis with ID: ${id}`);
 
-    // Try direct table access first (simplified approach)
-    const { data: analysisData, error: analysisError } = await supabase
+    // Try direct table access first
+    let { data: analysisData, error: analysisError } = await supabase
       .from('analyses')
       .select('*')
       .eq('id', id)
       .maybeSingle();
     
     if (analysisError) {
-      console.error("Error fetching analysis:", analysisError);
+      console.error("Error fetching analysis by ID:", analysisError);
       throw analysisError;
     }
     
+    // If not found by id, try looking by assessment_id
     if (!analysisData) {
-      // If not found by id, try looking by assessment_id
-      const { data: assessmentData, error: assessmentError } = await supabase
+      let { data: assessmentData, error: assessmentError } = await supabase
         .from('analyses')
         .select('*')
         .eq('assessment_id', id)
