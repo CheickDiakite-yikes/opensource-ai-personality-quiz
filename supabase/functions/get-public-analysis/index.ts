@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Extract ID from URL parameters
     const url = new URL(req.url);
     const id = url.searchParams.get('id');
 
@@ -34,7 +35,10 @@ Deno.serve(async (req) => {
     
     if (analysisError) {
       console.error("Error fetching analysis by ID:", analysisError);
-      throw analysisError;
+      return new Response(
+        JSON.stringify({ error: analysisError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     // If not found by id, try looking by assessment_id
@@ -47,10 +51,14 @@ Deno.serve(async (req) => {
         
       if (assessmentError) {
         console.error("Error fetching by assessment_id:", assessmentError);
-        throw assessmentError;
+        return new Response(
+          JSON.stringify({ error: assessmentError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
       if (assessmentData) {
+        console.log("Found analysis by assessment_id:", assessmentData.id);
         return new Response(
           JSON.stringify(assessmentData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -63,6 +71,7 @@ Deno.serve(async (req) => {
       );
     }
     
+    console.log("Found analysis by ID:", analysisData.id);
     return new Response(
       JSON.stringify(analysisData),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

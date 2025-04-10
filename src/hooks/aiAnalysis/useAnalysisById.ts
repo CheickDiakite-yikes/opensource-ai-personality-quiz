@@ -60,9 +60,10 @@ export const useAnalysisById = () => {
         // Call the edge function using Supabase functions.invoke
         console.log("Calling Edge Function for analysis:", id);
         
+        // Fix: Use params instead of query (which isn't in the type definition)
         const { data, error } = await supabase.functions.invoke('get-public-analysis', {
           method: 'GET',
-          query: { id }
+          params: { id }
         });
         
         if (error) {
