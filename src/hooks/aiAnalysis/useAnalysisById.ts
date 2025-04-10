@@ -55,14 +55,15 @@ export const useAnalysisById = () => {
         console.error("Direct table access error:", analysisError);
       }
       
-      // APPROACH 2: Try the public Edge Function
+      // APPROACH 2: Try the Edge Function with explicit URL construction
       try {
-        // Call the edge function using Supabase functions.invoke
         console.log("Calling Edge Function for analysis:", id);
         
-        // Fix: The correct way to pass parameters to Edge Function is in the URL
-        const { data, error } = await supabase.functions.invoke(`get-public-analysis?id=${id}`, {
-          method: 'GET'
+        // Fix: Use the function name directly and pass the ID as part of the URL
+        const { data, error } = await supabase.functions.invoke(`get-public-analysis`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          body: { id }
         });
         
         if (error) {

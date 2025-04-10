@@ -13,9 +13,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Extract ID from URL parameters
+    let id: string | null = null;
+    
+    // Support multiple ways of getting the ID parameter
+    
+    // 1. Check URL parameters first
     const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    id = url.searchParams.get('id');
+    
+    // 2. If not found in URL, try to get from request body
+    if (!id && req.method === 'POST' || req.method === 'GET' && !id) {
+      try {
+        const body = await req.json();
+        id = body.id;
+        console.log("Extracted ID from request body:", id);
+      } catch (e) {
+        // Ignore JSON parsing errors
+        console.error("Error parsing request body:", e);
+      }
+    }
+    
+    // Log the ID that was found
+    console.log(`Processing request for analysis ID: ${id || 'none'}`);
 
     if (!id) {
       return new Response(
@@ -43,6 +62,7 @@ Deno.serve(async (req) => {
     
     // If not found by id, try looking by assessment_id
     if (!analysisData) {
+      console.log("Analysis not found by ID, trying assessment_id");
       let { data: assessmentData, error: assessmentError } = await supabase
         .from('analyses')
         .select('*')
@@ -61,6 +81,25 @@ Deno.serve(async (req) => {
         console.log("Found analysis by assessment_id:", assessmentData.id);
         return new Response(
           JSON.stringify(assessmentData),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // If still not found, try a more flexible search
+      console.log("Analysis not found by assessment_id, trying partial match");
+      let { data: flexData, error: flexError } = await supabase
+        .from('analyses')
+        .select('*')
+        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (flexError) {
+        console.error("Error in flexible search:", flexError);
+      } else if (flexData && flexData.length > 0) {
+        console.log("Found analysis via flexible search:", flexData[0].id);
+        return new Response(
+          JSON.stringify(flexData[0]),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
