@@ -9,102 +9,116 @@ import { useNavigate } from 'react-router-dom';
 
 export const FixAnalysisButton: React.FC = () => {
   const { forceAnalysisRefresh } = useAnalysisRefresh();
-  const { refreshAnalysis, loadAllAnalysesFromSupabase } = useAIAnalysis();
+  const { refreshAnalysis, loadAllAnalysesFromSupabase, forceFetchAllAnalyses } = useAIAnalysis();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const navigate = useNavigate();
   
   const handleFix = async () => {
     setIsRefreshing(true);
     try {
-      toast.info("Attempting to fix analysis display issues...");
+      toast.info("Attempting to fix analysis display issues...", { id: "fix-analysis" });
       
-      // First, try the direct Supabase approach
-      const analyses = await forceAnalysisRefresh().catch(err => {
-        console.error("Error in forceAnalysisRefresh:", err);
+      // Try all available methods to fetch analyses with enhanced error handling
+      console.log("Starting comprehensive analysis recovery process");
+      
+      // First try the most direct method - force fetching all analyses
+      const analyses = await forceFetchAllAnalyses().catch(err => {
+        console.error("Error in forceFetchAllAnalyses:", err);
         return null;
       });
       
+      // If that didn't work, try the direct Supabase approach
       if (!analyses || analyses.length === 0) {
-        // Try the loadAllAnalysesFromSupabase approach as fallback
-        const allAnalyses = await loadAllAnalysesFromSupabase().catch(err => {
-          console.error("Error in loadAllAnalysesFromSupabase:", err);
+        console.log("First approach failed, trying forceAnalysisRefresh");
+        const directAnalyses = await forceAnalysisRefresh().catch(err => {
+          console.error("Error in forceAnalysisRefresh:", err);
           return null;
         });
         
-        if (!allAnalyses || allAnalyses.length === 0) {
-          toast.error("Could not find any analyses", {
-            description: "Try taking a new assessment",
-            duration: 5000
+        if (!directAnalyses || directAnalyses.length === 0) {
+          console.log("Second approach failed, trying loadAllAnalysesFromSupabase");
+          // Try the loadAllAnalysesFromSupabase approach as fallback
+          const allAnalyses = await loadAllAnalysesFromSupabase().catch(err => {
+            console.error("Error in loadAllAnalysesFromSupabase:", err);
+            return null;
           });
-          navigate("/assessment");
+          
+          if (!allAnalyses || allAnalyses.length === 0) {
+            toast.error("Could not find any analyses", {
+              id: "fix-analysis",
+              description: "Try taking a new assessment",
+              duration: 5000
+            });
+            navigate("/assessment");
+            return;
+          }
+          
+          console.log(`Found ${allAnalyses.length} analyses using loadAllAnalysesFromSupabase`);
+          // Use the found analyses
+          await refreshAnalysis();
+          
+          // Navigate to the most recent analysis
+          navigate(`/report/${allAnalyses[0].id}`);
+          toast.success("Found your most recent analysis", {
+            id: "fix-analysis",
+            description: "You can now view your results"
+          });
           return;
         }
         
-        // Use the found analyses
-        await refreshAnalysis();
+        console.log(`Found ${directAnalyses.length} analyses using forceAnalysisRefresh`);
         
-        // Navigate to the most recent analysis
-        navigate(`/report/${allAnalyses[0].id}`);
-        toast.success("Found your most recent analysis", {
-          description: "You can now view your results"
-        });
-        return;
+        // Find an analysis with sufficient traits
+        const completeAnalysis = directAnalyses.find(a => a && a.traits && Array.isArray(a.traits) && a.traits.length >= 8);
+        
+        if (completeAnalysis) {
+          console.log(`Found complete analysis with ${completeAnalysis.traits?.length} traits, navigating to it`);
+          navigate(`/report/${completeAnalysis.id}`);
+          toast.success("Found a complete analysis", {
+            id: "fix-analysis",
+            description: "Displaying your best analysis results"
+          });
+          return;
+        } else if (directAnalyses.length > 0) {
+          // Navigate to the most recent analysis
+          navigate(`/report/${directAnalyses[0].id}`);
+          toast.info("Found an analysis that may be incomplete", {
+            id: "fix-analysis",
+            description: "Showing the best available results"
+          });
+          return;
+        }
       }
       
-      // Then refresh through the normal mechanism
-      await loadAllAnalysesFromSupabase().catch(err => {
-        console.error("Error loading all analyses:", err);
-      });
+      console.log(`Found ${analyses?.length || 0} analyses using forceFetchAllAnalyses`);
       
-      await refreshAnalysis().catch(err => {
-        console.error("Error refreshing analysis:", err);
-      });
-      
-      // Log details about the fetched analyses for debugging
-      console.log(`Fetched ${analyses.length} analyses`);
-      analyses.forEach((analysis, index) => {
-        if (analysis && analysis.traits) {
-          console.log(`Analysis ${index + 1}: ID: ${analysis.id}, Traits: ${analysis.traits?.length || 0}`);
+      // Find the best analysis from all analyses
+      if (analyses && analyses.length > 0) {
+        // Find an analysis with sufficient traits
+        const bestAnalysis = analyses.find(a => a && a.traits && Array.isArray(a.traits) && a.traits.length >= 8);
+        
+        if (bestAnalysis) {
+          console.log(`Found best analysis with ${bestAnalysis.traits?.length} traits, navigating to it`);
+          navigate(`/report/${bestAnalysis.id}`);
+          toast.success("Found a complete analysis", {
+            id: "fix-analysis",
+            description: "Displaying your best analysis results"
+          });
         } else {
-          console.log(`Analysis ${index + 1}: ID: ${analysis.id}, Traits: Missing or invalid`);
+          // Just use the first one
+          navigate(`/report/${analyses[0].id}`);
+          toast.info("Found an analysis that may be incomplete", {
+            id: "fix-analysis",
+            description: "Showing the best available results"
+          });
         }
-      });
-      
-      // Wait a moment to ensure data is fully loaded
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Find an analysis with sufficient traits (at least 2)
-      const completeAnalysis = analyses.find(a => a && a.traits && Array.isArray(a.traits) && a.traits.length >= 8);
-      const partialAnalysis = analyses.find(a => a && a.traits && Array.isArray(a.traits) && a.traits.length >= 2);
-      
-      if (completeAnalysis) {
-        console.log(`Found complete analysis with ${completeAnalysis.traits?.length} traits, navigating to it`);
-        navigate(`/report/${completeAnalysis.id}`);
-        toast.success("Found a complete analysis", {
-          description: "Displaying your best analysis results"
-        });
-      } else if (partialAnalysis) {
-        console.log(`Found partial analysis with ${partialAnalysis.traits?.length} traits, navigating to it`);
-        navigate(`/report/${partialAnalysis.id}`);
-        toast.info("Found a partial analysis", {
-          description: "Some data may be incomplete but viewable"
-        });
-      } else if (analyses.length > 0) {
-        // Navigate to the most recent analysis
-        navigate(`/report/${analyses[0].id}`);
-        toast.warning("Your analyses all appear to be incomplete", {
-          description: "Consider retaking the assessment with more detailed answers"
-        });
       } else {
-        toast.error("No valid analyses found", {
-          description: "Try taking a new assessment",
-          duration: 5000
-        });
-        navigate("/assessment");
+        throw new Error("Could not find any valid analyses");
       }
     } catch (error) {
       console.error("Error fixing analyses:", error);
       toast.error("Failed to fix analysis", {
+        id: "fix-analysis",
         description: "Please try refreshing the page or completing a new assessment"
       });
       // After 3 seconds, redirect to the assessment page
