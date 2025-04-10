@@ -34,30 +34,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Track initial session check to avoid race conditions
+  const [initialSessionChecked, setInitialSessionChecked] = useState(false);
   const navigate = useNavigate();
 
+  // CRITICAL FIX: Improved auth state management to prevent token errors
   useEffect(() => {
-    // Set up the auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event);
-        setSession(session);
-        setUser(session?.user ?? null);
+    const initializeAuth = async () => {
+      try {
+        // First check if there's an existing session
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          // Clear any invalid session data
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(sessionData.session);
+          setUser(sessionData.session?.user ?? null);
+        }
+
+        // Now set up the auth state listener after we've checked the initial session
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, newSession) => {
+            console.log("Auth state changed:", event);
+            
+            // When there's an invalid refresh token, we may get a SIGNED_OUT event
+            if (event === 'SIGNED_OUT') {
+              setSession(null);
+              setUser(null);
+              // Don't navigate on initial load
+              if (initialSessionChecked) {
+                navigate("/auth");
+              }
+            } else if (newSession) {
+              setSession(newSession);
+              setUser(newSession.user);
+            }
+          }
+        );
+        
+        setInitialSessionChecked(true);
         setIsLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setIsLoading(false);
+        setInitialSessionChecked(true);
       }
-    );
-
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
     };
-  }, []);
+
+    initializeAuth();
+  }, [navigate]);
 
   const signUp = async (
     email: string, 
@@ -117,6 +150,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      
+      // Clear any existing session first to prevent token conflicts
+      const currentSession = await supabase.auth.getSession();
+      if (currentSession.data.session) {
+        await supabase.auth.signOut();
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

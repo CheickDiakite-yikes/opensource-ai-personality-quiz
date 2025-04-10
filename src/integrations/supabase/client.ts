@@ -16,19 +16,23 @@ export const supabase = createClient<Database>(
   {
     realtime: {
       params: {
-        eventsPerSecond: 3 // Reduced from 5 to prevent rate limiting issues
+        eventsPerSecond: 2 // Further reduced to prevent rate limiting issues
       }
     },
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false
+      detectSessionInUrl: false,
+      storage: localStorage, // Explicitly use localStorage for auth storage
+      storageKey: 'supabase-auth-token', // Custom storage key to avoid conflicts
+      // Retry configuration for token refresh
+      flowType: 'pkce' // More secure flow for authentication
     },
     global: {
       fetch: (...args) => {
-        // Enhanced fetch with longer timeout (30 seconds)
+        // Enhanced fetch with longer timeout (45 seconds)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
         
         // Fixed TypeScript error - Create a new options object with signal
         const [url, options = {}] = args;
@@ -107,20 +111,23 @@ const setupRealtimeSubscriptions = () => {
   }
 };
 
-// Initialize realtime subscriptions with retry mechanism
+// Initialize realtime subscriptions with retry mechanism and delay
 try {
-  const initSubscriptions = () => {
-    try {
-      const channels = setupRealtimeSubscriptions();
-      console.log(`Initialized ${channels.length} realtime subscription channels`);
-    } catch (error) {
-      console.error("Failed to initialize realtime subscriptions:", error);
-      // Retry after 10 seconds if it fails
-      setTimeout(initSubscriptions, 10000);
-    }
-  };
-  
-  initSubscriptions();
+  // Delay initialization of subscriptions to ensure auth is handled first
+  setTimeout(() => {
+    const initSubscriptions = () => {
+      try {
+        const channels = setupRealtimeSubscriptions();
+        console.log(`Initialized ${channels.length} realtime subscription channels`);
+      } catch (error) {
+        console.error("Failed to initialize realtime subscriptions:", error);
+        // Retry after 10 seconds if it fails
+        setTimeout(initSubscriptions, 10000);
+      }
+    };
+    
+    initSubscriptions();
+  }, 2000); // Delay by 2 seconds to ensure auth is properly initialized first
 } catch (error) {
   console.error("Error in subscription initialization block:", error);
 }

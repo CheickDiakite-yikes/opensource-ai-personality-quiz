@@ -2,7 +2,7 @@
 import { useAIAnalysisCore } from './aiAnalysis/useAIAnalysisCore';
 import { useAnalysisById } from './aiAnalysis/useAnalysisById';
 import { PersonalityAnalysis } from '@/utils/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAnalysisRefresh } from './useAnalysisRefresh';
 import { toast } from 'sonner';
 
@@ -29,6 +29,7 @@ export const useAIAnalysis = () => {
   // Track last total count for debugging
   const [lastHistoryCount, setLastHistoryCount] = useState<number>(0);
   const [isRetrying, setIsRetrying] = useState(false);
+  const retryRef = useRef<boolean>(false); // Use ref to avoid stale closures
   
   // Log changes to analysis history for debugging
   useEffect(() => {
@@ -46,18 +47,38 @@ export const useAIAnalysis = () => {
     }
   }, [analysisHistory, lastHistoryCount]);
 
+  // Track when this hook is mounted/unmounted to prevent stale state
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Add a function to manually force refresh from all sources
   const forceFetchAllAnalyses = async () => {
-    toast.loading("Forcing complete analysis refresh...", { id: "force-refresh" });
+    const toastId = "force-refresh";
+    toast.loading("Forcing complete analysis refresh...", { id: toastId });
     console.log("[useAIAnalysis] Starting force fetch of all analyses");
     
     try {
       // First try the direct refresh from useAnalysisRefresh
-      const directAnalyses = await forceAnalysisRefresh();
+      const directAnalyses = await forceAnalysisRefresh().catch(err => {
+        console.error("Error in forceAnalysisRefresh:", err);
+        return null;
+      });
+      
+      if (!isMounted.current) return null;
       console.log(`[useAIAnalysis] Direct refresh found ${directAnalyses?.length || 0} analyses`);
       
       // Then try the loadAll method from useAIAnalysisCore
-      const coreAnalyses = await loadAllAnalysesFromSupabase();
+      const coreAnalyses = await loadAllAnalysesFromSupabase().catch(err => {
+        console.error("Error in loadAllAnalysesFromSupabase:", err);
+        return null;
+      });
+      
+      if (!isMounted.current) return null;
       console.log(`[useAIAnalysis] Core refresh found ${coreAnalyses?.length || 0} analyses`);
       
       // Determine if we succeeded
@@ -69,12 +90,12 @@ export const useAIAnalysis = () => {
       
       if (totalAnalyses > 0) {
         toast.success(`Found ${totalAnalyses} analyses`, { 
-          id: "force-refresh",
+          id: toastId,
           description: "Your reports are now available"
         });
       } else {
         toast.error("Could not find any analyses", { 
-          id: "force-refresh",
+          id: toastId,
           description: "Please check your connection and try again"
         });
       }
@@ -82,17 +103,17 @@ export const useAIAnalysis = () => {
       return directAnalyses || coreAnalyses;
     } catch (error) {
       console.error("[useAIAnalysis] Error in forceFetchAllAnalyses:", error);
-      toast.error("Error refreshing analyses", { id: "force-refresh" });
+      toast.error("Error refreshing analyses", { id: toastId });
       return null;
     }
   };
 
-  // FIXED: Fix for the analysis generation process to avoid multiple retries
+  // Fixed API for analysis generation to prevent duplicate retries
   const enhancedAnalyzeResponses = async (responses: any) => {
     console.log("[useAIAnalysis] Starting enhanced analysis with responses:", responses.length);
     
-    // CRITICAL FIX: Prevent double retries
-    if (isRetrying) {
+    // CRITICAL FIX: Use ref to prevent duplicate retries
+    if (retryRef.current) {
       console.warn("[useAIAnalysis] Analysis is already being retried, skipping redundant retry");
       throw new Error("Analysis is already being retried");
     }
@@ -105,13 +126,26 @@ export const useAIAnalysis = () => {
     } catch (error) {
       console.error("[useAIAnalysis] Error in first analysis attempt:", error);
       
-      // If the first attempt failed, wait and try again ONLY IF we aren't already retrying
+      // Only retry if we aren't already doing so
+      if (retryRef.current) {
+        console.warn("[useAIAnalysis] Already retrying, not starting another retry");
+        throw error;
+      }
+      
+      // Mark that we're retrying to prevent multiple simultaneous retries
       setIsRetrying(true);
+      retryRef.current = true;
+      
       toast.loading("First analysis attempt failed, retrying once...", { id: "retry-analysis" });
       
       try {
         // Wait 3 seconds before retrying
         await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        if (!isMounted.current) {
+          throw new Error("Component unmounted during retry");
+        }
+        
         const secondAttempt = await analyzeResponses(responses);
         console.log("[useAIAnalysis] Second analysis attempt succeeded:", secondAttempt?.id);
         toast.success("Analysis completed on retry", { id: "retry-analysis" });
@@ -121,7 +155,10 @@ export const useAIAnalysis = () => {
         toast.error("Analysis failed after multiple attempts", { id: "retry-analysis" });
         throw secondError;
       } finally {
-        setIsRetrying(false);
+        if (isMounted.current) {
+          setIsRetrying(false);
+        }
+        retryRef.current = false;
       }
     }
   };
@@ -140,6 +177,7 @@ export const useAIAnalysis = () => {
     fetchAnalysisById,
     fetchError,
     analysisHistory,
-    forceFetchAllAnalyses
+    forceFetchAllAnalyses,
+    isRetrying
   };
 };

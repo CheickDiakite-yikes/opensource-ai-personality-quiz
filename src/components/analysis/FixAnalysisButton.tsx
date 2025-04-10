@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useAnalysisRefresh } from '@/hooks/useAnalysisRefresh';
@@ -13,8 +13,18 @@ export const FixAnalysisButton: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const navigate = useNavigate();
   
-  // CRITICAL FIX: Add state to track ongoing requests and avoid duplicates
-  const [activeRequestId, setActiveRequestId] = React.useState<string | null>(null);
+  // CRITICAL FIX: Add refs to track ongoing requests and prevent redundant calls
+  const activeRequestRef = useRef<string | null>(null);
+  const requestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Cleanup function for timeouts
+  React.useEffect(() => {
+    return () => {
+      if (requestTimeoutRef.current) {
+        clearTimeout(requestTimeoutRef.current);
+      }
+    };
+  }, []);
   
   const handleFix = async () => {
     // CRITICAL FIX: Prevent multiple simultaneous requests
@@ -26,7 +36,7 @@ export const FixAnalysisButton: React.FC = () => {
     
     // Generate unique request ID to track this specific recovery attempt
     const requestId = `fix-${Date.now()}`;
-    setActiveRequestId(requestId);
+    activeRequestRef.current = requestId;
     setIsRefreshing(true);
     
     try {
@@ -42,7 +52,7 @@ export const FixAnalysisButton: React.FC = () => {
       });
       
       // CRITICAL FIX: Verify this is still the active request
-      if (activeRequestId !== requestId) {
+      if (activeRequestRef.current !== requestId) {
         console.log("Request superseded by a newer request, aborting");
         return;
       }
@@ -56,7 +66,7 @@ export const FixAnalysisButton: React.FC = () => {
         });
         
         // CRITICAL FIX: Check again if this is still the active request
-        if (activeRequestId !== requestId) {
+        if (activeRequestRef.current !== requestId) {
           console.log("Request superseded by a newer request, aborting");
           return;
         }
@@ -70,7 +80,7 @@ export const FixAnalysisButton: React.FC = () => {
           });
           
           // CRITICAL FIX: One more check
-          if (activeRequestId !== requestId) {
+          if (activeRequestRef.current !== requestId) {
             console.log("Request superseded by a newer request, aborting");
             return;
           }
@@ -154,12 +164,12 @@ export const FixAnalysisButton: React.FC = () => {
         description: "Please try refreshing the page or completing a new assessment"
       });
       // After 3 seconds, redirect to the assessment page
-      setTimeout(() => {
+      requestTimeoutRef.current = setTimeout(() => {
         navigate("/assessment");
       }, 3000);
     } finally {
       setIsRefreshing(false);
-      setActiveRequestId(null);
+      activeRequestRef.current = null;
     }
   };
 
