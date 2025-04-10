@@ -61,7 +61,7 @@
   }
 }
 
-/* Share button design */
+/* Share button design - keeping basic styles that might be used elsewhere */
 .share-button {
   transition: all 0.3s ease;
 }
@@ -71,17 +71,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* QR Code for profile sharing */
-.profile-qr-code {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  margin: 1rem auto;
-  max-width: 200px;
-}
+/* QR Code for profile sharing - removed */
 
 .shared-trait-bubble {
   display: inline-block;

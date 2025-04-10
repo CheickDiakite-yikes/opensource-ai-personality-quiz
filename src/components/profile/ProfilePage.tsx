@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
 import { FixAnalysisButton } from "../analysis/FixAnalysisButton";
 
+// ShareProfile import has been removed
+
 const ProfilePage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { 
@@ -179,6 +181,8 @@ const ProfilePage: React.FC = () => {
         <TraitsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <InsightsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <GrowthPathwayCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        
+        {/* ShareProfile component has been removed */}
       </div>
     </div>
   );
