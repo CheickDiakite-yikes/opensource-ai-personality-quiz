@@ -22,21 +22,21 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
   // Use a more specific check for very small screens
   const isVerySmallScreen = width < 380;
   
-  // Helper function to format trait scores consistently
-  const formatTraitScore = (score: number): number => {
+  // Helper function to display trait score consistently as X/10
+  const formatTraitScore = (score: number): string => {
     // If score is already between 0 and 10, use it directly
     if (score > 0 && score <= 10) {
-      return Math.round(score);
+      return `${Math.round(score)}/10`;
     }
     // If score is between 0 and 1, scale to 0-10
     else if (score >= 0 && score <= 1) {
-      return Math.round(score * 10);
+      return `${Math.round(score * 10)}/10`;
     }
     // If score is greater than 10 (e.g., 0-100 scale), convert to 0-10
     else if (score > 10) {
-      return Math.round((score / 100) * 10);
+      return `${Math.round((score / 100) * 10)}/10`;
     }
-    return Math.round(score);
+    return `${Math.round(score)}/10`;
   };
   
   return (
@@ -60,12 +60,12 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                   <div className="flex items-center flex-wrap gap-2">
                     <span className={`font-medium ${isVerySmallScreen ? 'text-xs' : isMobile ? 'text-sm' : ''}`}>{trait.trait}</span>
                     <Badge variant="outline" className={`${isVerySmallScreen ? 'text-xs px-1.5 py-0' : isMobile ? 'text-xs px-1.5 py-0' : ''}`}>
-                      {formatTraitScore(trait.score)}/10
+                      {formatTraitScore(trait.score)}
                     </Badge>
                   </div>
                 </div>
                 <Progress
-                  value={trait.score * 100}
+                  value={trait.score <= 1 ? trait.score * 100 : trait.score <= 10 ? trait.score * 10 : trait.score}
                   className="h-2"
                   indicatorClassName="bg-primary"
                 />
