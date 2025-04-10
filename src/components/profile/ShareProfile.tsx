@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,27 +13,66 @@ interface ShareProfileProps {
 
 const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
   const [copied, setCopied] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   
-  // Generate a proper shareable URL
-  const shareUrl = `${window.location.origin}/shared/${analysis.id || 'demo'}`;
+  // Make sure we have a valid analysis ID for sharing - this is critical
+  const analysisId = analysis?.id || "";
   
-  // Update the image URL for social media previews
-  const shareImageUrl = "/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png";
+  // Generate the shareable URL using the analysis ID as a unique identifier
+  const shareUrl = `${window.location.origin}/shared/${analysisId}`;
   
   // Handle copy to clipboard
   const handleCopy = () => {
+    if (!analysisId) {
+      toast.error("Cannot create share link - missing analysis ID");
+      return;
+    }
+    
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       toast.success("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error("Failed to copy link:", err);
+      toast.error("Failed to copy link to clipboard");
     });
+  };
+  
+  // Handle native mobile sharing
+  const handleNativeShare = () => {
+    if (!analysisId) {
+      toast.error("Cannot share - missing analysis ID");
+      return;
+    }
+    
+    if (navigator.share) {
+      navigator.share({
+        title: "My Who Am I? Personality Analysis",
+        text: `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits?.[0]?.trait || 'Personality'}`,
+        url: shareUrl,
+      })
+      .then(() => {
+        toast.success("Shared successfully!");
+        setShareDialogOpen(false);
+      })
+      .catch((error) => {
+        console.error("Error sharing:", error);
+      });
+    } else {
+      handleCopy();
+    }
   };
   
   // Handle social sharing
   const handleShare = (platform: string) => {
+    if (!analysisId) {
+      toast.error("Cannot share - missing analysis ID");
+      return;
+    }
+    
     let shareLink = '';
-    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits[0]?.trait || 'Personality'}`;
+    const text = `Check out my personality analysis on Who Am I? My top trait is ${analysis.traits?.[0]?.trait || 'Personality'}`;
     
     switch (platform) {
       case 'twitter':
@@ -52,10 +92,13 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
     }
   };
   
+  // Disable sharing if there's no valid analysis ID
+  const isSharingDisabled = !analysisId;
+  
   return (
-    <Dialog>
+    <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
       <DialogTrigger asChild>
-        <Button className="hover-glow w-full">
+        <Button className="hover-glow w-full" disabled={isSharingDisabled}>
           <Share className="mr-2 h-4 w-4" /> Share Profile
         </Button>
       </DialogTrigger>
@@ -76,6 +119,17 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
           </Button>
         </div>
         
+        {/* Mobile native sharing */}
+        {navigator.share && (
+          <Button 
+            onClick={handleNativeShare} 
+            className="w-full mt-4"
+          >
+            <Share className="mr-2 h-4 w-4" />
+            Share Now
+          </Button>
+        )}
+        
         <div className="mt-4">
           <p className="text-sm text-muted-foreground mb-3">Share on social media</p>
           <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
@@ -89,6 +143,15 @@ const ShareProfile: React.FC<ShareProfileProps> = ({ analysis }) => {
               <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
             </Button>
           </div>
+        </div>
+        
+        <div className="mt-4 border-t pt-4">
+          <p className="text-sm text-center text-muted-foreground">
+            Your shared profile link is always accessible at:
+          </p>
+          <p className="text-xs text-center mt-1 font-mono bg-muted p-2 rounded">
+            {shareUrl}
+          </p>
         </div>
       </DialogContent>
     </Dialog>
