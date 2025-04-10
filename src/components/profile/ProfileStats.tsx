@@ -28,26 +28,10 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
   const intelligenceRating = getCreditRating(intelligenceScoreNormalized);
   const emotionalRating = getCreditRating(emotionalScoreNormalized);
   
-  // Format trait score for consistent display across the app
-  const formatTraitScore = (score: number): number => {
-    // If score is already between 0 and 10 (but greater than 1), use it directly
-    if (score > 1 && score <= 10) {
-      return Math.round(score);
-    }
-    // If score is between 0 and 1, scale to 0-10
-    else if (score >= 0 && score <= 1) {
-      return Math.round(score * 10);
-    }
-    // If score is greater than 10 (e.g., 0-100 scale), convert to 0-10
-    else {
-      return Math.round((score / 100) * 10);
-    }
-  };
-  
-  // Calculate the average score of all traits with consistent formatting
+  // Calculate the average score of all traits
+  // Handle trait scores that might be on a 0-1 scale or a 0-10 scale
   const avgTraitScore = analysis.traits.length > 0 
     ? analysis.traits.reduce((acc, trait) => {
-        // Normalize trait score to 0-1 scale for calculation
         const normalizedTraitScore = trait.score >= 0 && trait.score <= 1 
           ? trait.score 
           : (trait.score >= 0 && trait.score <= 10) 
@@ -137,7 +121,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
           </div>
           <Progress value={avgTraitScore * 100} className="h-2" />
           <div className="text-sm text-muted-foreground">
-            Average of all trait scores - {formatTraitScore(avgTraitScore * 10)}/10
+            Average of all trait scores - {Math.round(avgTraitScore * 10)}/10
           </div>
         </div>
       </div>
