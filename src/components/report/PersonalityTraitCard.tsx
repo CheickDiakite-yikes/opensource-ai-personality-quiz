@@ -21,20 +21,6 @@ interface PersonalityTraitCardProps {
 const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, index }) => {
   const isMobile = useIsMobile();
   
-  // Ensure score is properly normalized to a value between 0-100
-  const normalizeScore = (score: number): number => {
-    if (score > 0 && score <= 1) {
-      return Math.round(score * 100);
-    } else if (score > 1 && score <= 100) {
-      return Math.round(score);
-    } else if (score > 100) {
-      return 100; // Cap at 100
-    }
-    return Math.round(score * 100); // Default normalization
-  };
-  
-  const displayScore = normalizeScore(trait.score);
-  
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -54,11 +40,11 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>{trait.trait}</h3>
                 </div>
                 <Badge variant="outline">
-                  {displayScore}/100
+                  {Math.round(trait.score * 100)}/100
                 </Badge>
               </div>
               <div className="mt-2 mb-2">
-                <Progress value={displayScore} className="h-2" />
+                <Progress value={trait.score * 100} className="h-2" />
               </div>
               <p className={`text-muted-foreground ${isMobile ? 'text-xs line-clamp-2' : 'text-sm line-clamp-2'}`}>
                 {trait.description}

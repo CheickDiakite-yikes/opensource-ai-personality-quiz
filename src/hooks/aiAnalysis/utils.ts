@@ -21,17 +21,14 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       } as PersonalityAnalysis;
     }
     
-    // Fix: Ensure trait scores are properly normalized between 0-1
+    // Fix: Ensure trait scores are properly scaled between 0-1
     let traits = [];
     if (Array.isArray(item.traits) && item.traits.length > 0) {
       traits = item.traits.map(trait => {
         // Ensure score is between 0 and 1 (converting any scores over 100 to the proper scale)
         let normalizedScore = trait.score;
-        if (normalizedScore > 1 && normalizedScore <= 100) {
+        if (normalizedScore > 1) {
           normalizedScore = normalizedScore / 100;
-        } else if (normalizedScore > 100) {
-          // Handle extreme values by capping at 1
-          normalizedScore = 1;
         }
         
         return {

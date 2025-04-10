@@ -22,9 +22,9 @@ Deno.serve(async (req) => {
     id = url.searchParams.get('id');
     
     // 2. If not found in URL, try to get from request body
-    if (!id) {
+    if (!id && req.method === 'POST' || req.method === 'GET' && !id) {
       try {
-        const body = await req.json().catch(e => ({}));
+        const body = await req.json();
         id = body.id;
         console.log("Extracted ID from request body:", id);
       } catch (e) {
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       let { data: flexData, error: flexError } = await supabase
         .from('analyses')
         .select('*')
-        .filter('id', 'ilike', `%${id}%`)
+        .filter('id', 'ilike', `%${id.slice(-8)}%`)
         .order('created_at', { ascending: false })
         .limit(1);
         
@@ -102,26 +102,6 @@ Deno.serve(async (req) => {
           JSON.stringify(flexData[0]),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      }
-      
-      // Try looking up by the last part of the ID (sometimes only a partial ID is passed)
-      if (id.length > 5) {
-        const lastPart = id.slice(-8);
-        console.log(`Trying to find analysis with ID ending in: ${lastPart}`);
-        let { data: partialMatchData, error: partialMatchError } = await supabase
-          .from('analyses')
-          .select('*')
-          .filter('id', 'ilike', `%${lastPart}`)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (!partialMatchError && partialMatchData && partialMatchData.length > 0) {
-          console.log("Found analysis via partial ID match:", partialMatchData[0].id);
-          return new Response(
-            JSON.stringify(partialMatchData[0]),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
       }
       
       return new Response(
