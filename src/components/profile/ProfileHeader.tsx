@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
-import ShareProfile from "./ShareProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProfileHeaderProps {
@@ -37,9 +36,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ analysis, itemVariants })
         </div>
       </div>
       
-      <div className={isMobile ? 'w-full' : ''}>
-        <ShareProfile analysis={analysis} />
-      </div>
+      {/* ShareProfile component has been removed */}
     </motion.div>
   );
 };
