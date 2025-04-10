@@ -99,7 +99,7 @@ export const useAnalyzeResponses = (
       }
       
       // Call the Supabase Edge Function for AI analysis with timeout handling
-      const functionTimeout = 120000; // Increase timeout to 120 seconds (2 minutes) since GPT-4 analysis can take time
+      const functionTimeout = 180000; // Increase timeout to 180 seconds (3 minutes) for GPT-4 analysis
       console.log(`Setting timeout for analysis function to ${functionTimeout/1000} seconds`);
       
       // Create a timeout promise
@@ -113,11 +113,18 @@ export const useAnalyzeResponses = (
       console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
       console.time('analyze-responses-call');
       
+      // Improved error handling for function invocation
       const functionPromise = supabase.functions.invoke("analyze-responses", {
         body: { 
           responses, 
           assessmentId 
+        },
+        headers: {
+          "Content-Type": "application/json"
         }
+      }).catch(error => {
+        console.error("Error invoking analyze-responses function:", error);
+        throw new Error(`Failed to connect to analysis service: ${error.message || 'Unknown error'}`);
       });
       
       // Race between function call and timeout

@@ -25,6 +25,18 @@ interface TraitsDetailProps {
 const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
   const isMobile = useIsMobile();
   
+  // Normalize trait scores to ensure they're properly displayed
+  const normalizeScore = (score: number): number => {
+    if (score > 0 && score <= 1) {
+      return Math.round(score * 100);
+    } else if (score > 1 && score <= 100) {
+      return Math.round(score);
+    } else if (score > 100) {
+      return 100; // Cap at 100 for extreme values
+    }
+    return Math.round(score * 100); // Default
+  };
+  
   return (
     <div className="space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
       {!isMobile ? (
@@ -49,7 +61,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className="py-2 md:py-4">
                   <div className="inline-flex items-center justify-center h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                    {Math.round(trait.score * 100)}
+                    {normalizeScore(trait.score)}
                   </div>
                 </TableCell>
                 <TableCell className="text-right py-2 md:py-4">
@@ -115,7 +127,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                       <span className="truncate max-w-[160px] text-sm">{trait.trait}</span>
                     </div>
                     <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
-                      {Math.round(trait.score * 100)}
+                      {normalizeScore(trait.score)}
                     </div>
                   </div>
                 </AccordionTrigger>

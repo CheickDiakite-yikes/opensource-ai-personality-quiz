@@ -11,7 +11,7 @@ interface AssessmentErrorProps {
   description?: string;
   showRetry?: boolean;
   errorDetails?: string;
-  onRetry?: () => void;  // Added this prop to fix the TypeScript error
+  onRetry?: () => void;
 }
 
 export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({ 
@@ -37,7 +37,7 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>Try the Fix Analysis button below to reload your data</li>
             <li>Take the assessment again with more detailed responses</li>
-            <li>Check that you answered all assessment questions thoroughly</li>
+            <li>Check your internet connection and try again</li>
             <li>Try providing more in-depth responses for key questions</li>
           </ol>
           
