@@ -20,11 +20,6 @@
 .shared-profile-header {
   position: relative;
   overflow: hidden;
-  border-radius: 0.5rem;
-  background-color: hsl(var(--card));
-  padding: 2rem 1rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .shared-profile-header::before {
@@ -97,26 +92,4 @@
   background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.1), transparent);
   border-radius: inherit;
   pointer-events: none;
-}
-
-/* Add styles for the shared profile components */
-.shared-trait-bubble {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  margin-right: 0.5rem;
-  margin-bottom: 0.5rem;
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
-  transition: all 0.3s ease;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
 }

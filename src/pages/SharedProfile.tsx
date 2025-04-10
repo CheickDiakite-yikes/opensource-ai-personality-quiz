@@ -140,13 +140,8 @@ const SharedProfile: React.FC = () => {
         animate="visible"
         className="space-y-8 max-w-4xl mx-auto"
       >
-        {/* Add social media meta tags for sharing */}
-        <div className="social-share-image">
-          <img src="/lovable-uploads/9a629d86-fdd2-4f3f-90a2-10826eb575d7.png" alt="Personality analysis" />
-        </div>
-        
         {/* Header */}
-        <motion.div variants={itemVariants} className="text-center mb-8 shared-profile-header">
+        <motion.div variants={itemVariants} className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Shared Personality Analysis</h1>
           <p className="text-muted-foreground">
             This is a shared view of someone's personality analysis from Who Am I?
