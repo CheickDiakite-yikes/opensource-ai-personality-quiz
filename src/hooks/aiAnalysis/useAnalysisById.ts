@@ -46,13 +46,27 @@ export const useAnalysisById = () => {
         setTimeout(() => {
           console.warn("Analysis fetch timed out after 30 seconds");
           resolve(null);
-        }, 30000); // Increased timeout from 15s to 30s
+        }, 30000); // 30 second timeout
       });
       
       // Fetch analysis directly from Supabase without requiring authentication
       const fetchPromise = new Promise<PersonalityAnalysis | null>(async (resolve) => {
         try {
-          // First try getting data directly from the analyses table
+          // First try the RPC function approach - most reliable for public access
+          console.log("Trying RPC function first for better public access");
+          const { data: rpcData, error: rpcError } = await supabase
+            .rpc<any, { analysis_id: string }>('get_analysis_by_id', { analysis_id: id });
+          
+          if (!rpcError && rpcData) {
+            console.log("Successfully retrieved analysis via RPC:", rpcData.id || id);
+            const convertedAnalysis = convertToPersonalityAnalysis(rpcData);
+            resolve(convertedAnalysis);
+            return;
+          }
+          
+          console.log("RPC approach failed, trying direct table query");
+          
+          // Try getting data directly from the analyses table
           const { data, error } = await supabase
             .from('analyses')
             .select('*')
@@ -94,14 +108,6 @@ export const useAnalysisById = () => {
           }
           
           console.log("Successfully retrieved analysis data:", data.id);
-          
-          if (data.traits && Array.isArray(data.traits)) {
-            console.log("Analysis traits count:", data.traits.length);
-          } else {
-            console.log("Analysis traits are missing or not an array");
-          }
-          
-          console.log("Intelligence data present:", !!data.intelligence);
           
           // Use the utility function to safely convert Supabase data to PersonalityAnalysis
           const result = convertToPersonalityAnalysis(data);
