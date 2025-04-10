@@ -1,3 +1,4 @@
+
 import { PersonalityAnalysis } from "@/utils/types";
 
 // Helper function to safely convert Supabase data to PersonalityAnalysis
@@ -20,16 +21,33 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       } as PersonalityAnalysis;
     }
     
+    // Fix: Ensure trait scores are properly scaled between 0-1
+    let traits = [];
+    if (Array.isArray(item.traits) && item.traits.length > 0) {
+      traits = item.traits.map(trait => {
+        // Ensure score is between 0 and 1 (converting any scores over 100 to the proper scale)
+        let normalizedScore = trait.score;
+        if (normalizedScore > 1) {
+          normalizedScore = normalizedScore / 100;
+        }
+        
+        return {
+          ...trait,
+          score: normalizedScore
+        };
+      });
+    }
+    
     // Otherwise construct from individual fields with type safety and fallbacks
     return {
       id: item.id || '',
       createdAt: item.created_at || new Date().toISOString(),
       overview: item.overview || 'No overview available for this analysis.',
-      traits: Array.isArray(item.traits) && item.traits.length > 0 ? 
-        item.traits : 
+      traits: traits.length > 0 ? 
+        traits : 
         [{
           trait: "Analysis Incomplete", 
-          score: 5, 
+          score: 0.5, 
           description: "This analysis didn't generate enough trait data.",
           strengths: ["Not available"],
           challenges: ["Not available"],
@@ -41,7 +59,7 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
         description: 'Intelligence data was not fully processed.',
         domains: [{
           name: "General Intelligence",
-          score: 5,
+          score: 0.5,
           description: "Intelligence data was incomplete in this analysis."
         }]
       },
@@ -71,7 +89,7 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       overview: "Error processing analysis data. Please try again.",
       traits: [{
         trait: "Error Processing Data", 
-        score: 5, 
+        score: 0.5, 
         description: "There was an error processing your analysis data.",
         strengths: ["Not available due to error"],
         challenges: ["Not available due to error"],

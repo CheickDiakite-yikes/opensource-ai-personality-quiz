@@ -49,7 +49,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className="py-2 md:py-4">
                   <div className="inline-flex items-center justify-center h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                    {trait.score.toFixed(1)}
+                    {Math.round(trait.score * 100)}
                   </div>
                 </TableCell>
                 <TableCell className="text-right py-2 md:py-4">
@@ -115,7 +115,7 @@ const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
                       <span className="truncate max-w-[160px] text-sm">{trait.trait}</span>
                     </div>
                     <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
-                      {trait.score.toFixed(1)}
+                      {Math.round(trait.score * 100)}
                     </div>
                   </div>
                 </AccordionTrigger>
