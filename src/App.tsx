@@ -53,7 +53,7 @@ function App() {
     <>
       <Routes>
         {/* Publicly accessible shared profile route outside of Layout to avoid auth problems */}
-        <Route path="shared/:id" element={
+        <Route path="/shared/:id" element={
           <Suspense fallback={<PageLoader />}>
             <SharedProfile />
           </Suspense>

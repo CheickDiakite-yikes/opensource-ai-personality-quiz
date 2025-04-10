@@ -19,7 +19,10 @@ export default defineConfig(({ mode }) => ({
     proxy: {}
   },
   plugins: [
-    react(),
+    react({
+      // Ensure proper JSX transformation
+      jsxImportSource: 'react',
+    }),
     // Use the imported componentTagger directly
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
