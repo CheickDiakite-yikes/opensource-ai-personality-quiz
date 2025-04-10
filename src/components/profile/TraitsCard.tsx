@@ -43,7 +43,7 @@ const TraitsCard: React.FC<TraitsCardProps> = ({ analysis, itemVariants }) => {
                   <div className="flex items-center flex-wrap gap-2">
                     <span className={`font-medium ${isVerySmallScreen ? 'text-xs' : isMobile ? 'text-sm' : ''}`}>{trait.trait}</span>
                     <Badge variant="outline" className={`${isVerySmallScreen ? 'text-xs px-1.5 py-0' : isMobile ? 'text-xs px-1.5 py-0' : ''}`}>
-                      {Math.round(trait.score * 100)}/100
+                      {Math.round(trait.score * 10)}/10
                     </Badge>
                   </div>
                 </div>

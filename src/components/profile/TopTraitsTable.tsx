@@ -40,7 +40,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className={`text-right ${isVerySmallScreen ? 'text-xs px-1 py-1.5' : 'py-2'}`}>
                   <div className={`inline-flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold ${isVerySmallScreen ? 'text-xs h-5 w-5' : 'text-sm h-7 w-7'}`}>
-                    {Math.round(trait.score * 100)}
+                    {Math.round(trait.score * 10)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -77,7 +77,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                  {Math.round(trait.score * 100)}
+                  {Math.round(trait.score * 10)}
                 </div>
               </TableCell>
               
@@ -90,7 +90,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                      {Math.round(rightColumn[index].score * 100)}
+                      {Math.round(rightColumn[index].score * 10)}
                     </div>
                   </TableCell>
                 </>
