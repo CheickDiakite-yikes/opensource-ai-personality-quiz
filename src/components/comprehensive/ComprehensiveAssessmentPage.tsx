@@ -1,17 +1,15 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { allQuestions } from "@/utils/questions";
+import { allComprehensiveQuestions } from "@/utils/comprehensiveQuestions";
 import QuestionCard from "@/components/assessment/QuestionCard";
 import AssessmentProgress from "@/components/assessment/AssessmentProgress";
 import AssessmentProgressInfo from "@/components/assessment/AssessmentProgressInfo";
 import AssessmentControls from "@/components/assessment/AssessmentControls";
-import { useAssessmentState } from "@/components/assessment/useAssessmentState";
+import { useAssessmentState } from "@/components/comprehensive/useComprehensiveAssessmentState";
 
 const ComprehensiveAssessmentPage: React.FC = () => {
-  // Using all 100 questions from the comprehensive question bank
-  const allComprehensiveQuestions = allQuestions.slice(0, 100);
-  
+  // Using dedicated comprehensive question bank with 100 questions
   const {
     currentQuestionIndex,
     currentQuestion,
