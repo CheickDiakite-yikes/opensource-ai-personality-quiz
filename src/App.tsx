@@ -114,7 +114,7 @@ function App() {
             </PrivateRoute>
           } />
 
-          {/* New Comprehensive Assessment Routes */}
+          {/* Comprehensive Assessment Routes */}
           <Route path="comprehensive-assessment" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>

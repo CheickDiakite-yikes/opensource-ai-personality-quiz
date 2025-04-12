@@ -44,8 +44,8 @@ serve(async (req) => {
     
     const userId = assessmentData.user_id;
     
-    // Generate a simulated comprehensive analysis
-    // In a production environment, this would be a complex analysis using AI or other algorithms
+    // Here we would normally call OpenAI API to analyze the responses
+    // For now, we'll generate a simulated comprehensive analysis
     const analysisResult = generateComprehensiveAnalysis(responses);
     
     // Insert analysis result into the database
@@ -113,7 +113,7 @@ serve(async (req) => {
 // Helper function to generate a simulated analysis result
 function generateComprehensiveAnalysis(responses) {
   // This is a mock implementation
-  // In a real environment, this would be a sophisticated algorithm
+  // In a real environment, this would be a sophisticated algorithm or AI model
   
   // Generate random trait scores for demonstration
   const traitScores = {

@@ -17,3 +17,7 @@ insert_mode = "upsert"
 [functions.get-comprehensive-analysis]
 verify_jwt = false
 insert_mode = "upsert"
+
+[functions.analyze-comprehensive-responses]
+verify_jwt = false
+insert_mode = "upsert"
