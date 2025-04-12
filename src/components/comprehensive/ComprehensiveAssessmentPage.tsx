@@ -37,6 +37,9 @@ const ComprehensiveAssessmentPage: React.FC = () => {
     }
   };
   
+  // Convert completedQuestions to numbers for AssessmentProgress
+  const completedQuestionsIds = completedQuestions.map(id => parseInt(id.replace('comp-', '')));
+  
   return (
     <div className="container max-w-3xl py-8 md:py-12 px-4 md:px-6 min-h-screen flex flex-col">
       <div className="mb-8 text-center">
@@ -72,7 +75,7 @@ const ComprehensiveAssessmentPage: React.FC = () => {
         <AssessmentProgress 
           currentQuestion={currentQuestionIndex}
           totalQuestions={allComprehensiveQuestions.length}
-          completedQuestions={completedQuestions}
+          completedQuestions={completedQuestionsIds}
           currentCategory={currentQuestion.category}
         />
       </motion.div>
@@ -92,7 +95,13 @@ const ComprehensiveAssessmentPage: React.FC = () => {
       <AssessmentControls
         currentQuestionIndex={currentQuestionIndex}
         totalQuestions={allComprehensiveQuestions.length}
-        currentResponse={currentResponse}
+        currentResponse={{
+          questionId: currentResponse.questionId,
+          selectedOption: currentResponse.selectedOption,
+          customResponse: currentResponse.customResponse,
+          category: currentQuestion.category,
+          timestamp: new Date()
+        }}
         isAnalyzing={isAnalyzing}
         onPrevious={goToPreviousQuestion}
         onNext={goToNextQuestion}
