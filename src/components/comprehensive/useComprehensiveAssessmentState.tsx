@@ -1,17 +1,24 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { AssessmentQuestion, AssessmentResponse, QuestionCategory } from "@/utils/types";
+import { AssessmentQuestion, QuestionCategory } from "@/utils/types";
+
+// Define a dedicated response type for comprehensive assessment
+interface ComprehensiveResponse {
+  questionId: string;
+  selectedOption: string;
+  customResponse: string;
+}
 
 export const useAssessmentState = (questionBank: AssessmentQuestion[]) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [completedQuestions, setCompletedQuestions] = useState<string[]>([]);
-  const [responses, setResponses] = useState<Record<string, AssessmentResponse>>({});
+  const [responses, setResponses] = useState<Record<string, ComprehensiveResponse>>({});
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   
   // Current question based on index
@@ -80,7 +87,8 @@ export const useAssessmentState = (questionBank: AssessmentQuestion[]) => {
   };
   
   // Handle custom response changes
-  const handleCustomResponseChange = (customResponse: string) => {
+  const handleCustomResponseChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const customResponse = e.target.value;
     const newResponses = { 
       ...responses,
       [currentQuestion.id]: { 
@@ -189,7 +197,7 @@ export const useAssessmentState = (questionBank: AssessmentQuestion[]) => {
 // Helper function to calculate progress for each category
 const calculateCategoryProgress = (
   questions: AssessmentQuestion[], 
-  responses: Record<string, AssessmentResponse>
+  responses: Record<string, ComprehensiveResponse>
 ): Record<QuestionCategory, number> => {
   // Initialize all categories with 0 progress
   const progress: Record<QuestionCategory, number> = Object.values(QuestionCategory).reduce(
