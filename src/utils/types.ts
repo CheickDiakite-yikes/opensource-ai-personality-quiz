@@ -1,4 +1,3 @@
-
 // Assessment Response Types
 export enum QuestionCategory {
   PersonalityTraits = "personality",
@@ -148,4 +147,44 @@ export interface Activity {
   steps?: string[] | Json[];  // Updated to accept both string[] and Json[]
   benefits?: string;
   user_id?: string;
+}
+
+// Comprehensive Assessment Types
+export interface ComprehensiveQuestion {
+  id: string;
+  category: QuestionCategory;
+  question: string;
+  options: string[];
+  allowCustomResponse?: boolean;
+  weight?: number;
+}
+
+export interface ComprehensiveAssessmentResponse {
+  questionId: string;
+  selectedOption?: string;
+  customResponse?: string;
+  category: QuestionCategory;
+  timestamp: Date;
+}
+
+export interface ComprehensiveAssessment {
+  id: string;
+  userId: string;
+  responses: ComprehensiveAssessmentResponse[];
+  completedAt: Date;
+}
+
+export interface ComprehensiveAnalysis extends PersonalityAnalysis {
+  // Extended with additional fields specific to comprehensive analysis
+  inhibitors: string[];
+  detailedTraits: {
+    primary: PersonalityTrait[];
+    secondary: PersonalityTrait[];
+  };
+  shadowAspects?: {
+    trait: string;
+    description: string;
+    impactAreas: string[];
+    integrationSuggestions: string[];
+  }[];
 }

@@ -16,6 +16,10 @@ const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 
+// Comprehensive Assessment Components
+const ComprehensiveAssessmentPage = lazy(() => import("@/components/comprehensive/ComprehensiveAssessmentPage"));
+const ComprehensiveReportPage = lazy(() => import("@/components/comprehensive/ComprehensiveReportPage"));
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -109,6 +113,23 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
+
+          {/* New Comprehensive Assessment Routes */}
+          <Route path="comprehensive-assessment" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ComprehensiveAssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="comprehensive-report/:id?" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ComprehensiveReportPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
               <NotFound />

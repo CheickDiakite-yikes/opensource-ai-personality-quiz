@@ -1,82 +1,99 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface HeroSectionProps {
   onGetStarted: () => void;
-  isAuthenticated: boolean;
+  onLearnMore: () => void;
 }
 
-// Using React.memo to prevent unnecessary re-renders
-const HeroSection = React.memo(({ onGetStarted, isAuthenticated }: HeroSectionProps) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, onLearnMore }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleComprehensiveAssessment = () => {
+    if (user) {
+      navigate("/comprehensive-assessment");
+    } else {
+      navigate("/auth");
+      toast.info("Sign in required", {
+        description: "Please sign in to access the comprehensive assessment"
+      });
+    }
+  };
+  
   return (
-    <section className="relative py-24 md:py-32 container mx-auto px-4 text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="max-w-3xl mx-auto"
-      >
-        <div className="flex justify-center mb-6">
-          <motion.img 
-            src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
-            alt="Who Am I Logo - AI Personality Assessment" 
-            className="h-24 w-auto" 
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
-        
-        <div className="inline-block mb-4">
-          <div className="flex items-center bg-primary/10 px-3 py-1 rounded-full text-sm text-primary">
-            <Sparkles className="h-4 w-4 mr-2" />
-            <span>AI-Powered Personality Test That Truly Understands You</span>
-          </div>
-        </div>
-        
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gradient">
-          Discover Who You Really Are
-        </h1>
-        
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Our advanced AI personality assessment delivers deep insights into your unique traits, cognitive patterns, and emotional intelligence. Understand yourself better than ever before.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            size="lg" 
-            onClick={onGetStarted} 
-            className="group"
-            aria-label="Start personality assessment"
+    <div className="relative pt-16 md:pt-24 pb-20 overflow-hidden">
+      <div className="container mx-auto px-4">
+        <motion.div
+          className="max-w-3xl mx-auto text-center z-10 relative"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.h1
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
           >
-            {isAuthenticated ? "Take Assessment" : "Get Started"}
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
+            Discover Your <span className="text-gradient">True Self</span>
+          </motion.h1>
           
-          <Button 
-            variant="outline" 
-            size="lg"
-            onClick={() => {
-              const featuresElement = document.getElementById("features");
-              if (featuresElement) {
-                featuresElement.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-            aria-label="Learn more about our personality test"
+          <motion.p
+            className="text-xl text-muted-foreground mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
           >
-            Learn More
-          </Button>
-        </div>
-      </motion.div>
-      
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"></div>
-    </section>
+            Unlock insights about your personality, potential, and purpose through our AI-powered assessments
+          </motion.p>
+          
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+          >
+            <Button 
+              onClick={onGetStarted} 
+              size="lg"
+              className="ghibli-button"
+            >
+              {user ? "Take Assessment" : "Get Started"}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={onLearnMore}
+              className="ghibli-button-outline"
+            >
+              Learn More
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            className="mt-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+          >
+            <button
+              onClick={handleComprehensiveAssessment}
+              className="text-sm text-primary underline hover:text-primary/80"
+            >
+              Try our new comprehensive 100-question assessment (Coming Soon)
+            </button>
+          </motion.div>
+        </motion.div>
+      </div>
+    </div>
   );
-});
-
-HeroSection.displayName = "HeroSection";
+};
 
 export default HeroSection;

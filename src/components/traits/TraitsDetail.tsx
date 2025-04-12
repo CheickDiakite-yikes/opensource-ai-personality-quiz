@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatTraitScore } from "@/utils/formatUtils";
 
 interface TraitsDetailProps {
   traits: PersonalityTrait[];
@@ -24,23 +25,6 @@ interface TraitsDetailProps {
 
 const TraitsDetail: React.FC<TraitsDetailProps> = ({ traits }) => {
   const isMobile = useIsMobile();
-  
-  // Helper function to display trait score consistently as X/10
-  const formatTraitScore = (score: number): string => {
-    // If score is already between 0 and 10, use it directly
-    if (score > 0 && score <= 10) {
-      return `${Math.round(score)}/10`;
-    }
-    // If score is between 0 and 1, scale to 0-10
-    else if (score >= 0 && score <= 1) {
-      return `${Math.round(score * 10)}/10`;
-    }
-    // If score is greater than 10 (e.g., 0-100 scale), convert to 0-10
-    else if (score > 10) {
-      return `${Math.round((score / 100) * 10)}/10`;
-    }
-    return `${Math.round(score)}/10`;
-  };
   
   return (
     <div className="space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
