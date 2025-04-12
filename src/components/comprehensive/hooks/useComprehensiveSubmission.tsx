@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { ComprehensiveResponse, ComprehensiveSubmissionResponse } from "./comprehensiveTypes";
+import { Json } from "@/integrations/supabase/types";
 
 export function useComprehensiveSubmission(
   responses: Record<string, ComprehensiveResponse>
@@ -30,11 +31,12 @@ export function useComprehensiveSubmission(
       setIsAnalyzing(true);
       
       // Save assessment responses to Supabase - fix the format to match what Supabase expects
+      // We need to explicitly cast formattedResponses to Json to satisfy TypeScript
       const { data: assessmentData, error: assessmentError } = await supabase
         .from("comprehensive_assessments")
         .insert({
           user_id: user.id,
-          responses: formattedResponses
+          responses: formattedResponses as unknown as Json
         })
         .select('id')
         .single();
