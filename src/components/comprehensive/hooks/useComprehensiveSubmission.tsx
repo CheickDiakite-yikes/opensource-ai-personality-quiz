@@ -29,13 +29,13 @@ export function useComprehensiveSubmission(
     try {
       setIsAnalyzing(true);
       
-      // Save assessment responses to Supabase
+      // Save assessment responses to Supabase - fix the format to match what Supabase expects
       const { data: assessmentData, error: assessmentError } = await supabase
         .from("comprehensive_assessments")
-        .insert([{
+        .insert({
           user_id: user.id,
           responses: formattedResponses
-        }])
+        })
         .select('id')
         .single();
       
