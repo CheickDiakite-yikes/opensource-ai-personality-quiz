@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { allQuestions } from "@/utils/questions";
 import QuestionCard from "@/components/assessment/QuestionCard";
 import AssessmentProgress from "@/components/assessment/AssessmentProgress";
-import AssessmentHeader from "@/components/assessment/AssessmentHeader";
 import AssessmentProgressInfo from "@/components/assessment/AssessmentProgressInfo";
 import AssessmentControls from "@/components/assessment/AssessmentControls";
 import { useAssessmentState } from "@/components/assessment/useAssessmentState";
@@ -42,7 +41,22 @@ const ComprehensiveAssessmentPage: React.FC = () => {
   
   return (
     <div className="container max-w-3xl py-8 md:py-12 px-4 md:px-6 min-h-screen flex flex-col">
-      <AssessmentHeader />
+      <div className="mb-8 text-center">
+        <div className="flex justify-center mb-3">
+          <img 
+            src="/lovable-uploads/a6a49449-db76-4794-8533-d61d6a85d466.png" 
+            alt="Who Am I Logo" 
+            className="h-10 w-auto" 
+          />
+        </div>
+        <h1 className="text-3xl font-bold">Comprehensive Assessment</h1>
+        <p className="text-muted-foreground mt-2">
+          Complete all 100 questions for an in-depth personality analysis
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          This detailed assessment offers a more accurate and personalized report
+        </p>
+      </div>
       
       <motion.div
         variants={progressContainerVariants}
