@@ -4,12 +4,21 @@ import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { ComprehensiveAnalysis } from "@/utils/types";
+import { ComprehensiveAnalysis, RelationshipPatterns } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
-import { formatTraitScore } from "@/utils/formatUtils";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isRelationshipObject } from "@/components/report/utils/typeGuards";
+
+// Import components
+import ComprehensiveOverviewSection from "./sections/ComprehensiveOverviewSection";
+import ComprehensiveTraitsSection from "./sections/ComprehensiveTraitsSection"; 
+import ComprehensiveIntelligenceSection from "./sections/ComprehensiveIntelligenceSection";
+import ComprehensiveMotivationSection from "./sections/ComprehensiveMotivationSection";
+import ComprehensiveRelationshipsSection from "./sections/ComprehensiveRelationshipsSection";
+import ComprehensiveGrowthSection from "./sections/ComprehensiveGrowthSection";
+import ComprehensiveCareerSection from "./sections/ComprehensiveCareerSection";
 
 const ComprehensiveReportPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -17,6 +26,7 @@ const ComprehensiveReportPage: React.FC = () => {
   const [analysis, setAnalysis] = useState<ComprehensiveAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("overview");
 
   // Fetch comprehensive analysis
   useEffect(() => {
@@ -151,6 +161,15 @@ const ComprehensiveReportPage: React.FC = () => {
     );
   }
 
+  // Process relationship patterns to handle both string[] and object formats
+  const processedRelationships = isRelationshipObject(analysis.relationshipPatterns) 
+    ? analysis.relationshipPatterns 
+    : { 
+        strengths: Array.isArray(analysis.relationshipPatterns) ? analysis.relationshipPatterns : [],
+        challenges: [],
+        compatibleTypes: []
+      };
+
   // Render analysis data
   return (
     <div className="container py-6 md:py-10 px-4 space-y-8">
@@ -161,42 +180,78 @@ const ComprehensiveReportPage: React.FC = () => {
         </p>
       </div>
       
-      {/* Overview section */}
-      <Card className="p-6 md:p-8 shadow-md">
-        <h2 className="text-2xl font-semibold mb-4">Personality Overview</h2>
-        <p className="mb-6">{analysis.overview}</p>
+      {/* Report navigation tabs */}
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="personality">Traits</TabsTrigger>
+          <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
+          <TabsTrigger value="motivation">Motivators</TabsTrigger>
+          <TabsTrigger value="relationships">Relationships</TabsTrigger>
+          <TabsTrigger value="growth">Growth</TabsTrigger>
+          <TabsTrigger value="career">Career</TabsTrigger>
+        </TabsList>
         
-        {/* Key traits section */}
-        <div className="mb-4">
-          <h3 className="text-lg font-medium mb-3">Key Personality Traits</h3>
-          <div className="flex flex-wrap gap-2">
-            {analysis.traits?.slice(0, 5).map((trait, index) => (
-              <Badge key={index} variant="secondary" className="px-3 py-1 text-sm">
-                {trait.trait}: {formatTraitScore(trait.score)}
-              </Badge>
-            ))}
-          </div>
-        </div>
+        {/* Overview tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <ComprehensiveOverviewSection 
+            overview={analysis.overview}
+            traits={analysis.traits}
+            intelligenceScore={analysis.intelligenceScore}
+            emotionalIntelligenceScore={analysis.emotionalIntelligenceScore}
+            motivators={analysis.motivators}
+            growthAreas={analysis.growthAreas}
+          />
+        </TabsContent>
         
-        {/* Intelligence scores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          <div className="p-4 bg-muted/30 rounded-lg">
-            <h4 className="font-medium">Intelligence Score</h4>
-            <p className="text-2xl font-bold">{formatTraitScore(analysis.intelligenceScore || 0)}</p>
-          </div>
-          
-          <div className="p-4 bg-muted/30 rounded-lg">
-            <h4 className="font-medium">Emotional Intelligence</h4>
-            <p className="text-2xl font-bold">{formatTraitScore(analysis.emotionalIntelligenceScore || 0)}</p>
-          </div>
-        </div>
-      </Card>
-      
-      {/* More details - can be expanded in future */}
-      <div className="text-center text-muted-foreground">
-        <p>This is a preview of your comprehensive report.</p>
-        <p>More detailed insights and functionality will be added soon.</p>
-      </div>
+        {/* Personality tab */}
+        <TabsContent value="personality" className="space-y-6">
+          <ComprehensiveTraitsSection
+            traits={analysis.traits}
+          />
+        </TabsContent>
+        
+        {/* Intelligence tab */}
+        <TabsContent value="intelligence" className="space-y-6">
+          <ComprehensiveIntelligenceSection
+            intelligence={analysis.intelligence}
+            intelligenceScore={analysis.intelligenceScore}
+            emotionalIntelligenceScore={analysis.emotionalIntelligenceScore}
+          />
+        </TabsContent>
+        
+        {/* Motivation tab */}
+        <TabsContent value="motivation" className="space-y-6">
+          <ComprehensiveMotivationSection
+            motivators={analysis.motivators}
+            inhibitors={analysis.inhibitors}
+          />
+        </TabsContent>
+        
+        {/* Relationships tab */}
+        <TabsContent value="relationships" className="space-y-6">
+          <ComprehensiveRelationshipsSection
+            relationshipPatterns={processedRelationships}
+          />
+        </TabsContent>
+        
+        {/* Growth tab */}
+        <TabsContent value="growth" className="space-y-6">
+          <ComprehensiveGrowthSection
+            growthAreas={analysis.growthAreas}
+            weaknesses={analysis.weaknesses}
+            learningPathways={analysis.learningPathways}
+          />
+        </TabsContent>
+        
+        {/* Career tab */}
+        <TabsContent value="career" className="space-y-6">
+          <ComprehensiveCareerSection
+            careerSuggestions={analysis.careerSuggestions}
+            roadmap={analysis.roadmap}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

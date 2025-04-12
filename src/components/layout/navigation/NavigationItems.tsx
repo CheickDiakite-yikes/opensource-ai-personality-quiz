@@ -7,6 +7,7 @@ export interface NavigationItem {
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   requiresAuth: boolean;
+  description?: string;
 }
 
 export const useNavigationItems = () => {
@@ -18,11 +19,41 @@ export const useNavigationItems = () => {
 
   // Navigation items used in both sidebar and mobile menu
   const navigationItems: NavigationItem[] = [
-    { name: "Assessment", path: "/assessment", icon: Brain, requiresAuth: true },
-    { name: "Report", path: "/report", icon: ClipboardList, requiresAuth: true },
-    { name: "Comprehensive", path: "/comprehensive-assessment", icon: BookCopy, requiresAuth: true },
-    { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
-    { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
+    { 
+      name: "Assessment", 
+      path: "/assessment", 
+      icon: Brain, 
+      requiresAuth: true,
+      description: "Standard 25-question personality assessment"
+    },
+    { 
+      name: "Report", 
+      path: "/report", 
+      icon: ClipboardList, 
+      requiresAuth: true,
+      description: "View your standard assessment results"
+    },
+    { 
+      name: "Comprehensive", 
+      path: "/comprehensive-assessment", 
+      icon: BookCopy, 
+      requiresAuth: true,
+      description: "In-depth 100-question assessment"
+    },
+    { 
+      name: "Tracker", 
+      path: "/tracker", 
+      icon: BarChart, 
+      requiresAuth: true,
+      description: "Track your personal growth journey"
+    },
+    { 
+      name: "Profile", 
+      path: "/profile", 
+      icon: User, 
+      requiresAuth: true,
+      description: "View and manage your profile"
+    },
   ];
 
   return { navigationItems, isActive };
