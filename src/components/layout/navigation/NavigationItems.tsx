@@ -38,7 +38,7 @@ export const useNavigationItems = () => {
       path: "/comprehensive-assessment", 
       icon: BookCopy, 
       requiresAuth: true,
-      description: "In-depth 100-question assessment"
+      description: "In-depth 100-question comprehensive assessment"
     },
     { 
       name: "Tracker", 

@@ -10,7 +10,8 @@ import AssessmentControls from "@/components/assessment/AssessmentControls";
 import { useAssessmentState } from "@/components/assessment/useAssessmentState";
 
 const ComprehensiveAssessmentPage: React.FC = () => {
-  const allComprehensiveQuestions = allQuestions.slice(0, 100); // Using all available questions for now
+  // Using all 100 questions from the comprehensive question bank
+  const allComprehensiveQuestions = allQuestions.slice(0, 100);
   
   const {
     currentQuestionIndex,

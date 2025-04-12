@@ -18,7 +18,7 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
       <h3 className="text-lg font-medium mb-3">Suggested Career Paths</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         {careerSuggestions?.map((career, index) => (
-          <div key={index} className="border p-4 rounded-md">
+          <div key={index} className="border p-4 rounded-md bg-background/50 hover:bg-background/80 transition-colors">
             <p>{career}</p>
           </div>
         ))}
