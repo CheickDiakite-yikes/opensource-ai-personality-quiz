@@ -68,21 +68,28 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
     );
   }
   
-  // Handle simple string career suggestions
+  // Handle simple string career suggestions and objects with name/description format
   return (
     <div className="space-y-4">
       <h3 className="text-md font-medium">Suggested Career Paths</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {(careers as string[]).map((career, index) => (
-          <div 
-            key={index} 
-            className="flex items-center p-3 border border-border/40 rounded-md hover:bg-secondary/10 transition-colors"
-          >
-            <ArrowRight className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-            <span>{career}</span>
-          </div>
-        ))}
+        {(careers as any[]).map((career, index) => {
+          // Check if career is an object with name/description or a simple string
+          const careerText = typeof career === 'string' 
+            ? career 
+            : (career.name || career.title || "Career Path");
+          
+          return (
+            <div 
+              key={index} 
+              className="flex items-center p-3 border border-border/40 rounded-md hover:bg-secondary/10 transition-colors"
+            >
+              <ArrowRight className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
+              <span>{careerText}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

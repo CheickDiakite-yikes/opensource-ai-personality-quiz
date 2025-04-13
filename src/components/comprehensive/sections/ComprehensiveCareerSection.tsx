@@ -20,11 +20,15 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
   const hasDetailedCareers = careerSuggestions.length > 0 && typeof careerSuggestions[0] !== 'string';
   const careerPaths = hasDetailedCareers 
     ? careerSuggestions as CareerPathway[]
-    : (careerSuggestions as string[]).map(career => ({ 
-        field: career,
-        title: career,
-        description: undefined
-      }));
+    : (careerSuggestions as string[]).map(career => {
+        // Handle if career is a string or an object with name/description
+        const careerText = typeof career === 'string' ? career : (career as any).name || '';
+        return { 
+          field: careerText,
+          title: careerText,
+          description: typeof career === 'string' ? undefined : (career as any).description
+        };
+      });
 
   return (
     <>
