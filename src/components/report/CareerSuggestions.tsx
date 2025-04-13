@@ -27,7 +27,13 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
   const hasDetailedCareers = careers.length > 0 && typeof careers[0] !== 'string';
   const careerPaths = hasDetailedCareers 
     ? careers as CareerPathway[]
-    : (careers as string[]).map(career => ({ field: career }));
+    : (careers as string[]).map(career => ({ 
+        field: career,
+        description: undefined,
+        alignment: undefined,
+        keyTraits: undefined,
+        growth: undefined 
+      }));
 
   return (
     <Card className="glass-panel overflow-hidden">
