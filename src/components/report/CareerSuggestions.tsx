@@ -36,10 +36,10 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                   <Briefcase className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-medium text-primary">{title}</h4>
-                    {description && <p className="text-sm mt-1 mb-2">{description}</p>}
+                    {description && <p className="text-sm mt-1 mb-2">{typeof description === 'string' ? description : String(description)}</p>}
                     {alignment && (
                       <p className="text-xs text-muted-foreground italic">
-                        Alignment: {alignment}
+                        Alignment: {typeof alignment === 'string' ? alignment : String(alignment)}
                       </p>
                     )}
                     
