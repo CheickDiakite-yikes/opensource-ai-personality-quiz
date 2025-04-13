@@ -41,7 +41,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                 </TableCell>
                 <TableCell className={`text-right ${isVerySmallScreen ? 'text-xs px-1 py-1.5' : 'py-2'}`}>
                   <div className={`inline-flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold ${isVerySmallScreen ? 'text-xs h-5 w-5' : 'text-sm h-7 w-7'}`}>
-                    {formatTraitScore(trait.score, 'number')}
+                    {formatTraitScore(trait.score)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -78,7 +78,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                  {formatTraitScore(trait.score, 'number')}
+                  {formatTraitScore(trait.score)}
                 </div>
               </TableCell>
               
@@ -91,7 +91,7 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-semibold">
-                    {formatTraitScore(rightColumn[index].score, 'number')}
+                    {formatTraitScore(rightColumn[index].score)}
                     </div>
                   </TableCell>
                 </>
