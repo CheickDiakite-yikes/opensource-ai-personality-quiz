@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper function to generate mock analysis data
+// Helper function to generate mock analysis data with more detailed results
 function generateMockAnalysis(id: string) {
   console.log(`[get-comprehensive-analysis] Generating mock analysis with ID: ${id}`);
   
@@ -211,6 +211,16 @@ function generateMockAnalysis(id: string) {
       name: "Empathy",
       score: 8.0,
       description: "You have a strong ability to understand and share the feelings of others."
+    },
+    {
+      name: "Strategic Planning",
+      score: 7.8,
+      description: "You excel at developing long-term plans and anticipating potential obstacles."
+    },
+    {
+      name: "Adaptability",
+      score: 6.9,
+      description: "You can adjust to new situations and environments, though may prefer some stability."
     }
   ];
   
@@ -222,41 +232,109 @@ function generateMockAnalysis(id: string) {
     social: 76
   };
   
+  const overview = `Your comprehensive personality assessment reveals a multifaceted individual with a blend of analytical and creative strengths. You demonstrate a natural capacity for deep thinking and problem-solving, often approaching situations from unique perspectives that others might overlook.
+
+Your empathetic nature allows you to form meaningful connections with others, while your resilience helps you navigate challenges effectively. You show a strong drive for personal growth and tend to value learning and self-improvement.
+
+Your cognitive style combines systematic analysis with creative insights, giving you versatility in how you approach problems. This balance allows you to both generate innovative ideas and implement them effectively.`;
+
+  const motivators = [
+    "Learning and intellectual growth", 
+    "Making meaningful connections with others", 
+    "Solving complex problems",
+    "Creating positive impact in your environment",
+    "Achieving personal excellence and mastery"
+  ];
+
+  const inhibitors = [
+    "Self-doubt when facing unfamiliar challenges", 
+    "Tendency to overthink decisions",
+    "Occasional perfectionism that delays completion",
+    "Difficulty setting firm boundaries with others"
+  ];
+
+  const weaknesses = [
+    "May overthink decisions, leading to analysis paralysis", 
+    "Could struggle with setting clear boundaries",
+    "Tendency toward perfectionism may delay project completion",
+    "Sometimes take on too many responsibilities"
+  ];
+
+  const growthAreas = [
+    "Developing more confidence in quick decision-making", 
+    "Finding balance between analysis and action",
+    "Setting clearer boundaries in personal and professional relationships",
+    "Embracing imperfection as part of the growth process",
+    "Translating creative ideas into practical implementation"
+  ];
+
+  const relationshipPatterns = {
+    strengths: [
+      "Building deep and authentic connections",
+      "Being a supportive and attentive listener",
+      "Bringing fresh perspectives to interactions",
+      "Showing genuine empathy and understanding"
+    ],
+    challenges: [
+      "Setting and maintaining healthy boundaries",
+      "Balancing giving to others with self-care",
+      "Expressing personal needs directly",
+      "Managing conflict constructively"
+    ],
+    compatibleTypes: [
+      "Those who value authenticity and depth in relationships",
+      "Growth-minded individuals who appreciate intellectual exchange",
+      "People who balance your thinking style with complementary traits",
+      "Partners who appreciate thoughtfulness and emotional intelligence"
+    ]
+  };
+
+  const careerSuggestions = [
+    "Research Scientist or Analyst",
+    "Strategic Consultant",
+    "Product Manager",
+    "Content Creator or Designer",
+    "Educator or Trainer",
+    "UX Researcher",
+    "Organizational Development Specialist"
+  ];
+
+  const learningPathways = [
+    "Self-directed learning with practical applications",
+    "Interactive and collaborative learning environments",
+    "Structured programs with clear milestones and feedback",
+    "Learning through creative exploration and experimentation",
+    "Combining theoretical frameworks with hands-on practice"
+  ];
+
+  const roadmap = `Your personal development journey should focus on leveraging your analytical and creative strengths while developing more confidence in your decision-making process.
+
+In the near term, practicing setting boundaries and embracing imperfection will help you overcome some of your current challenges. Consider establishing a regular reflection practice to identify when perfectionism or overthinking is holding you back.
+
+In the medium term, explore opportunities that combine analytical thinking with creative problem-solving, such as Research Scientist, Strategic Consultant, or Product Management roles. These fields would benefit from your unique combination of skills and perspectives.
+
+Long-term growth will come from integrating your analytical mindset with more intuitive approaches, allowing you to balance thoroughness with efficiency. Consider developing expertise in emerging fields where your natural curiosity and problem-solving abilities can make significant impact.
+
+As you progress, focus on developing leadership skills that incorporate your emotional intelligence and strategic thinking. This combination will position you to guide others effectively while continuing your own growth journey.`;
+  
   return {
     id: id || crypto.randomUUID(),
     created_at: new Date().toISOString(),
     user_id: "test-user",
     assessment_id: id,
-    overview: "You are someone who values both analytical thinking and creative problem-solving. Your profile indicates a strong capacity for growth and learning, with particular strengths in analytical thinking and creativity.",
+    overview: overview,
     traits: traits,
     intelligence: intelligence,
     intelligence_score: 80,
     emotional_intelligence_score: 78,
-    value_system: ["Growth", "Connection", "Understanding", "Achievement", "Autonomy"],
-    motivators: [
-      "Learning new concepts and skills", 
-      "Making meaningful connections with others", 
-      "Solving complex problems"
-    ],
-    inhibitors: [
-      "Self-doubt in unfamiliar situations", 
-      "Tendency to overthink decisions"
-    ],
-    weaknesses: [
-      "May overthink decisions, leading to analysis paralysis", 
-      "Could struggle with setting clear boundaries"
-    ],
-    growth_areas: [
-      "Developing more confidence in your decisions", 
-      "Finding balance between analysis and action"
-    ],
-    relationship_patterns: {
-      strengths: ["Building deep connections", "Active listening"],
-      challenges: ["Setting boundaries", "Expressing needs directly"],
-      compatibleTypes: ["Those who value authenticity", "Growth-minded individuals"]
-    },
-    career_suggestions: ["Researcher", "Data Analyst", "Project Manager", "Consultant"],
-    learning_pathways: ["Self-directed learning", "Practical application", "Collaborative environments"],
-    roadmap: "Focus on leveraging your analytical strengths while developing your interpersonal skills. In the medium-term, explore roles that combine your technical abilities with creative problem-solving."
+    value_system: ["Growth", "Connection", "Understanding", "Achievement", "Autonomy", "Creativity", "Integrity"],
+    motivators: motivators,
+    inhibitors: inhibitors,
+    weaknesses: weaknesses,
+    growth_areas: growthAreas,
+    relationship_patterns: relationshipPatterns,
+    career_suggestions: careerSuggestions,
+    learning_pathways: learningPathways,
+    roadmap: roadmap
   };
 }
