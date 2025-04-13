@@ -1,158 +1,157 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Briefcase, 
-  LightbulbIcon, 
-  TrendingUp, 
-  School, 
-  Sparkles, 
-  Target, 
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  ArrowRight
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { CareerPathway } from "@/utils/types";
+import { Briefcase, TrendingUp, Lightbulb, GraduationCap, Target, BarChart3 } from "lucide-react";
 
 interface ComprehensiveCareerSectionProps {
   careerSuggestions: string[] | CareerPathway[];
   roadmap: string;
+  lifePurposeThemes?: string[];
 }
 
-const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
-  careerSuggestions,
-  roadmap
+const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({ 
+  careerSuggestions, 
+  roadmap,
+  lifePurposeThemes = []
 }) => {
-  // Check if we're dealing with enhanced career data
+  // Check if we're dealing with the enhanced career pathways format
   const hasDetailedCareers = careerSuggestions.length > 0 && typeof careerSuggestions[0] !== 'string';
-  
-  // Convert simple career strings to career pathway objects if needed
-  const careerPathways = hasDetailedCareers 
+  const careerPaths = hasDetailedCareers 
     ? careerSuggestions as CareerPathway[]
     : (careerSuggestions as string[]).map(career => ({ 
-        title: career,
         field: career,
-        description: `A career path that aligns well with your personality profile and cognitive strengths.`
+        title: career,
+        description: undefined
       }));
-  
-  // Parse roadmap into sections if it contains markdown-style headers
-  const roadmapSections = roadmap?.split(/(?=^##\s+)/m).filter(Boolean) || [];
-  const hasStructuredRoadmap = roadmapSections.length > 1;
-  
-  // Function to render roadmap content
-  const renderRoadmapContent = () => {
-    if (hasStructuredRoadmap) {
-      return roadmapSections.map((section, index) => {
-        const lines = section.split('\n');
-        const title = lines[0].replace(/^##\s+/, '');
-        const content = lines.slice(1).join('\n').trim();
-        
-        return (
-          <div key={index} className={index > 0 ? "mt-8" : ""}>
-            <h4 className="text-lg font-medium mb-3 flex items-center gap-2">
-              {index === 0 ? <Target className="h-5 w-5 text-primary/80" /> : 
-               index === 1 ? <Clock className="h-5 w-5 text-primary/80" /> : 
-               <CheckCircle2 className="h-5 w-5 text-primary/80" />}
-              {title}
-            </h4>
-            <div className="whitespace-pre-line text-muted-foreground pl-7">
-              {content.split('\n').map((line, i) => (
-                <p key={i} className={i > 0 ? "mt-2" : ""}>{line}</p>
-              ))}
-            </div>
-          </div>
-        );
-      });
-    } else {
-      // Simple roadmap formatting
-      return (
-        <div className="whitespace-pre-line text-muted-foreground">
-          {roadmap?.split('\n\n').map((paragraph, idx) => (
-            <p key={idx} className={idx > 0 ? "mt-4" : ""}>{paragraph}</p>
-          ))}
-        </div>
-      );
-    }
-  };
 
   return (
-    <Card className="p-6 md:p-8 shadow-md">
-      <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
-        <Briefcase className="h-6 w-6 text-primary/80" />
-        Career Insights
-      </h2>
-      <p className="text-muted-foreground mb-8">
-        Career recommendations based on your personality traits, cognitive strengths, and values alignment
-      </p>
+    <>
+      <Card className="w-full mb-6">
+        <CardHeader className="relative">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-primary/10 rounded-bl-full -z-0" />
+          <CardTitle className="flex items-center gap-2 z-10">
+            <Target className="h-5 w-5 text-primary" />
+            Purpose & Life Direction
+          </CardTitle>
+          <CardDescription>
+            Key themes that may provide meaning and direction in your life
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {lifePurposeThemes && lifePurposeThemes.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {lifePurposeThemes.map((theme, index) => (
+                  <Badge key={index} variant="outline" className="bg-primary/5 text-primary border-primary/30 px-3 py-1.5">
+                    {theme}
+                  </Badge>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                These themes represent potential areas of purpose and meaning that align with your personality structure, values, and motivational patterns. They aren't prescriptive but may guide your exploration of fulfilling life directions.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Based on your profile, you may find meaning in pursuits that combine intellectual exploration with making tangible contributions. Consider areas where you can apply your analytical strengths while connecting with values that matter deeply to you.
+            </p>
+          )}
+        </CardContent>
+      </Card>
       
-      <div className="space-y-12">
-        {/* Career Pathways Section */}
-        <section>
-          <h3 className="text-xl font-medium mb-5 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary/80" />
-            Recommended Career Pathways
-          </h3>
-          
-          <div className="space-y-5">
-            {careerPathways.map((career, index) => (
-              <div key={index} className="border rounded-lg overflow-hidden bg-card/50">
-                <div className="bg-muted/30 p-4 border-b flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+      <Card className="w-full mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-primary" />
+            Career Pathways
+          </CardTitle>
+          <CardDescription>
+            Professional directions aligned with your personality profile
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-4">
+            {careerPaths.map((career, index) => (
+              <div key={index} className="border rounded-lg overflow-hidden">
+                <div className="bg-muted/30 p-4 border-b">
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center justify-center rounded-full bg-primary/10 h-8 w-8 text-sm text-primary font-medium mt-0.5 flex-shrink-0">
                       {index + 1}
                     </div>
-                    <h4 className="text-lg font-medium">{career.title || career.field}</h4>
+                    <div>
+                      <h3 className="text-lg font-medium">{career.title || career.field}</h3>
+                      {career.field && career.title && career.field !== career.title && (
+                        <p className="text-sm text-muted-foreground mt-0.5">Field: {career.field}</p>
+                      )}
+                    </div>
                   </div>
-                  <Badge variant="secondary">{index === 0 ? "Highest Match" : index === 1 ? "Strong Match" : "Good Match"}</Badge>
                 </div>
                 
                 <div className="p-4 space-y-4">
                   {career.description && (
-                    <p className="text-muted-foreground">{career.description}</p>
+                    <p className="text-sm">{career.description}</p>
                   )}
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {((career.traits && career.traits.length > 0) || (career.keyTraits && career.keyTraits.length > 0)) && (
-                      <div className="flex items-start gap-2">
-                        <LightbulbIcon className="h-5 w-5 text-primary/80 flex-shrink-0 mt-1" />
-                        <div>
-                          <p className="font-medium text-sm mb-1">Personality Alignment</p>
-                          <div className="flex flex-wrap gap-2">
-                            {career.traits && career.traits.map((trait, traitIdx) => (
-                              <Badge key={traitIdx} variant="outline">{trait}</Badge>
-                            ))}
-                            {career.keyTraits && career.keyTraits.map((trait, traitIdx) => (
-                              <Badge key={`key-${traitIdx}`} variant="outline">{trait}</Badge>
-                            ))}
-                          </div>
+                  {career.alignment && (
+                    <div className="flex items-start gap-2">
+                      <Lightbulb className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Alignment</p>
+                        <p className="text-sm text-muted-foreground">{career.alignment}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(career.keyTraits && career.keyTraits.length > 0) && (
+                    <div className="flex items-start gap-2">
+                      <BarChart3 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Key Traits</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {career.keyTraits.map((trait, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{trait}</Badge>
+                          ))}
                         </div>
                       </div>
-                    )}
-                    
-                    {(career.skills && career.skills.length > 0) && (
-                      <div className="flex items-start gap-2">
-                        <BookOpen className="h-5 w-5 text-primary/80 flex-shrink-0 mt-1" />
-                        <div>
-                          <p className="font-medium text-sm mb-1">Key Skills to Develop</p>
-                          <div className="flex flex-wrap gap-2">
-                            {career.skills.map((skill, skillIdx) => (
-                              <Badge key={skillIdx} variant="outline" className="bg-secondary/20">{skill}</Badge>
-                            ))}
-                          </div>
+                    </div>
+                  )}
+                  
+                  {(career.traits && career.traits.length > 0 && !career.keyTraits) && (
+                    <div className="flex items-start gap-2">
+                      <BarChart3 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Key Traits</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {career.traits.map((trait, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{trait}</Badge>
+                          ))}
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
                   {career.growth && (
-                    <div className="flex items-start gap-2 mt-4 pt-4 border-t border-border/50">
-                      <TrendingUp className="h-5 w-5 text-primary/80 flex-shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-sm mb-1">Growth Trajectory</p>
-                        <p className="text-muted-foreground text-sm">{career.growth}</p>
+                        <p className="text-sm font-medium">Growth Potential</p>
+                        <p className="text-sm text-muted-foreground">{career.growth}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(career.skills && career.skills.length > 0) && (
+                    <div className="flex items-start gap-2">
+                      <GraduationCap className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Skills to Develop</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {career.skills.map((skill, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">{skill}</Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -160,53 +159,34 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
               </div>
             ))}
           </div>
-        </section>
-        
-        <Separator />
-        
-        {/* Educational Pathways Section */}
-        <section>
-          <h3 className="text-xl font-medium mb-5 flex items-center gap-2">
-            <School className="h-5 w-5 text-primary/80" />
-            Learning & Development Roadmap
-          </h3>
-          
-          <Card className="p-6 bg-secondary/10">
-            {renderRoadmapContent()}
-          </Card>
-        </section>
-        
-        {/* Additional Career Resources */}
-        <section>
-          <h3 className="text-xl font-medium mb-4">Additional Development Resources</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border rounded-md p-4 bg-card/50">
-              <h4 className="font-medium flex items-center gap-2 mb-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                Skill Development Focus Areas
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Based on your personality profile, consider developing both technical skills in your field of interest 
-                and soft skills like communication, emotional intelligence, and adaptability that complement your natural strengths.
-              </p>
+        </CardContent>
+      </Card>
+      
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Development Roadmap
+          </CardTitle>
+          <CardDescription>
+            Your path to personal and professional growth
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {roadmap ? (
+            <div className="text-sm space-y-4">
+              {roadmap.split('\n\n').map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
             </div>
-            
-            <div className="border rounded-md p-4 bg-card/50">
-              <h4 className="font-medium flex items-center gap-2 mb-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                Networking Recommendations
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Your personality profile suggests you would benefit from building a network that includes both mentors
-                in your field of interest and peers who share your values and work ethic. Consider professional groups
-                that align with your career aspirations.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </Card>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Your development roadmap focuses on leveraging your analytical strengths while building confidence in your intuitive decision-making. Focus on setting clearer boundaries and embracing the concept of "good enough" to overcome perfectionist tendencies. Explore opportunities that combine your analytical abilities with creative problem-solving.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
