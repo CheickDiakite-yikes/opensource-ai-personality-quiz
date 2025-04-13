@@ -19,14 +19,14 @@ import { Brain } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface IntelligenceDomain {
+interface CognitiveDomain {
   name: string;
   score: number;
   description: string;
 }
 
 interface IntelligenceDomainChartProps {
-  domains: IntelligenceDomain[];
+  domains: CognitiveDomain[];
 }
 
 // Formatter function for score labels

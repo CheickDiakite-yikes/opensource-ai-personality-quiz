@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatTraitScore } from "@/utils/formatUtils";
 import { PersonalityTrait } from "@/utils/types";
-import { ChevronRight, Lightbulb, Sparkles } from "lucide-react";
+import { ChevronRight, Lightbulb, Sparkles, BookOpen, Rocket, Brain } from "lucide-react";
 
 interface ComprehensiveOverviewSectionProps {
   overview: string;
@@ -81,29 +81,35 @@ const ComprehensiveOverviewSection: React.FC<ComprehensiveOverviewSectionProps> 
             </p>
           </div>
           
-          {/* Intelligence scores with contextual description */}
+          {/* Cognitive scores with contextual description */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div className="p-5 bg-muted/30 rounded-lg border border-border/50 hover:border-border transition-all">
-              <h4 className="font-medium text-lg mb-1">Intelligence Score</h4>
+              <h4 className="font-medium text-lg mb-1 flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary/80" />
+                Cognitive Flexibility Score
+              </h4>
               <p className="text-2xl font-bold mb-2">{formatTraitScore(intelligenceScore || 0)}</p>
               <p className="text-sm text-muted-foreground">
-                {intelligenceScore >= 80 ? "Exceptional cognitive abilities" : 
-                 intelligenceScore >= 70 ? "Strong analytical capabilities" : 
-                 intelligenceScore >= 60 ? "Above average intellectual capacity" : 
-                 intelligenceScore >= 50 ? "Average cognitive processing" : 
-                 "Developing intellectual strengths"}
+                {intelligenceScore >= 80 ? "Exceptional cognitive adaptability and problem-solving approaches" : 
+                 intelligenceScore >= 70 ? "Strong mental flexibility and analytical capabilities" : 
+                 intelligenceScore >= 60 ? "Above average cognitive processing and pattern recognition" : 
+                 intelligenceScore >= 50 ? "Balanced cognitive adaptability with growth potential" : 
+                 "Developing cognitive flexibility with unique strengths in specific contexts"}
               </p>
             </div>
             
             <div className="p-5 bg-muted/30 rounded-lg border border-border/50 hover:border-border transition-all">
-              <h4 className="font-medium text-lg mb-1">Emotional Intelligence</h4>
+              <h4 className="font-medium text-lg mb-1 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary/80" />
+                Emotional Intelligence
+              </h4>
               <p className="text-2xl font-bold mb-2">{formatTraitScore(emotionalIntelligenceScore || 0)}</p>
               <p className="text-sm text-muted-foreground">
-                {emotionalIntelligenceScore >= 80 ? "Exceptional emotional awareness and regulation" : 
-                 emotionalIntelligenceScore >= 70 ? "Strong empathetic abilities" : 
-                 emotionalIntelligenceScore >= 60 ? "Good social and emotional processing" : 
-                 emotionalIntelligenceScore >= 50 ? "Developing emotional awareness" : 
-                 "Growing emotional recognition"}
+                {emotionalIntelligenceScore >= 80 ? "Exceptional emotional awareness, regulation and empathetic abilities" : 
+                 emotionalIntelligenceScore >= 70 ? "Strong emotional perception and interpersonal navigation skills" : 
+                 emotionalIntelligenceScore >= 60 ? "Good social and emotional processing with effective self-regulation" : 
+                 emotionalIntelligenceScore >= 50 ? "Developing emotional awareness with good intuitive understanding" : 
+                 "Growing emotional recognition with potential for significant development"}
               </p>
             </div>
           </div>
@@ -112,7 +118,10 @@ const ComprehensiveOverviewSection: React.FC<ComprehensiveOverviewSectionProps> 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <Card className="p-6 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-primary/50">
-          <h3 className="text-lg font-medium mb-4">Core Motivators</h3>
+          <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+            <Rocket className="h-5 w-5 text-primary/80" />
+            Core Motivators
+          </h3>
           <ul className="space-y-3">
             {motivators?.slice(0, 5).map((motivator, index) => (
               <li key={index} className="flex items-start group">
@@ -137,7 +146,10 @@ const ComprehensiveOverviewSection: React.FC<ComprehensiveOverviewSectionProps> 
         </Card>
         
         <Card className="p-6 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-primary/50">
-          <h3 className="text-lg font-medium mb-4">Growth Opportunities</h3>
+          <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary/80" />
+            Growth Opportunities
+          </h3>
           <ul className="space-y-3">
             {growthAreas?.slice(0, 5).map((area, index) => (
               <li key={index} className="flex items-start group">

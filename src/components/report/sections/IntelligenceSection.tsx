@@ -52,7 +52,7 @@ const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
           <CardTitle className="flex items-center text-foreground text-base md:text-xl">
             <Brain className="h-5 w-5 mr-2 text-orange-500" /> Cognitive Processing Profile
           </CardTitle>
-          <CardDescription className="text-foreground/80">Your thinking style and cognitive approaches</CardDescription>
+          <CardDescription className="text-foreground/80">Your thinking style and problem-solving approaches</CardDescription>
         </CardHeader>
         
         {isMobile ? (
