@@ -17,17 +17,30 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
   lifePurposeThemes = []
 }) => {
   // Check if we're dealing with the enhanced career pathways format
-  const hasDetailedCareers = careerSuggestions.length > 0 && typeof careerSuggestions[0] !== 'string';
+  const hasDetailedCareers = careerSuggestions.length > 0 && 
+    typeof careerSuggestions[0] !== 'string' && 
+    careerSuggestions[0] !== null &&
+    ('title' in careerSuggestions[0] || 'field' in careerSuggestions[0]);
+  
+  // Safely transform career suggestions into a consistent format
   const careerPaths = hasDetailedCareers 
     ? careerSuggestions as CareerPathway[]
-    : (careerSuggestions as string[]).map(career => {
+    : (careerSuggestions as any[]).map(career => {
         // Handle if career is a string or an object with name/description
-        const careerText = typeof career === 'string' ? career : (career as any).name || '';
-        return { 
-          field: careerText,
-          title: careerText,
-          description: typeof career === 'string' ? undefined : (career as any).description
-        };
+        if (typeof career === 'string') {
+          return { 
+            field: career,
+            title: career,
+          };
+        } else {
+          // Safely handle objects with potential name/description properties
+          const title = career.name || career.title || career.field || "Career Path";
+          return { 
+            field: title,
+            title: title,
+            description: career.description || undefined
+          };
+        }
       });
 
   return (

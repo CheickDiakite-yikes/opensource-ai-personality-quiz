@@ -68,17 +68,25 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
     );
   }
   
-  // Handle simple string career suggestions and objects with name/description format
+  // Handle simple string career suggestions or objects with name/description format
   return (
     <div className="space-y-4">
       <h3 className="text-md font-medium">Suggested Career Paths</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {(careers as any[]).map((career, index) => {
-          // Check if career is an object with name/description or a simple string
-          const careerText = typeof career === 'string' 
-            ? career 
-            : (career.name || career.title || "Career Path");
+          // Ensure we're properly handling objects with name/description properties
+          let careerText = "";
+          
+          if (typeof career === 'string') {
+            careerText = career;
+          } else if (career && typeof career === 'object') {
+            // Extract text value from object based on available properties
+            careerText = career.name || career.title || career.field || 
+                        (career.description ? String(career.description) : "Career Path");
+          } else {
+            careerText = "Career Path";
+          }
           
           return (
             <div 
