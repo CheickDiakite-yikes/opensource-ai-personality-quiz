@@ -27,6 +27,9 @@ export function useComprehensiveSubmission(
       answer: response.selectedOption === "Other" ? response.customResponse : response.selectedOption
     }));
     
+    // Track the assessment data outside the try block so it's accessible in the catch block
+    let createdAssessmentId: string | null = null;
+    
     try {
       setIsAnalyzing(true);
       toast.loading("Saving your assessment responses...", { id: "assessment-submission" });
@@ -47,6 +50,9 @@ export function useComprehensiveSubmission(
         throw new Error("Failed to create assessment");
       }
       
+      // Store the ID for use in the catch block if needed
+      createdAssessmentId = assessmentData.id;
+      
       toast.loading("Analyzing your responses with AI...", { id: "assessment-submission" });
       
       // Call Supabase Edge Function to analyze responses with improved error handling
@@ -55,7 +61,7 @@ export function useComprehensiveSubmission(
       
       for (let retry = 0; retry <= MAX_RETRIES; retry++) {
         try {
-          console.log(`Attempt ${retry + 1} to analyze responses for assessment ${assessmentData.id}`);
+          console.log(`Attempt ${retry + 1} to analyze responses for assessment ${createdAssessmentId}`);
           
           if (retry > 0) {
             // Add delay between retries with exponential backoff
@@ -63,23 +69,20 @@ export function useComprehensiveSubmission(
             toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
           }
           
-          // Set a longer timeout for the request
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+          // Set a longer timeout for the request - we can't use AbortController with Supabase functions
+          // so we'll need a different approach
           
-          // Call the edge function with timeout control
+          // Call the edge function without the signal option (it's not supported)
           const { data, error } = await supabase.functions.invoke(
             "analyze-comprehensive-responses",
             {
               body: { 
-                assessmentId: assessmentData.id,
+                assessmentId: createdAssessmentId,
                 responses: formattedResponses
-              },
-              signal: controller.signal
+              }
+              // Removed the signal property as it's not supported
             }
           );
-          
-          clearTimeout(timeoutId);
           
           if (error) throw new Error(error.message);
           
@@ -114,7 +117,7 @@ export function useComprehensiveSubmission(
       console.error("Error submitting assessment:", error);
       
       // Check if the assessment was created but analysis failed
-      if (assessmentData?.id) {
+      if (createdAssessmentId) {
         toast.error("Your assessment was saved but analysis failed", { 
           id: "assessment-submission",
           description: "We'll try to analyze it again when you view your reports"
