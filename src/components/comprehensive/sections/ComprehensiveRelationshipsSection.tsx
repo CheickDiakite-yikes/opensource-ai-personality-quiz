@@ -18,12 +18,9 @@ interface ComprehensiveRelationshipsSectionProps {
 const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSectionProps> = ({
   relationshipPatterns
 }) => {
-  // Function to get display value from either string or object
+  // Function to safely display value from either string or object
   const getDisplayValue = (item: string | RelationshipItem): string => {
-    if (typeof item === 'string') {
-      return item;
-    }
-    return item.name || safeString(item);
+    return safeString(item);
   };
 
   return (

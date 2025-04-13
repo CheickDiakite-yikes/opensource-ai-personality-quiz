@@ -380,7 +380,7 @@ const ComprehensiveReportPage: React.FC = () => {
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Comprehensive Report</h1>
         <p className="text-muted-foreground">
-          Analysis ID: {analysis.id}
+          Analysis ID: {analysis?.id}
         </p>
       </div>
       
@@ -399,36 +399,36 @@ const ComprehensiveReportPage: React.FC = () => {
         {/* Overview tab */}
         <TabsContent value="overview" className="space-y-6">
           <ComprehensiveOverviewSection 
-            overview={analysis.overview}
-            traits={analysis.traits}
-            intelligenceScore={analysis.intelligenceScore}
-            emotionalIntelligenceScore={analysis.emotionalIntelligenceScore}
-            motivators={analysis.motivators}
-            growthAreas={analysis.growthAreas}
+            overview={analysis?.overview}
+            traits={analysis?.traits}
+            intelligenceScore={analysis?.intelligenceScore}
+            emotionalIntelligenceScore={analysis?.emotionalIntelligenceScore}
+            motivators={analysis?.motivators}
+            growthAreas={analysis?.growthAreas}
           />
         </TabsContent>
         
         {/* Personality tab */}
         <TabsContent value="personality" className="space-y-6">
           <ComprehensiveTraitsSection
-            traits={analysis.traits}
+            traits={analysis?.traits}
           />
         </TabsContent>
         
         {/* Intelligence tab */}
         <TabsContent value="intelligence" className="space-y-6">
           <ComprehensiveIntelligenceSection
-            intelligence={analysis.intelligence}
-            intelligenceScore={analysis.intelligenceScore}
-            emotionalIntelligenceScore={analysis.emotionalIntelligenceScore}
+            intelligence={analysis?.intelligence}
+            intelligenceScore={analysis?.intelligenceScore}
+            emotionalIntelligenceScore={analysis?.emotionalIntelligenceScore}
           />
         </TabsContent>
         
         {/* Motivation tab */}
         <TabsContent value="motivation" className="space-y-6">
           <ComprehensiveMotivationSection
-            motivators={analysis.motivators}
-            inhibitors={analysis.inhibitors}
+            motivators={analysis?.motivators || []}
+            inhibitors={analysis?.inhibitors || []}
           />
         </TabsContent>
         
@@ -442,17 +442,17 @@ const ComprehensiveReportPage: React.FC = () => {
         {/* Growth tab */}
         <TabsContent value="growth" className="space-y-6">
           <ComprehensiveGrowthSection
-            growthAreas={analysis.growthAreas}
-            weaknesses={analysis.weaknesses}
-            learningPathways={analysis.learningPathways}
+            growthAreas={analysis?.growthAreas || []}
+            weaknesses={analysis?.weaknesses || []}
+            learningPathways={analysis?.learningPathways || []}
           />
         </TabsContent>
         
         {/* Career tab */}
         <TabsContent value="career" className="space-y-6">
           <ComprehensiveCareerSection
-            careerSuggestions={analysis.careerSuggestions}
-            roadmap={analysis.roadmap}
+            careerSuggestions={analysis?.careerSuggestions || []}
+            roadmap={analysis?.roadmap || ""}
           />
         </TabsContent>
       </Tabs>

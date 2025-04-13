@@ -19,12 +19,9 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
   weaknesses,
   learningPathways
 }) => {
-  // Function to extract appropriate display value from either string or object
+  // Function to safely display value from either string or object
   const getDisplayValue = (item: string | GrowthItem): string => {
-    if (typeof item === 'string') {
-      return item;
-    }
-    return item.name || '';
+    return safeString(item);
   };
 
   return (
