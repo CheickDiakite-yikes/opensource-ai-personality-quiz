@@ -1,15 +1,12 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import { corsHeaders } from "../_shared/cors.ts"
 
-// Create a Supabase client with the service role key
 const supabaseClient = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-// Open AI API key for generating higher quality analyses
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
@@ -19,7 +16,6 @@ serve(async (req) => {
   }
   
   try {
-    // Parse request data
     const { assessmentId, responses } = await req.json();
     
     console.log(`[analyze-comprehensive-responses] Processing comprehensive assessment: ${assessmentId}`);
@@ -64,10 +60,10 @@ serve(async (req) => {
     
     let analysisResult;
     
-    // Try to use OpenAI for enhanced analysis if API key is available
+    // Use OpenAI for enhanced analysis
     if (openAIApiKey && responses && responses.length > 0) {
       try {
-        console.log("[analyze-comprehensive-responses] Attempting to use OpenAI for enhanced analysis");
+        console.log("[analyze-comprehensive-responses] Attempting to use OpenAI for comprehensive analysis");
         analysisResult = await generateOpenAIAnalysis(responses);
         console.log("[analyze-comprehensive-responses] Successfully generated OpenAI analysis");
       } catch (error) {
@@ -194,7 +190,7 @@ serve(async (req) => {
   }
 });
 
-// Function to generate analysis using OpenAI API for higher quality results
+// Function to generate analysis using OpenAI API
 async function generateOpenAIAnalysis(responses) {
   if (!openAIApiKey) {
     throw new Error("OpenAI API key not configured");
@@ -208,23 +204,27 @@ async function generateOpenAIAnalysis(responses) {
     }));
     
     // Create a prompt for OpenAI
-    const systemPrompt = `You are an expert personality analyst. Create a comprehensive personality analysis based on assessment responses. 
-    Your analysis should include:
-    1. A detailed overview of the person's personality
-    2. 5-7 personality traits with scores (1-10) and descriptions
-    3. Intelligence analysis across analytical, creative, practical, emotional, and social domains (score each 1-100)
-    4. Core values and motivators
-    5. Potential inhibitors and growth areas
-    6. Career suggestions that match their personality
-    7. A personal development roadmap
-
-    Format your response as a JSON object with these keys: overview, traits, intelligence, intelligence_score, emotional_intelligence_score, 
-    value_system, motivators, inhibitors, weaknesses, growth_areas, relationship_patterns, career_suggestions, learning_pathways, roadmap.`;
+    const systemPrompt = `You are an expert personality analyst. Create a detailed, nuanced personality analysis. 
+    Analyze the user's responses deeply and provide insights that reveal their unique psychological profile.
     
-    const userPrompt = `Based on these assessment responses, provide a comprehensive personality analysis:
+    Your analysis should include:
+    1. A profound overview describing the individual's core personality
+    2. 5-7 personality traits with detailed scores (1-10) and rich descriptions
+    3. Intelligence analysis across multiple domains (analytical, creative, practical, emotional, social)
+    4. Core values driving their behavior
+    5. Potential psychological inhibitors and growth opportunities
+    6. Career paths that align with their personality
+    7. A personalized development roadmap
+
+    Provide insights that are both scientifically grounded and empathetically delivered. Focus on positive potential and constructive growth.`;
+    
+    const userPrompt = `Perform a comprehensive personality analysis based on these assessment responses. 
+    Each response provides a glimpse into the individual's psychological landscape.
+
+    Responses:
     ${JSON.stringify(responseData, null, 2)}
     
-    Return ONLY a valid JSON object without any other text.`;
+    Construct a JSON analysis that reveals deep, meaningful insights about this person's personality, potential, and psychological dynamics.`;
     
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -240,7 +240,8 @@ async function generateOpenAIAnalysis(responses) {
           { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        response_format: { type: "json_object" }
       })
     });
     
@@ -260,38 +261,14 @@ async function generateOpenAIAnalysis(responses) {
     let analysisResult;
     try {
       const content = data.choices[0].message.content;
-      // Extract JSON if it's wrapped in markdown code blocks
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : content;
-      
-      analysisResult = JSON.parse(jsonStr);
+      analysisResult = JSON.parse(content);
       console.log("[analyze-comprehensive-responses] Successfully parsed OpenAI response");
     } catch (error) {
       console.error("[analyze-comprehensive-responses] Error parsing OpenAI response:", error);
-      console.error("Response content:", data.choices[0].message.content);
       throw new Error("Failed to parse OpenAI response as JSON");
     }
     
-    // Ensure the result has all required fields
-    return {
-      ...analysisResult,
-      // Provide fallbacks for any missing fields
-      traits: analysisResult.traits || [],
-      intelligence: analysisResult.intelligence || {
-        analytical: 70,
-        creative: 65,
-        practical: 75,
-        emotional: 68,
-        social: 72
-      },
-      intelligence_score: analysisResult.intelligence_score || 70,
-      emotional_intelligence_score: analysisResult.emotional_intelligence_score || 68,
-      value_system: analysisResult.value_system || ["Growth", "Connection", "Achievement"],
-      motivators: analysisResult.motivators || ["Learning", "Helping others", "Personal development"],
-      inhibitors: analysisResult.inhibitors || ["Self-doubt", "Procrastination"],
-      weaknesses: analysisResult.weaknesses || ["May overthink decisions", "Difficulty with boundaries"],
-      growth_areas: analysisResult.growth_areas || ["Developing confidence", "Finding work-life balance"]
-    };
+    return analysisResult;
   } catch (error) {
     console.error("[analyze-comprehensive-responses] Error in OpenAI analysis:", error);
     throw error;
