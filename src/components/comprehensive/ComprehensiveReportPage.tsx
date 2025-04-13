@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis, RelationshipPatterns } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle, FileText, ArrowLeft, RefreshCw, Bug } from "lucide-react";
+import { AlertTriangle, FileText, ArrowLeft, RefreshCw, Bug, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
@@ -32,6 +32,8 @@ const ComprehensiveReportPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState<number>(0);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
+  const [testPrompt, setTestPrompt] = useState<string>("");
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
 
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
@@ -115,7 +117,7 @@ const ComprehensiveReportPage: React.FC = () => {
     navigate('/comprehensive-report');
   };
   
-  // Function to create a test analysis for quick testing
+  // Function to create a test analysis
   const handleCreateTestAnalysis = async () => {
     if (!user) {
       toast.error("You must be logged in to create a test analysis");
@@ -132,8 +134,11 @@ const ComprehensiveReportPage: React.FC = () => {
         .insert({
           user_id: user.id,
           responses: [
-            { questionId: "test-1", answer: "Test response 1" },
-            { questionId: "test-2", answer: "Test response 2" }
+            { 
+              questionId: "test-1", 
+              answer: testPrompt || "I am someone who enjoys thinking deeply about problems and finding creative solutions. I value both analytical thinking and emotional intelligence."
+            },
+            { questionId: "test-2", answer: "I prefer working in collaborative environments where ideas can be freely shared." }
           ]
         })
         .select()
@@ -152,8 +157,11 @@ const ComprehensiveReportPage: React.FC = () => {
           body: { 
             assessmentId: assessmentData.id,
             responses: [
-              { questionId: "test-1", answer: "Test response 1" },
-              { questionId: "test-2", answer: "Test response 2" }
+              { 
+                questionId: "test-1", 
+                answer: testPrompt || "I am someone who enjoys thinking deeply about problems and finding creative solutions. I value both analytical thinking and emotional intelligence."
+              },
+              { questionId: "test-2", answer: "I prefer working in collaborative environments where ideas can be freely shared." }
             ]
           }
         }
@@ -242,13 +250,40 @@ const ComprehensiveReportPage: React.FC = () => {
               </Button>
               <Button 
                 variant="secondary" 
-                onClick={handleCreateTestAnalysis} 
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)} 
                 className="flex items-center gap-2"
-                disabled={isCreatingTest}
               >
-                <Bug className="h-4 w-4" /> Create Test Analysis
+                <Bug className="h-4 w-4" /> Advanced Options
               </Button>
             </div>
+            
+            {showAdvancedOptions && (
+              <div className="mt-6 p-6 bg-muted rounded-md w-full max-w-lg mx-auto">
+                <h3 className="font-medium mb-3">Create Test Analysis</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="testPrompt" className="block text-sm font-medium mb-1">
+                      Custom Personality Description (Optional)
+                    </label>
+                    <textarea 
+                      id="testPrompt"
+                      value={testPrompt}
+                      onChange={(e) => setTestPrompt(e.target.value)}
+                      placeholder="Describe your personality traits, preferences, and characteristics..."
+                      className="w-full p-3 border rounded-md h-24"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleCreateTestAnalysis} 
+                    disabled={isCreatingTest}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {isCreatingTest ? "Creating..." : "Generate Test Analysis"}
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {debugInfo && (
               <div className="mt-6 p-4 bg-muted rounded-md w-full max-w-lg mx-auto">
@@ -287,14 +322,44 @@ const ComprehensiveReportPage: React.FC = () => {
             </Button>
             {user && (
               <Button 
-                onClick={handleCreateTestAnalysis} 
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)} 
                 className="flex items-center gap-2"
-                disabled={isCreatingTest}
               >
-                <Bug className="h-4 w-4" /> Create Test Analysis
+                <Bug className="h-4 w-4" /> {showAdvancedOptions ? "Hide Options" : "Create Test Analysis"}
               </Button>
             )}
           </div>
+          
+          {showAdvancedOptions && (
+            <div className="mt-8 p-6 bg-muted rounded-md max-w-lg mx-auto">
+              <h3 className="font-medium mb-3">Create Test Analysis</h3>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="testPrompt" className="block text-sm font-medium mb-1">
+                    Custom Personality Description (Optional)
+                  </label>
+                  <textarea 
+                    id="testPrompt"
+                    value={testPrompt}
+                    onChange={(e) => setTestPrompt(e.target.value)}
+                    placeholder="Describe your personality traits, preferences, and characteristics..."
+                    className="w-full p-3 border rounded-md h-24"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The AI will analyze this text to generate a detailed personality profile.
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleCreateTestAnalysis} 
+                  disabled={isCreatingTest}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isCreatingTest ? "Creating..." : "Generate Test Analysis"}
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     );
@@ -398,15 +463,52 @@ const ComprehensiveReportPage: React.FC = () => {
         </Button>
         {user && (
           <Button 
-            variant="secondary"
-            onClick={handleCreateTestAnalysis} 
+            variant="secondary" 
+            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
             className="flex items-center gap-2"
-            disabled={isCreatingTest}
           >
-            <Bug className="h-4 w-4" /> Create New Test Analysis
+            {showAdvancedOptions ? (
+              <>
+                <Bug className="h-4 w-4" /> Hide Options
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" /> Create New Test Analysis
+              </>
+            )}
           </Button>
         )}
       </div>
+      
+      {showAdvancedOptions && (
+        <Card className="p-6 mt-4 max-w-lg mx-auto">
+          <h3 className="text-lg font-medium mb-3">Create New Test Analysis</h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="newTestPrompt" className="block text-sm font-medium mb-1">
+                Custom Personality Description
+              </label>
+              <textarea 
+                id="newTestPrompt"
+                value={testPrompt}
+                onChange={(e) => setTestPrompt(e.target.value)}
+                placeholder="Describe your personality traits, preferences, and characteristics for the AI to analyze..."
+                className="w-full p-3 border rounded-md h-24"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                The more detailed your description, the more accurate the analysis will be.
+              </p>
+            </div>
+            <Button 
+              onClick={handleCreateTestAnalysis} 
+              disabled={isCreatingTest}
+              className="w-full"
+            >
+              {isCreatingTest ? "Creating..." : "Generate New Analysis"}
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

@@ -205,36 +205,50 @@ async function generateOpenAIAnalysis(responses) {
     }));
     
     // Create a prompt for OpenAI
-    const systemPrompt = `You are an expert personality analyst and psychologist. Create a comprehensive, detailed personality analysis based on the user's assessment responses. Your analysis should be thorough, insightful, and presented in a structured format.
+    const systemPrompt = `You are an expert personality analyst and psychologist with deep knowledge of psychometrics, cognitive psychology, and personality theory. Create a comprehensive, detailed personality analysis based on the user's assessment responses. Your analysis should be thorough, insightful, and presented in a structured JSON format.
 
-Provide the following in your analysis, formatted as a JSON object:
-1. An "overview" key with a 2-3 paragraph narrative summary of the person's personality profile (minimum 300 words)
+Provide the following in your analysis:
+1. An "overview" key with a 3-4 paragraph narrative summary (minimum 500 words) of the person's personality profile that is deeply insightful and reveals nuanced understanding of their psychological makeup
 2. A "traits" array with 5-7 personality traits, each including:
    - "trait" (name of the trait)
    - "score" (decimal between 0 and 10)
-   - "description" (detailed paragraph about this trait)
+   - "description" (detailed paragraph about this trait, minimum 100 words)
    - "strengths" (array of 3-5 specific strengths related to this trait)
    - "challenges" (array of 2-3 specific challenges or limitations)
    - "growthSuggestions" (array of 2-3 specific growth recommendations)
-3. An "intelligence" object with:
+3. "detailedTraits" object with:
+   - "primary" (array of 2-3 dominant traits with same structure as above)
+   - "secondary" (array of 2-3 supporting traits with same structure)
+4. An "intelligence" object with:
    - "type" (primary intelligence type)
    - "description" (paragraph explaining their intelligence profile)
    - "domains" (array of intelligence domains, each with "name", "score" (0-10), and "description")
-4. Numerical scores:
-   - "intelligence_score" (overall intelligence rating, 0-100)
-   - "emotional_intelligence_score" (emotional intelligence rating, 0-100)
-5. "value_system" (array of 3-5 core values)
-6. "motivators" (array of 3-5 key motivational factors)
-7. "inhibitors" (array of 2-4 psychological inhibitors)
-8. "weaknesses" (array of 3-5 specific weaknesses or blindspots)
-9. "growth_areas" (array of 3-5 areas for personal development)
-10. "relationship_patterns" object with:
+5. Numerical scores:
+   - "intelligenceScore" (overall intelligence rating, 0-100)
+   - "emotionalIntelligenceScore" (emotional intelligence rating, 0-100)
+6. "shadowAspects" array with 2-3 shadow aspects of personality:
+   - "trait" (name of the shadow aspect)
+   - "description" (paragraph explaining this shadow aspect)
+   - "impactAreas" (array of areas in life where this manifests)
+   - "integrationSuggestions" (array of suggestions for growth)
+7. "personalityArchetype" object with:
+   - "name" (archetypal pattern name)
+   - "description" (paragraph explaining this archetype)
+   - "strengths" (array of archetypal strengths)
+   - "challenges" (array of archetypal challenges)
+   - "growthPath" (paragraph on development trajectory)
+8. "valueSystem" (array of 3-5 core values)
+9. "motivators" (array of 3-5 key motivational factors)
+10. "inhibitors" (array of 2-4 psychological inhibitors)
+11. "weaknesses" (array of 3-5 specific weaknesses or blindspots)
+12. "growthAreas" (array of 3-5 areas for personal development)
+13. "relationshipPatterns" object with:
     - "strengths" (array of relationship strengths)
     - "challenges" (array of relationship challenges)
     - "compatibleTypes" (array of compatible personality types)
-11. "career_suggestions" (array of 5-7 specific career paths that align with their profile)
-12. "learning_pathways" (array of 3-5 learning approaches that would work well)
-13. "roadmap" (a detailed paragraph with a development roadmap)
+14. "careerSuggestions" (array of 5-7 specific career paths that align with their profile)
+15. "learningPathways" (array of 3-5 learning approaches that would work well)
+16. "roadmap" (a detailed paragraph with a development roadmap)
 
 Your analysis should be:
 - Evidence-based: Draw directly from their responses
@@ -250,7 +264,7 @@ Format your entire response as a valid JSON object that can be parsed by JavaScr
 Assessment Responses:
 ${JSON.stringify(responseData, null, 2)}
 
-Remember to structure your response as a valid JSON object with all the required fields.`;
+Remember to structure your response as a valid JSON object with all the required fields. Be as specific, insightful, and detailed as possible. Provide narratives that are meaningful and practical rather than generic advice.`;
     
     // Call OpenAI API
     console.log("[analyze-comprehensive-responses] Sending request to OpenAI API with gpt-4o model");
@@ -354,6 +368,27 @@ function standardizeAnalysisFormat(analysis) {
       compatibleTypes: []
     };
   }
+
+  // Ensure shadow aspects exist
+  if (!standardized.shadowAspects || !Array.isArray(standardized.shadowAspects)) {
+    standardized.shadowAspects = [{
+      trait: "Inner Critic",
+      description: "Tendency to set extremely high standards and engage in self-criticism when these aren't met",
+      impactAreas: ["Self-confidence", "Decision making", "Work satisfaction"],
+      integrationSuggestions: ["Practice self-compassion", "Distinguish between perfectionism and excellence"]
+    }];
+  }
+  
+  // Ensure personality archetype exists
+  if (!standardized.personalityArchetype) {
+    standardized.personalityArchetype = {
+      name: "Balanced Explorer",
+      description: "Combines analytical thinking with creative exploration, seeking knowledge while maintaining practical application",
+      strengths: ["Adaptability", "Pattern recognition", "Creative problem solving"],
+      challenges: ["May struggle with commitment to a single path"],
+      growthPath: "Developing focus while maintaining flexibility and curiosity"
+    };
+  }
   
   return standardized;
 }
@@ -380,7 +415,7 @@ function generateComprehensiveAnalysis(responses) {
     {
       trait: "Analytical Thinking",
       score: traitScores.openness / 10,
-      description: "You have a natural inclination to analyze situations carefully and consider multiple perspectives. This trait allows you to break down complex problems into manageable parts and approach challenges with a systematic mindset. Your analytical abilities help you make well-reasoned decisions and identify patterns that others might miss.",
+      description: "You have a natural inclination to analyze situations carefully and consider multiple perspectives. This trait allows you to break down complex problems into manageable parts and approach challenges with a systematic mindset. Your analytical abilities help you make well-reasoned decisions and identify patterns that others might miss. This reflective approach serves you well in academic and professional contexts that require critical thinking and detailed evaluation of information.",
       strengths: [
         "Problem-solving abilities",
         "Critical thinking skills",
@@ -399,7 +434,7 @@ function generateComprehensiveAnalysis(responses) {
     {
       trait: "Creativity",
       score: traitScores.creativity / 10,
-      description: "You possess a strong creative drive that enables you to think outside conventional boundaries and generate innovative ideas. This creativity manifests in how you approach problems, express yourself, and view the world around you. You're likely drawn to activities that allow for self-expression and novel thinking.",
+      description: "You possess a strong creative drive that enables you to think outside conventional boundaries and generate innovative ideas. This creativity manifests in how you approach problems, express yourself, and view the world around you. You're likely drawn to activities that allow for self-expression and novel thinking. Your creative thinking allows you to make unique connections between seemingly unrelated concepts and develop original solutions to challenging problems.",
       strengths: [
         "Innovative problem-solving",
         "Original thinking",
@@ -418,7 +453,7 @@ function generateComprehensiveAnalysis(responses) {
     {
       trait: "Conscientiousness",
       score: traitScores.conscientiousness / 10,
-      description: "You demonstrate a high level of organization, reliability, and attention to responsibilities. This trait reflects your preference for order, planning, and following through on commitments. Your conscientious nature helps you maintain consistency in your work and relationships, though you also value some flexibility.",
+      description: "You demonstrate a high level of organization, reliability, and attention to responsibilities. This trait reflects your preference for order, planning, and following through on commitments. Your conscientious nature helps you maintain consistency in your work and relationships, though you also value some flexibility. This trait contributes significantly to your ability to achieve long-term goals and maintain stable relationships, as others know they can depend on you to fulfill your obligations and maintain high standards.",
       strengths: [
         "Strong organizational skills",
         "Reliability and dependability",
@@ -437,7 +472,7 @@ function generateComprehensiveAnalysis(responses) {
     {
       trait: "Resilience",
       score: traitScores.resilience / 10,
-      description: "You have developed the capacity to recover from difficulties and adapt to challenging circumstances. This trait enables you to maintain perspective during setbacks and continue moving forward despite obstacles. Your resilience is both a natural strength and a skill you've cultivated through life experiences.",
+      description: "You have developed the capacity to recover from difficulties and adapt to challenging circumstances. This trait enables you to maintain perspective during setbacks and continue moving forward despite obstacles. Your resilience is both a natural strength and a skill you've cultivated through life experiences. Your ability to bounce back from adversity serves as a foundation for your emotional stability and contributes significantly to your capacity for sustained growth and achievement over time.",
       strengths: [
         "Ability to bounce back from setbacks",
         "Adaptability in changing situations",
@@ -456,7 +491,7 @@ function generateComprehensiveAnalysis(responses) {
     {
       trait: "Empathy",
       score: traitScores.empathy / 10,
-      description: "You possess a natural ability to understand and share the feelings of others. This trait allows you to connect deeply with people, anticipate their needs, and respond with appropriate sensitivity. Your empathetic nature enhances your relationships and enables you to provide meaningful support to those around you.",
+      description: "You possess a natural ability to understand and share the feelings of others. This trait allows you to connect deeply with people, anticipate their needs, and respond with appropriate sensitivity. Your empathetic nature enhances your relationships and enables you to provide meaningful support to those around you. This emotional intelligence component contributes significantly to your interpersonal effectiveness and ability to navigate complex social situations with grace and understanding.",
       strengths: [
         "Deep understanding of others' perspectives",
         "Strong active listening skills",
@@ -473,6 +508,71 @@ function generateComprehensiveAnalysis(responses) {
       ]
     }
   ];
+  
+  // Detailed traits structure
+  const detailedTraits = {
+    primary: [
+      {
+        trait: "Strategic Vision",
+        score: 8.2,
+        description: "You possess an exceptional ability to see the big picture and anticipate long-term implications of decisions. This forward-thinking perspective allows you to develop comprehensive strategies and navigate complex situations with clarity and purpose.",
+        strengths: ["Long-term planning", "Pattern recognition", "Systems thinking"],
+        challenges: ["May overlook immediate details", "Can seem detached from present concerns"],
+        growthSuggestions: ["Balance strategic thinking with present awareness", "Communicate vision clearly to others"]
+      },
+      {
+        trait: "Adaptive Resilience",
+        score: 7.9,
+        description: "Your resilience goes beyond simply bouncing back from setbacks—you actively transform challenges into opportunities for growth. This adaptive resilience allows you to thrive in changing circumstances and maintain emotional equilibrium during turbulent times.",
+        strengths: ["Stress tolerance", "Flexible coping strategies", "Learning from adversity"],
+        challenges: ["May push through when rest is needed", "Risk of neglecting emotional processing"],
+        growthSuggestions: ["Integrate mindfulness into resilience practice", "Honor both productivity and recovery phases"]
+      }
+    ],
+    secondary: [
+      {
+        trait: "Curious Intellect",
+        score: 7.5,
+        description: "Your intellectual curiosity drives continuous learning and exploration of diverse topics. This trait fuels your cognitive development and keeps your thinking fresh and engaged across various domains of knowledge.",
+        strengths: ["Self-directed learning", "Interdisciplinary thinking", "Intellectual adaptability"],
+        challenges: ["May pursue breadth over depth", "Risk of cognitive overwhelm"],
+        growthSuggestions: ["Develop expertise in core areas while maintaining breadth", "Create synthesis between different knowledge domains"]
+      },
+      {
+        trait: "Deliberate Focus",
+        score: 6.8,
+        description: "You have the ability to direct your attention with intention and sustain concentration on important tasks despite distractions. This focused approach enables deep work and quality output in your endeavors.",
+        strengths: ["Sustained attention", "Task completion", "Depth of engagement"],
+        challenges: ["May resist necessary transitions", "Potential for tunnel vision"],
+        growthSuggestions: ["Practice intentional task-switching", "Balance deep focus with periodic perspective-taking"]
+      }
+    ]
+  };
+  
+  // Shadow aspects
+  const shadowAspects = [
+    {
+      trait: "Perfectionistic Tendency",
+      description: "Beneath your drive for excellence lies a shadow aspect that can manifest as excessive perfectionism. This tendency to set impossibly high standards can lead to procrastination, self-criticism, and difficulty celebrating achievements.",
+      impactAreas: ["Self-acceptance", "Productivity", "Relationship satisfaction", "Risk-taking"],
+      integrationSuggestions: ["Practice 'good enough' thinking", "Set realistic standards based on context", "Celebrate progress alongside accomplishment"]
+    },
+    {
+      trait: "Avoidant Self-Protection",
+      description: "This shadow aspect emerges as a protective mechanism against potential emotional vulnerability or rejection. It may manifest as intellectual distancing, emotional withdrawal, or preemptive disengagement from situations that threaten deeper involvement.",
+      impactAreas: ["Intimate relationships", "Emotional authenticity", "Receiving feedback", "Collaborative work"],
+      integrationSuggestions: ["Practice incremental vulnerability", "Acknowledge protective impulses without acting on them", "Build relationships with graduated trust development"]
+    }
+  ];
+  
+  // Personality archetype
+  const personalityArchetype = {
+    name: "Analytical Explorer",
+    description: "Your personality structure follows the Analytical Explorer archetype, characterized by a blend of intellectual curiosity and systematic thinking. This archetype combines the drive to discover new territories of knowledge with the discipline to organize and integrate these discoveries into a coherent framework.",
+    strengths: ["Balanced thinking approach", "Knowledge integration", "Adaptive problem-solving", "Intellectual autonomy"],
+    challenges: ["Potential for analysis paralysis", "Difficulty with purely emotional decisions", "Balancing exploration with focused execution"],
+    growthPath: "Your development pathway involves integrating intuitive insights with analytical processes, finding practical applications for theoretical knowledge, and developing the social intelligence to communicate complex ideas effectively to diverse audiences."
+  };
   
   // Intelligence profile
   const intelligence = {
@@ -546,12 +646,29 @@ function generateComprehensiveAnalysis(responses) {
     "Combining theoretical foundations with hands-on practice"
   ];
   
+  // Communication style
+  const communicationStyle = {
+    primary: "Analytical",
+    secondary: "Collaborative",
+    description: "You tend to communicate in a thoughtful, structured manner that emphasizes clarity and logical progression. While your natural style values precision, you also demonstrate an ability to adapt your communication approach to build consensus and facilitate group understanding.",
+    effectiveChannels: ["Written documentation with visual elements", "One-on-one in-depth conversations", "Structured group discussions"]
+  };
+  
+  // Mindset patterns
+  const mindsetPatterns = {
+    dominant: "Growth-oriented with analytical foundation",
+    description: "Your cognitive approach combines a fundamental belief in development potential with a systematic evaluation process. This mindset enables you to pursue growth opportunities while maintaining a realistic assessment of situations.",
+    implications: ["Natural inclination toward learning environments", "Tendency to evaluate feedback carefully before integration", "Balanced approach to optimism and critical thinking"]
+  };
+  
   // Generate an overview based on these insights
-  const overview = `Your personality assessment reveals a multifaceted individual with a rich internal landscape and diverse capabilities. You demonstrate a balanced cognitive approach that combines analytical reasoning with creative thinking, allowing you to tackle problems from multiple angles. This versatility serves you well across various contexts, though your natural inclination tends slightly toward ${traitScores.openness > traitScores.conscientiousness ? "innovative exploration" : "structured organization"}.
+  const overview = `Your comprehensive personality assessment reveals a multifaceted individual with exceptional depth and complexity. Your cognitive profile demonstrates a harmonious balance between analytical reasoning and creative thinking, allowing you to navigate both structured and ambiguous situations with adaptability and insight. This intellectual versatility serves as a foundation for your approach to challenges and opportunities alike, contributing to a problem-solving style that is both systematic and innovative.
 
-A defining aspect of your personality is your ${traitScores.openness > 75 ? "exceptional" : "strong"} analytical mindset. You process information methodically and appreciate examining different perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally find yourself caught in cycles of overthinking. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and mental stimulation.
+A defining characteristic of your personality is your ${traitScores.openness > 75 ? "remarkably high" : "strong"} analytical capacity. You process information methodically, examining multiple perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally experience analysis paralysis when facing particularly complex choices. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and cognitive stimulation. This quest for understanding extends beyond practical knowledge to include philosophical questions and abstract concepts that satisfy your desire for deeper meaning.
 
-In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others in meaningful ways. You demonstrate sensitivity to emotional dynamics and likely serve as a supportive presence in your relationships. This empathetic quality, combined with your analytical abilities, enables you to understand both the logical and emotional dimensions of complex situations. Moving forward, your development journey might focus on balancing your ${traitScores.extraversion > 60 ? "social engagement with reflective solitude" : "thoughtful analysis with decisive action"}, while leveraging your natural strengths in ${traitScores.creativity > 75 ? "creative innovation" : "careful consideration"} and ${traitScores.resilience > 70 ? "adaptive resilience" : "empathetic understanding"}.`;
+In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others in meaningful ways. You demonstrate sensitivity to emotional dynamics and likely serve as a supportive presence in your relationships. This empathetic quality, combined with your analytical abilities, enables you to understand both the logical and emotional dimensions of complex situations. However, your tendency to absorb others' emotions may occasionally lead to emotional fatigue, suggesting a need for intentional boundaries and self-care practices.
+
+Your personality structure includes certain shadow aspects that influence your behavior in subtle but important ways. A perfectionist tendency manifests when you set exceptionally high standards for yourself that can impede progress and satisfaction. Similarly, an inclination toward self-protection through intellectual distancing may occasionally limit your emotional vulnerability in situations where deeper connection would be beneficial. Recognizing these patterns represents a significant opportunity for personal growth, allowing you to integrate these aspects of yourself more consciously and constructively.`;
 
   // Relationship patterns
   const relationshipPatterns = {
@@ -592,7 +709,7 @@ In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ?
   ];
   
   // Personal development roadmap
-  const roadmap = `Your personal development journey should focus on leveraging your analytical strengths while building confidence in your decision-making processes. In the short term, practicing setting clearer boundaries and embracing the concept of "good enough" will help you overcome perfectionist tendencies that may be limiting your progress in certain areas.
+  const roadmap = `Your personal development journey should focus on leveraging your analytical strengths while building confidence in your intuitive decision-making processes. In the short term, practicing setting clearer boundaries and embracing the concept of "good enough" will help you overcome perfectionist tendencies that may be limiting your progress in certain areas.
 
 In the medium term, explore opportunities that combine your analytical abilities with creative problem-solving, such as roles in research, strategic planning, or content development. These contexts would allow you to utilize your natural strengths while providing the intellectual stimulation you value. Consider developing expertise in areas where your combination of careful analysis and innovative thinking can create unique value.
 
@@ -600,6 +717,7 @@ Long-term growth will come from integrating your analytical mindset with more in
   
   return {
     traits,
+    detailedTraits,
     intelligence,
     intelligence_score: intelligence.score,
     emotional_intelligence_score: Math.floor(70 + Math.random() * 15),
@@ -612,6 +730,10 @@ Long-term growth will come from integrating your analytical mindset with more in
     relationship_patterns: relationshipPatterns,
     career_suggestions: careerSuggestions,
     learning_pathways: learningPathways,
-    roadmap
+    roadmap,
+    shadowAspects,
+    personalityArchetype,
+    communicationStyle,
+    mindsetPatterns
   };
 }

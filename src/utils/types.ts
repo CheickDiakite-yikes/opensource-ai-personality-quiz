@@ -1,3 +1,4 @@
+
 // Assessment Response Types
 export enum QuestionCategory {
   PersonalityTraits = "personality",
@@ -187,4 +188,27 @@ export interface ComprehensiveAnalysis extends PersonalityAnalysis {
     impactAreas: string[];
     integrationSuggestions: string[];
   }[];
+  personalityArchetype?: {
+    name: string;
+    description: string;
+    strengths: string[];
+    challenges: string[];
+    growthPath: string;
+  };
+  mindsetPatterns?: {
+    dominant: string;
+    description: string;
+    implications: string[];
+  };
+  emotionalProfile?: {
+    primaryEmotions: string[];
+    emotionalResponsiveness: number;
+    regulationStrategies: string[];
+  };
+  communicationStyle?: {
+    primary: string;
+    secondary: string;
+    description: string;
+    effectiveChannels: string[];
+  };
 }

@@ -137,6 +137,7 @@ export const useAnalyzeResponses = (
             body: { 
               responses, 
               assessmentId,
+              prompt: "Please provide a detailed, insightful personality analysis based on these assessment responses. Include specific traits, motivations, cognitive patterns, and growth areas.",
               retryCount // Pass retry count for logging purposes
             }
           });
@@ -316,12 +317,16 @@ export const useAnalyzeResponses = (
       return {
         id: fallbackId,
         createdAt: new Date().toISOString(),
-        overview: `This is a fallback analysis generated when the AI analysis couldn't be completed. Based on your ${responses.length} responses, you seem most interested in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}.`,
+        overview: `This is a fallback analysis generated when the AI analysis couldn't be completed. Based on your ${responses.length} responses, you seem most interested in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}.
+
+The assessment suggests you have a balanced personality with strengths in analytical thinking and empathy. You appear to value both logical reasoning and emotional understanding, which likely helps you navigate complex situations effectively.
+
+Your responses indicate a preference for thoughtful consideration before making decisions, along with a desire for meaningful connections with others. These qualities would serve you well in collaborative environments where both problem-solving and interpersonal skills are valued.`,
         traits: [
           {
             trait: "Analytical Thinking",
             score: 0.75,
-            description: "You show a tendency to analyze situations carefully before making decisions.",
+            description: "You show a tendency to analyze situations carefully before making decisions. This thoughtful approach helps you consider multiple perspectives and identify potential challenges or opportunities that others might miss.",
             strengths: ["Problem solving", "Critical thinking", "Attention to detail"],
             challenges: ["May overthink simple situations", "Could take longer to decide"],
             growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"]
@@ -329,7 +334,7 @@ export const useAnalyzeResponses = (
           {
             trait: "Adaptability",
             score: 0.7,
-            description: "You demonstrate ability to adjust to new situations and changing environments.",
+            description: "You demonstrate ability to adjust to new situations and changing environments. This flexibility allows you to remain effective even when circumstances shift unexpectedly.",
             strengths: ["Flexibility", "Resilience", "Open to new experiences"],
             challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions"],
             growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"]
@@ -337,10 +342,18 @@ export const useAnalyzeResponses = (
           {
             trait: "Empathy",
             score: 0.8,
-            description: "You show strong ability to understand and share feelings of others.",
+            description: "You show strong ability to understand and share feelings of others. This emotional intelligence enhances your relationships and allows you to provide meaningful support to those around you.",
             strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives"],
             challenges: ["May take on others' emotional burdens", "Could be affected by negative environments"],
             growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"]
+          },
+          {
+            trait: "Conscientiousness",
+            score: 0.72,
+            description: "You tend to be organized, responsible, and thorough in your approach to tasks and obligations. This reliability makes you someone others can count on to follow through on commitments.",
+            strengths: ["Organization", "Dependability", "Attention to detail"],
+            challenges: ["May set overly high standards", "Could experience frustration when plans change"],
+            growthSuggestions: ["Practice appropriate flexibility", "Celebrate progress alongside perfection"]
           }
         ],
         intelligence: {
@@ -357,21 +370,30 @@ export const useAnalyzeResponses = (
               name: "Emotional Intelligence",
               score: 0.72,
               description: "Your ability to understand and manage emotions, both yours and others'."
+            },
+            {
+              name: "Practical Intelligence",
+              score: 0.65,
+              description: "Your ability to apply knowledge effectively in real-world situations."
             }
           ]
         },
         intelligenceScore: 65,
         emotionalIntelligenceScore: 72,
         cognitiveStyle: "Balanced Thinker",
-        valueSystem: ["Growth", "Connection", "Understanding"],
-        motivators: ["Learning new things", "Helping others", "Personal development"],
-        inhibitors: ["Self-doubt", "Perfectionism"],
-        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries"],
-        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action"],
-        relationshipPatterns: ["Tends to be supportive", "Values deep connections over many superficial ones"],
-        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers"],
-        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments"],
-        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important."
+        valueSystem: ["Growth", "Connection", "Understanding", "Integrity"],
+        motivators: ["Learning new things", "Helping others", "Personal development", "Solving interesting problems"],
+        inhibitors: ["Self-doubt", "Perfectionism", "Overthinking decisions"],
+        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries", "Occasional reluctance to take risks"],
+        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action", "Setting clearer personal boundaries"],
+        relationshipPatterns: {
+          strengths: ["Supportive and understanding", "Values deep connections", "Good listener"],
+          challenges: ["May avoid necessary conflict", "Could struggle with asserting needs"],
+          compatibleTypes: ["Direct communicators", "Those who appreciate depth", "People who balance your tendencies"]
+        },
+        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers", "Research or advisory positions"],
+        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments", "Self-directed exploration with feedback"],
+        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important. Consider practicing more direct communication about your own needs while continuing to support others. Over time, work on integrating your analytical thinking with more intuitive approaches to achieve greater balance."
       };
     } catch (error) {
       console.error("Error generating fallback analysis:", error);
@@ -380,7 +402,7 @@ export const useAnalyzeResponses = (
       return {
         id: `minimal-fallback-${Date.now()}`,
         createdAt: new Date().toISOString(),
-        overview: "This is a minimal fallback analysis created when the AI analysis couldn't be completed.",
+        overview: "This is a minimal fallback analysis created when the AI analysis couldn't be completed. We apologize for the inconvenience and recommend trying again later.",
         traits: [
           {
             trait: "Resilience",

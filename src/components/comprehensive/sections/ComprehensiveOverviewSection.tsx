@@ -22,11 +22,16 @@ const ComprehensiveOverviewSection: React.FC<ComprehensiveOverviewSectionProps> 
   motivators,
   growthAreas
 }) => {
+  // Format the overview text with proper paragraphs
+  const formattedOverview = overview?.split('\n\n').map((paragraph, index) => (
+    <p key={index} className={index > 0 ? "mt-4" : ""}>{paragraph}</p>
+  )) || <p>Analysis overview not available.</p>;
+
   return (
     <>
       <Card className="p-6 md:p-8 shadow-md">
         <h2 className="text-2xl font-semibold mb-4">Personality Overview</h2>
-        <p className="mb-6">{overview}</p>
+        <div className="mb-6 text-pretty leading-relaxed">{formattedOverview}</div>
         
         {/* Key traits section */}
         <div className="mb-4">
