@@ -27,22 +27,6 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
   const [motivatorsOpen, setMotivatorsOpen] = React.useState(!isMobile);
   const [inhibitorsOpen, setInhibitorsOpen] = React.useState(!isMobile);
   
-  // Helper function to parse out any embedded explanations in motivators/inhibitors
-  const parseItemWithExplanation = (item: string) => {
-    const colonIndex = item.indexOf(':');
-    if (colonIndex > 0 && colonIndex < item.length - 1) {
-      return {
-        key: item.substring(0, colonIndex).trim(),
-        explanation: item.substring(colonIndex + 1).trim()
-      };
-    }
-    return { key: item, explanation: '' };
-  };
-  
-  // Process motivators and inhibitors to extract any embedded explanations
-  const processedMotivators = motivators.map(parseItemWithExplanation);
-  const processedInhibitors = inhibitors.map(parseItemWithExplanation);
-  
   return (
     <motion.div variants={{
       hidden: { opacity: 0, y: 20 },
@@ -72,7 +56,7 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
                 size="sm"
               >
                 <span className="text-xs">
-                  {motivatorsOpen ? "Collapse" : "Expand"} ({processedMotivators.length})
+                  {motivatorsOpen ? "Collapse" : "Expand"} ({motivators.length})
                 </span>
                 {motivatorsOpen ? (
                   <ChevronUp className="h-3 w-3" />
@@ -84,17 +68,12 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
             <CollapsibleContent>
               <CardContent className="pt-2 pb-2 px-3">
                 <ul className="space-y-1.5">
-                  {processedMotivators.map((item, index) => (
+                  {motivators.map((item, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </span>
-                      <div>
-                        <span className="text-xs">{item.key}</span>
-                        {item.explanation && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{item.explanation}</p>
-                        )}
-                      </div>
+                      <span className="text-xs">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -104,17 +83,12 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
         ) : (
           <CardContent className="pt-6">
             <ul className="space-y-2">
-              {processedMotivators.map((item, index) => (
-                <li key={index} className="flex items-start group hover:bg-muted/30 p-2 rounded-md transition-colors">
-                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0 group-hover:bg-primary/20">
+              {motivators.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                     {index + 1}
                   </span>
-                  <div>
-                    <span>{item.key}</span>
-                    {item.explanation && (
-                      <p className="text-sm text-muted-foreground mt-1">{item.explanation}</p>
-                    )}
-                  </div>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -139,7 +113,7 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
                 size="sm"
               >
                 <span className="text-xs">
-                  {inhibitorsOpen ? "Collapse" : "Expand"} ({processedInhibitors.length})
+                  {inhibitorsOpen ? "Collapse" : "Expand"} ({inhibitors.length})
                 </span>
                 {inhibitorsOpen ? (
                   <ChevronUp className="h-3 w-3" />
@@ -151,17 +125,12 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
             <CollapsibleContent>
               <CardContent className="pt-2 pb-2 px-3">
                 <ul className="space-y-1.5">
-                  {processedInhibitors.map((item, index) => (
+                  {inhibitors.map((item, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </span>
-                      <div>
-                        <span className="text-xs">{item.key}</span>
-                        {item.explanation && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{item.explanation}</p>
-                        )}
-                      </div>
+                      <span className="text-xs">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -171,17 +140,12 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({
         ) : (
           <CardContent className="pt-6">
             <ul className="space-y-2">
-              {processedInhibitors.map((item, index) => (
-                <li key={index} className="flex items-start group hover:bg-muted/30 p-2 rounded-md transition-colors">
-                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0 group-hover:bg-primary/20">
+              {inhibitors.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                     {index + 1}
                   </span>
-                  <div>
-                    <span>{item.key}</span>
-                    {item.explanation && (
-                      <p className="text-sm text-muted-foreground mt-1">{item.explanation}</p>
-                    )}
-                  </div>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>

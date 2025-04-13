@@ -69,27 +69,18 @@ export function useComprehensiveSubmission(
             toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
           }
           
-          // Call the edge function with enhanced output request
+          // Set a longer timeout for the request - we can't use AbortController with Supabase functions
+          // so we'll need a different approach
+          
+          // Call the edge function without the signal option (it's not supported)
           const { data, error } = await supabase.functions.invoke(
             "analyze-comprehensive-responses",
             {
               body: { 
                 assessmentId: createdAssessmentId,
-                responses: formattedResponses,
-                enhancedOutput: true, 
-                enhancementFocus: {
-                  motivators: true,
-                  inhibitors: true,
-                  relationships: true,
-                  growthAreas: true,
-                  personalTone: true,
-                  careerDetail: true,
-                  emotionalProfile: true,
-                  communicationStyle: true,
-                  lifePurpose: true
-                },
-                outputTokenTarget: 14000 // Requesting a very detailed output (but still within limits)
+                responses: formattedResponses
               }
+              // Removed the signal property as it's not supported
             }
           );
           

@@ -1,90 +1,47 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Lightbulb, AlertCircle } from "lucide-react";
-
-interface MotivatorItem {
-  name?: string;
-  description?: string;
-}
 
 interface ComprehensiveMotivationSectionProps {
-  motivators: string[] | MotivatorItem[];
-  inhibitors: string[] | MotivatorItem[];
+  motivators: string[];
+  inhibitors: string[];
 }
 
 const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionProps> = ({
   motivators,
   inhibitors
 }) => {
-  // Helper function to safely render motivator/inhibitor items
-  const renderItem = (item: string | MotivatorItem) => {
-    if (typeof item === 'string') {
-      return item;
-    } else if (item && typeof item === 'object') {
-      // Ensure we return a string, not an object
-      return item.name || item.description || 'Unnamed item';
-    }
-    // Convert any other types to string
-    return String(item);
-  };
-
-  // Helper function to get description if available
-  const getDescription = (item: string | MotivatorItem): string | null => {
-    if (typeof item === 'object' && item && item.description) {
-      // Ensure we return a string, not an object
-      return String(item.description);
-    }
-    return null;
-  };
-
   return (
     <Card className="p-6 md:p-8 shadow-md">
-      <h2 className="text-2xl font-semibold mb-6">Motivation Analysis</h2>
+      <h2 className="text-2xl font-semibold mb-4">Motivation Profile</h2>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-lg font-medium flex items-center mb-4">
-            <Lightbulb className="h-5 w-5 text-primary mr-2" />
-            Key Motivators
-          </h3>
-          
-          <div className="space-y-4">
-            {Array.isArray(motivators) && motivators.map((motivator, index) => (
-              <div key={index} className="border-l-4 border-primary pl-4 py-1">
-                <p className="font-medium">
-                  {renderItem(motivator)}
-                </p>
-                {getDescription(motivator) && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getDescription(motivator)}
-                  </p>
-                )}
-              </div>
+          <h3 className="text-lg font-medium mb-3">Key Motivators</h3>
+          <ul className="space-y-3">
+            {motivators?.map((motivator, index) => (
+              <li key={index} className="flex items-start">
+                <span className="inline-flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 h-6 w-6 text-sm text-green-600 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0">
+                  {index + 1}
+                </span>
+                <span>{motivator}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-
-        <div className="mt-8">
-          <h3 className="text-lg font-medium flex items-center mb-4">
-            <AlertCircle className="h-5 w-5 text-destructive mr-2" />
-            Inhibiting Factors
-          </h3>
-          
-          <div className="space-y-4">
-            {Array.isArray(inhibitors) && inhibitors.map((inhibitor, index) => (
-              <div key={index} className="border-l-4 border-destructive/60 pl-4 py-1">
-                <p className="font-medium">
-                  {renderItem(inhibitor)}
-                </p>
-                {getDescription(inhibitor) && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getDescription(inhibitor)}
-                  </p>
-                )}
-              </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-3">Inhibitors</h3>
+          <ul className="space-y-3">
+            {inhibitors?.map((inhibitor, index) => (
+              <li key={index} className="flex items-start">
+                <span className="inline-flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 h-6 w-6 text-sm text-red-600 dark:text-red-400 mr-3 mt-0.5 flex-shrink-0">
+                  {index + 1}
+                </span>
+                <span>{inhibitor}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </Card>

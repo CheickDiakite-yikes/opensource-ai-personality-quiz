@@ -2,18 +2,15 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Heart, Users, UserCircle, ShieldQuestion } from "lucide-react";
-import { RelationshipPatterns, RelationshipDynamic } from "@/utils/types";
-import { Badge } from "@/components/ui/badge";
+import { Heart } from "lucide-react";
+import { RelationshipPatterns } from "@/utils/types";
 
 interface ComprehensiveRelationshipsSectionProps {
   relationshipPatterns: RelationshipPatterns;
-  relationshipDynamics?: RelationshipDynamic;
 }
 
 const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSectionProps> = ({
-  relationshipPatterns,
-  relationshipDynamics
+  relationshipPatterns
 }) => {
   return (
     <Card className="p-6 md:p-8 shadow-md">
@@ -25,52 +22,6 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
       <p className="mb-6 text-muted-foreground">
         This analysis reveals how you tend to connect and interact with others in relationships.
       </p>
-      
-      {/* Display relationship dynamics if available */}
-      {relationshipDynamics && (
-        <div className="mb-8 p-4 bg-muted/30 rounded-lg border border-primary/20">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-medium">{relationshipDynamics.pattern}</h3>
-          </div>
-          
-          <p className="mb-4 text-pretty">{relationshipDynamics.description}</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            {relationshipDynamics.idealPartnerQualities && relationshipDynamics.idealPartnerQualities.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <UserCircle className="h-4 w-4 text-primary" />
-                  Ideal Partner Qualities
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {relationshipDynamics.idealPartnerQualities.map((quality, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-primary/5">
-                      {quality}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {relationshipDynamics.growthOpportunities && relationshipDynamics.growthOpportunities.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <ShieldQuestion className="h-4 w-4 text-primary" />
-                  Growth Opportunities
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {relationshipDynamics.growthOpportunities.map((opportunity, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-primary/5">
-                      {opportunity}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       
       <div className="space-y-6">
         <div>

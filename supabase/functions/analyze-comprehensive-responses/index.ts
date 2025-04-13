@@ -17,11 +17,10 @@ serve(async (req) => {
   }
   
   try {
-    const { assessmentId, responses, enhancedOutput = true, enhancementFocus = {}, outputTokenTarget = 12000 } = await req.json();
+    const { assessmentId, responses } = await req.json();
     
     console.log(`[analyze-comprehensive-responses] Processing comprehensive assessment: ${assessmentId}`);
     console.log(`[analyze-comprehensive-responses] Received ${responses?.length || 0} responses`);
-    console.log(`[analyze-comprehensive-responses] Enhanced output requested: ${enhancedOutput}`);
     
     if (!assessmentId) {
       console.error("[analyze-comprehensive-responses] Missing assessment ID");
@@ -66,7 +65,7 @@ serve(async (req) => {
     if (openAIApiKey && responses && responses.length > 0) {
       try {
         console.log("[analyze-comprehensive-responses] Attempting to use OpenAI for comprehensive analysis");
-        analysisResult = await generateOpenAIAnalysis(responses, enhancedOutput, enhancementFocus, outputTokenTarget);
+        analysisResult = await generateOpenAIAnalysis(responses);
         console.log("[analyze-comprehensive-responses] Successfully generated OpenAI analysis");
       } catch (error) {
         console.error("[analyze-comprehensive-responses] OpenAI analysis failed:", error);
@@ -193,7 +192,7 @@ serve(async (req) => {
 });
 
 // Function to generate analysis using OpenAI API
-async function generateOpenAIAnalysis(responses, enhancedOutput = true, enhancementFocus = {}, outputTokenTarget = 12000) {
+async function generateOpenAIAnalysis(responses) {
   if (!openAIApiKey) {
     throw new Error("OpenAI API key not configured");
   }
@@ -209,72 +208,47 @@ async function generateOpenAIAnalysis(responses, enhancedOutput = true, enhancem
     const systemPrompt = `You are an expert personality analyst and psychologist with deep knowledge of psychometrics, cognitive psychology, and personality theory. Create a comprehensive, detailed personality analysis based on the user's assessment responses. Your analysis should be thorough, insightful, and presented in a structured JSON format.
 
 Provide the following in your analysis:
-1. An "overview" key with a 4-6 paragraph narrative summary (minimum 800 words) of the person's personality profile that is deeply insightful and reveals nuanced understanding of their psychological makeup. Make this feel personal and tailored, not generic.
-2. A "traits" array with 5-8 personality traits, each including:
+1. An "overview" key with a 3-4 paragraph narrative summary (minimum 500 words) of the person's personality profile that is deeply insightful and reveals nuanced understanding of their psychological makeup
+2. A "traits" array with 5-7 personality traits, each including:
    - "trait" (name of the trait)
    - "score" (decimal between 0 and 10)
-   - "description" (detailed paragraph about this trait, minimum 150 words)
-   - "strengths" (array of 4-6 specific strengths related to this trait)
-   - "challenges" (array of 3-4 specific challenges or limitations)
-   - "growthSuggestions" (array of 3-5 specific growth recommendations)
+   - "description" (detailed paragraph about this trait, minimum 100 words)
+   - "strengths" (array of 3-5 specific strengths related to this trait)
+   - "challenges" (array of 2-3 specific challenges or limitations)
+   - "growthSuggestions" (array of 2-3 specific growth recommendations)
 3. "detailedTraits" object with:
-   - "primary" (array of 2-4 dominant traits with same structure as above)
-   - "secondary" (array of 2-4 supporting traits with same structure)
+   - "primary" (array of 2-3 dominant traits with same structure as above)
+   - "secondary" (array of 2-3 supporting traits with same structure)
 4. An "intelligence" object with:
    - "type" (primary intelligence type)
-   - "description" (detailed paragraph explaining their intelligence profile, 150+ words)
-   - "domains" (array of 5-7 intelligence domains, each with "name", "score" (0-10), and detailed "description")
+   - "description" (paragraph explaining their intelligence profile)
+   - "domains" (array of intelligence domains, each with "name", "score" (0-10), and "description")
 5. Numerical scores:
    - "intelligenceScore" (overall intelligence rating, 0-100)
    - "emotionalIntelligenceScore" (emotional intelligence rating, 0-100)
-6. "shadowAspects" array with 2-4 shadow aspects of personality:
+6. "shadowAspects" array with 2-3 shadow aspects of personality:
    - "trait" (name of the shadow aspect)
-   - "description" (detailed paragraph explaining this shadow aspect, 100+ words)
-   - "impactAreas" (array of 4-6 specific areas in life where this manifests)
-   - "integrationSuggestions" (array of 3-5 detailed suggestions for growth)
+   - "description" (paragraph explaining this shadow aspect)
+   - "impactAreas" (array of areas in life where this manifests)
+   - "integrationSuggestions" (array of suggestions for growth)
 7. "personalityArchetype" object with:
-   - "name" (archetypal pattern name, be creative but insightful)
-   - "description" (detailed paragraph explaining this archetype, 150+ words)
-   - "strengths" (array of 4-6 archetypal strengths)
-   - "challenges" (array of 3-5 archetypal challenges)
-   - "growthPath" (detailed paragraph on development trajectory, 100+ words)
-8. "emotionalProfile" object with:
-   - "primaryEmotions" (array of 3-5 dominant emotions)
-   - "emotionalResponsiveness" (number from 1-10)
-   - "regulationStrategies" (array of 3-5 strategies)
-   - "emotionalPatterns" (detailed paragraph on emotional tendencies, 150+ words)
-9. "mindsetPatterns" object with:
-   - "dominant" (primary mindset pattern)
-   - "description" (detailed explanation, 100+ words)
-   - "implications" (array of 4-6 life implications)
-   - "developmentPath" (paragraph on mindset evolution, 100+ words)
-10. "communicationStyle" object with:
-   - "primary" (primary communication style)
-   - "secondary" (secondary communication style)
-   - "description" (detailed paragraph, 150+ words)
-   - "effectiveChannels" (array of 3-5 communication methods that work well)
-   - "challengingContexts" (array of 2-4 difficult communication scenarios)
-   - "improvementStrategies" (array of 3-4 specific strategies)
-11. "valueSystem" (array of 4-7 core values, each with a name and detailed description)
-12. "motivators" (array of 4-6 key motivational factors with detailed explanations)
-13. "inhibitors" (array of 3-5 psychological inhibitors with root causes and manifestations)
-14. "weaknesses" (array of 3-5 specific weaknesses or blindspots with detailed context)
-15. "growthAreas" (array of 4-6 areas for personal development with specific action steps)
-16. "relationshipPatterns" object with:
-   - "pattern" (primary relationship pattern name)
-   - "description" (detailed paragraph on relationship style, 150+ words)
-   - "strengths" (array of 4-6 relationship strengths)
-   - "challenges" (array of 3-5 relationship challenges)
-   - "compatibleTypes" (array of 4-5 compatible personality types with explanations)
-   - "incompatibleTypes" (array of 2-3 challenging personality matches with reasons)
-   - "growthOpportunities" (array of 3-5 relationship growth areas)
-   - "intimacyStyle" (paragraph on approach to emotional intimacy)
-   - "communicationNeeds" (array of 3-4 specific relationship communication needs)
-17. "careerSuggestions" (array of 6-9 specific career paths that align with their profile):
-   - Each career should include a "field", "title", "description", "alignment" rationale, "keyTraits" required, "growth" potential, and "skills" to develop
-18. "learningPathways" (array of 4-6 learning approaches with detailed explanations of why they'd work well)
-19. "roadmap" (a detailed, multi-paragraph development roadmap with short, medium, and long-term growth trajectories, 300+ words)
-20. "lifePurposeThemes" (array of 3-5 potential life purpose themes with explorations)
+   - "name" (archetypal pattern name)
+   - "description" (paragraph explaining this archetype)
+   - "strengths" (array of archetypal strengths)
+   - "challenges" (array of archetypal challenges)
+   - "growthPath" (paragraph on development trajectory)
+8. "valueSystem" (array of 3-5 core values)
+9. "motivators" (array of 3-5 key motivational factors)
+10. "inhibitors" (array of 2-4 psychological inhibitors)
+11. "weaknesses" (array of 3-5 specific weaknesses or blindspots)
+12. "growthAreas" (array of 3-5 areas for personal development)
+13. "relationshipPatterns" object with:
+    - "strengths" (array of relationship strengths)
+    - "challenges" (array of relationship challenges)
+    - "compatibleTypes" (array of compatible personality types)
+14. "careerSuggestions" (array of 5-7 specific career paths that align with their profile)
+15. "learningPathways" (array of 3-5 learning approaches that would work well)
+16. "roadmap" (a detailed paragraph with a development roadmap)
 
 Your analysis should be:
 - Evidence-based: Draw directly from their responses
@@ -282,31 +256,18 @@ Your analysis should be:
 - Growth-oriented: Focus on potential for development
 - Balanced: Include both strengths and areas for improvement
 - Specific: Include concrete examples and actionable insights
-- Personal: Feel tailored specifically to this individual, not generic
-- Empowering: Help the person understand themselves better and take positive action
 
-Format your entire response as a valid JSON object that can be parsed by JavaScript. Ensure all text fields have proper paragraph breaks where appropriate.`;
+Format your entire response as a valid JSON object that can be parsed by JavaScript.`;
     
     const userPrompt = `Based on the following assessment responses, create a comprehensive personality analysis.
 
 Assessment Responses:
 ${JSON.stringify(responseData, null, 2)}
 
-Remember to structure your response as a valid JSON object with all the required fields. Be as specific, insightful, and detailed as possible. Provide narratives that are meaningful and practical rather than generic advice.
-
-Your analysis should feel deeply personalized and insightful - as if you've truly understood this unique individual. Focus especially on providing:
-1. Detailed career suggestions with specific roles and industries
-2. Nuanced relationship patterns and compatibility insights
-3. Growth pathways that acknowledge both challenges and strengths
-4. Value systems that reflect authentic personal priorities
-5. Shadow aspects that provide insight into unconscious patterns
-
-The person reading this analysis should feel seen, understood, and equipped with practical insights for personal development.`;
+Remember to structure your response as a valid JSON object with all the required fields. Be as specific, insightful, and detailed as possible. Provide narratives that are meaningful and practical rather than generic advice.`;
     
     // Call OpenAI API
     console.log("[analyze-comprehensive-responses] Sending request to OpenAI API with gpt-4o model");
-    console.log("[analyze-comprehensive-responses] Output token target:", outputTokenTarget);
-    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -320,7 +281,7 @@ The person reading this analysis should feel seen, understood, and equipped with
           { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: Math.min(16000, outputTokenTarget), // Cap at OpenAI's max
+        max_tokens: 4000,
         response_format: { type: "json_object" }
       })
     });
@@ -427,48 +388,6 @@ function standardizeAnalysisFormat(analysis) {
       challenges: ["May struggle with commitment to a single path"],
       growthPath: "Developing focus while maintaining flexibility and curiosity"
     };
-  }
-
-  // Ensure emotional profile exists
-  if (!standardized.emotionalProfile) {
-    standardized.emotionalProfile = {
-      primaryEmotions: ["Curiosity", "Determination", "Empathy"],
-      emotionalResponsiveness: 7,
-      regulationStrategies: ["Reflective processing", "Mindful awareness", "Creative expression"],
-      emotionalPatterns: "Tends to process emotions through intellectual analysis before fully experiencing them. Shows strong emotional resilience when facing challenges but may occasionally suppress difficult emotions rather than addressing them directly. Has developed effective self-regulation strategies that allow for maintaining composure in most situations."
-    };
-  }
-
-  // Ensure mindset patterns exist
-  if (!standardized.mindsetPatterns) {
-    standardized.mindsetPatterns = {
-      dominant: "Growth-oriented with analytical foundation",
-      description: "Approaches challenges with a belief in personal development while applying systematic evaluation. Balances optimism about potential with realistic assessment of situations.",
-      implications: ["Natural inclination toward learning environments", "Careful evaluation of feedback", "Balanced approach to risk-taking"],
-      developmentPath: "Moving toward greater integration of intuitive insights with analytical processes, allowing for more fluid decision-making in uncertain situations."
-    };
-  }
-
-  // Ensure communication style exists
-  if (!standardized.communicationStyle) {
-    standardized.communicationStyle = {
-      primary: "Analytical",
-      secondary: "Collaborative",
-      description: "Communicates in a thoughtful, structured manner that emphasizes clarity and logical progression. Tends to consider multiple perspectives before expressing viewpoints, which lends depth to communication but may sometimes delay immediate responses in fast-paced discussions.",
-      effectiveChannels: ["Written communication", "One-on-one conversations", "Structured discussions"],
-      challengingContexts: ["Highly emotional conflicts", "Impromptu public speaking"],
-      improvementStrategies: ["Practice more spontaneous expression", "Develop comfort with constructive disagreement"]
-    };
-  }
-
-  // Ensure life purpose themes exist
-  if (!standardized.lifePurposeThemes) {
-    standardized.lifePurposeThemes = [
-      "Knowledge Integration & Sharing",
-      "Creative Problem-Solving",
-      "Building Meaningful Connections",
-      "Personal Growth & Development"
-    ];
   }
   
   return standardized;
@@ -664,242 +583,157 @@ function generateComprehensiveAnalysis(responses) {
       {
         name: "Analytical Intelligence",
         score: Math.floor(70 + Math.random() * 20) / 10,
-        description: "Your analytical intelligence reflects your ability to evaluate information critically, identify patterns, and draw logical conclusions. You excel at breaking down complex problems into manageable components and applying systematic thinking to find solutions."
+        description: "Your analytical intelligence reflects your ability to evaluate information critically, identify patterns, and apply logical reasoning to solve problems."
       },
       {
         name: "Creative Intelligence",
         score: Math.floor(65 + Math.random() * 25) / 10,
-        description: "Your creative intelligence manifests as the ability to generate novel ideas, make unexpected connections between concepts, and think outside conventional frameworks. This aspect of intelligence helps you approach problems from fresh perspectives and innovate when standard solutions aren't effective."
-      },
-      {
-        name: "Emotional Intelligence",
-        score: Math.floor(60 + Math.random() * 30) / 10,
-        description: "Your emotional intelligence encompasses your capacity to recognize, understand, and manage your own emotions while also perceiving and influencing the emotions of others. This intelligence type enhances your interpersonal effectiveness and emotional well-being."
+        description: "This represents your capacity for innovative thinking, generating original ideas, and making novel connections between concepts."
       },
       {
         name: "Practical Intelligence",
-        score: Math.floor(65 + Math.random() * 20) / 10, 
-        description: "Your practical intelligence represents your ability to apply knowledge effectively in real-world contexts, adapt to new environments, and develop workable solutions to everyday problems. This pragmatic aspect of intelligence helps you navigate life's challenges with resourcefulness."
+        score: Math.floor(60 + Math.random() * 30) / 10,
+        description: "Your practical intelligence involves applying knowledge effectively in real-world situations and finding workable solutions to everyday problems."
+      },
+      {
+        name: "Emotional Intelligence",
+        score: Math.floor(70 + Math.random() * 20) / 10,
+        description: "This domain encompasses your ability to recognize, understand, and manage your own emotions while effectively interpreting and responding to others' emotional states."
       },
       {
         name: "Social Intelligence",
-        score: Math.floor(60 + Math.random() * 25) / 10,
-        description: "Your social intelligence reflects your capacity to understand social dynamics, navigate interpersonal relationships effectively, and adapt your behavior appropriately across different social contexts. This intelligence enhances your ability to collaborate and build meaningful connections."
+        score: Math.floor(65 + Math.random() * 25) / 10,
+        description: "Your social intelligence reflects how well you navigate interpersonal dynamics, understand social contexts, and build effective relationships with others."
       }
     ]
   };
   
-  // Emotional profile
-  const emotionalProfile = {
-    primaryEmotions: ["Curiosity", "Determination", "Empathy", "Contentment"],
-    emotionalResponsiveness: Math.floor(6 + Math.random() * 3),
-    regulationStrategies: ["Cognitive reframing", "Mindful awareness", "Expressive processing", "Selective engagement"],
-    emotionalPatterns: "You tend to process emotions through a combination of intellectual analysis and embodied awareness. Your emotional landscape is characterized by a generally positive baseline with periods of intense focus and occasional waves of deeper feelings that you typically navigate successfully. You show strong resilience when facing challenges but may sometimes intellectualize emotions rather than fully experiencing them. Your emotional pattern reflects a preference for emotional stability and measured responses rather than dramatic fluctuations."
-  };
+  // Values and motivators
+  const valueSystem = ["Growth", "Authenticity", "Connection", "Understanding", "Achievement"];
   
-  // Mindset patterns
-  const mindsetPatterns = {
-    dominant: "Growth-oriented with analytical foundation",
-    description: "You approach life with a fundamental belief in the potential for development and improvement, while applying systematic thinking to evaluate situations and opportunities. This combination allows you to remain optimistic about possibilities while maintaining realistic assessments of challenges and requirements.",
-    implications: ["Natural orientation toward learning environments", "Thoughtful evaluation of feedback", "Balanced approach to risk-taking", "Preference for evidence-based growth strategies"],
-    developmentPath: "Your mindset is evolving toward greater integration of intuitive insights with your analytical processes, allowing for more fluid decision-making in uncertain situations. As you continue to develop, you'll likely find increasing comfort with ambiguity while maintaining your commitment to thoughtful evaluation."
-  };
+  const motivators = [
+    "Learning new concepts and expanding knowledge",
+    "Making meaningful connections with others",
+    "Solving complex problems that challenge your abilities",
+    "Personal growth and self-improvement",
+    "Creating positive impact through your contributions"
+  ];
+  
+  const inhibitors = [
+    "Self-doubt that arises in unfamiliar situations",
+    "Tendency to overthink important decisions",
+    "Difficulty setting firm boundaries with others",
+    "Perfectionism that can slow progress and increase stress"
+  ];
+  
+  // Career suggestions based on trait profile
+  const careerSuggestions = [
+    "Research Scientist or Analyst",
+    "Strategic Consultant",
+    "Creative Director or Designer", 
+    "Content Creator or Writer",
+    "Product Development Manager",
+    "Educational Content Developer",
+    "UX Researcher or Designer"
+  ];
+  
+  // Learning styles based on trait profile
+  const learningPathways = [
+    "Self-directed learning combined with practical application",
+    "Interactive and collaborative learning environments",
+    "Structured programs with clear milestones and feedback",
+    "Learning through creative exploration and experimentation",
+    "Combining theoretical foundations with hands-on practice"
+  ];
   
   // Communication style
   const communicationStyle = {
     primary: "Analytical",
     secondary: "Collaborative",
-    description: "You tend to communicate in a thoughtful, structured manner that emphasizes clarity and logical progression. Your analytical primary style means you often consider multiple perspectives before expressing viewpoints, which lends depth to your communication but may sometimes delay immediate responses in fast-paced discussions. Your secondary collaborative style balances this with an emphasis on inclusive dialogue and mutual understanding.",
-    effectiveChannels: ["Written communication", "One-on-one conversations", "Structured discussions", "Visual aids and diagrams"],
-    challengingContexts: ["Highly emotional conflicts", "Impromptu public speaking", "Environments with frequent interruptions"],
-    improvementStrategies: ["Practice more spontaneous expression", "Develop comfort with constructive disagreement", "Incorporate more emotion and personal narrative"]
+    description: "You tend to communicate in a thoughtful, structured manner that emphasizes clarity and logical progression. While your natural style values precision, you also demonstrate an ability to adapt your communication approach to build consensus and facilitate group understanding.",
+    effectiveChannels: ["Written documentation with visual elements", "One-on-one in-depth conversations", "Structured group discussions"]
   };
   
-  // Value system
-  const valueSystem = ["Growth", "Connection", "Understanding", "Integrity", "Autonomy", "Balance"];
+  // Mindset patterns
+  const mindsetPatterns = {
+    dominant: "Growth-oriented with analytical foundation",
+    description: "Your cognitive approach combines a fundamental belief in development potential with a systematic evaluation process. This mindset enables you to pursue growth opportunities while maintaining a realistic assessment of situations.",
+    implications: ["Natural inclination toward learning environments", "Tendency to evaluate feedback carefully before integration", "Balanced approach to optimism and critical thinking"]
+  };
   
-  // Motivators
-  const motivators = [
-    "Learning and intellectual development",
-    "Making meaningful contributions",
-    "Building deep connections with others",
-    "Achieving mastery in areas of interest",
-    "Creating useful or beautiful things"
-  ];
-  
-  // Inhibitors
-  const inhibitors = [
-    "Fear of inadequate performance",
-    "Tendency toward overthinking",
-    "Reluctance to engage in self-promotion",
-    "Difficulty with rapid decisions"
-  ];
-  
-  // Weaknesses
-  const weaknesses = [
-    "May overthink decisions, leading to delayed action",
-    "Could struggle with setting firm boundaries",
-    "Tendency to take on too many interests simultaneously",
-    "Occasional reluctance to take social or professional risks"
-  ];
-  
-  // Growth areas
-  const growthAreas = [
-    "Developing more confidence in intuitive decisions",
-    "Finding balance between analysis and action",
-    "Setting clearer personal boundaries",
-    "Expanding comfort with public visibility",
-    "Cultivating selective focus among multiple interests"
-  ];
-  
+  // Generate an overview based on these insights
+  const overview = `Your comprehensive personality assessment reveals a multifaceted individual with exceptional depth and complexity. Your cognitive profile demonstrates a harmonious balance between analytical reasoning and creative thinking, allowing you to navigate both structured and ambiguous situations with adaptability and insight. This intellectual versatility serves as a foundation for your approach to challenges and opportunities alike, contributing to a problem-solving style that is both systematic and innovative.
+
+A defining characteristic of your personality is your ${traitScores.openness > 75 ? "remarkably high" : "strong"} analytical capacity. You process information methodically, examining multiple perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally experience analysis paralysis when facing particularly complex choices. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and cognitive stimulation. This quest for understanding extends beyond practical knowledge to include philosophical questions and abstract concepts that satisfy your desire for deeper meaning.
+
+In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others in meaningful ways. You demonstrate sensitivity to emotional dynamics and likely serve as a supportive presence in your relationships. This empathetic quality, combined with your analytical abilities, enables you to understand both the logical and emotional dimensions of complex situations. However, your tendency to absorb others' emotions may occasionally lead to emotional fatigue, suggesting a need for intentional boundaries and self-care practices.
+
+Your personality structure includes certain shadow aspects that influence your behavior in subtle but important ways. A perfectionist tendency manifests when you set exceptionally high standards for yourself that can impede progress and satisfaction. Similarly, an inclination toward self-protection through intellectual distancing may occasionally limit your emotional vulnerability in situations where deeper connection would be beneficial. Recognizing these patterns represents a significant opportunity for personal growth, allowing you to integrate these aspects of yourself more consciously and constructively.`;
+
   // Relationship patterns
   const relationshipPatterns = {
-    pattern: "Thoughtful Connector",
-    description: "Your approach to relationships is characterized by thoughtful engagement and genuine interest in others' perspectives and experiences. You tend to form connections gradually but with meaningful depth once established. In close relationships, you value authentic communication and mutual growth, offering loyal support while respecting autonomy.",
     strengths: [
-      "Deep listening and empathetic understanding",
-      "Thoughtful support tailored to others' needs",
-      "Loyalty and commitment",
-      "Creating intellectual and emotional safety"
+      "Building deep and meaningful connections based on authentic understanding",
+      "Being a thoughtful and attentive listener in conversations",
+      "Providing insightful perspective and support to those close to you",
+      "Bringing intellectual curiosity and depth to relationships"
     ],
     challenges: [
-      "May sometimes withhold opinions to maintain harmony",
-      "Could struggle with directly addressing conflicts",
-      "Occasional difficulty expressing emotional needs clearly"
+      "Setting and maintaining healthy boundaries when others need support",
+      "Balancing giving to others with necessary self-care",
+      "Expressing direct needs and wants clearly without over-analyzing",
+      "Managing the tendency to internalize others' problems or emotions"
     ],
     compatibleTypes: [
-      "Authentic communicators who value depth",
-      "Growth-oriented individuals who appreciate reflection",
-      "People who balance your tendencies with complementary traits",
-      "Those who appreciate both connection and autonomy"
-    ],
-    incompatibleTypes: [
-      "Highly controlling personalities",
-      "Those requiring constant external validation"
-    ],
-    growthOpportunities: [
-      "Practicing more direct expression of needs and boundaries",
-      "Initiating connection more frequently",
-      "Embracing constructive conflict as growth opportunity"
-    ],
-    intimacyStyle: "You approach emotional intimacy with a blend of thoughtfulness and genuine vulnerability, typically preferring to develop trust gradually through shared experiences and meaningful exchanges rather than rapid self-disclosure.",
-    communicationNeeds: [
-      "Time to process complex emotional topics",
-      "Direct but respectful feedback",
-      "Recognition of unspoken thoughts and feelings",
-      "Balance between deep conversation and comfortable silence"
+      "Those who value authenticity and depth in relationships",
+      "Growth-minded individuals who appreciate intellectual discussion",
+      "People who balance your thinking style with complementary traits",
+      "Partners who respect both connection and independent growth"
     ]
   };
   
-  // Career suggestions with enhanced structure
-  const careerSuggestions = [
-    {
-      field: "Research & Analysis",
-      title: "Research Consultant",
-      description: "Apply analytical skills to investigate complex problems and provide evidence-based recommendations across various domains.",
-      alignment: "Leverages your natural analytical strengths and desire for continuous learning",
-      keyTraits: ["Analytical thinking", "Intellectual curiosity", "Systematic approach"],
-      growth: "Expanding field with growing demand for evidence-based decision making",
-      skills: ["Research methodology", "Data visualization", "Insight communication"]
-    },
-    {
-      field: "Education & Knowledge Sharing",
-      title: "Learning Experience Designer",
-      description: "Create engaging educational experiences that help others develop knowledge and skills effectively.",
-      alignment: "Combines your understanding of learning processes with creative problem-solving",
-      keyTraits: ["Empathy", "Communication", "Structured thinking"],
-      growth: "Evolving field with increased focus on personalized learning approaches",
-      skills: ["Instructional design", "Digital content creation", "Learning assessment"]
-    },
-    {
-      field: "Creative Problem Solving",
-      title: "Innovation Strategist",
-      description: "Develop approaches for organizations to foster creative thinking and implement innovative solutions.",
-      alignment: "Utilizes your ability to balance analytical and creative thinking",
-      keyTraits: ["Creativity", "Strategic vision", "Adaptability"],
-      growth: "High demand as organizations seek competitive advantage through innovation",
-      skills: ["Design thinking", "Facilitation", "Trend analysis"]
-    },
-    {
-      field: "Psychology & Human Development",
-      title: "Developmental Specialist",
-      description: "Support individuals in personal or professional growth through evidence-based approaches.",
-      alignment: "Resonates with your interest in human potential and meaningful connection",
-      keyTraits: ["Empathy", "Analytical thinking", "Growth mindset"],
-      growth: "Expanding field with increasing focus on lifelong development",
-      skills: ["Assessment techniques", "Coaching methods", "Progress measurement"]
-    },
-    {
-      field: "Content Creation",
-      title: "Educational Content Developer",
-      description: "Create accessible, engaging content that makes complex topics understandable and applicable.",
-      alignment: "Combines your analytical abilities with communication skills",
-      keyTraits: ["Clear communication", "Subject mastery", "User empathy"],
-      growth: "Growing demand for quality content across digital platforms",
-      skills: ["Storytelling", "Multimedia production", "Information architecture"]
-    },
-    {
-      field: "Technology & Human Experience",
-      title: "UX Researcher",
-      description: "Study how people interact with products and services to enhance usability and satisfaction.",
-      alignment: "Integrates your analytical thinking with empathy for users' experiences",
-      keyTraits: ["Systematic research", "Empathetic understanding", "Pattern recognition"],
-      growth: "Essential role as digital experiences become increasingly important",
-      skills: ["User testing", "Qualitative research", "Insight synthesis"]
-    },
-    {
-      field: "Strategic Communication",
-      title: "Communications Strategist",
-      description: "Develop comprehensive approaches to help organizations effectively convey complex messages.",
-      alignment: "Uses your ability to understand different perspectives and communicate clearly",
-      keyTraits: ["Analytical thinking", "Audience understanding", "Message clarity"],
-      growth: "Vital function as information ecosystems become more complex",
-      skills: ["Strategic planning", "Content strategy", "Message effectiveness assessment"]
-    }
+  // Growth areas and weaknesses
+  const growthAreas = [
+    "Developing greater confidence in your intuitive decision-making abilities",
+    "Finding balance between thorough analysis and timely action",
+    "Establishing clearer boundaries in personal and professional relationships",
+    "Embracing imperfection as part of the growth and creative process",
+    "Translating innovative ideas into practical implementation plans"
   ];
   
-  // Learning pathways
-  const learningPathways = [
-    "Structured exploration with practical application - You learn best when you can systematically explore topics while simultaneously applying new knowledge to real-world contexts.",
-    "Integrative learning across domains - Your thinking thrives when you can make connections between different fields, synthesizing insights across traditional boundaries.",
-    "Depth-focused mastery with reflective practice - You benefit from diving deeply into subjects while regularly reflecting on your developing understanding.",
-    "Collaborative learning with independent integration - You gain valuable perspectives from learning with others, followed by time to independently process and integrate the information."
+  const weaknesses = [
+    "Tendency to overthink decisions, potentially leading to analysis paralysis",
+    "Difficulty setting and enforcing clear personal boundaries",
+    "Perfectionism that may delay completion of projects or cause undue stress",
+    "Occasionally taking on too many responsibilities due to difficulty saying no"
   ];
   
-  // Roadmap
-  const roadmap = "Your developmental journey centers on integrating your analytical strengths with greater emotional fluency and intuitive wisdom. In the short term, focus on recognizing situations where overthinking creates diminishing returns and practice making timely decisions with the information available.\n\nIn the medium term, explore opportunities that require you to balance your natural thoroughness with more improvisational thinking. This might include collaborative creative projects or leadership roles that demand both careful planning and in-the-moment adaptability. These experiences will help you develop greater comfort with uncertainty and build confidence in your ability to navigate ambiguity effectively.\n\nLonger-term development involves cultivating a more integrated cognitive-emotional approach to life's challenges and opportunities. Work toward bringing your analytical capabilities into harmony with emotional intelligence and intuitive insights. This balanced approach will enhance both your decision-making effectiveness and personal fulfillment.\n\nThroughout this journey, remain attentive to your tendency to take on multiple interests simultaneously, potentially diluting your impact. While your diverse interests are a strength, strategic focus on core priorities will help you achieve deeper mastery and more meaningful contributions in areas most aligned with your values and purposes.";
-  
-  // Life purpose themes
-  const lifePurposeThemes = [
-    "Knowledge Integration & Sharing",
-    "Human Connection & Understanding",
-    "Creative Problem-Solving",
-    "Supporting Growth & Development"
-  ];
+  // Personal development roadmap
+  const roadmap = `Your personal development journey should focus on leveraging your analytical strengths while building confidence in your intuitive decision-making processes. In the short term, practicing setting clearer boundaries and embracing the concept of "good enough" will help you overcome perfectionist tendencies that may be limiting your progress in certain areas.
+
+In the medium term, explore opportunities that combine your analytical abilities with creative problem-solving, such as roles in research, strategic planning, or content development. These contexts would allow you to utilize your natural strengths while providing the intellectual stimulation you value. Consider developing expertise in areas where your combination of careful analysis and innovative thinking can create unique value.
+
+Long-term growth will come from integrating your analytical mindset with more intuitive approaches, allowing you to balance thoroughness with efficiency. Work on trusting your initial judgments more readily in low-risk situations to build this skill gradually. Additionally, seek environments and relationships that honor your need for both meaningful connection and independent thought. Your development path is one of integration—bringing together your capacity for deep analysis with practical implementation, and your empathetic understanding with healthy self-preservation.`;
   
   return {
-    overview: "Based on your assessment responses, you demonstrate a thoughtful, analytical approach to life combined with genuine empathy and creative problem-solving abilities. You tend to process experiences through both intellectual understanding and emotional awareness, seeking to find meaningful patterns and insights that can be applied practically.\n\nYour cognitive style balances systematic thinking with openness to new perspectives, allowing you to approach challenges from multiple angles. You show particular strength in analyzing complex situations, identifying underlying patterns, and developing nuanced understandings that acknowledge complexity rather than seeking oversimplified explanations.\n\nIn relationships, you value authentic connection and mutual growth, offering thoughtful support while respecting autonomy. You're likely to form connections gradually but with meaningful depth once established. Your communication tends toward the thoughtful and precise, though you may sometimes hesitate to express perspectives that could create tension or disagreement.\n\nYour approach to personal development reflects a growth mindset, recognizing that abilities and understanding can be developed through dedication and learning. You're motivated by continuous improvement and finding ways to contribute meaningfully through your unique combination of strengths. At the same time, you may occasionally struggle with perfectionism or overthinking, potentially delaying action in favor of additional analysis.\n\nYour value system appears to prioritize intellectual integrity, meaningful connection, and making positive contributions, with particular emphasis on helping others develop their potential. You're likely drawn to environments that encourage both independent thinking and collaborative exploration, offering both autonomy and the opportunity for meaningful exchange with others.\n\nThe career directions that would likely provide the greatest fulfillment align with these core aspects of your personality, focusing on roles that allow you to apply analytical thinking to complex problems while working toward outcomes that support human development and well-being.",
-    traits: traits,
-    detailedTraits: detailedTraits,
-    intelligence: intelligence,
-    intelligenceScore: intelligence.score,
-    emotionalIntelligenceScore: Math.floor(65 + Math.random() * 20),
-    cognitiveStyle: "Analytical-Integrative",
-    valueSystem: valueSystem,
-    shadowAspects: shadowAspects,
-    personalityArchetype: personalityArchetype,
-    emotionalProfile: emotionalProfile,
-    mindsetPatterns: mindsetPatterns,
-    communicationStyle: communicationStyle,
-    valueSystem: valueSystem,
-    motivators: motivators,
-    inhibitors: inhibitors,
-    weaknesses: weaknesses,
-    growthAreas: growthAreas,
-    relationshipPatterns: relationshipPatterns,
-    careerSuggestions: careerSuggestions,
-    learningPathways: learningPathways,
-    roadmap: roadmap,
-    lifePurposeThemes: lifePurposeThemes
+    traits,
+    detailedTraits,
+    intelligence,
+    intelligence_score: intelligence.score,
+    emotional_intelligence_score: Math.floor(70 + Math.random() * 15),
+    overview,
+    value_system: valueSystem,
+    motivators,
+    inhibitors,
+    weaknesses,
+    growth_areas: growthAreas,
+    relationship_patterns: relationshipPatterns,
+    career_suggestions: careerSuggestions,
+    learning_pathways: learningPathways,
+    roadmap,
+    shadowAspects,
+    personalityArchetype,
+    communicationStyle,
+    mindsetPatterns
   };
 }

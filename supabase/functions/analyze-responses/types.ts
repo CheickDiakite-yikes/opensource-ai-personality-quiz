@@ -77,18 +77,6 @@ export interface RelationshipPatterns {
   compatibleTypes: string[];
 }
 
-// Career Pathway type for enhanced career suggestions
-export interface CareerPathway {
-  field?: string;
-  title?: string;
-  description?: string;
-  alignment?: string;
-  keyTraits?: string[];
-  traits?: string[];
-  growth?: string;
-  skills?: string[];
-}
-
 // Personality Analysis
 export interface PersonalityAnalysis {
   id: string;
@@ -105,7 +93,7 @@ export interface PersonalityAnalysis {
   weaknesses: string[];
   growthAreas: string[];
   relationshipPatterns: RelationshipPatterns | string[];
-  careerSuggestions: string[] | CareerPathway[];
+  careerSuggestions: string[];
   learningPathways: string[];
   roadmap: string;
   userId?: string;
