@@ -1,5 +1,5 @@
 
-import { User, Brain, BarChart, ClipboardList, Home, LogOut, BookCopy } from "lucide-react";
+import { User, Brain, BarChart, ClipboardList, Home, LogOut, BookCopy, FileChart } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export interface NavigationItem {
@@ -39,6 +39,13 @@ export const useNavigationItems = () => {
       icon: BookCopy, 
       requiresAuth: true,
       description: "In-depth 100-question comprehensive assessment"
+    },
+    { 
+      name: "Full Report", 
+      path: "/comprehensive-report", 
+      icon: FileChart, 
+      requiresAuth: true,
+      description: "View your in-depth comprehensive analysis"
     },
     { 
       name: "Tracker", 

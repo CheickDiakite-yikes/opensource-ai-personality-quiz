@@ -19,6 +19,7 @@ const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 // Comprehensive Assessment Components
 const ComprehensiveAssessmentPage = lazy(() => import("@/components/comprehensive/ComprehensiveAssessmentPage"));
 const ComprehensiveReportPage = lazy(() => import("@/components/comprehensive/ComprehensiveReportPage"));
+const ComprehensiveReportLanding = lazy(() => import("@/components/comprehensive/ComprehensiveReportLanding"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -122,7 +123,14 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          <Route path="comprehensive-report/:id?" element={
+          <Route path="comprehensive-report" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ComprehensiveReportLanding />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="comprehensive-report/:id" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ComprehensiveReportPage />
