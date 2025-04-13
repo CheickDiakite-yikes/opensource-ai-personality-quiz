@@ -29,9 +29,9 @@ export function useComprehensiveSubmission(
     
     try {
       setIsAnalyzing(true);
+      toast.loading("Saving your assessment responses...", { id: "assessment-submission" });
       
-      // Save assessment responses to Supabase - fix the format to match what Supabase expects
-      // We need to explicitly cast formattedResponses to Json to satisfy TypeScript
+      // Save assessment responses to Supabase
       const { data: assessmentData, error: assessmentError } = await supabase
         .from("comprehensive_assessments")
         .insert({
@@ -47,31 +47,89 @@ export function useComprehensiveSubmission(
         throw new Error("Failed to create assessment");
       }
       
-      // Call Supabase Edge Function to analyze responses
-      const { data, error } = await supabase.functions.invoke(
-        "analyze-comprehensive-responses",
-        {
-          body: { 
-            assessmentId: assessmentData.id,
-            responses: formattedResponses
+      toast.loading("Analyzing your responses with AI...", { id: "assessment-submission" });
+      
+      // Call Supabase Edge Function to analyze responses with improved error handling
+      const MAX_RETRIES = 2;
+      let lastError = null;
+      
+      for (let retry = 0; retry <= MAX_RETRIES; retry++) {
+        try {
+          console.log(`Attempt ${retry + 1} to analyze responses for assessment ${assessmentData.id}`);
+          
+          if (retry > 0) {
+            // Add delay between retries with exponential backoff
+            await new Promise(r => setTimeout(r, retry * 2000));
+            toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
+          }
+          
+          // Set a longer timeout for the request
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+          
+          // Call the edge function with timeout control
+          const { data, error } = await supabase.functions.invoke(
+            "analyze-comprehensive-responses",
+            {
+              body: { 
+                assessmentId: assessmentData.id,
+                responses: formattedResponses
+              },
+              signal: controller.signal
+            }
+          );
+          
+          clearTimeout(timeoutId);
+          
+          if (error) throw new Error(error.message);
+          
+          if (!data?.analysisId) {
+            throw new Error("Analysis completed but no analysis ID was returned");
+          }
+          
+          // Clear stored progress after successful submission
+          localStorage.removeItem("comprehensive_assessment_progress");
+          
+          // Show success message
+          toast.success("Analysis complete!", { id: "assessment-submission" });
+          
+          // Navigate to the comprehensive report page
+          navigate(`/comprehensive-report/${data.analysisId}`);
+          return;
+        } catch (error) {
+          console.error(`Error attempt ${retry + 1}:`, error);
+          lastError = error;
+          
+          // If this was the last retry, we'll throw the error after the loop
+          if (retry === MAX_RETRIES) {
+            console.error("All retries failed");
           }
         }
-      );
+      }
       
-      if (error) throw new Error(error.message);
+      // If we got here, all retries failed
+      throw lastError || new Error("Failed to analyze responses after multiple attempts");
       
-      // Clear stored progress after successful submission
-      localStorage.removeItem("comprehensive_assessment_progress");
-      
-      // Navigate to the comprehensive report page
-      navigate(`/comprehensive-report/${data.analysisId}`);
-      
-      toast.success("Your comprehensive assessment has been analyzed!");
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      toast.error("Failed to submit assessment", { 
-        description: error instanceof Error ? error.message : "Please try again later"
-      });
+      
+      // Check if the assessment was created but analysis failed
+      if (assessmentData?.id) {
+        toast.error("Your assessment was saved but analysis failed", { 
+          id: "assessment-submission",
+          description: "We'll try to analyze it again when you view your reports"
+        });
+        
+        // Navigate to the profile page instead
+        navigate("/profile");
+      } else {
+        // Complete submission failure
+        toast.error("Failed to submit assessment", { 
+          id: "assessment-submission",
+          description: error instanceof Error ? error.message : "Please try again later"
+        });
+      }
+      
       setIsAnalyzing(false);
     }
   };
