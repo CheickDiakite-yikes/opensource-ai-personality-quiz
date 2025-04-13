@@ -52,7 +52,7 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                               key={i} 
                               className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
                             >
-                              {trait}
+                              {typeof trait === 'string' ? trait : String(trait)}
                             </span>
                           ))}
                         </div>

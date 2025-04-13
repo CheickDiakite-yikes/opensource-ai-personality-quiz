@@ -33,17 +33,17 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({
           </ul>
         </div>
       );
-    } else {
+    } else if (valueSystem && typeof valueSystem === 'object') {
       // Handle object with strengths
       valuesList = (
         <div className="mb-6">
           <h3 className="text-md font-medium mb-3">Core Values That Drive Career Decisions</h3>
-          {valueSystem.strengths && (
+          {valueSystem.strengths && Array.isArray(valueSystem.strengths) && (
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {valueSystem.strengths.map((value, i) => (
                 <li key={i} className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
-                  <span>{value}</span>
+                  <span>{typeof value === 'string' ? value : String(value)}</span>
                 </li>
               ))}
             </ul>
