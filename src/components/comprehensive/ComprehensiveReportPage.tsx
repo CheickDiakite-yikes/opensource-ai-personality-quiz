@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis, RelationshipPatterns } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
@@ -23,10 +24,12 @@ import ComprehensiveCareerSection from "./sections/ComprehensiveCareerSection";
 const ComprehensiveReportPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState<ComprehensiveAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   // Fetch comprehensive analysis
   useEffect(() => {
@@ -57,6 +60,12 @@ const ComprehensiveReportPage: React.FC = () => {
         }
 
         console.log("Comprehensive analysis data:", data);
+        
+        // Check for message indicating fallback to most recent analysis
+        if (data.message) {
+          toast.info(data.message);
+        }
+        
         setAnalysis(data as ComprehensiveAnalysis);
       } catch (err) {
         console.error("Error fetching comprehensive analysis:", err);
@@ -70,7 +79,16 @@ const ComprehensiveReportPage: React.FC = () => {
     }
 
     fetchComprehensiveAnalysis();
-  }, [id]);
+  }, [id, retryCount]);
+
+  const handleRetry = () => {
+    setError(null);
+    setRetryCount(prev => prev + 1);
+  };
+  
+  const handleGoBack = () => {
+    navigate('/comprehensive-report');
+  };
 
   // Loading state
   if (isLoading) {
@@ -116,9 +134,17 @@ const ComprehensiveReportPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center space-y-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
             <h2 className="text-xl font-semibold">Unable to Load Report</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
               {error}
             </p>
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" /> Back to Reports
+              </Button>
+              <Button onClick={handleRetry} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" /> Try Again
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
@@ -156,6 +182,9 @@ const ComprehensiveReportPage: React.FC = () => {
             <Skeleton className="h-4 w-3/6" />
             <Skeleton className="h-4 w-5/6" />
           </div>
+          <Button variant="outline" onClick={handleGoBack} className="mt-4">
+            Back to Reports
+          </Button>
         </Card>
       </div>
     );
@@ -252,6 +281,12 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
       </Tabs>
+      
+      <div className="flex justify-center mt-8">
+        <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back to Reports List
+        </Button>
+      </div>
     </div>
   );
 };

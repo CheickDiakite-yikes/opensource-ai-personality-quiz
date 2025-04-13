@@ -104,33 +104,10 @@ Deno.serve(async (req) => {
       // Continue to next approach
     }
       
-    // If still not found, try a more flexible search
+    // FIX: Remove the flexible search with ILIKE that causes the UUID type error
+    // Instead, try to get the most recent analysis for this user if we have a user_id
     try {
-      console.log("[get-comprehensive-analysis] Analysis not found by assessment_id, trying partial match");
-      const { data: flexData, error: flexError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .filter('id', 'ilike', `%${id.slice(-8)}%`)
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (flexError) {
-        console.error("[get-comprehensive-analysis] Error in flexible search:", flexError);
-      } else if (flexData && flexData.length > 0) {
-        console.log(`[get-comprehensive-analysis] Found analysis via flexible search: ${flexData[0].id}`);
-        return new Response(
-          JSON.stringify(flexData[0]),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (e) {
-      console.error("[get-comprehensive-analysis] Exception in flexible search:", e);
-      // Continue to next approach
-    }
-
-    // Try one last approach - get the most recent analysis, if any
-    try {
-      console.log("[get-comprehensive-analysis] No matching analysis found, getting most recent comprehensive analysis");
+      console.log("[get-comprehensive-analysis] Trying to get the most recent comprehensive analysis");
       const { data: recentData, error: recentError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
