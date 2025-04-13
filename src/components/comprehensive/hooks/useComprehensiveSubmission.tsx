@@ -78,9 +78,17 @@ export function useComprehensiveSubmission(
             {
               body: { 
                 assessmentId: createdAssessmentId,
-                responses: formattedResponses
+                responses: formattedResponses,
+                enhancedOutput: true, // New flag to request enhanced output
+                enhancementFocus: {
+                  motivators: true,
+                  inhibitors: true,
+                  relationships: true,
+                  growthAreas: true,
+                  personalTone: true
+                },
+                outputTokenTarget: 10000 // Requesting a more detailed output (but still well within limits)
               }
-              // Removed the signal property as it's not supported
             }
           );
           

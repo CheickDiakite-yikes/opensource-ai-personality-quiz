@@ -91,6 +91,15 @@ export interface RelationshipPatterns {
   compatibleTypes: string[];
 }
 
+// Career Pathway type for enhanced career suggestions
+export interface CareerPathway {
+  field: string;
+  description?: string;
+  alignment?: string;
+  keyTraits?: string[];
+  growth?: string;
+}
+
 // Personality Analysis
 export interface PersonalityAnalysis {
   id: string;
@@ -107,7 +116,7 @@ export interface PersonalityAnalysis {
   weaknesses: string[];
   growthAreas: string[];
   relationshipPatterns: RelationshipPatterns | string[];
-  careerSuggestions: string[];
+  careerSuggestions: string[] | CareerPathway[];
   learningPathways: string[];
   roadmap: string;
   userId?: string;
@@ -175,6 +184,49 @@ export interface ComprehensiveAssessment {
   completedAt: Date;
 }
 
+export interface ShadowAspect {
+  trait: string;
+  description: string;
+  impactAreas: string[];
+  integrationSuggestions: string[];
+}
+
+export interface PersonalityArchetype {
+  name: string;
+  description: string;
+  strengths: string[];
+  challenges: string[];
+  growthPath: string;
+}
+
+export interface MindsetPattern {
+  dominant: string;
+  description: string;
+  implications: string[];
+}
+
+export interface EmotionalProfile {
+  primaryEmotions: string[];
+  emotionalResponsiveness: number;
+  regulationStrategies: string[];
+}
+
+export interface CommunicationStyle {
+  primary: string;
+  secondary: string;
+  description: string;
+  effectiveChannels: string[];
+}
+
+export interface RelationshipDynamic {
+  pattern: string;
+  description: string;
+  strengthsInRelationships: string[];
+  challengesInRelationships: string[];
+  idealPartnerQualities: string[];
+  growthOpportunities: string[];
+}
+
 export interface ComprehensiveAnalysis extends PersonalityAnalysis {
   // Extended with additional fields specific to comprehensive analysis
   inhibitors: string[];
@@ -182,33 +234,10 @@ export interface ComprehensiveAnalysis extends PersonalityAnalysis {
     primary: PersonalityTrait[];
     secondary: PersonalityTrait[];
   };
-  shadowAspects?: {
-    trait: string;
-    description: string;
-    impactAreas: string[];
-    integrationSuggestions: string[];
-  }[];
-  personalityArchetype?: {
-    name: string;
-    description: string;
-    strengths: string[];
-    challenges: string[];
-    growthPath: string;
-  };
-  mindsetPatterns?: {
-    dominant: string;
-    description: string;
-    implications: string[];
-  };
-  emotionalProfile?: {
-    primaryEmotions: string[];
-    emotionalResponsiveness: number;
-    regulationStrategies: string[];
-  };
-  communicationStyle?: {
-    primary: string;
-    secondary: string;
-    description: string;
-    effectiveChannels: string[];
-  };
+  shadowAspects?: ShadowAspect[];
+  personalityArchetype?: PersonalityArchetype;
+  mindsetPatterns?: MindsetPattern;
+  emotionalProfile?: EmotionalProfile;
+  communicationStyle?: CommunicationStyle;
+  relationshipDynamics?: RelationshipDynamic;
 }
