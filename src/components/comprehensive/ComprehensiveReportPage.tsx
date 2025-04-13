@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -30,6 +31,7 @@ const ComprehensiveReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [retryCount, setRetryCount] = useState<number>(0);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
 
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
@@ -42,6 +44,8 @@ const ComprehensiveReportPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       setDebugInfo(null);
+      
+      console.log(`Fetching comprehensive analysis with ID: ${analysisId}`);
       
       // Call the edge function to get the comprehensive analysis
       const { data, error: functionError } = await supabase.functions.invoke(
@@ -111,13 +115,14 @@ const ComprehensiveReportPage: React.FC = () => {
     navigate('/comprehensive-report');
   };
   
-  // Debug function to manually test analysis creation
-  const handleTestAnalysisCreation = async () => {
+  // Function to create a test analysis for quick testing
+  const handleCreateTestAnalysis = async () => {
     if (!user) {
       toast.error("You must be logged in to create a test analysis");
       return;
     }
     
+    setIsCreatingTest(true);
     try {
       toast.loading("Creating test analysis...", { id: "test-analysis" });
       
@@ -137,6 +142,8 @@ const ComprehensiveReportPage: React.FC = () => {
       if (assessmentError || !assessmentData) {
         throw new Error(`Failed to create test assessment: ${assessmentError?.message || "Unknown error"}`);
       }
+      
+      console.log("Created test assessment:", assessmentData);
       
       // Call the edge function to create a test analysis
       const { data, error: functionError } = await supabase.functions.invoke(
@@ -166,10 +173,16 @@ const ComprehensiveReportPage: React.FC = () => {
       
     } catch (err) {
       console.error("Error creating test analysis:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      
       toast.error("Failed to create test analysis", { 
         id: "test-analysis",
-        description: err instanceof Error ? err.message : "Unknown error"
+        description: errorMessage
       });
+      
+      setDebugInfo(JSON.stringify(err, null, 2));
+    } finally {
+      setIsCreatingTest(false);
     }
   };
 
@@ -227,11 +240,14 @@ const ComprehensiveReportPage: React.FC = () => {
               <Button onClick={handleRetry} className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" /> Try Again
               </Button>
-              {user && (
-                <Button variant="secondary" onClick={handleTestAnalysisCreation} className="flex items-center gap-2">
-                  <Bug className="h-4 w-4" /> Create Test Analysis
-                </Button>
-              )}
+              <Button 
+                variant="secondary" 
+                onClick={handleCreateTestAnalysis} 
+                className="flex items-center gap-2"
+                disabled={isCreatingTest}
+              >
+                <Bug className="h-4 w-4" /> Create Test Analysis
+              </Button>
             </div>
             
             {debugInfo && (
@@ -248,7 +264,7 @@ const ComprehensiveReportPage: React.FC = () => {
     );
   }
 
-  // No analysis state - show coming soon placeholder
+  // No analysis state with option to create a test
   if (!analysis) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
@@ -260,28 +276,25 @@ const ComprehensiveReportPage: React.FC = () => {
         </div>
         
         <Card className="p-8 text-center">
-          <h2 className="text-xl mb-4">Coming Soon</h2>
+          <h2 className="text-xl mb-4">No Analysis Found</h2>
           <p className="text-muted-foreground mb-6">
-            The comprehensive report feature is currently under development.
-            This will provide a more detailed analysis based on our 100-question assessment.
+            We couldn't find a comprehensive analysis with the provided ID.
           </p>
           
-          <div className="space-y-4 max-w-md mx-auto">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-4/6" />
-            
-            <div className="py-4">
-              <Skeleton className="h-24 w-full rounded-md" />
-            </div>
-            
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/6" />
-            <Skeleton className="h-4 w-5/6" />
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" /> Back to Reports
+            </Button>
+            {user && (
+              <Button 
+                onClick={handleCreateTestAnalysis} 
+                className="flex items-center gap-2"
+                disabled={isCreatingTest}
+              >
+                <Bug className="h-4 w-4" /> Create Test Analysis
+              </Button>
+            )}
           </div>
-          <Button variant="outline" onClick={handleGoBack} className="mt-4">
-            Back to Reports
-          </Button>
         </Card>
       </div>
     );
@@ -379,10 +392,20 @@ const ComprehensiveReportPage: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      <div className="flex justify-center mt-8">
+      <div className="flex flex-wrap gap-4 justify-center mt-8">
         <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Back to Reports List
         </Button>
+        {user && (
+          <Button 
+            variant="secondary"
+            onClick={handleCreateTestAnalysis} 
+            className="flex items-center gap-2"
+            disabled={isCreatingTest}
+          >
+            <Bug className="h-4 w-4" /> Create New Test Analysis
+          </Button>
+        )}
       </div>
     </div>
   );

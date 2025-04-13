@@ -15,10 +15,10 @@ Deno.serve(async (req) => {
   try {
     let id: string | null = null;
     
-    // Enhanced error logging
-    console.log(`[get-comprehensive-analysis] Processing request, method: ${req.method}, url: ${req.url}`);
+    // Enhanced logging for debugging
+    console.log(`[get-comprehensive-analysis] New request received: ${req.url}`);
     
-    // Support multiple ways of getting the ID parameter - with better error handling
+    // Support multiple ways of getting the ID parameter
     
     // 1. Check URL parameters first
     try {
@@ -43,9 +43,6 @@ Deno.serve(async (req) => {
         console.error("[get-comprehensive-analysis] Error parsing request body:", e);
       }
     }
-    
-    // Log the ID that was found
-    console.log(`[get-comprehensive-analysis] Processing request for analysis ID: ${id || 'none'}`);
 
     if (!id) {
       console.error("[get-comprehensive-analysis] No ID provided in request");
@@ -56,116 +53,87 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[get-comprehensive-analysis] Getting comprehensive analysis with ID: ${id}`);
-
-    // Try direct table access first with improved error handling
-    try {
-      const { data: analysisData, error: analysisError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+    
+    // First, try to get analysis directly using the provided ID
+    const { data: analysisData, error: analysisError } = await supabase
+      .from('comprehensive_analyses')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (analysisError) {
+      console.error("[get-comprehensive-analysis] Error fetching analysis by ID:", analysisError);
+    } else if (analysisData) {
+      console.log(`[get-comprehensive-analysis] Successfully found analysis with ID: ${id}`);
+      return new Response(
+        JSON.stringify(analysisData),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log("[get-comprehensive-analysis] Analysis not found by direct ID, checking if it's an assessment ID");
+    
+    // If not found directly, try to find by assessment_id
+    const { data: assessmentAnalysisData, error: assessmentAnalysisError } = await supabase
+      .from('comprehensive_analyses')
+      .select('*')
+      .eq('assessment_id', id)
+      .maybeSingle();
       
-      if (analysisError) {
-        console.error("[get-comprehensive-analysis] Error fetching analysis by ID:", analysisError);
-        // Continue to next approach instead of returning error immediately
-      } else if (analysisData) {
-        console.log(`[get-comprehensive-analysis] Found analysis by direct ID lookup: ${analysisData.id}`);
-        return new Response(
-          JSON.stringify(analysisData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("[get-comprehensive-analysis] No analysis found with this ID");
-      }
-    } catch (e) {
-      console.error("[get-comprehensive-analysis] Exception in direct ID lookup:", e);
-      // Continue to next approach
+    if (assessmentAnalysisError) {
+      console.error("[get-comprehensive-analysis] Error fetching by assessment_id:", assessmentAnalysisError);
+    } else if (assessmentAnalysisData) {
+      console.log(`[get-comprehensive-analysis] Found analysis by assessment_id: ${id}`);
+      return new Response(
+        JSON.stringify(assessmentAnalysisData),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    // If not found by id, try looking by assessment_id
-    try {
-      console.log("[get-comprehensive-analysis] Analysis not found by ID, trying assessment_id");
-      const { data: assessmentData, error: assessmentError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('assessment_id', id)
-        .maybeSingle();
-        
-      if (assessmentError) {
-        console.error("[get-comprehensive-analysis] Error fetching by assessment_id:", assessmentError);
-        // Continue to next approach
-      } else if (assessmentData) {
-        console.log(`[get-comprehensive-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
-        return new Response(
-          JSON.stringify(assessmentData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("[get-comprehensive-analysis] No analysis found with this assessment_id");
-      }
-    } catch (e) {
-      console.error("[get-comprehensive-analysis] Exception in assessment_id lookup:", e);
-      // Continue to next approach
+    // If still not found, check if there are any analyses available as fallback
+    console.log("[get-comprehensive-analysis] No analysis found by ID or assessment_id, looking for most recent one");
+    
+    // Try to get the most recent analysis
+    const { data: mostRecentData, error: mostRecentError } = await supabase
+      .from('comprehensive_analyses')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (mostRecentError) {
+      console.error("[get-comprehensive-analysis] Error fetching most recent analysis:", mostRecentError);
+    } else if (mostRecentData && mostRecentData.length > 0) {
+      console.log(`[get-comprehensive-analysis] Returning most recent analysis as fallback: ${mostRecentData[0].id}`);
+      return new Response(
+        JSON.stringify({
+          ...mostRecentData[0],
+          message: "Requested analysis not found. Returning most recent analysis as fallback."
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    // Get most recent analysis as fallback
-    try {
-      console.log("[get-comprehensive-analysis] Trying to get the most recent comprehensive analysis");
-      const { data: recentData, error: recentError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (recentError) {
-        console.error("[get-comprehensive-analysis] Error fetching recent analysis:", recentError);
-      } else if (recentData && recentData.length > 0) {
-        console.log(`[get-comprehensive-analysis] Found most recent analysis as fallback: ${recentData[0].id}`);
-        return new Response(
-          JSON.stringify({ 
-            ...recentData[0],
-            message: "Requested analysis not found, returning most recent analysis instead" 
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("[get-comprehensive-analysis] No recent analyses found");
-      }
-    } catch (e) {
-      console.error("[get-comprehensive-analysis] Exception in recent analysis lookup:", e);
+    // Check if there are any analyses in the database
+    const { count, error: countError } = await supabase
+      .from('comprehensive_analyses')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      console.error("[get-comprehensive-analysis] Error counting analyses:", countError);
+    } else {
+      console.log(`[get-comprehensive-analysis] Total analyses in database: ${count || 0}`);
     }
     
-    // If all approaches failed, check if there are any analyses at all
-    try {
-      const { count, error } = await supabase
-        .from('comprehensive_analyses')
-        .select('*', { count: 'exact', head: true });
-        
-      if (error) {
-        console.error("[get-comprehensive-analysis] Error checking analysis count:", error);
-      } else {
-        console.log(`[get-comprehensive-analysis] Total analyses in database: ${count}`);
-      }
-    } catch (e) {
-      console.error("[get-comprehensive-analysis] Error counting analyses:", e);
-    }
-    
-    // If all approaches failed, return a 404
-    console.error(`[get-comprehensive-analysis] Analysis not found after all lookup attempts for ID: ${id}`);
+    // At this point, we've tried everything and found nothing
+    console.error("[get-comprehensive-analysis] Analysis not found and no fallbacks available");
     return new Response(
-      JSON.stringify({ 
-        error: 'Analysis not found',
-        message: 'The requested comprehensive analysis could not be found after multiple lookup attempts'
-      }),
+      JSON.stringify({ error: 'Analysis not found' }),
       { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("[get-comprehensive-analysis] Uncaught error:", error);
+    console.error('[get-comprehensive-analysis] Uncaught error:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to get comprehensive analysis',
-        stack: Deno.env.get('NODE_ENV') === 'development' ? error.stack : undefined
-      }),
+      JSON.stringify({ error: error.message || 'Failed to get analysis' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
