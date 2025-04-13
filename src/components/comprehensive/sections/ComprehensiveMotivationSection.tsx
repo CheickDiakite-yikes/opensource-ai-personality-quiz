@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
+import { safeString } from "@/utils/formatUtils";
 
 interface ComprehensiveMotivationSectionProps {
   motivators: string[];
@@ -24,7 +25,7 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span className="inline-flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 h-6 w-6 text-sm text-green-600 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{motivator}</span>
+                <span>{safeString(motivator)}</span>
               </li>
             ))}
           </ul>
@@ -38,7 +39,7 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span className="inline-flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 h-6 w-6 text-sm text-red-600 dark:text-red-400 mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{inhibitor}</span>
+                <span>{safeString(inhibitor)}</span>
               </li>
             ))}
           </ul>

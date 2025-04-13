@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
+import { safeString } from "@/utils/formatUtils";
 
 interface ComprehensiveGrowthSectionProps {
   growthAreas: string[];
@@ -26,7 +27,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{area}</span>
+                <span>{safeString(area)}</span>
               </li>
             ))}
           </ul>
@@ -40,7 +41,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{weakness}</span>
+                <span>{safeString(weakness)}</span>
               </li>
             ))}
           </ul>
@@ -52,7 +53,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {learningPathways?.slice(0, 6).map((pathway, index) => (
             <div key={index} className="bg-muted/50 p-3 rounded-md">
-              <p>{pathway}</p>
+              <p>{safeString(pathway)}</p>
             </div>
           ))}
         </div>

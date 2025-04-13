@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Briefcase, ArrowRight, GraduationCap, TrendingUp, Zap } from "lucide-react";
+import { safeString } from "@/utils/formatUtils";
 
 interface CareerPathway {
   field: string;
@@ -61,20 +62,20 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                     <div className="inline-flex items-center justify-center rounded-full bg-primary/10 h-8 w-8 text-sm text-primary mr-3 flex-shrink-0">
                       {index + 1}
                     </div>
-                    <span className="font-medium text-lg">{career.field}</span>
+                    <span className="font-medium text-lg">{safeString(career.field)}</span>
                   </div>
                 </div>
                 
                 {(career.description || career.alignment || career.keyTraits || career.growth) && (
                   <div className="p-4 space-y-3">
                     {career.description && (
-                      <p className="text-muted-foreground text-sm">{career.description}</p>
+                      <p className="text-muted-foreground text-sm">{safeString(career.description)}</p>
                     )}
                     
                     {career.alignment && (
                       <div className="flex items-start text-sm">
                         <ArrowRight className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <span><span className="font-medium">Alignment:</span> {career.alignment}</span>
+                        <span><span className="font-medium">Alignment:</span> {safeString(career.alignment)}</span>
                       </div>
                     )}
                     
@@ -83,7 +84,7 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                         <Zap className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
                         <div>
                           <span className="font-medium">Key traits:</span>{' '}
-                          {career.keyTraits.join(', ')}
+                          {career.keyTraits.map(trait => safeString(trait)).join(', ')}
                         </div>
                       </div>
                     )}
@@ -91,7 +92,7 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                     {career.growth && (
                       <div className="flex items-start text-sm">
                         <TrendingUp className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <span><span className="font-medium">Growth:</span> {career.growth}</span>
+                        <span><span className="font-medium">Growth:</span> {safeString(career.growth)}</span>
                       </div>
                     )}
                   </div>

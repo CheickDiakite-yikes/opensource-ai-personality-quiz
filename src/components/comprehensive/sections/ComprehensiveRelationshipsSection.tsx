@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Heart } from "lucide-react";
 import { RelationshipPatterns } from "@/utils/types";
+import { safeString } from "@/utils/formatUtils";
 
 interface ComprehensiveRelationshipsSectionProps {
   relationshipPatterns: RelationshipPatterns;
@@ -32,7 +33,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{strength}</span>
+                <span>{safeString(strength)}</span>
               </li>
             ))}
           </ul>
@@ -48,7 +49,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{challenge}</span>
+                <span>{safeString(challenge)}</span>
               </li>
             ))}
           </ul>
@@ -65,7 +66,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                   key={index}
                   className="border border-border/40 p-2 rounded-md text-center bg-card/30"
                 >
-                  {type}
+                  {safeString(type)}
                 </div>
               ))
             ) : (
