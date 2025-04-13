@@ -1,127 +1,90 @@
 
-import React from "react";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Briefcase, ArrowRight, GraduationCap, TrendingUp, Zap } from "lucide-react";
-import { CareerPathway } from "@/utils/types";
+import React from 'react';
+import { Briefcase, ArrowRight } from 'lucide-react';
+import { CareerPathway } from '@/utils/types';
 
 interface CareerSuggestionsProps {
   careers: string[] | CareerPathway[];
 }
 
 const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
-  // Check if we're dealing with the enhanced career pathways format
-  const hasDetailedCareers = careers.length > 0 && typeof careers[0] !== 'string';
-  const careerPaths = hasDetailedCareers 
-    ? careers as CareerPathway[]
-    : (careers as string[]).map(career => ({ 
-        field: career,
-        title: career,
-        description: undefined,
-        alignment: undefined,
-        keyTraits: undefined,
-        traits: undefined,
-        growth: undefined,
-        skills: undefined
-      }));
+  // Check if we're dealing with enhanced career pathways or simple strings
+  const isEnhancedCareers = careers.length > 0 && 
+    typeof careers[0] !== 'string' && 
+    careers[0] !== null &&
+    ('title' in careers[0] || 'field' in careers[0]);
 
-  return (
-    <Card className="glass-panel overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 pb-4">
-        <CardTitle className="flex items-center">
-          <Briefcase className="h-5 w-5 mr-2 text-primary" /> Career Pathways
-        </CardTitle>
-        <CardDescription>
-          Potential career directions aligned with your personality and cognitive style
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 gap-4">
-          {careerPaths.map((career, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-md border border-border/40 bg-card/30 overflow-hidden"
-            >
-              <div className="flex flex-col">
-                <div className="px-4 py-3 bg-muted/20 border-b border-border/40">
-                  <div className="flex items-center">
-                    <div className="inline-flex items-center justify-center rounded-full bg-primary/10 h-8 w-8 text-sm text-primary mr-3 flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <span className="font-medium text-lg">{career.title || career.field}</span>
+  if (isEnhancedCareers) {
+    // Handle enhanced career pathways with detailed information
+    return (
+      <div className="space-y-4">
+        <h3 className="text-md font-medium">Career Pathways</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(careers as CareerPathway[]).map((career, index) => {
+            // Make sure to extract text values safely, handling potential undefined values
+            const title = career.title || career.field || "Career Path";
+            const description = career.description || "";
+            const alignment = career.alignment || "";
+            
+            return (
+              <div 
+                key={index} 
+                className="border border-border/40 p-4 rounded-md hover:shadow-md transition-shadow bg-card/30"
+              >
+                <div className="flex items-start gap-2">
+                  <Briefcase className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-primary">{title}</h4>
+                    {description && <p className="text-sm mt-1 mb-2">{description}</p>}
+                    {alignment && (
+                      <p className="text-xs text-muted-foreground italic">
+                        Alignment: {alignment}
+                      </p>
+                    )}
+                    
+                    {career.traits && career.traits.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium">Key Traits:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {career.traits.slice(0, 3).map((trait, i) => (
+                            <span 
+                              key={i} 
+                              className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
+                            >
+                              {trait}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                {(career.description || career.alignment || career.keyTraits || career.traits || career.growth || career.skills) && (
-                  <div className="p-4 space-y-3">
-                    {career.description && (
-                      <p className="text-muted-foreground text-sm">{career.description}</p>
-                    )}
-                    
-                    {career.alignment && (
-                      <div className="flex items-start text-sm">
-                        <ArrowRight className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <span><span className="font-medium">Alignment:</span> {career.alignment}</span>
-                      </div>
-                    )}
-                    
-                    {(career.keyTraits && career.keyTraits.length > 0) && (
-                      <div className="flex items-start text-sm">
-                        <Zap className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <div>
-                          <span className="font-medium">Key traits:</span>{' '}
-                          {career.keyTraits.join(', ')}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {(career.traits && career.traits.length > 0) && (
-                      <div className="flex items-start text-sm">
-                        <Zap className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <div>
-                          <span className="font-medium">Key traits:</span>{' '}
-                          {career.traits.join(', ')}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {career.growth && (
-                      <div className="flex items-start text-sm">
-                        <TrendingUp className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
-                        <span><span className="font-medium">Growth:</span> {career.growth}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
-        
-        <div className="mt-6 p-4 border border-dashed rounded-md">
-          <div className="flex items-start">
-            <GraduationCap className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-            <div className="space-y-2">
-              <h4 className="font-medium">Educational Pathways</h4>
-              <p className="text-sm text-muted-foreground">
-                Consider exploring courses, certifications, or degree programs that align with your 
-                cognitive strengths and personal values. Focus on acquiring both technical skills and 
-                developing the soft skills your personality naturally excels in.
-              </p>
-            </div>
+      </div>
+    );
+  }
+  
+  // Handle simple string career suggestions
+  return (
+    <div className="space-y-4">
+      <h3 className="text-md font-medium">Suggested Career Paths</h3>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {(careers as string[]).map((career, index) => (
+          <div 
+            key={index} 
+            className="flex items-center p-3 border border-border/40 rounded-md hover:bg-secondary/10 transition-colors"
+          >
+            <ArrowRight className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
+            <span>{career}</span>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </div>
   );
 };
 
