@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
     
     // 2. If not found in URL, try to get from request body
-    if (!id && (req.method === 'POST' || req.method === 'GET')) {
+    if (!id && req.method === 'POST') {
       try {
         const body = await req.json().catch(() => ({}));
         id = body.id;
