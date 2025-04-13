@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis, RelationshipPatterns } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle, FileText, ArrowLeft, RefreshCw } from "lucide-react";
+import { AlertTriangle, FileText, ArrowLeft, RefreshCw, Bug } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
@@ -30,64 +29,148 @@ const ComprehensiveReportPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
+  // Enhanced function to fetch comprehensive analysis with better error handling
+  const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
+    if (!analysisId) {
+      setError("No analysis ID provided");
+      return null;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setDebugInfo(null);
+      
+      // Call the edge function to get the comprehensive analysis
+      const { data, error: functionError } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          body: { id: analysisId },
+        }
+      );
+
+      if (functionError) {
+        console.error("Function error:", functionError);
+        throw new Error(`Edge function error: ${functionError.message}`);
+      }
+
+      if (!data) {
+        throw new Error("No analysis data returned from edge function");
+      }
+
+      console.log("Comprehensive analysis data:", data);
+      
+      // Check for message indicating fallback to most recent analysis
+      if (data.message) {
+        toast.info(data.message);
+      }
+      
+      return data as ComprehensiveAnalysis;
+    } catch (err) {
+      console.error("Error fetching comprehensive analysis:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
+      setError(errorMessage);
+      setDebugInfo(JSON.stringify(err, null, 2));
+      
+      toast.error("Failed to load analysis", {
+        description: "There was a problem retrieving your comprehensive analysis"
+      });
+      
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Fetch comprehensive analysis
   useEffect(() => {
-    async function fetchComprehensiveAnalysis() {
+    async function loadAnalysis() {
       if (!id) {
         setIsLoading(false);
         setError("No analysis ID provided");
         return;
       }
 
-      try {
-        setIsLoading(true);
-        
-        // Call the edge function to get the comprehensive analysis
-        const { data, error: functionError } = await supabase.functions.invoke(
-          "get-comprehensive-analysis",
-          {
-            body: { id },
-          }
-        );
-
-        if (functionError) {
-          throw new Error(`Edge function error: ${functionError.message}`);
-        }
-
-        if (!data) {
-          throw new Error("No analysis data returned");
-        }
-
-        console.log("Comprehensive analysis data:", data);
-        
-        // Check for message indicating fallback to most recent analysis
-        if (data.message) {
-          toast.info(data.message);
-        }
-        
-        setAnalysis(data as ComprehensiveAnalysis);
-      } catch (err) {
-        console.error("Error fetching comprehensive analysis:", err);
-        setError(err instanceof Error ? err.message : "Failed to load analysis");
-        toast.error("Failed to load analysis", {
-          description: "There was a problem retrieving your comprehensive analysis"
-        });
-      } finally {
-        setIsLoading(false);
+      const data = await fetchComprehensiveAnalysis(id);
+      if (data) {
+        setAnalysis(data);
       }
     }
 
-    fetchComprehensiveAnalysis();
-  }, [id, retryCount]);
+    loadAnalysis();
+  }, [id, retryCount, fetchComprehensiveAnalysis]);
 
   const handleRetry = () => {
-    setError(null);
     setRetryCount(prev => prev + 1);
+    toast.loading("Retrying analysis load...");
   };
   
   const handleGoBack = () => {
     navigate('/comprehensive-report');
+  };
+  
+  // Debug function to manually test analysis creation
+  const handleTestAnalysisCreation = async () => {
+    if (!user) {
+      toast.error("You must be logged in to create a test analysis");
+      return;
+    }
+    
+    try {
+      toast.loading("Creating test analysis...", { id: "test-analysis" });
+      
+      // Create a test assessment first
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from("comprehensive_assessments")
+        .insert({
+          user_id: user.id,
+          responses: [
+            { questionId: "test-1", answer: "Test response 1" },
+            { questionId: "test-2", answer: "Test response 2" }
+          ]
+        })
+        .select()
+        .single();
+        
+      if (assessmentError || !assessmentData) {
+        throw new Error(`Failed to create test assessment: ${assessmentError?.message || "Unknown error"}`);
+      }
+      
+      // Call the edge function to create a test analysis
+      const { data, error: functionError } = await supabase.functions.invoke(
+        "analyze-comprehensive-responses",
+        {
+          body: { 
+            assessmentId: assessmentData.id,
+            responses: [
+              { questionId: "test-1", answer: "Test response 1" },
+              { questionId: "test-2", answer: "Test response 2" }
+            ]
+          }
+        }
+      );
+      
+      if (functionError || !data?.analysisId) {
+        throw new Error(`Failed to create test analysis: ${functionError?.message || "Unknown error"}`);
+      }
+      
+      toast.success("Test analysis created!", { 
+        id: "test-analysis",
+        description: `Analysis ID: ${data.analysisId}`
+      });
+      
+      // Navigate to the new analysis
+      navigate(`/comprehensive-report/${data.analysisId}`);
+      
+    } catch (err) {
+      console.error("Error creating test analysis:", err);
+      toast.error("Failed to create test analysis", { 
+        id: "test-analysis",
+        description: err instanceof Error ? err.message : "Unknown error"
+      });
+    }
   };
 
   // Loading state
@@ -137,14 +220,28 @@ const ComprehensiveReportPage: React.FC = () => {
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               {error}
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap justify-center">
               <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back to Reports
               </Button>
               <Button onClick={handleRetry} className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" /> Try Again
               </Button>
+              {user && (
+                <Button variant="secondary" onClick={handleTestAnalysisCreation} className="flex items-center gap-2">
+                  <Bug className="h-4 w-4" /> Create Test Analysis
+                </Button>
+              )}
             </div>
+            
+            {debugInfo && (
+              <div className="mt-6 p-4 bg-muted rounded-md w-full max-w-lg mx-auto">
+                <p className="text-sm font-medium mb-2">Debug Information:</p>
+                <pre className="text-xs overflow-auto text-left whitespace-pre-wrap">
+                  {debugInfo}
+                </pre>
+              </div>
+            )}
           </div>
         </Card>
       </div>

@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
           JSON.stringify(analysisData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else {
+        console.log("[get-comprehensive-analysis] No analysis found with this ID");
       }
     } catch (e) {
       console.error("[get-comprehensive-analysis] Exception in direct ID lookup:", e);
@@ -98,14 +100,15 @@ Deno.serve(async (req) => {
           JSON.stringify(assessmentData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else {
+        console.log("[get-comprehensive-analysis] No analysis found with this assessment_id");
       }
     } catch (e) {
       console.error("[get-comprehensive-analysis] Exception in assessment_id lookup:", e);
       // Continue to next approach
     }
-      
-    // FIX: Remove the flexible search with ILIKE that causes the UUID type error
-    // Instead, try to get the most recent analysis for this user if we have a user_id
+    
+    // Get most recent analysis as fallback
     try {
       console.log("[get-comprehensive-analysis] Trying to get the most recent comprehensive analysis");
       const { data: recentData, error: recentError } = await supabase
@@ -125,9 +128,26 @@ Deno.serve(async (req) => {
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else {
+        console.log("[get-comprehensive-analysis] No recent analyses found");
       }
     } catch (e) {
       console.error("[get-comprehensive-analysis] Exception in recent analysis lookup:", e);
+    }
+    
+    // If all approaches failed, check if there are any analyses at all
+    try {
+      const { count, error } = await supabase
+        .from('comprehensive_analyses')
+        .select('*', { count: 'exact', head: true });
+        
+      if (error) {
+        console.error("[get-comprehensive-analysis] Error checking analysis count:", error);
+      } else {
+        console.log(`[get-comprehensive-analysis] Total analyses in database: ${count}`);
+      }
+    } catch (e) {
+      console.error("[get-comprehensive-analysis] Error counting analyses:", e);
     }
     
     // If all approaches failed, return a 404
@@ -144,7 +164,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to get comprehensive analysis',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: Deno.env.get('NODE_ENV') === 'development' ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

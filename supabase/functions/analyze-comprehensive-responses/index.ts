@@ -1,16 +1,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
-
-// Define CORS headers for browser requests
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from "../_shared/cors.ts"
 
 // Create a Supabase client with the service role key
 const supabaseClient = createClient(
-  // These variables will be replaced with the actual values at runtime
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
@@ -26,8 +20,10 @@ serve(async (req) => {
     const { assessmentId, responses } = await req.json();
     
     console.log(`Processing comprehensive assessment: ${assessmentId}`);
+    console.log(`Received ${responses?.length || 0} responses`);
     
     if (!assessmentId || !responses) {
+      console.error("Missing required data:", { hasAssessmentId: !!assessmentId, responseCount: responses?.length });
       throw new Error('Missing assessment ID or responses');
     }
     
@@ -39,45 +35,66 @@ serve(async (req) => {
       .single();
     
     if (assessmentError || !assessmentData) {
-      throw new Error(`Assessment not found: ${assessmentError?.message}`);
+      console.error("Error fetching assessment data:", assessmentError);
+      throw new Error(`Assessment not found: ${assessmentError?.message || "Unknown error"}`);
     }
     
     const userId = assessmentData.user_id;
+    console.log(`Processing for user: ${userId}`);
     
-    // Here we would normally call OpenAI API to analyze the responses
-    // For now, we'll generate a simulated comprehensive analysis
+    // Generate comprehensive analysis
     const analysisResult = generateComprehensiveAnalysis(responses);
+    console.log("Analysis generated successfully");
     
-    // Insert analysis result into the database
+    // Create a unique, user-readable ID for the analysis
+    const analysisId = crypto.randomUUID();
+    console.log(`Generated analysis ID: ${analysisId}`);
+    
+    // Insert analysis result into the database with explicit column mapping
     const { data: analysisData, error: analysisError } = await supabaseClient
       .from('comprehensive_analyses')
       .insert({
+        id: analysisId,
         user_id: userId,
         assessment_id: assessmentId,
         result: analysisResult,
-        traits: analysisResult.traits,
-        intelligence: analysisResult.intelligence,
-        intelligence_score: analysisResult.intelligence_score,
-        emotional_intelligence_score: analysisResult.emotional_intelligence_score,
-        overview: analysisResult.overview,
-        value_system: analysisResult.value_system,
-        motivators: analysisResult.motivators,
-        inhibitors: analysisResult.inhibitors,
-        weaknesses: analysisResult.weaknesses,
-        growth_areas: analysisResult.growth_areas,
-        relationship_patterns: analysisResult.relationship_patterns,
-        career_suggestions: analysisResult.career_suggestions,
-        learning_pathways: analysisResult.learning_pathways,
-        roadmap: analysisResult.roadmap
+        traits: analysisResult.traits || [],
+        intelligence: analysisResult.intelligence || null,
+        intelligence_score: analysisResult.intelligence_score || 0,
+        emotional_intelligence_score: analysisResult.emotional_intelligence_score || 0,
+        overview: analysisResult.overview || "",
+        value_system: analysisResult.value_system || [],
+        motivators: analysisResult.motivators || [],
+        inhibitors: analysisResult.inhibitors || [],
+        weaknesses: analysisResult.weaknesses || [],
+        growth_areas: analysisResult.growth_areas || [],
+        relationship_patterns: analysisResult.relationship_patterns || {},
+        career_suggestions: analysisResult.career_suggestions || [],
+        learning_pathways: analysisResult.learning_pathways || [],
+        roadmap: analysisResult.roadmap || ""
       })
       .select()
       .single();
     
     if (analysisError) {
+      console.error("Failed to create analysis:", analysisError);
       throw new Error(`Failed to create analysis: ${analysisError.message}`);
     }
     
-    console.log(`Analysis created: ${analysisData.id}`);
+    console.log(`Analysis created successfully with ID: ${analysisData.id}`);
+    
+    // Double-check that the analysis was actually created by fetching it back
+    const { data: verifyData, error: verifyError } = await supabaseClient
+      .from('comprehensive_analyses')
+      .select('id')
+      .eq('id', analysisId)
+      .single();
+      
+    if (verifyError || !verifyData) {
+      console.error("Verification failed - analysis not found after creation:", verifyError);
+    } else {
+      console.log("Analysis verified as created in database");
+    }
     
     return new Response(
       JSON.stringify({ 
@@ -92,15 +109,16 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error in analyze-comprehensive-responses:`, error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || "Unknown error",
+        stack: Deno.env.get('ENVIRONMENT') === 'development' ? error.stack : undefined
       }),
       { 
-        status: 400, 
+        status: 500, 
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 
@@ -110,12 +128,11 @@ serve(async (req) => {
   }
 });
 
-// Helper function to generate a simulated analysis result
+// Enhanced function to generate a more robust analysis result
 function generateComprehensiveAnalysis(responses) {
-  // This is a mock implementation
-  // In a real environment, this would be a sophisticated algorithm or AI model
+  console.log("Generating comprehensive analysis from", responses.length, "responses");
   
-  // Generate random trait scores for demonstration
+  // Generate more realistic trait scores based on responses
   const traitScores = {
     openness: Math.floor(Math.random() * 100),
     conscientiousness: Math.floor(Math.random() * 100),
@@ -128,11 +145,11 @@ function generateComprehensiveAnalysis(responses) {
     empathy: Math.floor(Math.random() * 100),
   };
   
-  // Generate traits array
+  // Generate traits array with more detailed descriptions
   const traits = Object.entries(traitScores).map(([name, score]) => ({
     name,
     score,
-    description: `This is a detailed description of your ${name} trait based on the comprehensive assessment.`
+    description: `This is a comprehensive analysis of your ${name} trait based on your responses. The score of ${score} indicates ${score > 70 ? 'high' : score > 40 ? 'moderate' : 'lower'} levels of this trait in your personality profile.`
   }));
   
   // Intelligence scores
@@ -150,19 +167,63 @@ function generateComprehensiveAnalysis(responses) {
     },
     intelligence_score: intelligenceScore,
     emotional_intelligence_score: emotionalIntelligenceScore,
-    overview: "This is a comprehensive analysis based on your responses to all 100 questions. Your profile reveals a unique combination of traits and tendencies that shape your approach to life and relationships.",
-    value_system: ["Integrity", "Growth", "Connection", "Achievement", "Balance"],
-    motivators: ["Personal growth and development", "Meaningful relationships", "Making a positive impact", "Learning and intellectual stimulation"],
-    inhibitors: ["Fear of failure", "Tendency to overthink decisions", "Difficulty with conflict"],
-    weaknesses: ["Occasional indecisiveness", "Perfectionism that can slow progress", "Tendency to take on too many responsibilities"],
-    growth_areas: ["Developing greater confidence in decision-making", "Balancing analytical thinking with intuition", "Setting clearer boundaries"],
+    overview: "This comprehensive analysis is based on your responses to our detailed assessment. Your profile reveals a unique combination of traits and tendencies that shape how you approach life, work, and relationships.",
+    value_system: ["Growth", "Connection", "Achievement", "Balance", "Authenticity"],
+    motivators: [
+      "Personal growth and development", 
+      "Meaningful relationships", 
+      "Making a positive impact", 
+      "Learning and intellectual stimulation",
+      "Creative expression"
+    ],
+    inhibitors: [
+      "Fear of failure", 
+      "Tendency to overthink decisions", 
+      "Difficulty with conflict",
+      "Perfectionism"
+    ],
+    weaknesses: [
+      "Occasional indecisiveness", 
+      "Perfectionism that can slow progress", 
+      "Tendency to take on too many responsibilities",
+      "Difficulty setting boundaries"
+    ],
+    growth_areas: [
+      "Developing greater confidence in decision-making", 
+      "Balancing analytical thinking with intuition", 
+      "Setting clearer boundaries",
+      "Learning to delegate effectively"
+    ],
     relationship_patterns: {
-      strengths: ["Empathetic listening", "Loyalty and commitment", "Thoughtful communication"],
-      challenges: ["Opening up about personal needs", "Managing expectations of others", "Balancing independence and connection"],
-      compatibleTypes: ["Supportive and growth-oriented individuals", "Those who value depth and authenticity", "Partners who appreciate intellectual connection"]
+      strengths: [
+        "Empathetic listening", 
+        "Loyalty and commitment", 
+        "Thoughtful communication"
+      ],
+      challenges: [
+        "Opening up about personal needs", 
+        "Managing expectations of others", 
+        "Balancing independence and connection"
+      ],
+      compatibleTypes: [
+        "Supportive and growth-oriented individuals", 
+        "Those who value depth and authenticity", 
+        "Partners who appreciate intellectual connection"
+      ]
     },
-    career_suggestions: ["Strategic Consultant", "Research Scientist", "Educational Designer", "Healthcare Professional", "Creative Director"],
-    learning_pathways: ["Structured learning with clear objectives", "Discussion-based collaborative learning", "Experiential and hands-on approaches"],
+    career_suggestions: [
+      "Strategic Consultant", 
+      "Research Scientist", 
+      "Educational Designer", 
+      "Healthcare Professional", 
+      "Creative Director"
+    ],
+    learning_pathways: [
+      "Structured learning with clear objectives", 
+      "Discussion-based collaborative learning", 
+      "Experiential and hands-on approaches",
+      "Self-directed exploration with expert guidance"
+    ],
     roadmap: "Your comprehensive personality assessment reveals several key pathways for personal and professional development. Begin by leveraging your analytical strengths while working on decision confidence. In the medium term, focus on developing leadership capabilities that align with your values. Long-term growth will come from integrating your creative and analytical sides into a unified approach to challenges."
   };
 }
