@@ -22,15 +22,18 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
     if (typeof item === 'string') {
       return item;
     } else if (item && typeof item === 'object') {
+      // Ensure we return a string, not an object
       return item.name || item.description || 'Unnamed item';
     }
+    // Convert any other types to string
     return String(item);
   };
 
   // Helper function to get description if available
-  const getDescription = (item: string | MotivatorItem) => {
+  const getDescription = (item: string | MotivatorItem): string | null => {
     if (typeof item === 'object' && item && item.description) {
-      return item.description;
+      // Ensure we return a string, not an object
+      return String(item.description);
     }
     return null;
   };
