@@ -1,6 +1,19 @@
 
 import { CareerPathway } from "@/utils/types";
 
+// Helper function to safely convert any value to string
+const safeString = (value: any): string => {
+  if (typeof value === 'string') return value;
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    // Handle objects with name/description
+    if (value.name) return String(value.name);
+    if (value.description) return String(value.description);
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
 /**
  * Processes career suggestions into a consistent format
  */
@@ -25,11 +38,11 @@ export const processCareerSuggestions = (
           };
         } else if (career && typeof career === 'object') {
           // Safely handle objects with potential name/description properties
-          const title = career.name || career.title || career.field || "Career Path";
+          const title = safeString(career.name || career.title || career.field || "Career Path");
           return { 
             field: title,
             title: title,
-            description: career.description || undefined
+            description: career.description ? safeString(career.description) : undefined
           };
         } else {
           return {

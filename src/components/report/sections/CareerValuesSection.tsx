@@ -14,6 +14,19 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({
   careerSuggestions,
   valueSystem
 }) => {
+  // Helper function to safely convert any value to string
+  const safeString = (value: any): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      // Handle objects with name/description
+      if (value.name) return String(value.name);
+      if (value.description) return String(value.description);
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+  
   // Process value system to handle both string[] and object formats
   let valuesList: React.ReactNode = null;
   
@@ -27,7 +40,7 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({
             {valueSystem.map((value, i) => (
               <li key={i} className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
                 <div className="h-2 w-2 rounded-full bg-primary"></div>
-                <span>{typeof value === 'string' ? value : String(value)}</span>
+                <span>{safeString(value)}</span>
               </li>
             ))}
           </ul>
@@ -43,7 +56,7 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({
               {valueSystem.strengths.map((value, i) => (
                 <li key={i} className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
-                  <span>{typeof value === 'string' ? value : String(value)}</span>
+                  <span>{safeString(value)}</span>
                 </li>
               ))}
             </ul>

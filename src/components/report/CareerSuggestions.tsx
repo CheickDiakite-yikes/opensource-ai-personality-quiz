@@ -8,6 +8,19 @@ interface CareerSuggestionsProps {
 }
 
 const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
+  // Helper function to safely convert any value to string
+  const safeString = (value: any): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      // Handle objects with name/description
+      if (value.name) return String(value.name);
+      if (value.description) return String(value.description);
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   // Check if we're dealing with enhanced career pathways or simple strings
   const isEnhancedCareers = careers.length > 0 && 
     typeof careers[0] !== 'string' && 
@@ -23,9 +36,9 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(careers as CareerPathway[]).map((career, index) => {
             // Make sure to extract text values safely, handling potential undefined values
-            const title = career.title || career.field || "Career Path";
-            const description = career.description || "";
-            const alignment = career.alignment || "";
+            const title = safeString(career.title || career.field || "Career Path");
+            const description = career.description ? safeString(career.description) : "";
+            const alignment = career.alignment ? safeString(career.alignment) : "";
             
             return (
               <div 
@@ -36,10 +49,10 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                   <Briefcase className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-medium text-primary">{title}</h4>
-                    {description && <p className="text-sm mt-1 mb-2">{typeof description === 'string' ? description : String(description)}</p>}
+                    {description && <p className="text-sm mt-1 mb-2">{description}</p>}
                     {alignment && (
                       <p className="text-xs text-muted-foreground italic">
-                        Alignment: {typeof alignment === 'string' ? alignment : String(alignment)}
+                        Alignment: {alignment}
                       </p>
                     )}
                     
@@ -52,7 +65,7 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                               key={i} 
                               className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
                             >
-                              {typeof trait === 'string' ? trait : String(trait)}
+                              {safeString(trait)}
                             </span>
                           ))}
                         </div>
@@ -82,8 +95,8 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
             careerText = career;
           } else if (career && typeof career === 'object') {
             // Extract text value from object based on available properties
-            careerText = career.name || career.title || career.field || 
-                        (career.description ? String(career.description) : "Career Path");
+            careerText = safeString(career.name || career.title || career.field || 
+                        (career.description ? career.description : "Career Path"));
           } else {
             careerText = "Career Path";
           }

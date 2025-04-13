@@ -1,44 +1,37 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Target } from "lucide-react";
+import { Compass } from "lucide-react";
 
 interface PurposeSectionProps {
   lifePurposeThemes?: string[];
 }
 
-const PurposeSection: React.FC<PurposeSectionProps> = ({ lifePurposeThemes = [] }) => {
+const PurposeSection: React.FC<PurposeSectionProps> = ({ 
+  lifePurposeThemes = []
+}) => {
   return (
     <Card className="w-full mb-6">
-      <CardHeader className="relative">
-        <div className="absolute top-0 right-0 h-24 w-24 bg-primary/10 rounded-bl-full -z-0" />
-        <CardTitle className="flex items-center gap-2 z-10">
-          <Target className="h-5 w-5 text-primary" />
-          Purpose & Life Direction
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Compass className="h-5 w-5 text-primary" />
+          Life Purpose Themes
         </CardTitle>
         <CardDescription>
-          Key themes that may provide meaning and direction in your life
+          Core themes that may guide your career choices and life direction
         </CardDescription>
       </CardHeader>
       <CardContent>
         {lifePurposeThemes && lifePurposeThemes.length > 0 ? (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {lifePurposeThemes.map((theme, index) => (
-                <Badge key={index} variant="outline" className="bg-primary/5 text-primary border-primary/30 px-3 py-1.5">
-                  {typeof theme === 'string' ? theme : String(theme)}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              These themes represent potential areas of purpose and meaning that align with your personality structure, values, and motivational patterns. They aren't prescriptive but may guide your exploration of fulfilling life directions.
-            </p>
+            {lifePurposeThemes.map((theme, index) => (
+              <div key={index} className="p-3 border rounded-md bg-card/50">
+                <p>{typeof theme === 'string' ? theme : String(theme)}</p>
+              </div>
+            ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Based on your profile, you may find meaning in pursuits that combine intellectual exploration with making tangible contributions. Consider areas where you can apply your analytical strengths while connecting with values that matter deeply to you.
-          </p>
+          <p className="text-muted-foreground italic">No life purpose themes available</p>
         )}
       </CardContent>
     </Card>
