@@ -3,10 +3,15 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { safeString } from "@/utils/formatUtils";
 
+interface GrowthItem {
+  name: string;
+  description: string;
+}
+
 interface ComprehensiveGrowthSectionProps {
-  growthAreas: string[];
-  weaknesses: string[];
-  learningPathways: string[];
+  growthAreas: Array<string | GrowthItem>;
+  weaknesses: Array<string | GrowthItem>;
+  learningPathways: Array<string | GrowthItem>;
 }
 
 const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
@@ -14,6 +19,14 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
   weaknesses,
   learningPathways
 }) => {
+  // Function to extract appropriate display value from either string or object
+  const getDisplayValue = (item: string | GrowthItem): string => {
+    if (typeof item === 'string') {
+      return item;
+    }
+    return item.name || '';
+  };
+
   return (
     <Card className="p-6 md:p-8 shadow-md">
       <h2 className="text-2xl font-semibold mb-4">Growth Areas</h2>
@@ -27,7 +40,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(area)}</span>
+                <span>{getDisplayValue(area)}</span>
               </li>
             ))}
           </ul>
@@ -41,7 +54,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(weakness)}</span>
+                <span>{getDisplayValue(weakness)}</span>
               </li>
             ))}
           </ul>
@@ -53,7 +66,7 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {learningPathways?.slice(0, 6).map((pathway, index) => (
             <div key={index} className="bg-muted/50 p-3 rounded-md">
-              <p>{safeString(pathway)}</p>
+              <p>{getDisplayValue(pathway)}</p>
             </div>
           ))}
         </div>

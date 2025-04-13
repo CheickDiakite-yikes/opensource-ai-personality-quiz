@@ -1,3 +1,4 @@
+
 // Function to format trait scores for display
 export const formatTraitScore = (score: number): string => {
   if (score >= 9) return "Very High";
@@ -7,7 +8,7 @@ export const formatTraitScore = (score: number): string => {
   return "Very Low";
 };
 
-// Add safe string conversion utility
+// Enhanced safe string conversion utility
 export const safeString = (value: any): string => {
   if (value === null || value === undefined) {
     return '';

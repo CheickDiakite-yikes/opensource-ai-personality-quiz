@@ -3,15 +3,28 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { safeString } from "@/utils/formatUtils";
 
+interface MotivatorItem {
+  name: string;
+  description: string;
+}
+
 interface ComprehensiveMotivationSectionProps {
-  motivators: string[];
-  inhibitors: string[];
+  motivators: Array<string | MotivatorItem>;
+  inhibitors: Array<string | MotivatorItem>;
 }
 
 const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionProps> = ({
   motivators,
   inhibitors
 }) => {
+  // Function to extract appropriate display value from either string or object
+  const getDisplayValue = (item: string | MotivatorItem): string => {
+    if (typeof item === 'string') {
+      return item;
+    }
+    return item.name || '';
+  };
+
   return (
     <Card className="p-6 md:p-8 shadow-md">
       <h2 className="text-2xl font-semibold mb-4">Motivation Profile</h2>
@@ -25,7 +38,7 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span className="inline-flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 h-6 w-6 text-sm text-green-600 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(motivator)}</span>
+                <span>{getDisplayValue(motivator)}</span>
               </li>
             ))}
           </ul>
@@ -39,7 +52,7 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span className="inline-flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 h-6 w-6 text-sm text-red-600 dark:text-red-400 mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(inhibitor)}</span>
+                <span>{getDisplayValue(inhibitor)}</span>
               </li>
             ))}
           </ul>
