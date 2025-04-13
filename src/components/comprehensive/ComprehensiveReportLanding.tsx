@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle, FileChart, ArrowRight } from "lucide-react";
+import { AlertTriangle, FileText, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const ComprehensiveReportLanding: React.FC = () => {
@@ -94,7 +93,7 @@ const ComprehensiveReportLanding: React.FC = () => {
       
       {latestAnalysisId ? (
         <Card className="p-6 md:p-8 max-w-3xl mx-auto text-center">
-          <FileChart className="h-16 w-16 text-primary mx-auto mb-4" />
+          <FileText className="h-16 w-16 text-primary mx-auto mb-4" />
           <h2 className="text-2xl font-semibold mb-2">Your Comprehensive Analysis is Ready</h2>
           <p className="text-muted-foreground mb-6">
             View your detailed personality analysis based on the 100-question comprehensive assessment.
