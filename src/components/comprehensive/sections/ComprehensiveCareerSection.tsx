@@ -15,15 +15,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-
-interface CareerPathway {
-  title: string;
-  description?: string;
-  alignment?: string;
-  traits?: string[];
-  growth?: string;
-  skills?: string[];
-}
+import { CareerPathway } from "@/utils/types";
 
 interface ComprehensiveCareerSectionProps {
   careerSuggestions: string[] | CareerPathway[];
@@ -42,6 +34,7 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
     ? careerSuggestions as CareerPathway[]
     : (careerSuggestions as string[]).map(career => ({ 
         title: career,
+        field: career,
         description: `A career path that aligns well with your personality profile and cognitive strengths.`
       }));
   
@@ -111,7 +104,7 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                       {index + 1}
                     </div>
-                    <h4 className="text-lg font-medium">{career.title}</h4>
+                    <h4 className="text-lg font-medium">{career.title || career.field}</h4>
                   </div>
                   <Badge variant="secondary">{index === 0 ? "Highest Match" : index === 1 ? "Strong Match" : "Good Match"}</Badge>
                 </div>
@@ -122,14 +115,17 @@ const ComprehensiveCareerSection: React.FC<ComprehensiveCareerSectionProps> = ({
                   )}
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {(career.traits && career.traits.length > 0) && (
+                    {((career.traits && career.traits.length > 0) || (career.keyTraits && career.keyTraits.length > 0)) && (
                       <div className="flex items-start gap-2">
                         <LightbulbIcon className="h-5 w-5 text-primary/80 flex-shrink-0 mt-1" />
                         <div>
                           <p className="font-medium text-sm mb-1">Personality Alignment</p>
                           <div className="flex flex-wrap gap-2">
-                            {career.traits.map((trait, traitIdx) => (
+                            {career.traits && career.traits.map((trait, traitIdx) => (
                               <Badge key={traitIdx} variant="outline">{trait}</Badge>
+                            ))}
+                            {career.keyTraits && career.keyTraits.map((trait, traitIdx) => (
+                              <Badge key={`key-${traitIdx}`} variant="outline">{trait}</Badge>
                             ))}
                           </div>
                         </div>

@@ -93,11 +93,14 @@ export interface RelationshipPatterns {
 
 // Career Pathway type for enhanced career suggestions
 export interface CareerPathway {
-  field: string;
+  field?: string;
+  title?: string; 
   description?: string;
   alignment?: string;
   keyTraits?: string[];
+  traits?: string[];
   growth?: string;
+  skills?: string[];
 }
 
 // Personality Analysis
@@ -230,7 +233,7 @@ export interface RelationshipDynamic {
 export interface ComprehensiveAnalysis extends PersonalityAnalysis {
   // Extended with additional fields specific to comprehensive analysis
   inhibitors: string[];
-  detailedTraits: {
+  detailedTraits?: {
     primary: PersonalityTrait[];
     secondary: PersonalityTrait[];
   };

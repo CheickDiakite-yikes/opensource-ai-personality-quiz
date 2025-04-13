@@ -9,14 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Briefcase, ArrowRight, GraduationCap, TrendingUp, Zap } from "lucide-react";
-
-interface CareerPathway {
-  field: string;
-  description?: string;
-  alignment?: string;
-  keyTraits?: string[];
-  growth?: string;
-}
+import { CareerPathway } from "@/utils/types";
 
 interface CareerSuggestionsProps {
   careers: string[] | CareerPathway[];
@@ -29,10 +22,13 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
     ? careers as CareerPathway[]
     : (careers as string[]).map(career => ({ 
         field: career,
+        title: career,
         description: undefined,
         alignment: undefined,
         keyTraits: undefined,
-        growth: undefined 
+        traits: undefined,
+        growth: undefined,
+        skills: undefined
       }));
 
   return (
@@ -61,11 +57,11 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                     <div className="inline-flex items-center justify-center rounded-full bg-primary/10 h-8 w-8 text-sm text-primary mr-3 flex-shrink-0">
                       {index + 1}
                     </div>
-                    <span className="font-medium text-lg">{career.field}</span>
+                    <span className="font-medium text-lg">{career.title || career.field}</span>
                   </div>
                 </div>
                 
-                {(career.description || career.alignment || career.keyTraits || career.growth) && (
+                {(career.description || career.alignment || career.keyTraits || career.traits || career.growth || career.skills) && (
                   <div className="p-4 space-y-3">
                     {career.description && (
                       <p className="text-muted-foreground text-sm">{career.description}</p>
@@ -78,12 +74,22 @@ const CareerSuggestions: React.FC<CareerSuggestionsProps> = ({ careers }) => {
                       </div>
                     )}
                     
-                    {career.keyTraits && career.keyTraits.length > 0 && (
+                    {(career.keyTraits && career.keyTraits.length > 0) && (
                       <div className="flex items-start text-sm">
                         <Zap className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
                         <div>
                           <span className="font-medium">Key traits:</span>{' '}
                           {career.keyTraits.join(', ')}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(career.traits && career.traits.length > 0) && (
+                      <div className="flex items-start text-sm">
+                        <Zap className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium">Key traits:</span>{' '}
+                          {career.traits.join(', ')}
                         </div>
                       </div>
                     )}
