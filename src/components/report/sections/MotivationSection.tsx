@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Flame, Minus } from "lucide-react";
-import { safeString } from "@/utils/formatUtils";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 
 interface MotivationSectionProps {
   motivators: string[] | Array<{name: string, description: string}>;
@@ -10,6 +10,10 @@ interface MotivationSectionProps {
 }
 
 const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], inhibitors = [] }) => {
+  // Convert any object items to strings
+  const safeMotivators = ensureStringItems(motivators);
+  const safeInhibitors = ensureStringItems(inhibitors);
+
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -23,11 +27,11 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], 
           <div className="space-y-3">
             <h3 className="text-lg font-medium">Key Motivators</h3>
             <ul className="space-y-2 marker:text-primary list-disc pl-5">
-              {motivators?.slice(0, 5).map((item, index) => (
-                <li key={index}>{safeString(item)}</li>
+              {safeMotivators.slice(0, 5).map((item, index) => (
+                <li key={index}>{item}</li>
               ))}
             </ul>
-            {(!motivators || motivators.length === 0) && (
+            {(!safeMotivators || safeMotivators.length === 0) && (
               <p className="text-muted-foreground italic">No motivators identified</p>
             )}
           </div>
@@ -35,11 +39,11 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], 
           <div className="space-y-3">
             <h3 className="text-lg font-medium">Inhibitors</h3>
             <ul className="space-y-2 marker:text-red-500 list-disc pl-5">
-              {inhibitors?.slice(0, 5).map((item, index) => (
-                <li key={index}>{safeString(item)}</li>
+              {safeInhibitors.slice(0, 5).map((item, index) => (
+                <li key={index}>{item}</li>
               ))}
             </ul>
-            {(!inhibitors || inhibitors.length === 0) && (
+            {(!safeInhibitors || safeInhibitors.length === 0) && (
               <div className="flex items-center justify-center text-muted-foreground h-20">
                 <span className="flex items-center gap-2">
                   <Minus className="h-4 w-4" />

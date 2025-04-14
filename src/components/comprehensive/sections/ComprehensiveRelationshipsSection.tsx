@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Heart } from "lucide-react";
 import { RelationshipPatterns } from "@/utils/types";
-import { safeString } from "@/utils/formatUtils";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 
 interface RelationshipItem {
   name: string;
@@ -18,10 +18,10 @@ interface ComprehensiveRelationshipsSectionProps {
 const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSectionProps> = ({
   relationshipPatterns
 }) => {
-  // Ensure we have arrays to work with
-  const strengths = relationshipPatterns?.strengths || [];
-  const challenges = relationshipPatterns?.challenges || [];
-  const compatibleTypes = relationshipPatterns?.compatibleTypes || [];
+  // Ensure we have arrays to work with and convert objects to strings
+  const strengths = ensureStringItems(relationshipPatterns?.strengths || []);
+  const challenges = ensureStringItems(relationshipPatterns?.challenges || []);
+  const compatibleTypes = ensureStringItems(relationshipPatterns?.compatibleTypes || []);
   
   return (
     <Card className="p-6 md:p-8 shadow-md">
@@ -43,7 +43,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(strength)}</span>
+                <span>{strength}</span>
               </li>
             ))}
             {strengths.length === 0 && (
@@ -62,7 +62,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{safeString(challenge)}</span>
+                <span>{challenge}</span>
               </li>
             ))}
             {challenges.length === 0 && (
@@ -82,7 +82,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                   key={index}
                   className="border border-border/40 p-2 rounded-md text-center bg-card/30"
                 >
-                  {safeString(type)}
+                  {type}
                 </div>
               ))
             ) : (

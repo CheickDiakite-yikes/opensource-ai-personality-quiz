@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, ArrowUpCircle, AlertTriangle } from "lucide-react";
-import { safeString } from "@/utils/formatUtils";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 
 interface GrowthAreasSectionProps {
   weaknesses: string[] | Array<{name: string, description: string}>;
@@ -10,6 +10,10 @@ interface GrowthAreasSectionProps {
 }
 
 const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = [], growthAreas = [] }) => {
+  // Convert any object items to strings
+  const safeWeaknesses = ensureStringItems(weaknesses);
+  const safeGrowthAreas = ensureStringItems(growthAreas);
+
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -26,11 +30,11 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = []
               Current Challenges
             </h3>
             <ul className="space-y-2 marker:text-amber-500 list-disc pl-5">
-              {weaknesses?.slice(0, 5).map((item, index) => (
-                <li key={index}>{safeString(item)}</li>
+              {safeWeaknesses.slice(0, 5).map((item, index) => (
+                <li key={index}>{item}</li>
               ))}
             </ul>
-            {(!weaknesses || weaknesses.length === 0) && (
+            {(!safeWeaknesses || safeWeaknesses.length === 0) && (
               <p className="text-muted-foreground italic">No significant challenges identified</p>
             )}
           </div>
@@ -41,11 +45,11 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = []
               Areas for Development
             </h3>
             <ul className="space-y-2 marker:text-green-500 list-disc pl-5">
-              {growthAreas?.slice(0, 5).map((item, index) => (
-                <li key={index}>{safeString(item)}</li>
+              {safeGrowthAreas.slice(0, 5).map((item, index) => (
+                <li key={index}>{item}</li>
               ))}
             </ul>
-            {(!growthAreas || growthAreas.length === 0) && (
+            {(!safeGrowthAreas || safeGrowthAreas.length === 0) && (
               <p className="text-muted-foreground italic">No specific growth areas identified</p>
             )}
           </div>

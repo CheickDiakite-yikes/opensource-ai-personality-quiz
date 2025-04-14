@@ -28,14 +28,14 @@ export const safeString = (value: any): string => {
   // Handle objects with common properties in our app
   if (typeof value === 'object') {
     // For objects with name or description properties (common in the app)
-    if ('name' in value && value.name !== undefined) {
-      return typeof value.name === 'string' ? value.name : safeString(value.name);
+    if ('name' in value && typeof value.name === 'string') {
+      return value.name;
     }
-    if ('description' in value && value.description !== undefined) {
-      return typeof value.description === 'string' ? value.description : safeString(value.description);
+    if ('description' in value && typeof value.description === 'string') {
+      return value.description;
     }
-    if ('trait' in value && value.trait !== undefined) {
-      return typeof value.trait === 'string' ? value.trait : safeString(value.trait);
+    if ('trait' in value && typeof value.trait === 'string') {
+      return value.trait;
     }
     
     // For arrays, map and join the elements
@@ -54,3 +54,14 @@ export const safeString = (value: any): string => {
   // Default toString for any other types
   return String(value);
 };
+
+/**
+ * Ensures array items are properly stringified before rendering
+ * For use in complex components that might receive objects in arrays
+ */
+export const ensureStringItems = <T>(array: T[] | null | undefined): string[] => {
+  if (!array) return [];
+  
+  return array.map(item => safeString(item));
+};
+

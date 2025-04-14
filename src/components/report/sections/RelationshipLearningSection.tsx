@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Heart, BookOpen } from "lucide-react";
-import { safeString } from "@/utils/formatUtils";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 import { RelationshipPatterns } from "@/utils/types";
 
 interface RelationshipLearningSectionProps {
@@ -15,9 +15,10 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
   relationshipPatterns, 
   learningPathways = []
 }) => {
-  // Ensure we have arrays to work with
-  const strengths = relationshipPatterns?.strengths || [];
-  const challenges = relationshipPatterns?.challenges || [];
+  // Ensure we have arrays to work with and convert objects to strings
+  const strengths = ensureStringItems(relationshipPatterns?.strengths || []);
+  const challenges = ensureStringItems(relationshipPatterns?.challenges || []);
+  const safePathways = ensureStringItems(learningPathways);
   
   return (
     <Card className="shadow-sm">
@@ -35,8 +36,8 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
               <div>
                 <h4 className="text-sm font-medium mb-2">Strengths</h4>
                 <ul className="space-y-1 marker:text-green-500 list-disc pl-5">
-                  {strengths?.slice(0, 3).map((item, index) => (
-                    <li key={index}>{safeString(item)}</li>
+                  {strengths.slice(0, 3).map((item, index) => (
+                    <li key={index}>{item}</li>
                   ))}
                 </ul>
                 {(!strengths || strengths.length === 0) && (
@@ -46,8 +47,8 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
               <div>
                 <h4 className="text-sm font-medium mb-2">Challenges</h4>
                 <ul className="space-y-1 marker:text-amber-500 list-disc pl-5">
-                  {challenges?.slice(0, 3).map((item, index) => (
-                    <li key={index}>{safeString(item)}</li>
+                  {challenges.slice(0, 3).map((item, index) => (
+                    <li key={index}>{item}</li>
                   ))}
                 </ul>
                 {(!challenges || challenges.length === 0) && (
@@ -65,16 +66,16 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
               Learning Pathways
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {learningPathways?.slice(0, 4).map((pathway, index) => (
+              {safePathways.slice(0, 4).map((pathway, index) => (
                 <div 
                   key={index} 
                   className="bg-muted/50 p-3 rounded-md text-sm"
                 >
-                  {safeString(pathway)}
+                  {pathway}
                 </div>
               ))}
             </div>
-            {(!learningPathways || learningPathways.length === 0) && (
+            {(!safePathways || safePathways.length === 0) && (
               <p className="text-muted-foreground italic">No learning pathways identified</p>
             )}
           </div>
