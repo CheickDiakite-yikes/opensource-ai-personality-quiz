@@ -1,18 +1,16 @@
-
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
-// Questions focused on Motivation - Enhanced with self-determination theory and nuanced motivational factors
 export const motivationQuestions: AssessmentQuestion[] = [
   {
     id: "21",
     category: QuestionCategory.Motivation,
-    question: "When you commit deeply to pursuing a challenging long-term goal, what typically drives your persistence?",
+    question: "What drives you to persist when facing significant challenges in pursuing important goals?",
     options: [
-      "The intrinsic enjoyment of the activities involved",
-      "The personal meaning or purpose the goal represents for you",
-      "The opportunity to develop mastery and demonstrate competence",
-      "The vision of the specific outcome or achievement",
-      "The way it connects you to something larger than yourself"
+      "The deep personal meaning or purpose behind the goal",
+      "The opportunity to prove capabilities to myself and others",
+      "The potential positive impact on others or society",
+      "The satisfaction of overcoming difficult obstacles",
+      "The learning and growth that comes from the journey"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -20,13 +18,13 @@ export const motivationQuestions: AssessmentQuestion[] = [
   {
     id: "22",
     category: QuestionCategory.Motivation,
-    question: "After successfully completing a significant project or achievement, what most strongly motivates your next steps?",
+    question: "In moments when motivation naturally dips, what strategy most effectively helps you maintain momentum?",
     options: [
-      "Seeking a more challenging extension of what I've just accomplished",
-      "Exploring an entirely different domain that intrigues me",
-      "Deepening my expertise in an aspect I found particularly engaging",
-      "Applying what I've learned to help others achieve similar goals",
-      "Reflecting on the experience before determining my next direction"
+      "Breaking the goal into smaller, more manageable milestones",
+      "Reconnecting with my core purpose and values",
+      "Seeking inspiration from others' success stories",
+      "Creating accountability through commitments to others",
+      "Adjusting approaches while maintaining the end goal"
     ],
     allowCustomResponse: true,
     weight: 0.9

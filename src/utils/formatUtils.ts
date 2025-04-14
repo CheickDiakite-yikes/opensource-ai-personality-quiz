@@ -78,3 +78,27 @@ export const deepEnsureString = (obj: any): any => {
   
   return String(obj);
 };
+
+// Add formatIntelligenceScore for consistent intelligence score display
+export const formatIntelligenceScore = (score: number | undefined): string => {
+  if (score === undefined || score === null) {
+    return "N/A";
+  }
+  return `${Math.round(score)}%`;
+};
+
+// Add formatImpactLevel to show trait impact levels
+export const formatImpactLevel = (level: number): string => {
+  const levels = ["Very Low", "Low", "Moderate", "High", "Very High"];
+  const index = Math.min(Math.max(Math.floor(level * 4), 0), 4);
+  return levels[index];
+};
+
+// Add summarizeRecommendations to format recommendation lists
+export const summarizeRecommendations = (recommendations: string[]): string => {
+  if (!recommendations || !recommendations.length) {
+    return "No specific recommendations available";
+  }
+  return recommendations.join(" • ");
+};
+
