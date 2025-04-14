@@ -324,42 +324,58 @@ The assessment suggests you have a balanced personality with strengths in analyt
 Your responses indicate a preference for thoughtful consideration before making decisions, along with a desire for meaningful connections with others. These qualities would serve you well in collaborative environments where both problem-solving and interpersonal skills are valued.`,
         traits: [
           {
+            name: "Analytical Thinking",
             trait: "Analytical Thinking",
             score: 0.75,
             description: "You show a tendency to analyze situations carefully before making decisions. This thoughtful approach helps you consider multiple perspectives and identify potential challenges or opportunities that others might miss.",
             strengths: ["Problem solving", "Critical thinking", "Attention to detail"],
             challenges: ["May overthink simple situations", "Could take longer to decide"],
-            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"]
+            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"],
+            impact: ["Better decision making", "Increased problem-solving ability"],
+            recommendations: ["Focus on developing quick-analysis skills", "Balance thorough analysis with timely action"]
           },
           {
+            name: "Adaptability",
             trait: "Adaptability",
             score: 0.7,
             description: "You demonstrate ability to adjust to new situations and changing environments. This flexibility allows you to remain effective even when circumstances shift unexpectedly.",
             strengths: ["Flexibility", "Resilience", "Open to new experiences"],
             challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions"],
-            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"]
+            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"],
+            impact: ["Increased resilience to change", "Better performance in dynamic environments"],
+            recommendations: ["Seek out varied experiences", "Develop comfort with ambiguity"]
           },
           {
+            name: "Empathy",
             trait: "Empathy",
             score: 0.8,
             description: "You show strong ability to understand and share feelings of others. This emotional intelligence enhances your relationships and allows you to provide meaningful support to those around you.",
             strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives"],
             challenges: ["May take on others' emotional burdens", "Could be affected by negative environments"],
-            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"]
+            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"],
+            impact: ["Better relationships", "Increased social awareness"],
+            recommendations: ["Use empathy as strength in team settings", "Develop emotional boundaries"]
           },
           {
+            name: "Conscientiousness",
             trait: "Conscientiousness",
             score: 0.72,
             description: "You tend to be organized, responsible, and thorough in your approach to tasks and obligations. This reliability makes you someone others can count on to follow through on commitments.",
             strengths: ["Organization", "Dependability", "Attention to detail"],
             challenges: ["May set overly high standards", "Could experience frustration when plans change"],
-            growthSuggestions: ["Practice appropriate flexibility", "Celebrate progress alongside perfection"]
+            growthSuggestions: ["Practice appropriate flexibility", "Celebrate progress alongside perfection"],
+            impact: ["Increased reliability", "Better task completion"],
+            recommendations: ["Balance thoroughness with efficiency", "Develop comfort with imperfection"]
           }
         ],
         intelligence: {
           type: "Balanced Intelligence",
           score: 0.65,
           description: "You demonstrate a balanced profile across different types of intelligence.",
+          strengths: ["Versatile thinking", "Balanced approach to problems", "Adaptability"],
+          areas_for_development: ["May benefit from deepening specific intelligences", "Could leverage strengths more consistently"],
+          learning_style: "Multiple modalities",
+          cognitive_preferences: ["Balanced processing", "Adaptable learning"],
           domains: [
             {
               name: "Analytical Intelligence",
@@ -380,8 +396,16 @@ Your responses indicate a preference for thoughtful consideration before making 
         },
         intelligenceScore: 65,
         emotionalIntelligenceScore: 72,
-        cognitiveStyle: "Balanced Thinker",
-        valueSystem: ["Growth", "Connection", "Understanding", "Integrity"],
+        cognitiveStyle: {
+          primary: "Balanced Thinker",
+          secondary: "Analytical-Intuitive",
+          description: "You tend to balance analytical and intuitive approaches to problems"
+        },
+        valueSystem: {
+          strengths: ["Growth", "Connection", "Understanding", "Integrity"],
+          weaknesses: ["May sometimes prioritize others over self", "Could benefit from clearer boundaries"],
+          description: "Your values center around personal growth and meaningful connections"
+        },
         motivators: ["Learning new things", "Helping others", "Personal development", "Solving interesting problems"],
         inhibitors: ["Self-doubt", "Perfectionism", "Overthinking decisions"],
         weaknesses: ["May overthink decisions", "Could struggle with setting boundaries", "Occasional reluctance to take risks"],
@@ -393,7 +417,8 @@ Your responses indicate a preference for thoughtful consideration before making 
         },
         careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers", "Research or advisory positions"],
         learningPathways: ["Structured learning with practical applications", "Collaborative learning environments", "Self-directed exploration with feedback"],
-        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important. Consider practicing more direct communication about your own needs while continuing to support others. Over time, work on integrating your analytical thinking with more intuitive approaches to achieve greater balance."
+        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important. Consider practicing more direct communication about your own needs while continuing to support others. Over time, work on integrating your analytical thinking with more intuitive approaches to achieve greater balance.",
+        userId: user?.id
       };
     } catch (error) {
       console.error("Error generating fallback analysis:", error);
@@ -405,32 +430,51 @@ Your responses indicate a preference for thoughtful consideration before making 
         overview: "This is a minimal fallback analysis created when the AI analysis couldn't be completed. We apologize for the inconvenience and recommend trying again later.",
         traits: [
           {
+            name: "Resilience",
             trait: "Resilience",
             score: 0.7,
             description: "You show ability to recover from setbacks and adapt to challenges.",
             strengths: ["Persistence", "Adaptability"],
             challenges: ["May push too hard sometimes"],
-            growthSuggestions: ["Balance effort with rest"]
+            growthSuggestions: ["Balance effort with rest"],
+            impact: ["Better stress management", "Increased ability to overcome obstacles"],
+            recommendations: ["Focus on sustainable effort", "Develop recovery strategies"]
           }
         ],
         intelligence: {
           type: "General Intelligence",
           score: 0.5,
           description: "A balanced set of cognitive capabilities.",
-          domains: []
+          domains: [],
+          strengths: ["Balanced approach", "Adaptable thinking"],
+          areas_for_development: ["Could benefit from developing specific intelligences"],
+          learning_style: "Variable",
+          cognitive_preferences: ["Versatile learning"]
         },
         intelligenceScore: 50,
         emotionalIntelligenceScore: 50,
-        cognitiveStyle: "Balanced",
-        valueSystem: ["Growth"],
+        cognitiveStyle: {
+          primary: "Balanced",
+          secondary: "Adaptive",
+          description: "You have a flexible cognitive approach"
+        },
+        valueSystem: {
+          strengths: ["Growth"],
+          weaknesses: ["Not fully developed"],
+          description: "Your core values appear to center around personal development"
+        },
         motivators: ["Learning"],
-        inhibitors: [],
-        weaknesses: [],
-        growthAreas: [],
-        relationshipPatterns: [],
-        careerSuggestions: [],
-        learningPathways: [],
-        roadmap: ""
+        inhibitors: ["Uncertainty"],
+        weaknesses: ["Limited data available"],
+        growthAreas: ["Complete a more thorough assessment"],
+        relationshipPatterns: {
+          strengths: ["Adaptability"],
+          challenges: ["Insufficient data"],
+          compatibleTypes: ["Various types"]
+        },
+        careerSuggestions: ["Consider a full assessment for personalized suggestions"],
+        learningPathways: ["Explore diverse learning opportunities"],
+        roadmap: "We recommend completing a full assessment to receive a personalized growth roadmap."
       };
     }
   };
