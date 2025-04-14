@@ -16,7 +16,7 @@ export function useComprehensiveStorage(questionBank: AssessmentQuestion[]) {
     questionId: currentQuestion.id, 
     selectedOption: "",
     customResponse: "",
-    category: currentQuestion.category // Add the category property here
+    category: currentQuestion.category // Ensure category is always included
   };
   
   // Track if we're using a custom response
