@@ -8,14 +8,14 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   const [isPolling, setIsPolling] = useState(false);
   const [foundAnalysis, setFoundAnalysis] = useState<ComprehensiveAnalysis | null>(null);
   const [hasAttemptedPolling, setHasAttemptedPolling] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
   
   // Function to poll for analysis completion
   const pollForAnalysis = useCallback(async (id: string, maxAttempts = 3) => {
-    if (!id) return null;
+    if (!id || hasAttemptedPolling) return null;
     
     setIsPolling(true);
     setHasAttemptedPolling(true);
-    let attempts = 0;
     
     try {
       // First, check if analysis already exists
@@ -28,12 +28,23 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       if (existingAnalysis) {
         console.log("Found existing analysis for assessment:", id);
         setFoundAnalysis(existingAnalysis as unknown as ComprehensiveAnalysis);
+        setIsPolling(false);
         return existingAnalysis;
       }
       
-      // If not found, try to trigger analysis and poll
-      while (attempts < maxAttempts) {
+      // If not found, try to trigger analysis
+      let attempts = 0;
+      const poll = async () => {
+        if (attempts >= maxAttempts) {
+          console.log(`Polling complete - reached max attempts (${maxAttempts})`);
+          setIsPolling(false);
+          toast.error("Could not retrieve analysis after multiple attempts");
+          return;
+        }
+        
         attempts++;
+        setPollingAttempts(attempts);
+        
         console.log(`Polling for analysis of assessment ${id} - attempt ${attempts}/${maxAttempts}`);
         
         if (attempts === 1) {
@@ -47,8 +58,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               .single();
               
             if (assessmentData?.responses) {
-              const toastId = `poll-analysis-${id}`;
-              toast.loading("Attempting to analyze responses...", { id: toastId });
+              toast.loading("Attempting to analyze responses...", { id: `poll-analysis-${id}` });
               
               // Try to analyze the responses
               await supabase.functions.invoke(
@@ -66,9 +76,6 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Wait before checking if analysis is complete
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
         // Check if analysis exists now
         const { data: analysis } = await supabase
           .from('comprehensive_analyses')
@@ -80,27 +87,41 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           console.log("Analysis completed for assessment:", id);
           toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
           setFoundAnalysis(analysis as unknown as ComprehensiveAnalysis);
-          return analysis;
+          setIsPolling(false);
+          return;
         }
         
         toast.loading(`Waiting for analysis to complete (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
-      }
+        
+        // Wait before next polling attempt
+        setTimeout(() => {
+          poll();
+        }, 5000);
+      };
       
-      toast.error("Could not retrieve analysis after multiple attempts", { id: `poll-analysis-${id}` });
-      return null;
+      // Start polling
+      poll();
+      
     } catch (error) {
       console.error("Error in pollForAnalysis:", error);
-      toast.error("Error retrieving analysis", { id: `poll-analysis-${id}` });
-      return null;
-    } finally {
+      toast.error("Error retrieving analysis");
       setIsPolling(false);
+      return null;
     }
+  }, [hasAttemptedPolling]);
+  
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      setIsPolling(false);
+    };
   }, []);
 
   return {
     pollForAnalysis,
     isPolling,
     foundAnalysis,
-    hasAttemptedPolling
+    hasAttemptedPolling,
+    pollingAttempts
   };
 };

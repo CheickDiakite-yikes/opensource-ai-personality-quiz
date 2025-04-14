@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -35,20 +36,16 @@ const ComprehensiveReportPage: React.FC = () => {
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
+  const [fetchComplete, setFetchComplete] = useState<boolean>(false);
   const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
   
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
     if (!analysisId) {
-      setError("No analysis ID provided");
       return null;
     }
 
     try {
-      setIsLoading(true);
-      setError(null);
-      setDebugInfo(null);
-      
       console.log(`Fetching comprehensive analysis with ID: ${analysisId}`);
       
       // First check if it exists directly in the database
@@ -133,22 +130,14 @@ const ComprehensiveReportPage: React.FC = () => {
       }
     } catch (err) {
       console.error("Error fetching comprehensive analysis:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
-      setError(errorMessage);
-      setDebugInfo(JSON.stringify(err, null, 2));
-      
-      toast.error("Failed to load analysis", {
-        description: "There was a problem retrieving your comprehensive analysis"
-      });
-      
-      return null;
-    } finally {
-      setIsLoading(false);
+      throw err;
     }
   }, []);
 
   // Fetch comprehensive analysis
   useEffect(() => {
+    if (fetchComplete || foundAnalysis) return;
+    
     let isMounted = true;
     
     async function loadAnalysis() {
@@ -156,18 +145,40 @@ const ComprehensiveReportPage: React.FC = () => {
         if (isMounted) {
           setIsLoading(false);
           setError("No analysis ID provided");
+          setFetchComplete(true);
         }
         return;
       }
 
-      const data = await fetchComprehensiveAnalysis(id);
-      if (data && isMounted) {
-        setAnalysis(data);
-      } else if (isMounted && !isLoading && !error && !hasAttemptedPolling) {
-        // If we couldn't load the analysis directly, check if it's an assessment ID
-        // and try to poll for its completion
-        toast.info("Checking if analysis is still processing...");
-        pollForAnalysis(id);
+      try {
+        const data = await fetchComprehensiveAnalysis(id);
+        if (data && isMounted) {
+          setAnalysis(data);
+          setFetchComplete(true);
+        } else if (isMounted && !isPolling && !hasAttemptedPolling) {
+          // If we couldn't load the analysis directly, check if it's an assessment ID
+          // and try to poll for its completion
+          toast.info("Checking if analysis is still processing...");
+          pollForAnalysis(id);
+        }
+      } catch (err) {
+        if (isMounted) {
+          const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
+          setError(errorMessage);
+          setDebugInfo(JSON.stringify(err, null, 2));
+          setFetchComplete(true);
+          
+          // Only show error toast if we're not already polling
+          if (!isPolling && !hasAttemptedPolling) {
+            toast.error("Failed to load analysis", {
+              description: "There was a problem retrieving your comprehensive analysis"
+            });
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -176,18 +187,20 @@ const ComprehensiveReportPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isLoading, error, hasAttemptedPolling]);
+  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isPolling, hasAttemptedPolling, foundAnalysis, fetchComplete]);
   
   // Update analysis when foundAnalysis changes
   useEffect(() => {
     if (foundAnalysis && !analysis) {
       setAnalysis(foundAnalysis);
+      setFetchComplete(true);
       setError(null);
     }
   }, [foundAnalysis, analysis]);
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
+    setFetchComplete(false);
     toast.loading("Retrying analysis load...");
   };
   
@@ -299,7 +312,7 @@ const ComprehensiveReportPage: React.FC = () => {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isLoading && !fetchComplete) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
         <div className="text-center">
@@ -328,7 +341,7 @@ const ComprehensiveReportPage: React.FC = () => {
   }
 
   // Error state
-  if (error) {
+  if (error && !isPolling) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
         <div className="text-center">
@@ -404,7 +417,7 @@ const ComprehensiveReportPage: React.FC = () => {
   }
 
   // No analysis state with option to create a test
-  if (!analysis) {
+  if (!analysis && !isPolling) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
         <div className="text-center">
@@ -510,7 +523,7 @@ const ComprehensiveReportPage: React.FC = () => {
   const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
   const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
 
-  // Render analysis data - use existing rendering code
+  // Render analysis data
   return (
     <div className="container py-6 md:py-10 px-4 space-y-8">
       <div className="text-center">
@@ -532,7 +545,7 @@ const ComprehensiveReportPage: React.FC = () => {
           <TabsTrigger value="career">Career</TabsTrigger>
         </TabsList>
         
-        {/* Tab content sections - keep existing */}
+        {/* Tab content sections */}
         <TabsContent value="overview" className="space-y-6">
           <ComprehensiveOverviewSection 
             overview={safeString(analysis?.overview)}
@@ -587,7 +600,7 @@ const ComprehensiveReportPage: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Footer navigation - keep existing */}
+      {/* Footer navigation */}
       <div className="flex flex-wrap gap-4 justify-center mt-8">
         <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Back to Reports List
@@ -611,7 +624,7 @@ const ComprehensiveReportPage: React.FC = () => {
         )}
       </div>
       
-      {/* Advanced options panel - keep existing */}
+      {/* Advanced options panel */}
       {showAdvancedOptions && (
         <Card className="p-6 mt-4 max-w-lg mx-auto">
           <h3 className="text-lg font-medium mb-3">Create New Test Analysis</h3>
