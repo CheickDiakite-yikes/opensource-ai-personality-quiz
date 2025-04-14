@@ -10,6 +10,7 @@ import { AlertTriangle, FileText, ArrowLeft, RefreshCw, Bug, Sparkles } from "lu
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 
 // Import components
 import ComprehensiveOverviewSection from "./sections/ComprehensiveOverviewSection";
@@ -368,18 +369,18 @@ const ComprehensiveReportPage: React.FC = () => {
   const processedRelationships = isRelationshipObject(analysis.relationshipPatterns) 
     ? analysis.relationshipPatterns 
     : { 
-        strengths: Array.isArray(analysis.relationshipPatterns) ? analysis.relationshipPatterns : [],
+        strengths: Array.isArray(analysis.relationshipPatterns) ? ensureStringItems(analysis.relationshipPatterns) : [],
         challenges: [],
         compatibleTypes: []
       };
 
-  // Ensure all arrays have default values
-  const safeMotivators = analysis?.motivators || [];
-  const safeInhibitors = analysis?.inhibitors || [];
-  const safeGrowthAreas = analysis?.growthAreas || [];
-  const safeWeaknesses = analysis?.weaknesses || [];
-  const safeLearningPathways = analysis?.learningPathways || [];
-  const safeCareerSuggestions = analysis?.careerSuggestions || [];
+  // Ensure all arrays have default values and are properly stringified
+  const safeMotivators = ensureStringItems(analysis?.motivators || []);
+  const safeInhibitors = ensureStringItems(analysis?.inhibitors || []);
+  const safeGrowthAreas = ensureStringItems(analysis?.growthAreas || []);
+  const safeWeaknesses = ensureStringItems(analysis?.weaknesses || []);
+  const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
+  const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
 
   // Render analysis data
   return (
@@ -406,19 +407,19 @@ const ComprehensiveReportPage: React.FC = () => {
         {/* Overview tab */}
         <TabsContent value="overview" className="space-y-6">
           <ComprehensiveOverviewSection 
-            overview={analysis?.overview}
+            overview={safeString(analysis?.overview)}
             traits={analysis?.traits}
             intelligenceScore={analysis?.intelligenceScore}
             emotionalIntelligenceScore={analysis?.emotionalIntelligenceScore}
-            motivators={analysis?.motivators}
-            growthAreas={analysis?.growthAreas}
+            motivators={safeMotivators}
+            growthAreas={safeGrowthAreas}
           />
         </TabsContent>
         
         {/* Personality tab */}
         <TabsContent value="personality" className="space-y-6">
           <ComprehensiveTraitsSection
-            traits={analysis?.traits}
+            traits={analysis?.traits || []}
           />
         </TabsContent>
         
@@ -459,7 +460,7 @@ const ComprehensiveReportPage: React.FC = () => {
         <TabsContent value="career" className="space-y-6">
           <ComprehensiveCareerSection
             careerSuggestions={safeCareerSuggestions}
-            roadmap={analysis?.roadmap || ""}
+            roadmap={safeString(analysis?.roadmap || "")}
           />
         </TabsContent>
       </Tabs>

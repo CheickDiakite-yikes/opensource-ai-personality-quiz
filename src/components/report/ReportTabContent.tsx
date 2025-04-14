@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
@@ -14,6 +13,7 @@ import RoadmapSection from "./sections/RoadmapSection";
 import { isRelationshipObject } from "./utils/typeGuards";
 import ReportSectionSkeleton from "./skeletons/ReportSectionSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { safeString, ensureStringItems } from "@/utils/formatUtils";
 
 interface ReportTabContentProps {
   analysis: PersonalityAnalysis;
@@ -47,10 +47,27 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   
   const isMobile = useIsMobile();
   
-  // Convert relationshipPatterns to the correct format
+  // Ensure everything is properly stringified
+  const safeMotivators = ensureStringItems(motivators || []);
+  const safeInhibitors = ensureStringItems(inhibitors || []);
+  const safeWeaknesses = ensureStringItems(weaknesses || []);
+  const safeGrowthAreas = ensureStringItems(growthAreas || []);
+  const safeLearningPathways = ensureStringItems(learningPathways || []);
+  const safeCareerSuggestions = ensureStringItems(careerSuggestions || []);
+  const safeRoadmap = safeString(roadmap || "");
+  
+  // Convert relationshipPatterns to the correct format and ensure values are strings
   const processedRelationships = isRelationshipObject(relationshipPatterns)
-    ? relationshipPatterns
-    : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
+    ? {
+        strengths: ensureStringItems(relationshipPatterns.strengths || []),
+        challenges: ensureStringItems(relationshipPatterns.challenges || []),
+        compatibleTypes: ensureStringItems(relationshipPatterns.compatibleTypes || [])
+      }
+    : { 
+        strengths: ensureStringItems(relationshipPatterns || []),
+        challenges: [], 
+        compatibleTypes: [] 
+      };
     
   const tabContentClass = isMobile 
     ? "space-y-3 mt-2 px-0 pb-16 w-full overflow-x-hidden max-w-full-mobile" 
@@ -61,13 +78,13 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       <TabsContent value="overview" className={tabContentClass}>
         <SectionLoader>
           <OverviewSection 
-            overview={overview} 
+            overview={safeString(overview)} 
             cognitiveStyle={cognitiveStyle} 
           />
         </SectionLoader>
         
         <SectionLoader>
-          <PersonalityTraitsSection traits={traits} />
+          <PersonalityTraitsSection traits={traits || []} />
         </SectionLoader>
         
         <SectionLoader>
@@ -80,8 +97,8 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         
         <SectionLoader>
           <MotivationSection 
-            motivators={motivators}
-            inhibitors={inhibitors}
+            motivators={safeMotivators}
+            inhibitors={safeInhibitors}
           />
         </SectionLoader>
         
@@ -91,27 +108,27 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         
         <SectionLoader>
           <GrowthAreasSection 
-            weaknesses={weaknesses}
-            growthAreas={growthAreas}
+            weaknesses={safeWeaknesses}
+            growthAreas={safeGrowthAreas}
           />
         </SectionLoader>
         
         <SectionLoader>
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
-            learningPathways={learningPathways}
+            learningPathways={safeLearningPathways}
           />
         </SectionLoader>
         
         <SectionLoader>
           <CareerValuesSection 
-            careerSuggestions={careerSuggestions}
+            careerSuggestions={safeCareerSuggestions}
             valueSystem={valueSystem}
           />
         </SectionLoader>
         
         <SectionLoader>
-          <RoadmapSection roadmap={roadmap} />
+          <RoadmapSection roadmap={safeRoadmap} />
         </SectionLoader>
       </TabsContent>
       
