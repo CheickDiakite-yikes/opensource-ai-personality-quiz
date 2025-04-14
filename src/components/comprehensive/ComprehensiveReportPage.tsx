@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import ComprehensiveRelationshipsSection from "./sections/ComprehensiveRelations
 import ComprehensiveGrowthSection from "./sections/ComprehensiveGrowthSection";
 import ComprehensiveCareerSection from "./sections/ComprehensiveCareerSection";
 import { useComprehensiveAnalysisFallback } from "@/hooks/useComprehensiveAnalysisFallback";
+import ComprehensiveReportHistory from "./ComprehensiveReportHistory";
 
 const ComprehensiveReportPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -37,7 +39,16 @@ const ComprehensiveReportPage: React.FC = () => {
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
   const [fetchComplete, setFetchComplete] = useState<boolean>(false);
-  const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling, savedAnalysisId } = useComprehensiveAnalysisFallback(id);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const { 
+    pollForAnalysis, 
+    isPolling, 
+    foundAnalysis, 
+    hasAttemptedPolling, 
+    savedAnalysisId, 
+    reportHistory, 
+    fetchReportHistory 
+  } = useComprehensiveAnalysisFallback(id);
   
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
@@ -125,6 +136,14 @@ const ComprehensiveReportPage: React.FC = () => {
       throw err;
     }
   }, []);
+  
+  // Load report history when user changes
+  useEffect(() => {
+    if (user && !isLoadingHistory) {
+      setIsLoadingHistory(true);
+      fetchReportHistory().finally(() => setIsLoadingHistory(false));
+    }
+  }, [user, fetchReportHistory]);
 
   // Fetch comprehensive analysis
   useEffect(() => {
@@ -225,6 +244,9 @@ const ComprehensiveReportPage: React.FC = () => {
         user_id: user.id
       });
       
+      // Refresh report history after saving
+      fetchReportHistory();
+      
       toast.success("Analysis saved to your account", { id: "saving-analysis" });
     } catch (error) {
       console.error("Error saving analysis to user account:", error);
@@ -237,6 +259,14 @@ const ComprehensiveReportPage: React.FC = () => {
     }
   };
 
+  // Handle switching to a different report
+  const handleSwitchReport = (reportId: string) => {
+    if (reportId === id) return; // Already viewing this report
+    
+    // Navigate to the selected report
+    navigate(`/comprehensive-report/${reportId}`);
+  };
+
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     setFetchComplete(false);
@@ -245,6 +275,20 @@ const ComprehensiveReportPage: React.FC = () => {
   
   const handleGoBack = () => {
     navigate('/comprehensive-report');
+  };
+  
+  // Function to refresh report history
+  const handleRefreshHistory = async () => {
+    toast.loading("Refreshing your report history...", { id: "refresh-history" });
+    setIsLoadingHistory(true);
+    try {
+      await fetchReportHistory();
+      toast.success("Report history refreshed", { id: "refresh-history" });
+    } catch (error) {
+      toast.error("Failed to refresh report history", { id: "refresh-history" });
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
   
   // Enhanced createTestAnalysis with better timeout handling
@@ -298,7 +342,8 @@ const ComprehensiveReportPage: React.FC = () => {
                 answer: testPrompt || "I am someone who enjoys thinking deeply about problems and finding creative solutions. I value both analytical thinking and emotional intelligence."
               },
               { questionId: "test-2", answer: "I prefer working in collaborative environments where ideas can be freely shared." }
-            ]
+            ],
+            forceAssociation: true // Ensure the analysis is always saved with user ID
           }
         }
       );
@@ -322,6 +367,9 @@ const ComprehensiveReportPage: React.FC = () => {
           id: "test-analysis",
           description: `Analysis ID: ${data.analysisId}`
         });
+        
+        // Refresh history after creating a new analysis
+        fetchReportHistory();
         
         // Navigate to the new analysis
         navigate(`/comprehensive-report/${data.analysisId}`);
@@ -592,6 +640,28 @@ const ComprehensiveReportPage: React.FC = () => {
             <Save className="h-4 w-4" />
             {isSaving ? "Saving..." : "Save to My Account"}
           </Button>
+        </div>
+      )}
+      
+      {/* Report history component */}
+      {user && reportHistory && reportHistory.length > 0 && (
+        <div className="max-w-3xl mx-auto">
+          <ComprehensiveReportHistory 
+            reports={reportHistory}
+            currentReportId={analysis?.id || ''}
+            onSelectReport={handleSwitchReport}
+          />
+          <div className="flex justify-end mb-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefreshHistory}
+              disabled={isLoadingHistory}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              {isLoadingHistory ? "Refreshing..." : "Refresh History"}
+            </Button>
+          </div>
         </div>
       )}
       

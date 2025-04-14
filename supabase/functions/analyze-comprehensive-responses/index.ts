@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { responses, assessmentId, userId } = await req.json();
+    const { responses, assessmentId, userId, forceAssociation } = await req.json();
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       console.error("Invalid responses format:", responses);
@@ -137,6 +138,12 @@ Provide a detailed analysis covering:
       try {
         console.log(`Attempt ${attempt} to save analysis to database...`);
         
+        // Always ensure we have userId if forceAssociation is true
+        if (forceAssociation && userId) {
+          console.log("Force association enabled - ensuring user_id is set");
+          comprehensiveAnalysis.user_id = userId;
+        }
+        
         const { error } = await fetch(
           `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
           {
@@ -149,7 +156,7 @@ Provide a detailed analysis covering:
             body: JSON.stringify({
               id: analysisId,
               assessment_id: assessmentId,
-              user_id: userId || null,
+              user_id: comprehensiveAnalysis.user_id,
               overview: overview,
               traits: traits,
               intelligence: intelligence,

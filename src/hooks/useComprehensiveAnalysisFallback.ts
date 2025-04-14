@@ -12,6 +12,39 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   const [hasAttemptedPolling, setHasAttemptedPolling] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const [savedAnalysisId, setSavedAnalysisId] = useState<string | null>(null);
+  const [reportHistory, setReportHistory] = useState<ComprehensiveAnalysis[]>([]);
+  
+  // Function to fetch user's report history
+  const fetchReportHistory = useCallback(async () => {
+    if (!user) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching report history:", error);
+        return [];
+      }
+      
+      console.log(`Fetched ${data?.length || 0} historical reports for user`);
+      setReportHistory(data as ComprehensiveAnalysis[] || []);
+      return data;
+    } catch (err) {
+      console.error("Error in fetchReportHistory:", err);
+      return [];
+    }
+  }, [user]);
+  
+  // Call this on initial load
+  useEffect(() => {
+    if (user) {
+      fetchReportHistory();
+    }
+  }, [user, fetchReportHistory]);
   
   // Function to poll for analysis completion
   const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5) => {
@@ -38,6 +71,9 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         setSavedAnalysisId(existingAnalysis.id);
         setIsPolling(false);
         toast.success("Analysis found!");
+        
+        // Refresh report history after finding an analysis
+        fetchReportHistory();
         return existingAnalysis;
       }
       
@@ -77,7 +113,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
                     assessmentId: id,
                     userId: user?.id,
                     responses: assessmentData.responses,
-                    useMockData: false // Explicitly prevent mock data usage
+                    useMockData: false, // Explicitly prevent mock data usage
+                    forceAssociation: true // Ensure the analysis is associated with the user
                   }
                 }
               );
@@ -106,6 +143,9 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
           setFoundAnalysis(analysis as unknown as ComprehensiveAnalysis);
           setIsPolling(false);
+          
+          // Refresh report history after finding an analysis
+          fetchReportHistory();
           return;
         }
         
@@ -127,7 +167,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       setIsPolling(false);
       return null;
     }
-  }, [hasAttemptedPolling, user, savedAnalysisId]);
+  }, [hasAttemptedPolling, user, savedAnalysisId, fetchReportHistory]);
   
   // Clean up polling on unmount
   useEffect(() => {
@@ -142,6 +182,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     foundAnalysis,
     hasAttemptedPolling,
     pollingAttempts,
-    savedAnalysisId
+    savedAnalysisId,
+    reportHistory,
+    fetchReportHistory
   };
 };

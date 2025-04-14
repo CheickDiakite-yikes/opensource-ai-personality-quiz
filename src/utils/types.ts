@@ -144,6 +144,7 @@ export interface PersonalityAnalysis {
 export interface ComprehensiveAnalysis {
   id: string;
   created_at?: string;
+  user_id?: string;
   assessment_id: string;
   overview: string;
   traits: any;
