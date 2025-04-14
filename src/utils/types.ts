@@ -52,10 +52,7 @@ export interface CognitiveStyle {
   description: string;
 }
 
-// Alias for backward compatibility
-export type CognitiveStyleType = CognitiveStyle | string;
-
-// Define the CognitiveDomain interface
+// Defining CognitiveDomain interface
 export interface CognitiveDomain {
   name: string;
   score: number;
@@ -72,9 +69,6 @@ export interface Intelligence {
   cognitive_preferences: string[];
   domains?: CognitiveDomain[];
 }
-
-// Alias for backward compatibility
-export type IntelligenceType = Intelligence;
 
 export interface PersonalityAnalysis {
   id: string;
@@ -157,15 +151,16 @@ export interface Activity {
   title: string;
   description: string;
   category: ActivityCategory;
-  duration: number; // in minutes
-  difficulty: "Easy" | "Moderate" | "Challenging";
-  completed?: boolean;
-  completedDate?: string;
+  duration?: number; // in minutes
+  difficulty?: "Easy" | "Moderate" | "Challenging";
+  completed: boolean;
+  completedAt?: Date;
   recommendedFrequency?: string;
-  benefits: string[];
+  benefits: string;
   steps?: string[];
-  points?: number;
-  createdAt?: string;
+  points: number;
+  createdAt: Date;
+  user_id?: string;
 }
 
 // Notification types
@@ -174,12 +169,21 @@ export interface MotivationalNotification {
   title: string;
   message: string;
   type: "motivational" | "reminder" | "milestone" | "tip" | "insight";
-  createdAt: string | Date;
+  createdAt: Date | string;
   read: boolean;
   trait?: string;
   link?: string;
   suggestion?: string;
   relatedTraits?: string[];
-  date?: string | Date;
+  date?: Date | string;
   userId?: string;
 }
+
+// JSON type for Supabase
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]

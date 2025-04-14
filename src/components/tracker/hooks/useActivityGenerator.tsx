@@ -1,10 +1,11 @@
 
 import { useState } from "react";
-import { Activity, ActivityCategory, PersonalityAnalysis, Json } from "@/utils/types";
+import { Activity, ActivityCategory, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { activitySuggestionsByCategory } from "../utils/activitySuggestions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Json } from "@/integrations/supabase/types";
 
 export const useActivityGenerator = (
   setActivities: React.Dispatch<React.SetStateAction<Activity[]>>,
@@ -23,6 +24,21 @@ export const useActivityGenerator = (
     }
     
     return [];
+  };
+  
+  // Format benefits to ensure it's a string
+  const formatBenefits = (benefits: any): string => {
+    if (!benefits) return "";
+    
+    if (typeof benefits === 'string') {
+      return benefits;
+    }
+    
+    if (Array.isArray(benefits)) {
+      return benefits.join(", ");
+    }
+    
+    return String(benefits);
   };
   
   // Generate a new activity based on user's profile
@@ -50,7 +66,7 @@ export const useActivityGenerator = (
           throw new Error(error?.message || "Failed to generate activity");
         }
         
-        newActivity = data.activity;
+        newActivity = data.activity as Activity;
         console.log("Received AI-generated activity:", newActivity);
       } catch (error) {
         console.error("Error calling generate-activity function:", error);
@@ -74,8 +90,8 @@ export const useActivityGenerator = (
               category: newActivity.category,
               completed: false,
               user_id: user.id,
-              steps: Array.isArray(newActivity.steps) ? formatSteps(newActivity.steps) : [],
-              benefits: newActivity.benefits || ""
+              steps: Array.isArray(newActivity.steps) ? newActivity.steps : [],
+              benefits: formatBenefits(newActivity.benefits)
             })
             .select('*')
             .single();
@@ -102,7 +118,7 @@ export const useActivityGenerator = (
               completedAt: savedData.completed_at ? new Date(savedData.completed_at) : undefined,
               createdAt: savedData.created_at ? new Date(savedData.created_at) : now,
               steps: formatSteps(savedData.steps),
-              benefits: savedData.benefits || "",
+              benefits: formatBenefits(savedData.benefits),
               user_id: savedData.user_id
             };
             
@@ -164,7 +180,7 @@ export const useActivityGenerator = (
       completed: false,
       steps: [],
       benefits: `Improve your ${selectedCategory.toLowerCase()} abilities.`,
-      createdAt: new Date() // Add this to match our updated interface
+      createdAt: new Date()
     };
   };
   

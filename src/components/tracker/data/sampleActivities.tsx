@@ -11,6 +11,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.KINDNESS,
     completed: false,
     createdAt: new Date(),
+    benefits: "Improves social connections and spreads kindness"
   },
   {
     id: "2",
@@ -20,6 +21,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.MINDFULNESS,
     completed: false,
     createdAt: new Date(),
+    benefits: "Reduces stress and improves mental clarity"
   },
   {
     id: "3",
@@ -29,6 +31,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.LEARNING,
     completed: false,
     createdAt: new Date(),
+    benefits: "Enhances cognitive flexibility and personal growth"
   },
   {
     id: "4",
@@ -38,6 +41,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.HEALTH,
     completed: false,
     createdAt: new Date(),
+    benefits: "Improves physical health and mental wellbeing"
   },
   {
     id: "5",
@@ -47,6 +51,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.SOCIAL,
     completed: false,
     createdAt: new Date(),
+    benefits: "Strengthens social connections and support networks"
   },
   {
     id: "6",
@@ -56,6 +61,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.KINDNESS,
     completed: false,
     createdAt: new Date(),
+    benefits: "Increases positive emotions and strengthens relationships"
   },
   {
     id: "7",
@@ -65,6 +71,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.CREATIVITY,
     completed: false,
     createdAt: new Date(),
+    benefits: "Enhances creative thinking and self-expression"
   },
   {
     id: "8",
@@ -74,6 +81,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.KINDNESS,
     completed: false,
     createdAt: new Date(),
+    benefits: "Creates meaning and purpose while helping others"
   },
   {
     id: "9",
@@ -83,6 +91,7 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.SOCIAL,
     completed: false,
     createdAt: new Date(),
+    benefits: "Improves communication skills and empathy"
   },
   {
     id: "10",
@@ -92,5 +101,6 @@ export const sampleActivities: Activity[] = [
     category: ActivityCategory.HEALTH,
     completed: false,
     createdAt: new Date(),
+    benefits: "Encourages healthy eating habits and culinary creativity"
   },
 ];

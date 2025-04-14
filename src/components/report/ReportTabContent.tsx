@@ -54,7 +54,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   // Ensure intelligence has the correct structure to satisfy Intelligence type
   const processedIntelligence: Intelligence = React.useMemo(() => {
     if (intelligence && typeof intelligence === 'object') {
-      // Ensure all required fields are present
+      // Ensure all required fields are present with sensible defaults
       return {
         type: intelligence.type || '',
         score: intelligence.score || 0,
@@ -97,7 +97,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         compatibleTypes: ensureStringItems(relationshipPatterns.compatibleTypes || [])
       }
     : { 
-        strengths: ensureStringItems(relationshipPatterns || []),
+        strengths: ensureStringItems(Array.isArray(relationshipPatterns) ? relationshipPatterns : []),
         challenges: [], 
         compatibleTypes: [] 
       };
