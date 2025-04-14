@@ -28,73 +28,67 @@ serve(async (req) => {
 
     let analysisData;
     
-    // First try to get analysis with the direct ID
+    // First try to get analysis with the direct ID using maybeSingle() instead of single()
     try {
       const { data: directResult, error: directError } = await supabaseClient
-        .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
-        
-      if (directError) {
-        console.error("[get-comprehensive-analysis] Error fetching with RPC:", directError);
-        throw new Error(`Database function error: ${directError.message}`);
-      }
-      
-      if (directResult && Object.keys(directResult).length > 0) {
-        console.log("[get-comprehensive-analysis] Successfully retrieved analysis via RPC");
-        analysisData = directResult;
-      } else {
-        console.log("[get-comprehensive-analysis] No analysis found with RPC, trying direct query");
-        throw new Error("Analysis not found via RPC");
-      }
-    } catch (rpcError) {
-      console.warn("[get-comprehensive-analysis] RPC approach failed:", rpcError.message);
-      
-      // Fall back to direct query
-      try {
-        const { data: queryResult, error: queryError } = await supabaseClient
-          .from('comprehensive_analyses')
-          .select('*')
-          .eq('id', id)
-          .single();
-          
-        if (queryError) {
-          console.error("[get-comprehensive-analysis] Error in direct query:", queryError);
-          throw new Error(`Query error: ${queryError.message}`);
-        }
-        
-        if (queryResult) {
-          console.log("[get-comprehensive-analysis] Successfully retrieved analysis via direct query");
-          analysisData = queryResult;
-        } else {
-          throw new Error("Analysis not found in database");
-        }
-      } catch (queryError) {
-        console.error("[get-comprehensive-analysis] Direct query failed:", queryError);
-        throw queryError;
-      }
-    }
-    
-    // If we still don't have analysis data, try to get the most recent one
-    if (!analysisData) {
-      console.log("[get-comprehensive-analysis] Falling back to most recent analysis");
-      
-      const { data: recentAnalysis, error: recentError } = await supabaseClient
         .from('comprehensive_analyses')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('id', id)
+        .maybeSingle();
         
-      if (recentError) {
-        console.error("[get-comprehensive-analysis] Error fetching recent analysis:", recentError);
-        throw new Error("No analysis found and couldn't fetch recent analysis");
+      if (directError) {
+        console.error("[get-comprehensive-analysis] Error in direct query:", directError);
+        throw new Error(`Query error: ${directError.message}`);
       }
       
-      if (recentAnalysis) {
-        console.log(`[get-comprehensive-analysis] Found most recent analysis with ID: ${recentAnalysis.id}`);
-        analysisData = recentAnalysis;
+      if (directResult) {
+        console.log("[get-comprehensive-analysis] Successfully retrieved analysis via direct query");
+        analysisData = directResult;
       } else {
-        throw new Error("No analyses found in database");
+        console.log("[get-comprehensive-analysis] No analysis found with direct query, trying assessment_id");
+        
+        // Try looking it up by assessment_id
+        const { data: assessmentResult, error: assessmentError } = await supabaseClient
+          .from('comprehensive_analyses')
+          .select('*')
+          .eq('assessment_id', id)
+          .maybeSingle();
+          
+        if (assessmentError) {
+          console.error("[get-comprehensive-analysis] Error in assessment_id query:", assessmentError);
+          throw new Error(`Query error: ${assessmentError.message}`);
+        }
+        
+        if (assessmentResult) {
+          console.log("[get-comprehensive-analysis] Successfully retrieved analysis via assessment_id");
+          analysisData = assessmentResult;
+        } else {
+          console.log("[get-comprehensive-analysis] No analysis found by assessment_id, trying recent analysis");
+          
+          // If all else fails, get the most recent analysis
+          const { data: recentData, error: recentError } = await supabaseClient
+            .from('comprehensive_analyses')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (recentError) {
+            console.error("[get-comprehensive-analysis] Error fetching recent analysis:", recentError);
+            throw new Error("No analysis found and couldn't fetch recent analysis");
+          }
+          
+          if (recentData) {
+            console.log("[get-comprehensive-analysis] Using most recent analysis as fallback");
+            analysisData = recentData;
+          } else {
+            throw new Error("No analyses found in database");
+          }
+        }
       }
+    } catch (queryError) {
+      console.error("[get-comprehensive-analysis] Query failed:", queryError);
+      throw queryError;
     }
     
     // Process and format the analysis data for client use

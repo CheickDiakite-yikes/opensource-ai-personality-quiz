@@ -19,16 +19,21 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     
     try {
       // First, check if analysis already exists
-      const { data: existingAnalysis } = await supabase
+      const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
-        .eq('assessment_id', id)
+        .or(`id.eq.${id},assessment_id.eq.${id}`)
         .maybeSingle();
+      
+      if (existingError) {
+        console.log("Error checking for existing analysis:", existingError);
+      }
       
       if (existingAnalysis) {
         console.log("Found existing analysis for assessment:", id);
         setFoundAnalysis(existingAnalysis as unknown as ComprehensiveAnalysis);
         setIsPolling(false);
+        toast.success("Analysis found!");
         return existingAnalysis;
       }
       
@@ -55,7 +60,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               .from('comprehensive_assessments')
               .select('*')
               .eq('id', id)
-              .single();
+              .maybeSingle();
               
             if (assessmentData?.responses) {
               toast.loading("Analyzing your responses...", { id: `poll-analysis-${id}` });
@@ -77,11 +82,11 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Check if analysis exists now
+        // Check if analysis exists now, using more flexible query
         const { data: analysis } = await supabase
           .from('comprehensive_analyses')
           .select('*')
-          .eq('assessment_id', id)
+          .or(`id.eq.${id},assessment_id.eq.${id}`)
           .maybeSingle();
         
         if (analysis) {
