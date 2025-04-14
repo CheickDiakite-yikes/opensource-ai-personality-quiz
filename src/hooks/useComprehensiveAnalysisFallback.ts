@@ -58,15 +58,16 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               .single();
               
             if (assessmentData?.responses) {
-              toast.loading("Attempting to analyze responses...", { id: `poll-analysis-${id}` });
+              toast.loading("Analyzing your responses...", { id: `poll-analysis-${id}` });
               
-              // Try to analyze the responses
+              // Try to analyze the responses - NEVER use mock data here
               await supabase.functions.invoke(
                 "analyze-comprehensive-responses",
                 {
                   body: { 
                     assessmentId: id,
-                    responses: assessmentData.responses
+                    responses: assessmentData.responses,
+                    useMockData: false // Explicitly prevent mock data usage
                   }
                 }
               );
@@ -91,7 +92,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           return;
         }
         
-        toast.loading(`Waiting for analysis to complete (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
+        toast.loading(`Processing your assessment (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
         
         // Wait before next polling attempt
         setTimeout(() => {

@@ -53,7 +53,7 @@ export function useComprehensiveSubmission(
       // Store the ID for use in the catch block if needed
       createdAssessmentId = assessmentData.id;
       
-      toast.loading("Analyzing your responses with AI...", { id: "assessment-submission" });
+      toast.loading("Analyzing your responses...", { id: "assessment-submission" });
       
       // Call Supabase Edge Function to analyze responses with improved error handling and timeout management
       const MAX_RETRIES = 2;
@@ -69,49 +69,33 @@ export function useComprehensiveSubmission(
             toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
           }
           
-          // Setup AbortController with timeout for the request (60 seconds)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000);
-          
-          try {
-            // Call the edge function
-            const { data, error } = await supabase.functions.invoke(
-              "analyze-comprehensive-responses",
-              {
-                body: { 
-                  assessmentId: createdAssessmentId,
-                  responses: formattedResponses
-                }
+          // Call the edge function - explicitly prevent mock data usage
+          const { data, error } = await supabase.functions.invoke(
+            "analyze-comprehensive-responses",
+            {
+              body: { 
+                assessmentId: createdAssessmentId,
+                responses: formattedResponses,
+                useMockData: false // Explicitly prevent mock data usage
               }
-            );
-            
-            // Clear the timeout since the request completed
-            clearTimeout(timeoutId);
-            
-            if (error) throw new Error(error.message);
-            
-            if (!data?.analysisId) {
-              throw new Error("Analysis completed but no analysis ID was returned");
             }
-            
-            // Clear stored progress after successful submission
-            localStorage.removeItem("comprehensive_assessment_progress");
-            
-            // Show success message
-            toast.success("Analysis complete!", { id: "assessment-submission" });
-            
-            // Navigate to the comprehensive report page
-            navigate(`/comprehensive-report/${data.analysisId}`);
-            return;
-          } catch (abortError) {
-            // Handle timeout specifically
-            if (abortError.name === 'AbortError') {
-              console.log("Request timed out, but responses were saved");
-              throw new Error("Analysis request timed out after 60 seconds. Your responses were saved and will be analyzed later.");
-            } else {
-              throw abortError;
-            }
+          );
+          
+          if (error) throw new Error(error.message);
+          
+          if (!data?.analysisId) {
+            throw new Error("Analysis completed but no analysis ID was returned");
           }
+          
+          // Clear stored progress after successful submission
+          localStorage.removeItem("comprehensive_assessment_progress");
+          
+          // Show success message
+          toast.success("Analysis complete!", { id: "assessment-submission" });
+          
+          // Navigate to the comprehensive report page
+          navigate(`/comprehensive-report/${data.analysisId}`);
+          return;
         } catch (error) {
           console.error(`Error attempt ${retry + 1}:`, error);
           lastError = error;
@@ -140,7 +124,7 @@ export function useComprehensiveSubmission(
       if (createdAssessmentId) {
         toast.error("Your assessment was saved but analysis failed", { 
           id: "assessment-submission",
-          description: "We'll try to analyze it again when you view your reports. You can continue to your profile to see existing reports."
+          description: "We'll try to analyze it again when you view your reports."
         });
         
         // Navigate to the assessment ID, the report page will handle polling

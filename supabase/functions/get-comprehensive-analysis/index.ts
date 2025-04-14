@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import { corsHeaders } from "../_shared/cors.ts"
@@ -19,9 +18,9 @@ serve(async (req) => {
   }
   
   try {
-    const { id } = await req.json();
+    const { id, useMockData = false } = await req.json();
     
-    console.log(`[get-comprehensive-analysis] Fetching analysis with ID: ${id}`);
+    console.log(`[get-comprehensive-analysis] Fetching analysis with ID: ${id}, useMockData: ${useMockData}`);
 
     if (!id) {
       throw new Error('Analysis ID is required');
@@ -120,57 +119,71 @@ serve(async (req) => {
       const formattedAnalysis = {
         id: analysisData.id,
         createdAt: analysisData.created_at,
-        overview: analysisData.overview || generateEnhancedOverview(),
-        traits: analysisData.traits || generateEnhancedTraits(),
-        intelligence: analysisData.intelligence || generateEnhancedIntelligence(),
-        intelligenceScore: analysisData.intelligence_score || 75,
-        emotionalIntelligenceScore: analysisData.emotional_intelligence_score || 70,
-        valueSystem: analysisData.value_system || ["Growth", "Connection", "Achievement", "Exploration", "Balance", "Integrity"],
-        motivators: analysisData.motivators || generateEnhancedMotivators(),
-        inhibitors: analysisData.inhibitors || ["Self-doubt", "Perfectionism", "Fear of failure", "Decision paralysis", "Overthinking"],
-        weaknesses: analysisData.weaknesses || ["May overthink decisions", "Could struggle with boundaries", "Occasional procrastination when faced with ambiguity", "Tendency to avoid necessary conflict", "Can be overly self-critical"],
-        growthAreas: analysisData.growth_areas || generateEnhancedGrowthAreas(),
-        relationshipPatterns: analysisData.relationship_patterns || generateEnhancedRelationshipPatterns(),
-        careerSuggestions: analysisData.career_suggestions || ["Researcher", "Strategic Consultant", "Creative Director", "Educator", "Content Strategist", "Project Manager", "Human Resources Specialist"],
-        learningPathways: analysisData.learning_pathways || ["Self-directed exploration with structured feedback", "Practical application of theoretical concepts", "Collaborative learning environments", "Multimedia educational resources", "Project-based learning"],
-        roadmap: analysisData.roadmap || generateEnhancedRoadmap(),
+        overview: analysisData.overview || null,
+        traits: analysisData.traits || null,
+        intelligence: analysisData.intelligence || null,
+        intelligenceScore: analysisData.intelligence_score || null,
+        emotionalIntelligenceScore: analysisData.emotional_intelligence_score || null,
+        valueSystem: analysisData.value_system || null,
+        motivators: analysisData.motivators || null,
+        inhibitors: analysisData.inhibitors || null, 
+        weaknesses: analysisData.weaknesses || null,
+        growthAreas: analysisData.growth_areas || null,
+        relationshipPatterns: analysisData.relationship_patterns || null,
+        careerSuggestions: analysisData.career_suggestions || null,
+        learningPathways: analysisData.learning_pathways || null,
+        roadmap: analysisData.roadmap || null,
         message: id !== analysisData.id ? 
           `Requested analysis not found. Showing analysis from ${new Date(analysisData.created_at).toLocaleDateString()}` : 
-          undefined,
-        shadowAspects: analysisData.shadow_aspects || generateEnhancedShadowAspects(),
-        detailedTraits: analysisData.detailed_traits || generateEnhancedDetailedTraits(),
-        personalityArchetype: analysisData.personality_archetype || generateEnhancedPersonalityArchetype(),
-        mindsetPatterns: analysisData.mindset_patterns || {
-          dominant: "Growth-oriented",
-          description: "You approach challenges as opportunities for learning and development rather than as threats to your capabilities.",
-          implications: [
-            "You're likely to persist in the face of obstacles", 
-            "You tend to embrace feedback as valuable information", 
-            "You see effort as a path to mastery", 
-            "You're inspired by the success of others rather than threatened by it"
-          ]
-        },
-        emotionalProfile: analysisData.emotional_profile || {
-          primaryEmotions: ["Curiosity", "Empathy", "Determination", "Occasional anxiety"],
-          emotionalResponsiveness: 7.2,
-          regulationStrategies: [
-            "Cognitive reframing", 
-            "Mindfulness practices", 
-            "Creative expression", 
-            "Social connection"
-          ]
-        },
-        communicationStyle: analysisData.communication_style || {
-          primary: "Thoughtful",
-          secondary: "Collaborative",
-          description: "You tend to process information thoroughly before responding and value input from multiple perspectives when making decisions.",
-          effectiveChannels: [
-            "One-on-one discussions", 
-            "Small group collaboration", 
-            "Written communication with time for reflection"
-          ]
-        }
+          undefined
       };
+      
+      // Fill in any missing fields only if explicitly in test mode with useMockData=true
+      if (useMockData === true) {
+        console.log("[get-comprehensive-analysis] Using mock data to fill in missing fields (test mode)");
+        
+        if (!formattedAnalysis.overview) formattedAnalysis.overview = generateEnhancedOverview();
+        if (!formattedAnalysis.traits) formattedAnalysis.traits = generateEnhancedTraits();
+        if (!formattedAnalysis.intelligence) formattedAnalysis.intelligence = generateEnhancedIntelligence();
+        if (!formattedAnalysis.intelligenceScore) formattedAnalysis.intelligenceScore = 75;
+        if (!formattedAnalysis.emotionalIntelligenceScore) formattedAnalysis.emotionalIntelligenceScore = 70;
+        if (!formattedAnalysis.valueSystem) formattedAnalysis.valueSystem = ["Growth", "Connection", "Achievement", "Exploration", "Balance", "Integrity"];
+        if (!formattedAnalysis.motivators) formattedAnalysis.motivators = generateEnhancedMotivators();
+        if (!formattedAnalysis.inhibitors) formattedAnalysis.inhibitors = ["Self-doubt", "Perfectionism", "Fear of failure", "Decision paralysis", "Overthinking"];
+        if (!formattedAnalysis.weaknesses) formattedAnalysis.weaknesses = ["May overthink decisions", "Could struggle with boundaries", "Occasional procrastination when faced with ambiguity", "Tendency to avoid necessary conflict", "Can be overly self-critical"];
+        if (!formattedAnalysis.growthAreas) formattedAnalysis.growthAreas = generateEnhancedGrowthAreas();
+        if (!formattedAnalysis.relationshipPatterns) formattedAnalysis.relationshipPatterns = generateEnhancedRelationshipPatterns();
+        if (!formattedAnalysis.careerSuggestions) formattedAnalysis.careerSuggestions = ["Researcher", "Strategic Consultant", "Creative Director", "Educator", "Content Strategist", "Project Manager", "Human Resources Specialist"];
+        if (!formattedAnalysis.learningPathways) formattedAnalysis.learningPathways = ["Self-directed exploration with structured feedback", "Practical application of theoretical concepts", "Collaborative learning environments", "Multimedia educational resources", "Project-based learning"];
+        if (!formattedAnalysis.roadmap) formattedAnalysis.roadmap = generateEnhancedRoadmap();
+        
+        // Add message about test data
+        formattedAnalysis.message = "This analysis contains test data. Some fields may be generated for demonstration purposes.";
+      } else {
+        // If any required fields are missing and we're NOT in test mode, report this
+        const missingFields = [];
+        if (!formattedAnalysis.overview) missingFields.push('overview');
+        if (!formattedAnalysis.traits || !formattedAnalysis.traits.length) missingFields.push('traits');
+        if (!formattedAnalysis.intelligence) missingFields.push('intelligence');
+        
+        if (missingFields.length > 0) {
+          console.warn(`[get-comprehensive-analysis] Analysis missing key fields: ${missingFields.join(', ')}`);
+          
+          // Return error response instead of incomplete data
+          return new Response(
+            JSON.stringify({ 
+              error: "Incomplete analysis data", 
+              message: `Your analysis is still processing. Missing: ${missingFields.join(', ')}`,
+              analysisId: analysisData.id,
+              status: "processing"
+            }),
+            { 
+              status: 202, // Accepted but processing
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
       
       return new Response(
         JSON.stringify(formattedAnalysis),
@@ -184,19 +197,22 @@ serve(async (req) => {
   } catch (error) {
     console.error("[get-comprehensive-analysis] Error:", error);
     
-    // Return a rich mock analysis as a fallback
-    console.log("[get-comprehensive-analysis] Generating enhanced mock analysis as fallback");
-    
+    // Return error response - NOT mock data
     return new Response(
-      JSON.stringify(generateEnhancedMockAnalysis()),
+      JSON.stringify({
+        error: "Failed to retrieve analysis",
+        message: error instanceof Error ? error.message : "Unknown error occurred",
+        status: "error"
+      }),
       { 
-        status: 200,  // Use 200 even for errors to ensure client gets usable data
+        status: 404,  // Not found
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
 });
 
+// Keep these helper functions, but make sure they are only used with useMockData=true
 function generateEnhancedTraits() {
   return [
     {

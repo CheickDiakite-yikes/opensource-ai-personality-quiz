@@ -1,7 +1,14 @@
 
 import { AssessmentResponse, PersonalityAnalysis, QuestionCategory, RelationshipPatterns } from "@/utils/types";
 
-export const generateMockAnalysis = (assessmentId: string): PersonalityAnalysis => {
+// Only use this function when explicitly testing
+export const generateMockAnalysis = (assessmentId: string, isTest: boolean = false): PersonalityAnalysis | null => {
+  // If not in test mode, return null to prevent mock data usage
+  if (!isTest) {
+    console.warn("Attempted to use mock analysis generator outside of test mode - prevented");
+    return null;
+  }
+
   const mockAnalysis: PersonalityAnalysis = {
     id: `analysis-${Date.now()}`,
     userId: 'current-user', // In a real app, this would be the actual user ID
