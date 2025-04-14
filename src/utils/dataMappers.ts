@@ -11,6 +11,7 @@ export function mapDbToComprehensiveAnalysis(dbData: DbComprehensiveAnalysis): C
   // Handle nested result field if present
   const resultData = dbData.result || {};
   
+  // Ensure all fields are properly mapped from snake_case to camelCase
   return {
     id: dbData.id,
     created_at: dbData.created_at,

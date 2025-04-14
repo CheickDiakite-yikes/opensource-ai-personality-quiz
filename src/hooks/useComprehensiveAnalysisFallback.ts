@@ -33,6 +33,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       }
       
       console.log(`Fetched ${data?.length || 0} historical reports for user`);
+      // CRITICAL FIX: Ensure we map the database data to our application model
       const mappedData = mapDbArrayToComprehensiveAnalyses(data as DbComprehensiveAnalysis[] || []);
       setReportHistory(mappedData);
       return mappedData;
@@ -50,7 +51,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   }, [user, fetchReportHistory]);
   
   // Function to poll for analysis completion
-  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 10) => {
+  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 15) => {
     if (!id) {
       console.warn("No ID provided for polling");
       return null;
@@ -67,7 +68,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     try {
       console.log(`Starting to poll for analysis with ID: ${id}`);
       
-      // First, check if analysis already exists using flexible query
+      // CRITICAL FIX: First, check if analysis already exists using flexible query
       const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -106,8 +107,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         
         console.log(`Polling for analysis of assessment ${id} - attempt ${attempts}/${maxAttempts}`);
         
-        if (attempts === 1) {
-          // On first attempt, try to trigger the analysis
+        if (attempts === 1 || attempts % 3 === 0) {
+          // On first attempt and every 3rd attempt, try to trigger the analysis
           try {
             // Get the assessment data to pass to the analysis function
             const { data: assessmentData } = await supabase
@@ -146,7 +147,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Check different possible ID formats
+        // CRITICAL FIX: Check different possible ID formats
         const possibleIds = [id];
         if (savedAnalysisId && savedAnalysisId !== id) {
           possibleIds.push(savedAnalysisId);
@@ -195,6 +196,21 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               setIsPolling(false);
               
               // Refresh report history after finding an analysis
+              fetchReportHistory();
+              analysisFound = true;
+              return;
+            }
+            
+            // CRITICAL FIX: Try with UUID conversion patterns
+            const { data: analysisByVariant } = await supabase
+              .rpc('get_comprehensive_analysis_by_id', { analysis_id: possibleId });
+              
+            if (analysisByVariant) {
+              console.log(`Found analysis using RPC function with ID: ${possibleId}`);
+              toast.success("Analysis retrieved!", { id: `poll-analysis-${id}` });
+              const mappedAnalysis = mapDbToComprehensiveAnalysis(analysisByVariant as any);
+              setFoundAnalysis(mappedAnalysis);
+              setIsPolling(false);
               fetchReportHistory();
               analysisFound = true;
               return;
