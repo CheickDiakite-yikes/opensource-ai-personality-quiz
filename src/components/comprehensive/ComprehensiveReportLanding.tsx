@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -128,43 +127,47 @@ const ComprehensiveReportLanding: React.FC = () => {
         }
       }
       
-      // CRITICAL FIX: If we still have nothing, try a broader search with RPC function
-      console.log("Trying RPC function to search for analyses");
+      // CRITICAL FIX: If we still have nothing, try a broader search with a direct query
+      console.log("Trying direct function to search for analyses");
       
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_all_comprehensive_analyses_for_user', { user_uuid: user.id });
+      // FIX: Use a valid RPC function - using get_comprehensive_analysis_by_id as a fallback
+      // but we'll use it in a different way
+      const { data: allAnalyses, error: allError } = await supabase
+        .from('comprehensive_analyses')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100); // Use a direct query instead of RPC
         
-      if (rpcError) {
-        console.error("RPC function error:", rpcError);
-        // If RPC fails, continue to next approach
-      } else if (rpcData && rpcData.length > 0) {
-        console.log(`RPC function found ${rpcData.length} analyses`);
-        const mappedData = mapDbArrayToComprehensiveAnalyses(rpcData as any);
+      if (allError) {
+        console.error("Direct query error:", allError);
+      } else if (allAnalyses && Array.isArray(allAnalyses) && allAnalyses.length > 0) {
+        console.log(`Direct query found ${allAnalyses.length} analyses`);
+        const mappedData = mapDbArrayToComprehensiveAnalyses(allAnalyses as DbComprehensiveAnalysis[]);
         setReportHistory(mappedData);
-        setLatestAnalysisId(rpcData[0].id);
-        toast.success(`Found ${rpcData.length} analyses through expanded search`, { id: "fetch-all" });
+        setLatestAnalysisId(allAnalyses[0].id);
+        toast.success(`Found ${allAnalyses.length} analyses through expanded search`, { id: "fetch-all" });
         return;
       }
       
       // CRITICAL FIX: Last resort, try to fetch ALL analyses and filter client-side
       console.log("Attempting to fetch all comprehensive analyses as last resort");
       
-      const { data: allAnalyses, error: allError } = await supabase
+      const { data: allCompAnalyses, error: allCompError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100); // Reasonable limit to prevent overwhelming the client
         
-      if (allError) {
-        throw new Error(allError.message);
+      if (allCompError) {
+        throw new Error(allCompError.message);
       }
       
-      if (allAnalyses && allAnalyses.length > 0) {
-        console.log(`Found ${allAnalyses.length} total analyses, filtering for user relevance`);
+      if (allCompAnalyses && Array.isArray(allCompAnalyses) && allCompAnalyses.length > 0) {
+        console.log(`Found ${allCompAnalyses.length} total analyses, filtering for user relevance`);
         
         // Filter for those that MIGHT be related to the user
         const userEmail = user.email?.toLowerCase();
-        const userAnalyses = allAnalyses.filter(analysis => {
+        const userAnalyses = allCompAnalyses.filter(analysis => {
           // Either has user_id matching or has assessment_id in user assessments
           return analysis.user_id === user.id || 
                  (analysis.result && 
@@ -254,7 +257,7 @@ const ComprehensiveReportLanding: React.FC = () => {
         
       if (error) throw new Error(error.message);
       
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data) && data.length > 0) {
         const mappedData = mapDbArrayToComprehensiveAnalyses(data as DbComprehensiveAnalysis[]);
         setReportHistory(mappedData);
         setLatestAnalysisId(data[0].id);
