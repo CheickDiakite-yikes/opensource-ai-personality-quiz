@@ -55,7 +55,7 @@ export function useComprehensiveSubmission(
       
       toast.loading("Analyzing your responses with AI...", { id: "assessment-submission" });
       
-      // Call Supabase Edge Function to analyze responses with improved error handling
+      // Call Supabase Edge Function to analyze responses with improved error handling and timeout management
       const MAX_RETRIES = 2;
       let lastError = null;
       
@@ -69,20 +69,29 @@ export function useComprehensiveSubmission(
             toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
           }
           
-          // Set a longer timeout for the request - we can't use AbortController with Supabase functions
-          // so we'll need a different approach
+          // Setup timeout for the request (60 seconds)
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Analysis request timed out after 60 seconds")), 60000)
+          );
           
-          // Call the edge function without the signal option (it's not supported)
-          const { data, error } = await supabase.functions.invoke(
+          // Call the edge function
+          const analysisPromise = supabase.functions.invoke(
             "analyze-comprehensive-responses",
             {
               body: { 
                 assessmentId: createdAssessmentId,
                 responses: formattedResponses
               }
-              // Removed the signal property as it's not supported
             }
           );
+          
+          // Race between the analysis request and the timeout
+          const { data, error } = await Promise.race([
+            analysisPromise,
+            timeoutPromise.then(() => {
+              throw new Error("Analysis request timed out after 60 seconds. Your responses were saved and will be analyzed later.");
+            })
+          ]) as any;
           
           if (error) throw new Error(error.message);
           
@@ -120,7 +129,7 @@ export function useComprehensiveSubmission(
       if (createdAssessmentId) {
         toast.error("Your assessment was saved but analysis failed", { 
           id: "assessment-submission",
-          description: "We'll try to analyze it again when you view your reports"
+          description: "We'll try to analyze it again when you view your reports. You can continue to your profile to see existing reports."
         });
         
         // Navigate to the profile page instead

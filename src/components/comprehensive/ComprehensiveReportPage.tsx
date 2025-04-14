@@ -20,6 +20,7 @@ import ComprehensiveMotivationSection from "./sections/ComprehensiveMotivationSe
 import ComprehensiveRelationshipsSection from "./sections/ComprehensiveRelationshipsSection";
 import ComprehensiveGrowthSection from "./sections/ComprehensiveGrowthSection";
 import ComprehensiveCareerSection from "./sections/ComprehensiveCareerSection";
+import { useComprehensiveAnalysisFallback } from "@/hooks/useComprehensiveAnalysisFallback";
 
 const ComprehensiveReportPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -34,7 +35,8 @@ const ComprehensiveReportPage: React.FC = () => {
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
-
+  const { pollForAnalysis, isPolling, foundAnalysis } = useComprehensiveAnalysisFallback(id);
+  
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
     if (!analysisId) {
@@ -102,11 +104,27 @@ const ComprehensiveReportPage: React.FC = () => {
       const data = await fetchComprehensiveAnalysis(id);
       if (data) {
         setAnalysis(data);
+      } else if (!isLoading && !error) {
+        // If we couldn't load the analysis directly, check if it's an assessment ID
+        // and try to poll for its completion
+        toast.info("Checking if analysis is still processing...");
+        const result = await pollForAnalysis(id);
+        if (!result && !foundAnalysis) {
+          setError("Could not find analysis. It might still be processing.");
+        }
       }
     }
 
     loadAnalysis();
-  }, [id, retryCount, fetchComprehensiveAnalysis]);
+  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isLoading, error, foundAnalysis]);
+  
+  // Update analysis when foundAnalysis changes
+  useEffect(() => {
+    if (foundAnalysis && !analysis) {
+      setAnalysis(foundAnalysis);
+      setError(null);
+    }
+  }, [foundAnalysis, analysis]);
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
@@ -117,7 +135,7 @@ const ComprehensiveReportPage: React.FC = () => {
     navigate('/comprehensive-report');
   };
   
-  // Function to create a test analysis
+  // Enhanced createTestAnalysis with better timeout handling
   const handleCreateTestAnalysis = async () => {
     if (!user) {
       toast.error("You must be logged in to create a test analysis");
@@ -150,8 +168,13 @@ const ComprehensiveReportPage: React.FC = () => {
       
       console.log("Created test assessment:", assessmentData);
       
-      // Call the edge function to create a test analysis
-      const { data, error: functionError } = await supabase.functions.invoke(
+      // Setup timeout for the request (60 seconds)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Analysis request timed out")), 60000)
+      );
+      
+      // Call the edge function
+      const analysisPromise = supabase.functions.invoke(
         "analyze-comprehensive-responses",
         {
           body: { 
@@ -167,17 +190,38 @@ const ComprehensiveReportPage: React.FC = () => {
         }
       );
       
-      if (functionError || !data?.analysisId) {
-        throw new Error(`Failed to create test analysis: ${functionError?.message || "Unknown error"}`);
+      try {
+        // Race between the analysis request and the timeout
+        const { data, error } = await Promise.race([
+          analysisPromise,
+          timeoutPromise.then(() => {
+            throw new Error("Analysis timed out, but your assessment was saved. You can try viewing it later.");
+          })
+        ]) as any;
+        
+        if (error) throw new Error(error.message);
+        
+        if (!data?.analysisId) {
+          throw new Error("Analysis completed but no analysis ID was returned");
+        }
+        
+        toast.success("Test analysis created!", { 
+          id: "test-analysis",
+          description: `Analysis ID: ${data.analysisId}`
+        });
+        
+        // Navigate to the new analysis
+        navigate(`/comprehensive-report/${data.analysisId}`);
+      } catch (timeoutError) {
+        console.error("Analysis timed out:", timeoutError);
+        toast.warning("Analysis is taking longer than expected", { 
+          id: "test-analysis",
+          description: "Your test has been saved. We'll try to retrieve the results."
+        });
+        
+        // Since we have the assessment ID, we can navigate to it and let the page try to poll for completion
+        navigate(`/comprehensive-report/${assessmentData.id}`);
       }
-      
-      toast.success("Test analysis created!", { 
-        id: "test-analysis",
-        description: `Analysis ID: ${data.analysisId}`
-      });
-      
-      // Navigate to the new analysis
-      navigate(`/comprehensive-report/${data.analysisId}`);
       
     } catch (err) {
       console.error("Error creating test analysis:", err);
@@ -381,6 +425,30 @@ const ComprehensiveReportPage: React.FC = () => {
   const safeWeaknesses = ensureStringItems(analysis?.weaknesses || []);
   const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
   const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
+
+  // When no analysis is found but we're polling, show appropriate UI
+  if (!analysis && isPolling) {
+    return (
+      <div className="container py-6 md:py-10 px-4 space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-2">Processing Your Analysis</h1>
+          <p className="text-muted-foreground">
+            ID: {id || "No report ID provided"}
+          </p>
+        </div>
+        
+        <Card className="p-8 text-center">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <h2 className="text-xl font-semibold">Analysis in Progress</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Your comprehensive analysis is currently being processed. This may take a few minutes as our AI generates detailed insights.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   // Render analysis data
   return (

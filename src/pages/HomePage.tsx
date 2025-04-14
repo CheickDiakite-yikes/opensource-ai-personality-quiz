@@ -29,7 +29,7 @@ const HomePage: React.FC = () => {
   };
   
   // Safety check: Make sure nothing from user object is directly rendered without stringification
-  const userName = user ? safeString(user.name || user.email || "User") : "";
+  const userName = user ? safeString(user.email || "User") : "";
   
   return (
     <PageTransition>
