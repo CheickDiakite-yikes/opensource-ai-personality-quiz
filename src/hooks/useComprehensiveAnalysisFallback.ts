@@ -1,9 +1,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { ComprehensiveAnalysis } from "@/utils/types";
+import { ComprehensiveAnalysis, DbComprehensiveAnalysis } from "@/utils/types";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { mapDbArrayToComprehensiveAnalyses, mapDbToComprehensiveAnalysis } from '@/utils/dataMappers';
 
 export const useComprehensiveAnalysisFallback = (assessmentId: string | undefined) => {
   const { user } = useAuth();
@@ -31,8 +32,9 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       }
       
       console.log(`Fetched ${data?.length || 0} historical reports for user`);
-      setReportHistory(data as ComprehensiveAnalysis[] || []);
-      return data;
+      const mappedData = mapDbArrayToComprehensiveAnalyses(data as DbComprehensiveAnalysis[] || []);
+      setReportHistory(mappedData);
+      return mappedData;
     } catch (err) {
       console.error("Error in fetchReportHistory:", err);
       return [];
@@ -67,14 +69,15 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       
       if (existingAnalysis) {
         console.log("Found existing analysis for assessment:", id);
-        setFoundAnalysis(existingAnalysis as unknown as ComprehensiveAnalysis);
+        const mappedAnalysis = mapDbToComprehensiveAnalysis(existingAnalysis as DbComprehensiveAnalysis);
+        setFoundAnalysis(mappedAnalysis);
         setSavedAnalysisId(existingAnalysis.id);
         setIsPolling(false);
         toast.success("Analysis found!");
         
         // Refresh report history after finding an analysis
         fetchReportHistory();
-        return existingAnalysis;
+        return mappedAnalysis;
       }
       
       // If not found, try to trigger analysis
@@ -141,7 +144,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         if (analysis) {
           console.log("Analysis completed for assessment:", id);
           toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
-          setFoundAnalysis(analysis as unknown as ComprehensiveAnalysis);
+          const mappedAnalysis = mapDbToComprehensiveAnalysis(analysis as DbComprehensiveAnalysis);
+          setFoundAnalysis(mappedAnalysis);
           setIsPolling(false);
           
           // Refresh report history after finding an analysis

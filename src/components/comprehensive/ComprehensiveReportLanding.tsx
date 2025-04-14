@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, FileText, ArrowRight, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { ComprehensiveAnalysis } from "@/utils/types";
+import { ComprehensiveAnalysis, DbComprehensiveAnalysis } from "@/utils/types";
 import { format } from "date-fns";
+import { mapDbArrayToComprehensiveAnalyses } from "@/utils/dataMappers";
 
 const ComprehensiveReportLanding: React.FC = () => {
   const { user } = useAuth();
@@ -36,7 +37,8 @@ const ComprehensiveReportLanding: React.FC = () => {
         if (error) throw new Error(error.message);
         
         if (data && data.length > 0) {
-          setReportHistory(data as ComprehensiveAnalysis[]);
+          const mappedData = mapDbArrayToComprehensiveAnalyses(data as DbComprehensiveAnalysis[]);
+          setReportHistory(mappedData);
           setLatestAnalysisId(data[0].id);
         }
       } catch (err) {
@@ -75,7 +77,8 @@ const ComprehensiveReportLanding: React.FC = () => {
       if (error) throw new Error(error.message);
       
       if (data && data.length > 0) {
-        setReportHistory(data as ComprehensiveAnalysis[]);
+        const mappedData = mapDbArrayToComprehensiveAnalyses(data as DbComprehensiveAnalysis[]);
+        setReportHistory(mappedData);
         setLatestAnalysisId(data[0].id);
         toast.success("Reports refreshed successfully", { id: "refresh-reports" });
       } else {
