@@ -5,6 +5,9 @@ import { ComprehensiveAnalysis, DbComprehensiveAnalysis } from "./types";
  * Maps database fields to application model fields for ComprehensiveAnalysis
  */
 export function mapDbToComprehensiveAnalysis(dbData: DbComprehensiveAnalysis): ComprehensiveAnalysis {
+  // Handle case when data is null or undefined
+  if (!dbData) return null;
+  
   // Handle nested result field if present
   const resultData = dbData.result || {};
   
@@ -33,5 +36,6 @@ export function mapDbToComprehensiveAnalysis(dbData: DbComprehensiveAnalysis): C
  * Maps an array of database records to ComprehensiveAnalysis models
  */
 export function mapDbArrayToComprehensiveAnalyses(dbData: DbComprehensiveAnalysis[]): ComprehensiveAnalysis[] {
+  if (!dbData || !Array.isArray(dbData)) return [];
   return dbData.map(item => mapDbToComprehensiveAnalysis(item));
 }

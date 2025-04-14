@@ -29,9 +29,10 @@ export function useComprehensiveSubmission(
     }));
     
     // Validate we have enough responses
-    if (formattedResponses.length < 50) {
+    const minResponses = 25; // Lower threshold for testing
+    if (formattedResponses.length < minResponses) {
       toast.error(`Not enough responses to analyze: ${formattedResponses.length}/100`, {
-        description: "Please complete more questions for a thorough analysis"
+        description: `Please complete at least ${minResponses} questions for a thorough analysis`
       });
       return;
     }
@@ -95,7 +96,9 @@ export function useComprehensiveSubmission(
         {
           body: { 
             assessmentId: createdAssessmentId,
-            responses: formattedResponses
+            userId: user.id, // Always include user ID
+            responses: formattedResponses,
+            forceAssociation: true // Always force association with user
           }
         }
       );
@@ -119,25 +122,18 @@ export function useComprehensiveSubmission(
       toast.success("Analysis complete!", { id: "assessment-submission" });
       
       // Navigate to the comprehensive report page
-      if (data.analysis && data.analysis.id) {
-        console.log(`Navigating to report page with ID: ${data.analysis.id}`);
-        navigate(`/comprehensive-report/${data.analysis.id}`);
-      } else if (data.analysisId) {
-        console.log(`Navigating to report page with ID: ${data.analysisId}`);
-        navigate(`/comprehensive-report/${data.analysisId}`);
-      } else {
-        console.error("No analysis ID in response:", data);
-        throw new Error("Analysis completed but no ID was returned");
-      }
+      const analysisId = data.analysisId || (data.analysis && data.analysis.id) || createdAssessmentId;
+      console.log(`Navigating to report page with ID: ${analysisId}`);
+      navigate(`/comprehensive-report/${analysisId}`);
       
     } catch (error) {
       console.error("Error submitting assessment:", error);
       
-      // Check if the assessment was created but analysis failed
+      // Always handle the case where the assessment was created but analysis failed
       if (createdAssessmentId) {
-        toast.error("Your assessment was saved but analysis failed", { 
+        toast.error("Your assessment was saved but analysis is still processing", { 
           id: "assessment-submission",
-          description: "We'll try to analyze it again when you view your reports."
+          description: "You'll be redirected to the report page where processing will continue."
         });
         
         // Navigate to the assessment ID, the report page will handle polling

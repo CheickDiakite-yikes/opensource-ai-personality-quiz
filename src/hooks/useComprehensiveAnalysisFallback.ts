@@ -20,6 +20,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     if (!user) return [];
     
     try {
+      console.log("Fetching user report history");
       const { data, error } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -49,13 +50,23 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   }, [user, fetchReportHistory]);
   
   // Function to poll for analysis completion
-  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5) => {
-    if (!id || hasAttemptedPolling) return null;
+  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 10) => {
+    if (!id) {
+      console.warn("No ID provided for polling");
+      return null;
+    }
+    
+    if (hasAttemptedPolling && foundAnalysis) {
+      console.log("Already found analysis, not polling again");
+      return foundAnalysis;
+    }
     
     setIsPolling(true);
     setHasAttemptedPolling(true);
     
     try {
+      console.log(`Starting to poll for analysis with ID: ${id}`);
+      
       // First, check if analysis already exists using flexible query
       const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
@@ -68,7 +79,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       }
       
       if (existingAnalysis) {
-        console.log("Found existing analysis for assessment:", id);
+        console.log("Found existing analysis directly in database");
         const mappedAnalysis = mapDbToComprehensiveAnalysis(existingAnalysis as DbComprehensiveAnalysis);
         setFoundAnalysis(mappedAnalysis);
         setSavedAnalysisId(existingAnalysis.id);
@@ -80,7 +91,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         return mappedAnalysis;
       }
       
-      // If not found, try to trigger analysis
+      // If not found immediately, try to trigger analysis and poll for results
       let attempts = 0;
       const poll = async () => {
         if (attempts >= maxAttempts) {
@@ -108,7 +119,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
             if (assessmentData?.responses) {
               toast.loading("Analyzing your responses...", { id: `poll-analysis-${id}` });
               
-              // Try to analyze the responses - NEVER use mock data here
+              // Try to analyze the responses with explicit parameters
               const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
                 "analyze-comprehensive-responses",
                 {
@@ -117,7 +128,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
                     userId: user?.id,
                     responses: assessmentData.responses,
                     useMockData: false, // Explicitly prevent mock data usage
-                    forceAssociation: true // Ensure the analysis is associated with the user
+                    forceAssociation: true, // Ensure the analysis is associated with the user
+                    retry: true // Indicate this is a retry attempt
                   }
                 }
               );
@@ -134,32 +146,73 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Check if analysis exists now, using more flexible query
-        const { data: analysis } = await supabase
-          .from('comprehensive_analyses')
-          .select('*')
-          .or(`id.eq.${id},assessment_id.eq.${id}${savedAnalysisId ? `,id.eq.${savedAnalysisId}` : ''}`)
-          .maybeSingle();
-        
-        if (analysis) {
-          console.log("Analysis completed for assessment:", id);
-          toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
-          const mappedAnalysis = mapDbToComprehensiveAnalysis(analysis as DbComprehensiveAnalysis);
-          setFoundAnalysis(mappedAnalysis);
-          setIsPolling(false);
-          
-          // Refresh report history after finding an analysis
-          fetchReportHistory();
-          return;
+        // Check different possible ID formats
+        const possibleIds = [id];
+        if (savedAnalysisId && savedAnalysisId !== id) {
+          possibleIds.push(savedAnalysisId);
         }
         
-        toast.loading(`Processing your assessment (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
+        console.log("Checking for analysis with possible IDs:", possibleIds);
         
-        // Wait before next polling attempt with exponential backoff
-        const delay = Math.min(2000 * Math.pow(1.5, attempts - 1), 10000); // Max 10 seconds
-        setTimeout(() => {
-          poll();
-        }, delay);
+        // Try with each possible ID
+        let analysisFound = false;
+        for (const possibleId of possibleIds) {
+          if (analysisFound) break;
+          
+          try {
+            // Try exact ID match
+            const { data: analysis } = await supabase
+              .from('comprehensive_analyses')
+              .select('*')
+              .eq('id', possibleId)
+              .maybeSingle();
+              
+            if (analysis) {
+              console.log(`Found analysis with ID: ${possibleId}`);
+              toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
+              const mappedAnalysis = mapDbToComprehensiveAnalysis(analysis as DbComprehensiveAnalysis);
+              setFoundAnalysis(mappedAnalysis);
+              setIsPolling(false);
+              
+              // Refresh report history after finding an analysis
+              fetchReportHistory();
+              analysisFound = true;
+              return;
+            }
+            
+            // Try as assessment ID
+            const { data: analysisByAssessment } = await supabase
+              .from('comprehensive_analyses')
+              .select('*')
+              .eq('assessment_id', possibleId)
+              .maybeSingle();
+              
+            if (analysisByAssessment) {
+              console.log(`Found analysis with assessment ID: ${possibleId}`);
+              toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
+              const mappedAnalysis = mapDbToComprehensiveAnalysis(analysisByAssessment as DbComprehensiveAnalysis);
+              setFoundAnalysis(mappedAnalysis);
+              setIsPolling(false);
+              
+              // Refresh report history after finding an analysis
+              fetchReportHistory();
+              analysisFound = true;
+              return;
+            }
+          } catch (error) {
+            console.error(`Error checking ID ${possibleId}:`, error);
+          }
+        }
+        
+        if (!analysisFound) {
+          toast.loading(`Processing your assessment (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
+          
+          // Wait before next polling attempt with exponential backoff
+          const delay = Math.min(2000 * Math.pow(1.5, attempts - 1), 10000); // Max 10 seconds
+          setTimeout(() => {
+            poll();
+          }, delay);
+        }
       };
       
       // Start polling
@@ -171,7 +224,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       setIsPolling(false);
       return null;
     }
-  }, [hasAttemptedPolling, user, savedAnalysisId, fetchReportHistory]);
+  }, [hasAttemptedPolling, user, savedAnalysisId, fetchReportHistory, foundAnalysis]);
   
   // Clean up polling on unmount
   useEffect(() => {
