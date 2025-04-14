@@ -18,7 +18,8 @@ export function useComprehensiveResponses(
       [currentQuestion.id]: { 
         ...currentResponse, 
         selectedOption: option,
-        customResponse: option === "Other" ? currentResponse.customResponse : ""
+        customResponse: option === "Other" ? currentResponse.customResponse : "",
+        category: currentQuestion.category // Ensure category is always set
       }
     };
     
@@ -36,7 +37,8 @@ export function useComprehensiveResponses(
       ...responses,
       [currentQuestion.id]: { 
         ...currentResponse, 
-        customResponse 
+        customResponse,
+        category: currentQuestion.category // Ensure category is always set 
       }
     };
     

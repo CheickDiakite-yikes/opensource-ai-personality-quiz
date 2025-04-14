@@ -15,7 +15,8 @@ export function useComprehensiveStorage(questionBank: AssessmentQuestion[]) {
   const currentResponse = responses[currentQuestion.id] || { 
     questionId: currentQuestion.id, 
     selectedOption: "",
-    customResponse: ""
+    customResponse: "",
+    category: currentQuestion.category // Add the category property here
   };
   
   // Track if we're using a custom response
