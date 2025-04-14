@@ -2,11 +2,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, ArrowUpCircle, AlertTriangle } from "lucide-react";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 
 interface GrowthAreasSectionProps {
-  weaknesses: string[] | Array<{name: string, description: string}>;
-  growthAreas: string[] | Array<{name: string, description: string}>;
+  weaknesses: StringOrObject[];
+  growthAreas: StringOrObject[];
 }
 
 const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = [], growthAreas = [] }) => {

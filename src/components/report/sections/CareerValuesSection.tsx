@@ -2,11 +2,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase } from "lucide-react";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 
 interface CareerValuesSectionProps {
-  careerSuggestions: string[] | Array<{name: string, description: string}>;
-  valueSystem: string[] | any;
+  careerSuggestions: StringOrObject[];
+  valueSystem: StringOrObject[] | any;
 }
 
 const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggestions = [], valueSystem = [] }) => {

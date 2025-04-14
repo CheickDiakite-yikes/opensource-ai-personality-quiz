@@ -2,11 +2,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Flame, Minus } from "lucide-react";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 
 interface MotivationSectionProps {
-  motivators: string[] | Array<{name: string, description: string}>;
-  inhibitors: string[] | Array<{name: string, description: string}>;
+  motivators: StringOrObject[];
+  inhibitors: StringOrObject[];
 }
 
 const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], inhibitors = [] }) => {

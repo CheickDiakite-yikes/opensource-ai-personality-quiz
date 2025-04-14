@@ -55,13 +55,15 @@ export const safeString = (value: any): string => {
   return String(value);
 };
 
+// Define a type that represents either a string or an object with name/description
+export type StringOrObject = string | { name: string, description: string } | { trait: string } | any;
+
 /**
  * Ensures array items are properly stringified before rendering
  * For use in complex components that might receive objects in arrays
  */
-export const ensureStringItems = <T>(array: T[] | null | undefined): string[] => {
+export const ensureStringItems = <T extends StringOrObject>(array: T[] | null | undefined): string[] => {
   if (!array) return [];
   
   return array.map(item => safeString(item));
 };
-

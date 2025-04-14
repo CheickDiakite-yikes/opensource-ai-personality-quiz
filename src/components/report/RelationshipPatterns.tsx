@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 
 interface RelationshipPatternsProps {
   relationshipPatterns: {
-    strengths: string[];
-    challenges: string[];
-    compatibleTypes: string[];
+    strengths: StringOrObject[];
+    challenges: StringOrObject[];
+    compatibleTypes: StringOrObject[];
   };
 }
 

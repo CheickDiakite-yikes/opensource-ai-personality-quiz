@@ -3,12 +3,12 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Heart, BookOpen } from "lucide-react";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 import { RelationshipPatterns } from "@/utils/types";
 
 interface RelationshipLearningSectionProps {
   relationshipPatterns: RelationshipPatterns;
-  learningPathways: string[] | Array<{name: string, description: string}>;
+  learningPathways: StringOrObject[];
 }
 
 const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = ({ 

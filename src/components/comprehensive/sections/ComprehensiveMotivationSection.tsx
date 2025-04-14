@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { safeString, ensureStringItems } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
 
 interface MotivatorItem {
   name: string;
@@ -9,8 +9,8 @@ interface MotivatorItem {
 }
 
 interface ComprehensiveMotivationSectionProps {
-  motivators: Array<string | MotivatorItem>;
-  inhibitors: Array<string | MotivatorItem>;
+  motivators: Array<StringOrObject>;
+  inhibitors: Array<StringOrObject>;
 }
 
 const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionProps> = ({
