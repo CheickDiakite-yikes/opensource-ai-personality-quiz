@@ -27,6 +27,9 @@ const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], 
                 <li key={index}>{safeString(item)}</li>
               ))}
             </ul>
+            {(!motivators || motivators.length === 0) && (
+              <p className="text-muted-foreground italic">No motivators identified</p>
+            )}
           </div>
           
           <div className="space-y-3">

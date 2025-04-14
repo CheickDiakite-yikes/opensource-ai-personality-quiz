@@ -35,6 +35,9 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span>{safeString(area)}</span>
               </li>
             ))}
+            {(!growthAreas || growthAreas.length === 0) && (
+              <li className="text-muted-foreground italic">No growth areas identified</li>
+            )}
           </ul>
         </div>
         
@@ -49,6 +52,9 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
                 <span>{safeString(weakness)}</span>
               </li>
             ))}
+            {(!weaknesses || weaknesses.length === 0) && (
+              <li className="text-muted-foreground italic">No weaknesses identified</li>
+            )}
           </ul>
         </div>
       </div>
@@ -61,6 +67,9 @@ const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
               <p>{safeString(pathway)}</p>
             </div>
           ))}
+          {(!learningPathways || learningPathways.length === 0) && (
+            <div className="text-muted-foreground italic">No learning pathways identified</div>
+          )}
         </div>
       </div>
     </Card>

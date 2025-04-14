@@ -39,6 +39,9 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
                     <li key={index}>{safeString(item)}</li>
                   ))}
                 </ul>
+                {(!strengths || strengths.length === 0) && (
+                  <p className="text-muted-foreground italic text-sm">No relationship strengths identified</p>
+                )}
               </div>
               <div>
                 <h4 className="text-sm font-medium mb-2">Challenges</h4>
@@ -47,6 +50,9 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
                     <li key={index}>{safeString(item)}</li>
                   ))}
                 </ul>
+                {(!challenges || challenges.length === 0) && (
+                  <p className="text-muted-foreground italic text-sm">No relationship challenges identified</p>
+                )}
               </div>
             </div>
           </div>
@@ -68,6 +74,9 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
                 </div>
               ))}
             </div>
+            {(!learningPathways || learningPathways.length === 0) && (
+              <p className="text-muted-foreground italic">No learning pathways identified</p>
+            )}
           </div>
         </div>
       </CardContent>

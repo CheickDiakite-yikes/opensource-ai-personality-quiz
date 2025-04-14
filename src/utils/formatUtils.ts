@@ -28,14 +28,14 @@ export const safeString = (value: any): string => {
   // Handle objects with common properties in our app
   if (typeof value === 'object') {
     // For objects with name or description properties (common in the app)
-    if (value.name !== undefined) {
-      return value.name;
+    if ('name' in value && value.name !== undefined) {
+      return typeof value.name === 'string' ? value.name : safeString(value.name);
     }
-    if (value.description !== undefined) {
-      return value.description;
+    if ('description' in value && value.description !== undefined) {
+      return typeof value.description === 'string' ? value.description : safeString(value.description);
     }
-    if (value.trait !== undefined) {
-      return value.trait;
+    if ('trait' in value && value.trait !== undefined) {
+      return typeof value.trait === 'string' ? value.trait : safeString(value.trait);
     }
     
     // For arrays, map and join the elements

@@ -33,6 +33,9 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span>{safeString(motivator)}</span>
               </li>
             ))}
+            {(!motivators || motivators.length === 0) && (
+              <li className="text-muted-foreground italic">No key motivators identified</li>
+            )}
           </ul>
         </div>
         
@@ -47,6 +50,9 @@ const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionPro
                 <span>{safeString(inhibitor)}</span>
               </li>
             ))}
+            {(!inhibitors || inhibitors.length === 0) && (
+              <li className="text-muted-foreground italic">No inhibitors identified</li>
+            )}
           </ul>
         </div>
       </div>

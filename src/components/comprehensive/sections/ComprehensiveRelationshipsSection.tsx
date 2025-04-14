@@ -46,6 +46,9 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span>{safeString(strength)}</span>
               </li>
             ))}
+            {strengths.length === 0 && (
+              <li className="text-muted-foreground italic">No relationship strengths identified</li>
+            )}
           </ul>
         </div>
 
@@ -62,6 +65,9 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span>{safeString(challenge)}</span>
               </li>
             ))}
+            {challenges.length === 0 && (
+              <li className="text-muted-foreground italic">No relationship challenges identified</li>
+            )}
           </ul>
         </div>
 

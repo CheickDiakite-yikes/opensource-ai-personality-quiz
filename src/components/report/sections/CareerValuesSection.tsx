@@ -9,7 +9,7 @@ interface CareerValuesSectionProps {
   valueSystem: string[] | any;
 }
 
-const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggestions, valueSystem }) => {
+const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggestions = [], valueSystem = [] }) => {
   // Handle various formats of valueSystem
   const values = Array.isArray(valueSystem) 
     ? valueSystem
@@ -37,6 +37,9 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggest
                 </div>
               ))}
             </div>
+            {(!careerSuggestions || careerSuggestions.length === 0) && (
+              <p className="text-muted-foreground italic">No career suggestions available</p>
+            )}
           </div>
           
           <div className="space-y-3">
@@ -51,6 +54,9 @@ const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggest
                 </div>
               ))}
             </div>
+            {(!values || values.length === 0) && (
+              <p className="text-muted-foreground italic">No core values identified</p>
+            )}
           </div>
         </div>
       </CardContent>
