@@ -25,7 +25,7 @@ export function useComprehensiveSubmission(
     const formattedResponses: ComprehensiveSubmissionResponse[] = Object.values(responses).map(response => ({
       questionId: response.questionId,
       answer: response.selectedOption === "Other" ? response.customResponse : response.selectedOption,
-      category: response.category // Ensure category is included for better analysis
+      category: response.category // Now properly typed
     }));
     
     // Validate we have enough responses
