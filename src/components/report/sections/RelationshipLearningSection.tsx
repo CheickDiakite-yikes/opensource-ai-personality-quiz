@@ -13,8 +13,12 @@ interface RelationshipLearningSectionProps {
 
 const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = ({ 
   relationshipPatterns, 
-  learningPathways 
+  learningPathways = []
 }) => {
+  // Ensure we have arrays to work with
+  const strengths = relationshipPatterns?.strengths || [];
+  const challenges = relationshipPatterns?.challenges || [];
+  
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -31,7 +35,7 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
               <div>
                 <h4 className="text-sm font-medium mb-2">Strengths</h4>
                 <ul className="space-y-1 marker:text-green-500 list-disc pl-5">
-                  {relationshipPatterns?.strengths?.slice(0, 3).map((item, index) => (
+                  {strengths?.slice(0, 3).map((item, index) => (
                     <li key={index}>{safeString(item)}</li>
                   ))}
                 </ul>
@@ -39,7 +43,7 @@ const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = 
               <div>
                 <h4 className="text-sm font-medium mb-2">Challenges</h4>
                 <ul className="space-y-1 marker:text-amber-500 list-disc pl-5">
-                  {relationshipPatterns?.challenges?.slice(0, 3).map((item, index) => (
+                  {challenges?.slice(0, 3).map((item, index) => (
                     <li key={index}>{safeString(item)}</li>
                   ))}
                 </ul>

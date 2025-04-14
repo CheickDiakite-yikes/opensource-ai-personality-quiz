@@ -15,9 +15,9 @@ interface ComprehensiveGrowthSectionProps {
 }
 
 const ComprehensiveGrowthSection: React.FC<ComprehensiveGrowthSectionProps> = ({
-  growthAreas,
-  weaknesses,
-  learningPathways
+  growthAreas = [],
+  weaknesses = [],
+  learningPathways = []
 }) => {
   return (
     <Card className="p-6 md:p-8 shadow-md">

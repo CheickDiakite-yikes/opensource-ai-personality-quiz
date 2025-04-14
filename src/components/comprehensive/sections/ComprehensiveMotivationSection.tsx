@@ -14,8 +14,8 @@ interface ComprehensiveMotivationSectionProps {
 }
 
 const ComprehensiveMotivationSection: React.FC<ComprehensiveMotivationSectionProps> = ({
-  motivators,
-  inhibitors
+  motivators = [],
+  inhibitors = []
 }) => {
   return (
     <Card className="p-6 md:p-8 shadow-md">

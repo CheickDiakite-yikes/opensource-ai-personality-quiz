@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -374,6 +373,14 @@ const ComprehensiveReportPage: React.FC = () => {
         compatibleTypes: []
       };
 
+  // Ensure all arrays have default values
+  const safeMotivators = analysis?.motivators || [];
+  const safeInhibitors = analysis?.inhibitors || [];
+  const safeGrowthAreas = analysis?.growthAreas || [];
+  const safeWeaknesses = analysis?.weaknesses || [];
+  const safeLearningPathways = analysis?.learningPathways || [];
+  const safeCareerSuggestions = analysis?.careerSuggestions || [];
+
   // Render analysis data
   return (
     <div className="container py-6 md:py-10 px-4 space-y-8">
@@ -427,8 +434,8 @@ const ComprehensiveReportPage: React.FC = () => {
         {/* Motivation tab */}
         <TabsContent value="motivation" className="space-y-6">
           <ComprehensiveMotivationSection
-            motivators={analysis?.motivators || []}
-            inhibitors={analysis?.inhibitors || []}
+            motivators={safeMotivators}
+            inhibitors={safeInhibitors}
           />
         </TabsContent>
         
@@ -442,16 +449,16 @@ const ComprehensiveReportPage: React.FC = () => {
         {/* Growth tab */}
         <TabsContent value="growth" className="space-y-6">
           <ComprehensiveGrowthSection
-            growthAreas={analysis?.growthAreas || []}
-            weaknesses={analysis?.weaknesses || []}
-            learningPathways={analysis?.learningPathways || []}
+            growthAreas={safeGrowthAreas}
+            weaknesses={safeWeaknesses}
+            learningPathways={safeLearningPathways}
           />
         </TabsContent>
         
         {/* Career tab */}
         <TabsContent value="career" className="space-y-6">
           <ComprehensiveCareerSection
-            careerSuggestions={analysis?.careerSuggestions || []}
+            careerSuggestions={safeCareerSuggestions}
             roadmap={analysis?.roadmap || ""}
           />
         </TabsContent>

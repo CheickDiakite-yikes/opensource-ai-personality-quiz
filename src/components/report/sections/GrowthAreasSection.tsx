@@ -9,7 +9,7 @@ interface GrowthAreasSectionProps {
   growthAreas: string[] | Array<{name: string, description: string}>;
 }
 
-const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses, growthAreas }) => {
+const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = [], growthAreas = [] }) => {
   return (
     <Card className="shadow-sm">
       <CardHeader>

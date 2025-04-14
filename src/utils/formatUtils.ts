@@ -10,24 +10,37 @@ export const formatTraitScore = (score: number): string => {
 
 // Enhanced safe string conversion utility
 export const safeString = (value: any): string => {
+  // Handle null or undefined
   if (value === null || value === undefined) {
     return '';
   }
   
+  // Handle strings directly
   if (typeof value === 'string') {
     return value;
   }
   
+  // Handle numbers
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  
+  // Handle objects with common properties in our app
   if (typeof value === 'object') {
     // For objects with name or description properties (common in the app)
-    if (value.name) {
+    if (value.name !== undefined) {
       return value.name;
     }
-    if (value.description) {
+    if (value.description !== undefined) {
       return value.description;
     }
-    if (value.trait) {
+    if (value.trait !== undefined) {
       return value.trait;
+    }
+    
+    // For arrays, map and join the elements
+    if (Array.isArray(value)) {
+      return value.map(item => safeString(item)).join(', ');
     }
     
     // Fallback to JSON string representation
@@ -38,5 +51,6 @@ export const safeString = (value: any): string => {
     }
   }
   
+  // Default toString for any other types
   return String(value);
 };

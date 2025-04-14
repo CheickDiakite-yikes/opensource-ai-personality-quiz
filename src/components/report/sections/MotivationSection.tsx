@@ -9,7 +9,7 @@ interface MotivationSectionProps {
   inhibitors: string[] | Array<{name: string, description: string}>;
 }
 
-const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators, inhibitors }) => {
+const MotivationSection: React.FC<MotivationSectionProps> = ({ motivators = [], inhibitors = [] }) => {
   return (
     <Card className="shadow-sm">
       <CardHeader>
