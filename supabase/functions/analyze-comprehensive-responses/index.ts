@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import { corsHeaders } from "../_shared/cors.ts"
@@ -690,4 +691,63 @@ function generateComprehensiveAnalysis(responses) {
 
 A defining characteristic of your personality is your ${traitScores.openness > 75 ? "remarkably high" : "strong"} analytical capacity. You process information methodically, examining multiple perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally experience analysis paralysis when facing particularly complex choices. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and cognitive stimulation. This quest for understanding extends beyond practical knowledge to include philosophical questions and abstract concepts that satisfy your desire for deeper meaning.
 
-In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with
+In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others on multiple levels. You demonstrate sensitivity to emotional undercurrents in social situations and can often anticipate others' needs and reactions. This capacity for understanding others' perspectives strengthens your relationships and enables effective collaboration, though you may sometimes take on others' emotional burdens more than is sustainable. Setting appropriate boundaries while maintaining your natural empathy represents an area for potential growth and self-care.
+
+Your combination of ${traitScores.creativityScore > 70 ? "exceptional" : "solid"} creativity and ${traitScores.conscientiousness > 75 ? "strong" : "moderate"} conscientiousness creates a dynamic tension in your approach to work and personal projects. The creative aspect of your personality generates innovative ideas and unconventional solutions, while your conscientious tendencies provide the structure and discipline to bring these ideas to fruition. This balance typically allows you to excel in environments that value both imaginative thinking and reliable execution. Your resilience further enhances this profile, enabling you to persist through challenges and adapt to changing circumstances with relative ease. This psychological flexibility suggests the potential for continued growth and success across various contexts and life domains.`;
+  
+  // Compile the complete analysis
+  return {
+    overview,
+    traits,
+    detailedTraits,
+    intelligence,
+    intelligenceScore: intelligence.score,
+    emotionalIntelligenceScore: Math.floor(65 + Math.random() * 20),
+    shadowAspects,
+    personalityArchetype,
+    valueSystem,
+    motivators,
+    inhibitors,
+    weaknesses: [
+      "May overthink decisions to the point of decision fatigue",
+      "Tendency to set unrealistically high standards for self and others",
+      "Difficulty disengaging from work or projects to rest",
+      "Can become overly focused on future possibilities at the expense of present experience"
+    ],
+    growthAreas: [
+      "Balancing analytical thinking with intuitive decision-making",
+      "Setting clear boundaries in personal and professional relationships",
+      "Developing greater comfort with ambiguity and uncertainty",
+      "Finding sustainable balance between productivity and restoration"
+    ],
+    relationshipPatterns: {
+      strengths: [
+        "Ability to form deep, meaningful connections",
+        "Attentive listening and thoughtful responses",
+        "Dedication and loyalty to important relationships",
+        "Capacity for emotional understanding and support"
+      ],
+      challenges: [
+        "May struggle to express needs directly",
+        "Can intellectualize emotions rather than experiencing them fully",
+        "Potential to withdraw when feeling overwhelmed",
+        "Tendency to take on excessive responsibility for others' well-being"
+      ],
+      compatibleTypes: [
+        "Expressive, emotionally-open individuals who balance your reflective nature",
+        "Goal-oriented partners who share your values of growth and achievement",
+        "Creative thinkers who appreciate both structure and innovation",
+        "Authentic communicators who value depth and meaning in relationships"
+      ]
+    },
+    careerSuggestions,
+    learningPathways,
+    communicationStyle,
+    mindsetPatterns,
+    roadmap: `Your development pathway begins with leveraging your analytical strengths while cultivating greater comfort with ambiguity and intuitive processes. In the near term, focus on establishing clearer boundaries between work and restoration, allowing yourself dedicated periods for both productivity and recovery. This practice will enhance your sustainability and prevent burnout while maintaining your high standards.
+
+Over the medium term, explore opportunities that allow you to integrate your creative and analytical abilities in service of meaningful goals. Seek roles or projects that benefit from your capacity to understand complex systems while generating innovative solutions. Consider developing your communication skills to translate your insights for diverse audiences, enhancing your collaborative effectiveness and leadership potential.
+
+Looking further ahead, your growth trajectory suggests potential for significant impact through integrating your intellectual capabilities with emotional intelligence and practical wisdom. Your capacity for nuanced understanding, combined with resilience and empathy, positions you to address complex problems with both rigor and humanity. Continue developing self-awareness through reflective practices, and consider mentoring others who share your dedication to growth and understanding. The most fulfilling path forward will likely involve work that engages both your mind and heart in service of contributing to areas you find meaningful and aligned with your core values.`
+  };
+}
