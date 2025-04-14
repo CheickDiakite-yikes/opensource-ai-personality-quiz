@@ -4,9 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { ComprehensiveAnalysis, RelationshipPatterns } from "@/utils/types";
+import { ComprehensiveAnalysis } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle, FileText, ArrowLeft, RefreshCw, Bug, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, RefreshCw, Bug, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
@@ -35,7 +35,7 @@ const ComprehensiveReportPage: React.FC = () => {
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
-  const { pollForAnalysis, isPolling, foundAnalysis } = useComprehensiveAnalysisFallback(id);
+  const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
   
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
@@ -51,31 +51,87 @@ const ComprehensiveReportPage: React.FC = () => {
       
       console.log(`Fetching comprehensive analysis with ID: ${analysisId}`);
       
-      // Call the edge function to get the comprehensive analysis
-      const { data, error: functionError } = await supabase.functions.invoke(
-        "get-comprehensive-analysis",
-        {
-          body: { id: analysisId },
+      // First check if it exists directly in the database
+      const { data: directData, error: directError } = await supabase
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('id', analysisId)
+        .maybeSingle();
+      
+      if (directData && !directError) {
+        console.log("Found analysis directly in database");
+        return directData as unknown as ComprehensiveAnalysis;
+      }
+      
+      // Also check if it exists as an assessment ID
+      const { data: byAssessmentId, error: assessmentError } = await supabase
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('assessment_id', analysisId)
+        .maybeSingle();
+        
+      if (byAssessmentId && !assessmentError) {
+        console.log("Found analysis by assessment ID");
+        return byAssessmentId as unknown as ComprehensiveAnalysis;
+      }
+      
+      // If we still haven't found it, try the edge function with a timeout
+      try {
+        // Set up timeout for the request (10 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        // Call the edge function to get the comprehensive analysis
+        const { data, error: functionError } = await supabase.functions.invoke(
+          "get-comprehensive-analysis",
+          {
+            body: { id: analysisId },
+            signal: controller.signal
+          }
+        );
+        
+        clearTimeout(timeoutId);
+
+        if (functionError) {
+          console.error("Function error:", functionError);
+          throw new Error(`Edge function error: ${functionError.message}`);
         }
-      );
 
-      if (functionError) {
-        console.error("Function error:", functionError);
-        throw new Error(`Edge function error: ${functionError.message}`);
-      }
+        if (!data) {
+          throw new Error("No analysis data returned from edge function");
+        }
 
-      if (!data) {
-        throw new Error("No analysis data returned from edge function");
+        console.log("Comprehensive analysis data:", data);
+        
+        // Check for message indicating fallback to most recent analysis
+        if (data.message) {
+          toast.info(data.message);
+        }
+        
+        return data as ComprehensiveAnalysis;
+      } catch (edgeFuncError) {
+        console.error("Edge function error:", edgeFuncError);
+        
+        // If it's a timeout, try one more approach
+        if (edgeFuncError.name === 'AbortError') {
+          console.log("Edge function request timed out, trying direct DB query for most recent analysis");
+          
+          // If all else fails, get the most recent analysis
+          const { data: recentAnalysis } = await supabase
+            .from('comprehensive_analyses')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (recentAnalysis) {
+            toast.info("Using most recent analysis as fallback");
+            return recentAnalysis as unknown as ComprehensiveAnalysis;
+          }
+        }
+        
+        throw edgeFuncError;
       }
-
-      console.log("Comprehensive analysis data:", data);
-      
-      // Check for message indicating fallback to most recent analysis
-      if (data.message) {
-        toast.info(data.message);
-      }
-      
-      return data as ComprehensiveAnalysis;
     } catch (err) {
       console.error("Error fetching comprehensive analysis:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
@@ -94,29 +150,34 @@ const ComprehensiveReportPage: React.FC = () => {
 
   // Fetch comprehensive analysis
   useEffect(() => {
+    let isMounted = true;
+    
     async function loadAnalysis() {
       if (!id) {
-        setIsLoading(false);
-        setError("No analysis ID provided");
+        if (isMounted) {
+          setIsLoading(false);
+          setError("No analysis ID provided");
+        }
         return;
       }
 
       const data = await fetchComprehensiveAnalysis(id);
-      if (data) {
+      if (data && isMounted) {
         setAnalysis(data);
-      } else if (!isLoading && !error) {
+      } else if (isMounted && !isLoading && !error && !hasAttemptedPolling) {
         // If we couldn't load the analysis directly, check if it's an assessment ID
         // and try to poll for its completion
         toast.info("Checking if analysis is still processing...");
-        const result = await pollForAnalysis(id);
-        if (!result && !foundAnalysis) {
-          setError("Could not find analysis. It might still be processing.");
-        }
+        pollForAnalysis(id);
       }
     }
 
     loadAnalysis();
-  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isLoading, error, foundAnalysis]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isLoading, error, hasAttemptedPolling]);
   
   // Update analysis when foundAnalysis changes
   useEffect(() => {
@@ -409,24 +470,7 @@ const ComprehensiveReportPage: React.FC = () => {
     );
   }
 
-  // Process relationship patterns to handle both string[] and object formats
-  const processedRelationships = isRelationshipObject(analysis.relationshipPatterns) 
-    ? analysis.relationshipPatterns 
-    : { 
-        strengths: Array.isArray(analysis.relationshipPatterns) ? ensureStringItems(analysis.relationshipPatterns) : [],
-        challenges: [],
-        compatibleTypes: []
-      };
-
-  // Ensure all arrays have default values and are properly stringified
-  const safeMotivators = ensureStringItems(analysis?.motivators || []);
-  const safeInhibitors = ensureStringItems(analysis?.inhibitors || []);
-  const safeGrowthAreas = ensureStringItems(analysis?.growthAreas || []);
-  const safeWeaknesses = ensureStringItems(analysis?.weaknesses || []);
-  const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
-  const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
-
-  // When no analysis is found but we're polling, show appropriate UI
+  // When polling but no analysis found yet
   if (!analysis && isPolling) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
@@ -450,13 +494,30 @@ const ComprehensiveReportPage: React.FC = () => {
     );
   }
 
-  // Render analysis data
+  // Process data for safe rendering
+  const processedRelationships = isRelationshipObject(analysis?.relationshipPatterns) 
+    ? analysis.relationshipPatterns 
+    : { 
+        strengths: Array.isArray(analysis?.relationshipPatterns) ? ensureStringItems(analysis?.relationshipPatterns) : [],
+        challenges: [],
+        compatibleTypes: []
+      };
+
+  // Ensure all arrays have default values and are properly stringified
+  const safeMotivators = ensureStringItems(analysis?.motivators || []);
+  const safeInhibitors = ensureStringItems(analysis?.inhibitors || []);
+  const safeGrowthAreas = ensureStringItems(analysis?.growthAreas || []);
+  const safeWeaknesses = ensureStringItems(analysis?.weaknesses || []);
+  const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
+  const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
+
+  // Render analysis data - use existing rendering code
   return (
     <div className="container py-6 md:py-10 px-4 space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Comprehensive Report</h1>
         <p className="text-muted-foreground">
-          Analysis ID: {analysis?.id}
+          Analysis ID: {safeString(analysis?.id)}
         </p>
       </div>
       
@@ -472,7 +533,7 @@ const ComprehensiveReportPage: React.FC = () => {
           <TabsTrigger value="career">Career</TabsTrigger>
         </TabsList>
         
-        {/* Overview tab */}
+        {/* Tab content sections - keep existing */}
         <TabsContent value="overview" className="space-y-6">
           <ComprehensiveOverviewSection 
             overview={safeString(analysis?.overview)}
@@ -484,14 +545,12 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Personality tab */}
         <TabsContent value="personality" className="space-y-6">
           <ComprehensiveTraitsSection
             traits={analysis?.traits || []}
           />
         </TabsContent>
         
-        {/* Intelligence tab */}
         <TabsContent value="intelligence" className="space-y-6">
           <ComprehensiveIntelligenceSection
             intelligence={analysis?.intelligence}
@@ -500,7 +559,6 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Motivation tab */}
         <TabsContent value="motivation" className="space-y-6">
           <ComprehensiveMotivationSection
             motivators={safeMotivators}
@@ -508,14 +566,12 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Relationships tab */}
         <TabsContent value="relationships" className="space-y-6">
           <ComprehensiveRelationshipsSection
             relationshipPatterns={processedRelationships}
           />
         </TabsContent>
         
-        {/* Growth tab */}
         <TabsContent value="growth" className="space-y-6">
           <ComprehensiveGrowthSection
             growthAreas={safeGrowthAreas}
@@ -524,7 +580,6 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Career tab */}
         <TabsContent value="career" className="space-y-6">
           <ComprehensiveCareerSection
             careerSuggestions={safeCareerSuggestions}
@@ -533,6 +588,7 @@ const ComprehensiveReportPage: React.FC = () => {
         </TabsContent>
       </Tabs>
       
+      {/* Footer navigation - keep existing */}
       <div className="flex flex-wrap gap-4 justify-center mt-8">
         <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Back to Reports List
@@ -556,6 +612,7 @@ const ComprehensiveReportPage: React.FC = () => {
         )}
       </div>
       
+      {/* Advanced options panel - keep existing */}
       {showAdvancedOptions && (
         <Card className="p-6 mt-4 max-w-lg mx-auto">
           <h3 className="text-lg font-medium mb-3">Create New Test Analysis</h3>

@@ -1,108 +1,90 @@
-// Function to format trait scores for display
-export const formatTraitScore = (score: number): string => {
-  if (score >= 9) return "Very High";
-  if (score >= 7) return "High";
-  if (score >= 5) return "Moderate";
-  if (score >= 3) return "Low";
-  return "Very Low";
-};
 
-// Define a type that represents either a string or object with name/description/trait
-export type StringOrObject = string | { name: string, description?: string } | { trait: string } | { [key: string]: any };
+/**
+ * Utility functions for formatting and sanitizing data
+ */
 
-// Enhanced safe string conversion utility
+/**
+ * Safely converts a value to string to avoid React render errors.
+ * Handles objects with name, description, or trait properties.
+ */
 export const safeString = (value: any): string => {
-  // Handle null or undefined
-  if (value === null || value === undefined) {
-    return '';
+  if (value === undefined || value === null) {
+    return "";
   }
   
-  // Handle strings directly
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value;
   }
   
-  // Handle numbers
-  if (typeof value === 'number') {
-    return value.toString();
-  }
-  
-  // Handle objects with common properties in our app
-  if (typeof value === 'object') {
-    // For objects with name or description properties (common in the app)
-    if ('name' in value && typeof value.name === 'string') {
-      return value.name;
-    }
-    if ('description' in value && typeof value.description === 'string') {
-      return value.description;
-    }
-    if ('trait' in value && typeof value.trait === 'string') {
-      return value.trait;
-    }
+  if (typeof value === "object") {
+    // Handle objects with name, description, or trait properties
+    if (value.name) return safeString(value.name);
+    if (value.description) return safeString(value.description);
+    if (value.trait) return safeString(value.trait);
     
-    // For arrays, map and join the elements
-    if (Array.isArray(value)) {
-      return value.map(item => safeString(item)).join(', ');
-    }
-    
-    // Fallback to JSON string representation
+    // For other objects, use JSON stringify
     try {
       return JSON.stringify(value);
     } catch (e) {
-      return '[Object]';
+      console.error("Error stringifying object:", e);
+      return "[Object]";
     }
   }
   
-  // Default toString for any other types
+  // For other types like numbers, booleans, etc.
   return String(value);
 };
 
 /**
- * Ensures array items are properly stringified before rendering
- * For use in components that might receive objects in arrays
+ * Ensure that every item in an array is a string.
+ * Handles arrays of objects by extracting relevant properties.
  */
-export const ensureStringItems = <T extends StringOrObject>(array: T[] | null | undefined): string[] => {
-  if (!array) return [];
+export const ensureStringItems = (items: any[] | undefined | null): string[] => {
+  if (!items || !Array.isArray(items)) {
+    return [];
+  }
   
-  return array.map(item => safeString(item));
+  return items.map(item => {
+    // Convert each item to a safe string
+    return safeString(item);
+  }).filter(Boolean); // Remove any empty strings
 };
 
 /**
- * Deep ensures all nested arrays and objects are properly converted to strings
- * For more complex nested data structures
+ * Deep recursive function to ensure all items in nested objects and arrays are strings
  */
-export const deepEnsureStringItems = (data: any): any => {
-  // Handle null or undefined
-  if (data === null || data === undefined) {
+export const deepEnsureString = (value: any): any => {
+  if (value === null || value === undefined) {
     return '';
   }
   
-  // Handle arrays (convert each item)
-  if (Array.isArray(data)) {
-    return data.map(item => deepEnsureStringItems(item));
+  // Handle primitive types
+  if (typeof value !== 'object') {
+    return String(value);
   }
   
-  // Handle objects (convert to string or process their properties)
-  if (typeof data === 'object') {
-    // If it looks like a common named object in our system, extract the name
-    if ('name' in data && typeof data.name === 'string') {
-      return data.name;
-    }
-    if ('description' in data && typeof data.description === 'string') {
-      return data.description;
-    }
-    if ('trait' in data && typeof data.trait === 'string') {
-      return data.trait;
-    }
-    
-    // Otherwise process each property in the object
-    const result: Record<string, any> = {};
-    for (const key in data) {
-      result[key] = deepEnsureStringItems(data[key]);
-    }
-    return result;
+  // Handle arrays
+  if (Array.isArray(value)) {
+    return value.map(item => deepEnsureString(item));
   }
   
-  // Return primitives as is
-  return data;
+  // Handle objects
+  const result: Record<string, any> = {};
+  for (const key in value) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      result[key] = deepEnsureString(value[key]);
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Type for objects that can be stringified safely
+ */
+export type StringOrObject = string | { 
+  name?: string; 
+  description?: string;
+  trait?: string;
+  [key: string]: any;
 };

@@ -69,58 +69,70 @@ export function useComprehensiveSubmission(
             toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
           }
           
-          // Setup timeout for the request (60 seconds)
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Analysis request timed out after 60 seconds")), 60000)
-          );
+          // Setup AbortController with timeout for the request (60 seconds)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
           
-          // Call the edge function
-          const analysisPromise = supabase.functions.invoke(
-            "analyze-comprehensive-responses",
-            {
-              body: { 
-                assessmentId: createdAssessmentId,
-                responses: formattedResponses
+          try {
+            // Call the edge function
+            const { data, error } = await supabase.functions.invoke(
+              "analyze-comprehensive-responses",
+              {
+                body: { 
+                  assessmentId: createdAssessmentId,
+                  responses: formattedResponses
+                },
+                signal: controller.signal
               }
+            );
+            
+            // Clear the timeout since the request completed
+            clearTimeout(timeoutId);
+            
+            if (error) throw new Error(error.message);
+            
+            if (!data?.analysisId) {
+              throw new Error("Analysis completed but no analysis ID was returned");
             }
-          );
-          
-          // Race between the analysis request and the timeout
-          const { data, error } = await Promise.race([
-            analysisPromise,
-            timeoutPromise.then(() => {
+            
+            // Clear stored progress after successful submission
+            localStorage.removeItem("comprehensive_assessment_progress");
+            
+            // Show success message
+            toast.success("Analysis complete!", { id: "assessment-submission" });
+            
+            // Navigate to the comprehensive report page
+            navigate(`/comprehensive-report/${data.analysisId}`);
+            return;
+          } catch (abortError) {
+            // Handle timeout specifically
+            if (abortError.name === 'AbortError') {
+              console.log("Request timed out, but responses were saved");
               throw new Error("Analysis request timed out after 60 seconds. Your responses were saved and will be analyzed later.");
-            })
-          ]) as any;
-          
-          if (error) throw new Error(error.message);
-          
-          if (!data?.analysisId) {
-            throw new Error("Analysis completed but no analysis ID was returned");
+            } else {
+              throw abortError;
+            }
           }
-          
-          // Clear stored progress after successful submission
-          localStorage.removeItem("comprehensive_assessment_progress");
-          
-          // Show success message
-          toast.success("Analysis complete!", { id: "assessment-submission" });
-          
-          // Navigate to the comprehensive report page
-          navigate(`/comprehensive-report/${data.analysisId}`);
-          return;
         } catch (error) {
           console.error(`Error attempt ${retry + 1}:`, error);
           lastError = error;
           
-          // If this was the last retry, we'll throw the error after the loop
+          // If this was the last retry, we'll handle the navigation after the loop
           if (retry === MAX_RETRIES) {
             console.error("All retries failed");
+            // Instead of throwing an error, we'll handle the navigation to the report page
+            // The report page will try to poll for the analysis
+            toast.warning("Analysis is taking longer than expected", { 
+              id: "assessment-submission",
+              description: "We'll take you to the report page where you can check the status."
+            });
+            
+            // Navigate to the report page with the assessment ID
+            navigate(`/comprehensive-report/${createdAssessmentId}`);
+            return;
           }
         }
       }
-      
-      // If we got here, all retries failed
-      throw lastError || new Error("Failed to analyze responses after multiple attempts");
       
     } catch (error) {
       console.error("Error submitting assessment:", error);
@@ -132,17 +144,17 @@ export function useComprehensiveSubmission(
           description: "We'll try to analyze it again when you view your reports. You can continue to your profile to see existing reports."
         });
         
-        // Navigate to the profile page instead
-        navigate("/profile");
+        // Navigate to the assessment ID, the report page will handle polling
+        navigate(`/comprehensive-report/${createdAssessmentId}`);
       } else {
         // Complete submission failure
         toast.error("Failed to submit assessment", { 
           id: "assessment-submission",
           description: error instanceof Error ? error.message : "Please try again later"
         });
+        
+        setIsAnalyzing(false);
       }
-      
-      setIsAnalyzing(false);
     }
   };
   

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis } from "@/utils/types";
 import { toast } from "sonner";
@@ -7,12 +7,14 @@ import { toast } from "sonner";
 export const useComprehensiveAnalysisFallback = (assessmentId: string | undefined) => {
   const [isPolling, setIsPolling] = useState(false);
   const [foundAnalysis, setFoundAnalysis] = useState<ComprehensiveAnalysis | null>(null);
+  const [hasAttemptedPolling, setHasAttemptedPolling] = useState(false);
   
   // Function to poll for analysis completion
-  const pollForAnalysis = async (id: string, maxAttempts = 3) => {
+  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 3) => {
     if (!id) return null;
     
     setIsPolling(true);
+    setHasAttemptedPolling(true);
     let attempts = 0;
     
     try {
@@ -45,7 +47,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               .single();
               
             if (assessmentData?.responses) {
-              toast.loading("Attempting to analyze responses...", { id: "poll-analysis" });
+              const toastId = `poll-analysis-${id}`;
+              toast.loading("Attempting to analyze responses...", { id: toastId });
               
               // Try to analyze the responses
               await supabase.functions.invoke(
@@ -75,28 +78,29 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         
         if (analysis) {
           console.log("Analysis completed for assessment:", id);
-          toast.success("Analysis completed!", { id: "poll-analysis" });
+          toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
           setFoundAnalysis(analysis as unknown as ComprehensiveAnalysis);
           return analysis;
         }
         
-        toast.loading(`Waiting for analysis to complete (${attempts}/${maxAttempts})...`, { id: "poll-analysis" });
+        toast.loading(`Waiting for analysis to complete (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
       }
       
-      toast.error("Could not retrieve analysis after multiple attempts", { id: "poll-analysis" });
+      toast.error("Could not retrieve analysis after multiple attempts", { id: `poll-analysis-${id}` });
       return null;
     } catch (error) {
       console.error("Error in pollForAnalysis:", error);
-      toast.error("Error retrieving analysis", { id: "poll-analysis" });
+      toast.error("Error retrieving analysis", { id: `poll-analysis-${id}` });
       return null;
     } finally {
       setIsPolling(false);
     }
-  };
+  }, []);
 
   return {
     pollForAnalysis,
     isPolling,
-    foundAnalysis
+    foundAnalysis,
+    hasAttemptedPolling
   };
 };
