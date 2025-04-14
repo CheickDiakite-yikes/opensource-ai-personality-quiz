@@ -12,6 +12,28 @@ export enum QuestionCategory {
   Leadership = "Leadership"
 }
 
+// Activity tracking related types
+export enum ActivityCategory {
+  PersonalGrowth = "PersonalGrowth",
+  SelfReflection = "SelfReflection",
+  SocialConnection = "SocialConnection",
+  EmotionalWellbeing = "EmotionalWellbeing",
+  MindfulPractice = "MindfulPractice",
+  StressCoping = "StressCoping",
+  KINDNESS = "KINDNESS",
+  MINDFULNESS = "MINDFULNESS",
+  LEARNING = "LEARNING",
+  HEALTH = "HEALTH",
+  SOCIAL = "SOCIAL",
+  CREATIVITY = "CREATIVITY",
+  COGNITIVE = "COGNITIVE",
+  EMOTIONAL = "EMOTIONAL",
+  PERSONALITY = "PERSONALITY",
+  MOTIVATION = "MOTIVATION",
+  VALUES = "VALUES",
+  STRENGTHS = "STRENGTHS"
+}
+
 // Assessment Response type
 export interface AssessmentResponse {
   questionId: string;
@@ -30,8 +52,40 @@ export interface AssessmentQuestion {
   weight: number;
 }
 
-export type ValueSystemType = ValueSystem | string[];
+// PersonalityTrait with all required properties
+export interface PersonalityTrait {
+  name: string;           // Required property
+  trait: string;          // Also required to maintain compatibility
+  score: number;
+  description: string;
+  impact: string[];       // Required property
+  recommendations: string[]; // Required property
+  relatedTraits?: string[];
+  strengths: string[];    
+  challenges: string[];   
+  growthSuggestions: string[];
+}
 
+// Intelligence with all required properties
+export interface Intelligence {
+  type: string;
+  score: number;
+  description: string;
+  strengths: string[];
+  areas_for_development: string[];
+  learning_style: string;
+  cognitive_preferences: string[];
+  domains?: CognitiveDomain[];
+}
+
+// Defining CognitiveDomain interface
+export interface CognitiveDomain {
+  name: string;
+  score: number;
+  description?: string;
+}
+
+// ValueSystem with required properties
 export interface ValueSystem {
   strengths: string[];
   weaknesses: string[];
@@ -39,6 +93,8 @@ export interface ValueSystem {
   compatibleTypes?: string[];
   challenges?: string[];
 }
+
+export type ValueSystemType = ValueSystem | string[];
 
 export interface RelationshipPatterns {
   strengths: string[];
@@ -52,26 +108,13 @@ export interface CognitiveStyle {
   description: string;
 }
 
-// Defining CognitiveDomain interface
-export interface CognitiveDomain {
-  name: string;
-  score: number;
-  description?: string;
-}
-
-export interface Intelligence {
-  type: string;
-  score: number;
-  description: string;
-  strengths: string[];
-  areas_for_development: string[];
-  learning_style: string;
-  cognitive_preferences: string[];
-  domains?: CognitiveDomain[];
-}
+// Adding CognitiveStyleType to allow for string fallback
+export type CognitiveStyleType = CognitiveStyle | string;
 
 export interface PersonalityAnalysis {
   id: string;
+  userId?: string;       // Optional property for backward compatibility
+  assessmentId?: string; // Optional property for backward compatibility
   createdAt?: string;
   overview: string;
   traits: PersonalityTrait[];
@@ -98,19 +141,6 @@ export interface PersonalityAnalysis {
   };
 }
 
-export interface PersonalityTrait {
-  name: string;
-  trait: string; 
-  score: number;
-  description: string;
-  impact: string[];
-  recommendations: string[];
-  relatedTraits?: string[];
-  strengths: string[]; 
-  challenges: string[]; 
-  growthSuggestions: string[];
-}
-
 export interface ComprehensiveAnalysis {
   id: string;
   created_at?: string;
@@ -130,22 +160,6 @@ export interface ComprehensiveAnalysis {
   learningPathways: string[];
 }
 
-// Activity tracking related types
-export enum ActivityCategory {
-  PersonalGrowth = "PersonalGrowth",
-  SelfReflection = "SelfReflection",
-  SocialConnection = "SocialConnection",
-  EmotionalWellbeing = "EmotionalWellbeing",
-  MindfulPractice = "MindfulPractice",
-  StressCoping = "StressCoping",
-  KINDNESS = "KINDNESS",
-  MINDFULNESS = "MINDFULNESS",
-  LEARNING = "LEARNING",
-  HEALTH = "HEALTH",
-  SOCIAL = "SOCIAL",
-  CREATIVITY = "CREATIVITY"
-}
-
 export interface Activity {
   id: string;
   title: string;
@@ -155,11 +169,11 @@ export interface Activity {
   difficulty?: "Easy" | "Moderate" | "Challenging";
   completed: boolean;
   completedAt?: Date;
+  createdAt: Date;
   recommendedFrequency?: string;
-  benefits: string;
+  benefits: string | string[];
   steps?: string[];
   points: number;
-  createdAt: Date;
   user_id?: string;
 }
 

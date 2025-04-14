@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertToPersonalityAnalysis, sortAnalysesByDate } from './utils';
 import { toast } from 'sonner';
 import { loadAnalysisHistory } from '../analysis/useLocalStorage';
+import { PersonalityAnalysis } from '@/utils/types';
 
 // Hook for refreshing analysis data from local storage or Supabase
 export const useAnalysisRefresh = (
@@ -111,9 +112,12 @@ export const useAnalysisRefresh = (
               if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length === 0) {
                 console.warn(`Analysis ${analysis.id} has no traits, adding placeholder`);
                 analysis.traits = [{
+                  name: "Analysis Incomplete", 
                   trait: "Analysis Incomplete", 
                   score: 5, 
                   description: "This analysis didn't generate enough trait data. You may want to retake the assessment.",
+                  impact: ["Limited insights available"],
+                  recommendations: ["Consider retaking the assessment"],
                   strengths: ["Not available"],
                   challenges: ["Not available"],
                   growthSuggestions: ["Consider retaking the assessment"]
@@ -124,9 +128,12 @@ export const useAnalysisRefresh = (
               if (Array.isArray(analysis.traits) && analysis.traits.length < 2) {
                 console.warn(`Analysis ${analysis.id} has only ${analysis.traits.length} traits, adding informational trait`);
                 analysis.traits.push({
+                  name: "Analysis Note",
                   trait: "Analysis Note", 
                   score: 0, 
                   description: "We expected 8-12 personality traits but only found " + analysis.traits.length + ". The analysis may be incomplete.",
+                  impact: ["Limited trait analysis"],
+                  recommendations: ["Try the Fix Analysis button or retake the assessment"],
                   strengths: ["Try the Fix Analysis button or retake the assessment"],
                   challenges: ["Analysis data is incomplete"],
                   growthSuggestions: ["Provide more detailed answers in your assessment"]
@@ -138,11 +145,15 @@ export const useAnalysisRefresh = (
                 console.warn(`Analysis ${analysis.id} has no intelligence data, adding placeholder`);
                 analysis.intelligence = {
                   type: "Analysis Incomplete",
-                  score: 5,
+                  score: 50,
                   description: "Intelligence analysis data was incomplete.",
+                  strengths: ["Not available"],
+                  areas_for_development: ["Complete analysis"],
+                  learning_style: "Visual",
+                  cognitive_preferences: ["Not determined"],
                   domains: [{
                     name: "General Intelligence",
-                    score: 5,
+                    score: 50,
                     description: "Intelligence data was incomplete in this analysis."
                   }]
                 };
