@@ -2,7 +2,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { IntelligenceType } from "@/utils/types";
+import { Intelligence, CognitiveDomain } from "@/utils/types";
 import { 
   Brain, 
   BookOpen, 
@@ -16,9 +16,10 @@ import {
 import IntelligenceDomainChart from "../../report/IntelligenceDomainChart";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isCognitiveDomainObject } from "@/components/report/utils/typeGuards";
 
 interface ComprehensiveIntelligenceSectionProps {
-  intelligence: IntelligenceType;
+  intelligence: Intelligence;
   intelligenceScore: number;
   emotionalIntelligenceScore: number;
 }
@@ -31,36 +32,61 @@ const ComprehensiveIntelligenceSection: React.FC<ComprehensiveIntelligenceSectio
   // Ensure we have valid data
   const hasIntelligenceData = intelligence && intelligence.type && intelligence.domains?.length > 0;
   
+  // Ensure domains are properly structured objects
+  const processedDomains = React.useMemo(() => {
+    if (!intelligence?.domains || !Array.isArray(intelligence.domains)) {
+      return [];
+    }
+    
+    return intelligence.domains.map((domain: any) => {
+      if (isCognitiveDomainObject(domain)) {
+        return domain;
+      }
+      // Convert string domains to domain objects if needed
+      if (typeof domain === 'string') {
+        return { name: domain, score: 5 }; // Default score
+      }
+      return domain;
+    });
+  }, [intelligence?.domains]);
+  
   // Organize cognitive domains into categories
-  const analyticalDomains = intelligence?.domains?.filter(d => 
-    d.name.toLowerCase().includes('analytical') || 
-    d.name.toLowerCase().includes('logical') ||
-    d.name.toLowerCase().includes('reasoning')
-  ) || [];
+  const analyticalDomains = processedDomains.filter(d => 
+    (typeof d.name === 'string') && (
+      d.name.toLowerCase().includes('analytical') || 
+      d.name.toLowerCase().includes('logical') ||
+      d.name.toLowerCase().includes('reasoning')
+    )
+  );
   
-  const creativeDomains = intelligence?.domains?.filter(d => 
-    d.name.toLowerCase().includes('creative') || 
-    d.name.toLowerCase().includes('innovation') ||
-    d.name.toLowerCase().includes('divergent')
-  ) || [];
+  const creativeDomains = processedDomains.filter(d => 
+    (typeof d.name === 'string') && (
+      d.name.toLowerCase().includes('creative') || 
+      d.name.toLowerCase().includes('innovation') ||
+      d.name.toLowerCase().includes('divergent')
+    )
+  );
   
-  const practicalDomains = intelligence?.domains?.filter(d => 
-    d.name.toLowerCase().includes('practical') || 
-    d.name.toLowerCase().includes('applied') ||
-    d.name.toLowerCase().includes('execution')
-  ) || [];
+  const practicalDomains = processedDomains.filter(d => 
+    (typeof d.name === 'string') && (
+      d.name.toLowerCase().includes('practical') || 
+      d.name.toLowerCase().includes('applied') ||
+      d.name.toLowerCase().includes('execution')
+    )
+  );
   
-  const socialDomains = intelligence?.domains?.filter(d => 
-    d.name.toLowerCase().includes('social') || 
-    d.name.toLowerCase().includes('interpersonal') ||
-    d.name.toLowerCase().includes('emotional')
-  ) || [];
+  const socialDomains = processedDomains.filter(d => 
+    (typeof d.name === 'string') && (
+      d.name.toLowerCase().includes('social') || 
+      d.name.toLowerCase().includes('interpersonal') ||
+      d.name.toLowerCase().includes('emotional')
+    )
+  );
   
   // Get remaining domains not in other categories
-  const otherDomains = intelligence?.domains?.filter(domain => 
-    ![...analyticalDomains, ...creativeDomains, ...practicalDomains, ...socialDomains]
-    .includes(domain)
-  ) || [];
+  const otherDomains = processedDomains.filter(domain => {
+    return ![...analyticalDomains, ...creativeDomains, ...practicalDomains, ...socialDomains].includes(domain);
+  });
 
   return (
     <Card className="p-6 md:p-8 shadow-md">
@@ -165,7 +191,7 @@ const ComprehensiveIntelligenceSection: React.FC<ComprehensiveIntelligenceSectio
             </h3>
             
             <div>
-              <IntelligenceDomainChart domains={intelligence.domains} />
+              <IntelligenceDomainChart domains={processedDomains} />
             </div>
             
             {/* Domain Groups Analysis */}

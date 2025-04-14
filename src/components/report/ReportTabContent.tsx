@@ -1,6 +1,7 @@
+
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
-import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
+import { PersonalityAnalysis, RelationshipPatterns, Intelligence } from "@/utils/types";
 import OverviewSection from "./sections/OverviewSection";
 import PersonalityTraitsSection from "./sections/PersonalityTraitsSection";
 import IntelligenceSection from "./sections/IntelligenceSection";
@@ -50,13 +51,31 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   // Process data safely to prevent React render errors
   const processedTraits = Array.isArray(traits) ? traits : [];
   
-  // Ensure intelligence has the correct structure to satisfy IntelligenceType
-  const processedIntelligence = intelligence || {
-    type: '',
-    score: 0,
-    description: '',
-    domains: []
-  };
+  // Ensure intelligence has the correct structure to satisfy Intelligence type
+  const processedIntelligence: Intelligence = React.useMemo(() => {
+    if (intelligence && typeof intelligence === 'object') {
+      // Ensure all required fields are present
+      return {
+        type: intelligence.type || '',
+        score: intelligence.score || 0,
+        description: intelligence.description || '',
+        strengths: Array.isArray(intelligence.strengths) ? intelligence.strengths : [],
+        areas_for_development: Array.isArray(intelligence.areas_for_development) ? intelligence.areas_for_development : [],
+        learning_style: intelligence.learning_style || '',
+        cognitive_preferences: Array.isArray(intelligence.cognitive_preferences) ? intelligence.cognitive_preferences : [],
+        domains: intelligence.domains || []
+      };
+    }
+    return {
+      type: '',
+      score: 0,
+      description: '',
+      strengths: [],
+      areas_for_development: [],
+      learning_style: '',
+      cognitive_preferences: []
+    };
+  }, [intelligence]);
   
   // Ensure everything is properly stringified
   const safeMotivators = ensureStringItems(motivators || []);

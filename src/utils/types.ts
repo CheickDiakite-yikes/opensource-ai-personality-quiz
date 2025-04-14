@@ -36,7 +36,6 @@ export interface ValueSystem {
   strengths: string[];
   weaknesses: string[];
   description: string;
-  // Adding compatibleTypes for type guard compatibility
   compatibleTypes?: string[];
   challenges?: string[];
 }
@@ -55,6 +54,27 @@ export interface CognitiveStyle {
 
 // Alias for backward compatibility
 export type CognitiveStyleType = CognitiveStyle | string;
+
+// Define the CognitiveDomain interface
+export interface CognitiveDomain {
+  name: string;
+  score: number;
+  description?: string;
+}
+
+export interface Intelligence {
+  type: string;
+  score: number;
+  description: string;
+  strengths: string[];
+  areas_for_development: string[];
+  learning_style: string;
+  cognitive_preferences: string[];
+  domains?: CognitiveDomain[];
+}
+
+// Alias for backward compatibility
+export type IntelligenceType = Intelligence;
 
 export interface PersonalityAnalysis {
   id: string;
@@ -86,30 +106,16 @@ export interface PersonalityAnalysis {
 
 export interface PersonalityTrait {
   name: string;
-  trait: string; // Adding trait property
+  trait: string; 
   score: number;
   description: string;
   impact: string[];
   recommendations: string[];
   relatedTraits?: string[];
-  strengths: string[]; // Adding strengths
-  challenges: string[]; // Adding challenges
-  growthSuggestions: string[]; // Adding growth suggestions
+  strengths: string[]; 
+  challenges: string[]; 
+  growthSuggestions: string[];
 }
-
-export interface Intelligence {
-  type: string;
-  score: number;
-  description: string;
-  strengths: string[];
-  areas_for_development: string[];
-  learning_style: string;
-  cognitive_preferences: string[];
-  domains?: string[];
-}
-
-// Alias for backward compatibility
-export type IntelligenceType = Intelligence;
 
 export interface ComprehensiveAnalysis {
   id: string;
@@ -137,7 +143,13 @@ export enum ActivityCategory {
   SocialConnection = "SocialConnection",
   EmotionalWellbeing = "EmotionalWellbeing",
   MindfulPractice = "MindfulPractice",
-  StressCoping = "StressCoping"
+  StressCoping = "StressCoping",
+  KINDNESS = "KINDNESS",
+  MINDFULNESS = "MINDFULNESS",
+  LEARNING = "LEARNING",
+  HEALTH = "HEALTH",
+  SOCIAL = "SOCIAL",
+  CREATIVITY = "CREATIVITY"
 }
 
 export interface Activity {
@@ -152,6 +164,8 @@ export interface Activity {
   recommendedFrequency?: string;
   benefits: string[];
   steps?: string[];
+  points?: number;
+  createdAt?: string;
 }
 
 // Notification types
@@ -159,9 +173,13 @@ export interface MotivationalNotification {
   id: string;
   title: string;
   message: string;
-  type: "motivational" | "reminder" | "milestone" | "tip";
-  createdAt: string;
+  type: "motivational" | "reminder" | "milestone" | "tip" | "insight";
+  createdAt: string | Date;
   read: boolean;
   trait?: string;
   link?: string;
+  suggestion?: string;
+  relatedTraits?: string[];
+  date?: string | Date;
+  userId?: string;
 }

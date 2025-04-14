@@ -86,12 +86,12 @@ const NotificationCenter: React.FC = () => {
       
       const newNotification: MotivationalNotification = {
         id: `notification-${Date.now()}`,
+        title: suggestion.message,
         message: suggestion.message,
         suggestion: suggestion.suggestion,
         relatedTraits: suggestion.relatedTraits,
-        createdAt: new Date(),
-        type: 'insight', // Adding required type field
-        date: new Date(), // Adding required date field
+        createdAt: new Date().toISOString(),
+        type: 'motivational', // Changed to a valid type
         read: false,
         userId: 'current-user', // In a real app, this would be the actual user ID
       };
@@ -219,7 +219,9 @@ const NotificationCenter: React.FC = () => {
                         </Button>
                       )}
                     </div>
-                    <p className="text-sm mt-1">{notification.suggestion}</p>
+                    {notification.suggestion && (
+                      <p className="text-sm mt-1">{notification.suggestion}</p>
+                    )}
                     <div className="flex items-center text-xs text-muted-foreground mt-2 gap-2">
                       <Clock className="h-3 w-3" />
                       {format(new Date(notification.createdAt), 'PPP')}
