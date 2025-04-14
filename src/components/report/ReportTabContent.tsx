@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
@@ -14,7 +13,7 @@ import RoadmapSection from "./sections/RoadmapSection";
 import { isRelationshipObject } from "./utils/typeGuards";
 import ReportSectionSkeleton from "./skeletons/ReportSectionSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { safeString, ensureStringItems, deepEnsureString } from "@/utils/formatUtils";
+import { safeString, ensureStringItems, deepEnsureString, formatTraitScore } from "@/utils/formatUtils";
 
 interface ReportTabContentProps {
   analysis: PersonalityAnalysis;
@@ -50,7 +49,14 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   
   // Process data safely to prevent React render errors
   const processedTraits = Array.isArray(traits) ? traits : [];
-  const processedIntelligence = intelligence || {};
+  
+  // Ensure intelligence has the correct structure to satisfy IntelligenceType
+  const processedIntelligence = intelligence || {
+    type: '',
+    score: 0,
+    description: '',
+    domains: []
+  };
   
   // Ensure everything is properly stringified
   const safeMotivators = ensureStringItems(motivators || []);

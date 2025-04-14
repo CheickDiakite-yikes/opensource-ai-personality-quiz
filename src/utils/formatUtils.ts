@@ -88,3 +88,28 @@ export type StringOrObject = string | {
   trait?: string;
   [key: string]: any;
 };
+
+/**
+ * Format trait score to display nicely
+ * Normalizes scores to a 1-10 scale if needed
+ */
+export const formatTraitScore = (score: number | undefined): string => {
+  if (score === undefined || score === null) {
+    return "N/A";
+  }
+  
+  // Handle different scale ranges
+  if (score <= 1) {
+    // If score is a decimal between 0-1, convert to percentage
+    return `${Math.round(score * 100)}%`;
+  } else if (score <= 10) {
+    // If score is already in 1-10 range
+    return score.toFixed(1);
+  } else if (score <= 100) {
+    // If score is in 1-100 range, normalize to 1-10
+    return (score / 10).toFixed(1);
+  } else {
+    // For any other range
+    return `${score}`;
+  }
+};

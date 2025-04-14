@@ -85,8 +85,7 @@ const ComprehensiveReportPage: React.FC = () => {
         const { data, error: functionError } = await supabase.functions.invoke(
           "get-comprehensive-analysis",
           {
-            body: { id: analysisId },
-            signal: controller.signal
+            body: { id: analysisId }
           }
         );
         

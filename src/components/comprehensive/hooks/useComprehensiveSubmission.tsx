@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -81,8 +80,7 @@ export function useComprehensiveSubmission(
                 body: { 
                   assessmentId: createdAssessmentId,
                   responses: formattedResponses
-                },
-                signal: controller.signal
+                }
               }
             );
             
