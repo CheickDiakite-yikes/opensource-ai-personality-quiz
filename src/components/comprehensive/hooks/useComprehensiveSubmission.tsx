@@ -24,8 +24,19 @@ export function useComprehensiveSubmission(
     // Convert responses to the format expected by the backend
     const formattedResponses: ComprehensiveSubmissionResponse[] = Object.values(responses).map(response => ({
       questionId: response.questionId,
-      answer: response.selectedOption === "Other" ? response.customResponse : response.selectedOption
+      answer: response.selectedOption === "Other" ? response.customResponse : response.selectedOption,
+      category: response.category // Ensure category is included for better analysis
     }));
+    
+    // Validate we have enough responses
+    if (formattedResponses.length < 50) {
+      toast.error(`Not enough responses to analyze: ${formattedResponses.length}/100`, {
+        description: "Please complete more questions for a thorough analysis"
+      });
+      return;
+    }
+    
+    console.log(`Submitting comprehensive assessment with ${formattedResponses.length} responses`);
     
     // Track the assessment data outside the try block so it's accessible in the catch block
     let createdAssessmentId: string | null = null;
@@ -34,7 +45,8 @@ export function useComprehensiveSubmission(
       setIsAnalyzing(true);
       toast.loading("Saving your assessment responses...", { id: "assessment-submission" });
       
-      // Save assessment responses to Supabase
+      // Save assessment responses to Supabase with improved logging
+      console.log("Saving comprehensive assessment to Supabase...");
       const { data: assessmentData, error: assessmentError } = await supabase
         .from("comprehensive_assessments")
         .insert({
@@ -44,76 +56,78 @@ export function useComprehensiveSubmission(
         .select('id')
         .single();
       
-      if (assessmentError) throw new Error(assessmentError.message);
+      if (assessmentError) {
+        console.error("Error saving assessment:", assessmentError);
+        throw new Error(assessmentError.message);
+      }
       
       if (!assessmentData?.id) {
-        throw new Error("Failed to create assessment");
+        console.error("No assessment ID returned from database");
+        throw new Error("Failed to create assessment - no ID returned");
       }
+      
+      console.log("Assessment saved successfully with ID:", assessmentData.id);
       
       // Store the ID for use in the catch block if needed
       createdAssessmentId = assessmentData.id;
       
       toast.loading("Analyzing your responses...", { id: "assessment-submission" });
       
-      // Call Supabase Edge Function to analyze responses with improved error handling and timeout management
-      const MAX_RETRIES = 2;
-      let lastError = null;
+      // Call Supabase Edge Function to analyze responses with improved logging
+      console.log(`Calling analyze-comprehensive-responses function with assessment ID: ${createdAssessmentId}`);
+      console.log(`Sending ${formattedResponses.length} responses for analysis`);
       
-      for (let retry = 0; retry <= MAX_RETRIES; retry++) {
-        try {
-          console.log(`Attempt ${retry + 1} to analyze responses for assessment ${createdAssessmentId}`);
-          
-          if (retry > 0) {
-            // Add delay between retries with exponential backoff
-            await new Promise(r => setTimeout(r, retry * 2000));
-            toast.loading(`Retrying analysis... (Attempt ${retry + 1})`, { id: "assessment-submission" });
-          }
-          
-          // Call the edge function - explicitly prevent mock data usage
-          const { data, error } = await supabase.functions.invoke(
-            "analyze-comprehensive-responses",
-            {
-              body: { 
-                assessmentId: createdAssessmentId,
-                responses: formattedResponses,
-                useMockData: false // Explicitly prevent mock data usage
-              }
-            }
-          );
-          
-          if (error) throw new Error(error.message);
-          
-          if (!data?.analysisId) {
-            throw new Error("Analysis completed but no analysis ID was returned");
-          }
-          
-          // Clear stored progress after successful submission
-          localStorage.removeItem("comprehensive_assessment_progress");
-          
-          // Show success message
-          toast.success("Analysis complete!", { id: "assessment-submission" });
-          
-          // Navigate to the comprehensive report page
-          navigate(`/comprehensive-report/${data.analysisId}`);
-          return;
-        } catch (error) {
-          console.error(`Error attempt ${retry + 1}:`, error);
-          lastError = error;
-          
-          // If this was the last retry, we'll handle the navigation after the loop
-          if (retry === MAX_RETRIES) {
-            console.error("All retries failed");
-            // Instead of throwing an error, we'll handle the navigation to the report page
-            toast.warning("Analysis is taking longer than expected", { 
-              id: "assessment-submission",
-              description: "We'll take you to the report page where you can check the status."
-            });
-            
-            // Navigate to the report page with the assessment ID
-            navigate(`/comprehensive-report/${createdAssessmentId}`);
-            return;
+      // Add response distribution logging
+      const categoryDistribution = formattedResponses.reduce((acc: Record<string, number>, curr) => {
+        acc[curr.category as string] = (acc[curr.category as string] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("Response distribution by category:", 
+        Object.entries(categoryDistribution)
+          .map(([category, count]) => `${category}: ${count}`)
+          .join(', ')
+      );
+      
+      // Call the edge function with improved error handling
+      const { data, error } = await supabase.functions.invoke(
+        "analyze-comprehensive-responses",
+        {
+          body: { 
+            assessmentId: createdAssessmentId,
+            responses: formattedResponses
           }
         }
+      );
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Analysis failed: ${error.message}`);
+      }
+      
+      console.log("Edge function response:", data);
+      
+      if (!data) {
+        throw new Error("No data returned from analysis function");
+      }
+      
+      // Clear stored progress after successful submission
+      localStorage.removeItem("comprehensive_assessment_progress");
+      console.log("Assessment progress cleared from localStorage");
+      
+      // Show success message
+      toast.success("Analysis complete!", { id: "assessment-submission" });
+      
+      // Navigate to the comprehensive report page
+      if (data.analysis && data.analysis.id) {
+        console.log(`Navigating to report page with ID: ${data.analysis.id}`);
+        navigate(`/comprehensive-report/${data.analysis.id}`);
+      } else if (data.analysisId) {
+        console.log(`Navigating to report page with ID: ${data.analysisId}`);
+        navigate(`/comprehensive-report/${data.analysisId}`);
+      } else {
+        console.error("No analysis ID in response:", data);
+        throw new Error("Analysis completed but no ID was returned");
       }
       
     } catch (error) {

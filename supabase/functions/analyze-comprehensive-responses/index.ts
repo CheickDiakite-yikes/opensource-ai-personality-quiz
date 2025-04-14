@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -15,15 +16,18 @@ serve(async (req) => {
     const { responses, assessmentId } = await req.json();
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
+      console.error("Invalid responses format:", responses);
       throw new Error("Invalid or empty responses array");
     }
 
     if (!assessmentId) {
+      console.error("Missing assessment ID");
       throw new Error("Missing assessment ID");
     }
 
     console.log(`Processing ${responses.length} responses for assessment ${assessmentId}`);
 
+    // Categorize responses by category for better analysis
     const categorizedResponses = responses.reduce((acc, response) => {
       const category = response.category;
       if (!acc[category]) {
@@ -39,10 +43,12 @@ serve(async (req) => {
         .join(', ')
     );
 
-    const systemPrompt = `You are an expert AI psychologist tasked with analyzing 100 comprehensive personality assessment responses.
+    // Create a detailed system prompt for comprehensive analysis
+    const systemPrompt = `You are an expert AI psychologist tasked with analyzing ${responses.length} comprehensive personality assessment responses.
 Focus on providing deep insights into personality traits, cognitive patterns, emotional intelligence, and growth potential.
 Be thorough in your analysis of each response category while maintaining a holistic view of the individual.`;
 
+    // Create a detailed user prompt with categorized responses
     const analysisPrompt = `Based on these ${responses.length} assessment responses, provide a comprehensive personality analysis:
 
 ${Object.entries(categorizedResponses).map(([category, items]) => 
@@ -60,7 +66,7 @@ Provide a detailed analysis covering:
 7. Career alignment and suggestions
 8. Learning style and preferences`;
 
-    console.log("Calling GPT-4o for analysis...");
+    console.log("Calling OpenAI for analysis...");
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -84,6 +90,7 @@ Provide a detailed analysis covering:
     const aiResponse = await response.json();
     
     if (!aiResponse.choices || !aiResponse.choices[0]?.message?.content) {
+      console.error("Invalid AI response:", aiResponse);
       throw new Error("Invalid AI response format");
     }
 
@@ -91,6 +98,7 @@ Provide a detailed analysis covering:
     
     console.log("AI analysis received, extracting structured data...");
 
+    // Extract structured data from AI response
     const traits = extractTraits(analysisText);
     const intelligence = extractIntelligence(analysisText);
     const overview = extractOverview(analysisText);
@@ -102,8 +110,10 @@ Provide a detailed analysis covering:
     const relationshipPatterns = extractRelationshipPatterns(analysisText);
     const roadmap = extractRoadmap(analysisText);
 
+    // Create analysis object with all required fields
+    const analysisId = crypto.randomUUID();
     const comprehensiveAnalysis = {
-      id: crypto.randomUUID(),
+      id: analysisId,
       assessment_id: assessmentId,
       overview,
       traits,
@@ -119,10 +129,51 @@ Provide a detailed analysis covering:
       roadmap
     };
 
-    console.log("Analysis completed successfully");
+    // Save analysis to database
+    try {
+      const { error: dbError } = await fetch(
+        `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+          },
+          body: JSON.stringify({
+            id: analysisId,
+            assessment_id: assessmentId,
+            user_id: comprehensiveAnalysis.user_id || null,
+            overview: overview,
+            traits: traits,
+            intelligence: intelligence,
+            intelligence_score: comprehensiveAnalysis.intelligence_score,
+            emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
+            value_system: valueSystem,
+            motivators: motivators,
+            growth_areas: growthAreas,
+            relationship_patterns: relationshipPatterns,
+            career_suggestions: careerSuggestions,
+            learning_pathways: learningPathways,
+            roadmap: roadmap,
+            result: comprehensiveAnalysis
+          })
+        }
+      ).then(res => res.json());
+
+      if (dbError) {
+        console.error("Error saving analysis to database:", dbError);
+      } else {
+        console.log("Analysis saved to database successfully with ID:", analysisId);
+      }
+    } catch (dbError) {
+      console.error("Exception saving analysis to database:", dbError);
+    }
+
+    console.log("Analysis completed successfully, returning ID:", analysisId);
     
     return new Response(
-      JSON.stringify({ success: true, analysis: comprehensiveAnalysis }),
+      JSON.stringify({ success: true, analysisId: analysisId, analysis: comprehensiveAnalysis }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -142,7 +193,7 @@ Provide a detailed analysis covering:
   }
 });
 
-function extractTraits(text: string) {
+function extractTraits(text) {
   const traitMatches = text.match(/(?:trait|characteristic|quality):\s*([^.!?\n]+)/gi) || [];
   const traits = traitMatches.map(match => {
     const traitName = match.split(':')[1].trim();
@@ -161,7 +212,7 @@ function extractTraits(text: string) {
   return traits.length > 0 ? traits : generateDefaultTraits();
 }
 
-function extractIntelligence(text: string) {
+function extractIntelligence(text) {
   const intelligenceTypes = ['Analytical', 'Emotional', 'Practical', 'Creative', 'Social'];
   const domains = intelligenceTypes.map(type => ({
     name: `${type} Intelligence`,
@@ -181,12 +232,12 @@ function extractIntelligence(text: string) {
   };
 }
 
-function extractOverview(text: string) {
+function extractOverview(text) {
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
   return sentences.slice(0, 3).join('. ') + '.';
 }
 
-function extractValueSystem(text: string) {
+function extractValueSystem(text) {
   const valueWords = text.match(/\b(integrity|honesty|respect|growth|achievement|balance|harmony|creativity|wisdom|justice)\b/gi) || [];
   const uniqueValues = [...new Set(valueWords.map(v => v.toLowerCase()))];
   
@@ -197,17 +248,17 @@ function extractValueSystem(text: string) {
   };
 }
 
-function extractMotivators(text: string) {
+function extractMotivators(text) {
   const motivationPatterns = text.match(/\b(achieve|learn|grow|help|create|lead|explore|understand|improve|succeed)\b/gi) || [];
   return [...new Set(motivationPatterns.map(m => `Desire to ${m.toLowerCase()}`))];
 }
 
-function extractGrowthAreas(text: string) {
+function extractGrowthAreas(text) {
   const growthPatterns = text.match(/\b(develop|improve|enhance|strengthen|practice|master|learn|adapt|grow)\b/gi) || [];
   return [...new Set(growthPatterns.map(g => `Continue to ${g.toLowerCase()} capabilities`))];
 }
 
-function extractCareerSuggestions(text: string) {
+function extractCareerSuggestions(text) {
   const defaultSuggestions = [
     "Strategic Leadership Roles",
     "Creative Problem-Solving Positions",
@@ -222,7 +273,7 @@ function extractCareerSuggestions(text: string) {
     : defaultSuggestions;
 }
 
-function extractLearningPathways(text: string) {
+function extractLearningPathways(text) {
   return [
     "Structured academic learning",
     "Practical hands-on experience",
@@ -232,7 +283,7 @@ function extractLearningPathways(text: string) {
   ];
 }
 
-function extractRelationshipPatterns(text: string) {
+function extractRelationshipPatterns(text) {
   return {
     strengths: [
       "Strong communication skills",
@@ -252,13 +303,13 @@ function extractRelationshipPatterns(text: string) {
   };
 }
 
-function extractRoadmap(text: string) {
+function extractRoadmap(text) {
   return `Focus on leveraging identified strengths while addressing growth areas. 
 Prioritize continuous learning and development in both professional and personal domains. 
 Maintain balance between analytical and emotional aspects of personality.`;
 }
 
-function calculateIntelligenceScore(intelligence: any): number {
+function calculateIntelligenceScore(intelligence) {
   if (!intelligence || !intelligence.domains) {
     return 75; // Default score if no data
   }
@@ -272,14 +323,14 @@ function calculateIntelligenceScore(intelligence: any): number {
   };
   
   return Math.round(
-    intelligence.domains.reduce((acc: number, domain: any) => {
+    intelligence.domains.reduce((acc, domain) => {
       const weight = weights[domain.name] || 0.2;
       return acc + (domain.score * 100 * weight);
     }, 0)
   );
 }
 
-function calculateEmotionalScore(text: string): number {
+function calculateEmotionalScore(text) {
   const emotionalKeywords = [
     'empathy', 'awareness', 'regulation', 'social', 'motivation',
     'understanding', 'perception', 'management', 'relationship'
