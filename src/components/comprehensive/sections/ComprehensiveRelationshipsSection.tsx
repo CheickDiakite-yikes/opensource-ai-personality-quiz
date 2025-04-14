@@ -18,11 +18,6 @@ interface ComprehensiveRelationshipsSectionProps {
 const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSectionProps> = ({
   relationshipPatterns
 }) => {
-  // Function to safely display value from either string or object
-  const getDisplayValue = (item: string | RelationshipItem): string => {
-    return safeString(item);
-  };
-
   return (
     <Card className="p-6 md:p-8 shadow-md">
       <div className="flex items-start mb-4">
@@ -43,7 +38,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{getDisplayValue(strength)}</span>
+                <span>{safeString(strength)}</span>
               </li>
             ))}
           </ul>
@@ -59,7 +54,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                 <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span>{getDisplayValue(challenge)}</span>
+                <span>{safeString(challenge)}</span>
               </li>
             ))}
           </ul>
@@ -76,7 +71,7 @@ const ComprehensiveRelationshipsSection: React.FC<ComprehensiveRelationshipsSect
                   key={index}
                   className="border border-border/40 p-2 rounded-md text-center bg-card/30"
                 >
-                  {getDisplayValue(type)}
+                  {safeString(type)}
                 </div>
               ))
             ) : (
