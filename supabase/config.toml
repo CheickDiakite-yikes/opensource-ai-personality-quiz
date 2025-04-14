@@ -1,6 +1,8 @@
-
-# A string used as a namespace for the functions.
 project_id = "fhmvdprcmhkolyzuecrr"
+
+[functions.analyze-comprehensive-responses]
+verify_jwt = false
+insert_mode = "upsert"
 
 [functions.get-public-analysis]
 verify_jwt = false
@@ -15,9 +17,5 @@ verify_jwt = true
 insert_mode = "upsert"
 
 [functions.get-comprehensive-analysis]
-verify_jwt = false
-insert_mode = "upsert"
-
-[functions.analyze-comprehensive-responses]
 verify_jwt = false
 insert_mode = "upsert"

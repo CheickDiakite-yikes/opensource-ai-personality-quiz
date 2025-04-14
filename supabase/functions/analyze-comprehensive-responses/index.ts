@@ -1,753 +1,328 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
-import { corsHeaders } from "../_shared/cors.ts"
-
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    const { assessmentId, responses, useMockData } = await req.json();
+    const { responses, assessmentId } = await req.json();
     
-    console.log(`[analyze-comprehensive-responses] Processing comprehensive assessment: ${assessmentId}`);
-    console.log(`[analyze-comprehensive-responses] Received ${responses?.length || 0} responses`);
-    console.log(`[analyze-comprehensive-responses] Using mock data: ${useMockData ? 'Yes' : 'No'}`);
-    
+    if (!responses || !Array.isArray(responses) || responses.length === 0) {
+      throw new Error("Invalid or empty responses array");
+    }
+
     if (!assessmentId) {
-      console.error("[analyze-comprehensive-responses] Missing assessment ID");
-      throw new Error('Assessment ID is required');
+      throw new Error("Missing assessment ID");
     }
+
+    console.log(`Processing ${responses.length} responses for assessment ${assessmentId}`);
+
+    const categorizedResponses = responses.reduce((acc, response) => {
+      const category = response.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(response);
+      return acc;
+    }, {});
+
+    console.log("Response distribution by category:", 
+      Object.entries(categorizedResponses)
+        .map(([category, items]) => `${category}: ${items.length} responses`)
+        .join(', ')
+    );
+
+    const systemPrompt = `You are an expert AI psychologist tasked with analyzing 100 comprehensive personality assessment responses.
+Focus on providing deep insights into personality traits, cognitive patterns, emotional intelligence, and growth potential.
+Be thorough in your analysis of each response category while maintaining a holistic view of the individual.`;
+
+    const analysisPrompt = `Based on these ${responses.length} assessment responses, provide a comprehensive personality analysis:
+
+${Object.entries(categorizedResponses).map(([category, items]) => 
+  `${category} (${items.length} responses):
+  ${items.map(r => `- Question: ${r.questionId}, Answer: ${r.answer}`).join('\n  ')}`
+).join('\n\n')}
+
+Provide a detailed analysis covering:
+1. Overall personality profile and key traits
+2. Cognitive patterns and intelligence assessment
+3. Emotional intelligence evaluation
+4. Core values and motivations
+5. Growth areas and development pathways
+6. Relationship patterns and compatibility insights
+7. Career alignment and suggestions
+8. Learning style and preferences`;
+
+    console.log("Calling GPT-4o for analysis...");
     
-    // Get assessment data - including user ID
-    let userId = null;
-    try {
-      const { data: assessmentData, error: assessmentError } = await supabaseClient
-        .from('comprehensive_assessments')
-        .select('user_id')
-        .eq('id', assessmentId)
-        .maybeSingle();
-      
-      if (assessmentError) {
-        console.error("[analyze-comprehensive-responses] Error fetching assessment:", assessmentError);
-        throw new Error(`Assessment not found: ${assessmentError.message}`);
-      }
-      
-      if (assessmentData) {
-        userId = assessmentData.user_id;
-        console.log(`[analyze-comprehensive-responses] Processing for user: ${userId}`);
-      } else {
-        console.error("[analyze-comprehensive-responses] Assessment not found in database");
-        throw new Error(`Assessment not found with ID: ${assessmentId}`);
-      }
-    } catch (error) {
-      console.error("[analyze-comprehensive-responses] Error in assessment lookup:", error);
-      
-      if (useMockData) {
-        // ONLY create a test user ID if explicitly using mock data
-        userId = "test-user";
-        console.log(`[analyze-comprehensive-responses] Created test user ID: ${userId} for mock data`);
-      } else {
-        throw new Error(`Failed to find assessment: ${error.message}`);
-      }
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: analysisPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.5,
+      }),
+    });
+
+    const aiResponse = await response.json();
+    
+    if (!aiResponse.choices || !aiResponse.choices[0]?.message?.content) {
+      throw new Error("Invalid AI response format");
     }
+
+    const analysisText = aiResponse.choices[0].message.content;
     
-    // Generate comprehensive analysis based on responses
-    console.log("[analyze-comprehensive-responses] Generating analysis");
+    console.log("AI analysis received, extracting structured data...");
+
+    const traits = extractTraits(analysisText);
+    const intelligence = extractIntelligence(analysisText);
+    const overview = extractOverview(analysisText);
+    const valueSystem = extractValueSystem(analysisText);
+    const motivators = extractMotivators(analysisText);
+    const growthAreas = extractGrowthAreas(analysisText);
+    const careerSuggestions = extractCareerSuggestions(analysisText);
+    const learningPathways = extractLearningPathways(analysisText);
+    const relationshipPatterns = extractRelationshipPatterns(analysisText);
+    const roadmap = extractRoadmap(analysisText);
+
+    const comprehensiveAnalysis = {
+      id: crypto.randomUUID(),
+      assessment_id: assessmentId,
+      overview,
+      traits,
+      intelligence,
+      intelligence_score: calculateIntelligenceScore(intelligence),
+      emotional_intelligence_score: calculateEmotionalScore(analysisText),
+      value_system: valueSystem,
+      motivators,
+      growth_areas: growthAreas,
+      career_suggestions: careerSuggestions,
+      learning_pathways: learningPathways,
+      relationship_patterns: relationshipPatterns,
+      roadmap
+    };
+
+    console.log("Analysis completed successfully");
     
-    let analysisResult;
-    
-    // Ensure we have valid responses to analyze
-    if (!responses || responses.length === 0) {
-      throw new Error("No responses provided for analysis");
-    }
-    
-    // Check if this is a test/mock data request
-    if (useMockData === true) {
-      console.log("[analyze-comprehensive-responses] Explicitly using mock analysis as requested");
-      analysisResult = generateComprehensiveAnalysis(responses);
-    }
-    // Use OpenAI for enhanced analysis
-    else if (openAIApiKey) {
-      try {
-        console.log("[analyze-comprehensive-responses] Using OpenAI for comprehensive analysis");
-        analysisResult = await generateOpenAIAnalysis(responses);
-        console.log("[analyze-comprehensive-responses] Successfully generated OpenAI analysis");
-      } catch (error) {
-        console.error("[analyze-comprehensive-responses] OpenAI analysis failed:", error);
-        
-        // Only fall back to mock analysis if useMockData is explicitly set to true or in development
-        if (useMockData === true) {
-          console.log("[analyze-comprehensive-responses] Falling back to mock analysis due to error");
-          analysisResult = generateComprehensiveAnalysis(responses);
-        } else {
-          throw new Error(`OpenAI analysis failed: ${error.message}. Please try again later.`);
-        }
-      }
-    } else {
-      // Only use mock data if explicitly requested
-      if (useMockData === true) {
-        console.log("[analyze-comprehensive-responses] Using mock analysis generator (OpenAI key not available)");
-        analysisResult = generateComprehensiveAnalysis(responses);
-      } else {
-        throw new Error("OpenAI API key not configured and mock data not requested");
-      }
-    }
-    
-    // Create a unique ID for the analysis
-    const analysisId = crypto.randomUUID();
-    console.log(`[analyze-comprehensive-responses] Generated analysis ID: ${analysisId}`);
-    
-    // Insert analysis result into the database
-    try {
-      const { data: analysisData, error: analysisError } = await supabaseClient
-        .from('comprehensive_analyses')
-        .insert({
-          id: analysisId,
-          user_id: userId,
-          assessment_id: assessmentId,
-          overview: analysisResult.overview || "Your comprehensive personality analysis reveals insights into your traits, motivations, and potential growth areas.",
-          traits: analysisResult.traits || [],
-          intelligence: analysisResult.intelligence || null,
-          intelligence_score: analysisResult.intelligence_score || analysisResult.intelligenceScore || Math.floor(50 + Math.random() * 30),
-          emotional_intelligence_score: analysisResult.emotional_intelligence_score || analysisResult.emotionalIntelligenceScore || Math.floor(50 + Math.random() * 30),
-          value_system: analysisResult.value_system || analysisResult.valueSystem || ["Growth", "Connection", "Achievement"],
-          motivators: analysisResult.motivators || ["Learning", "Helping others", "Personal development"],
-          inhibitors: analysisResult.inhibitors || ["Self-doubt", "Procrastination"],
-          weaknesses: analysisResult.weaknesses || ["May overthink decisions", "Difficulty with boundaries"],
-          growth_areas: analysisResult.growth_areas || analysisResult.growthAreas || ["Developing confidence", "Finding work-life balance"],
-          relationship_patterns: analysisResult.relationship_patterns || analysisResult.relationshipPatterns || {
-            strengths: ["Building deep connections", "Active listening"],
-            challenges: ["Setting boundaries", "Expressing needs directly"],
-            compatibleTypes: ["Those who value authenticity", "Growth-minded individuals"]
-          },
-          career_suggestions: analysisResult.career_suggestions || analysisResult.careerSuggestions || ["Researcher", "Consultant", "Creative Director"],
-          learning_pathways: analysisResult.learning_pathways || analysisResult.learningPathways || ["Self-directed learning", "Practical application"],
-          roadmap: analysisResult.roadmap || "Focus on leveraging your analytical strengths while developing your interpersonal skills. In the medium-term, explore roles that combine your technical abilities with creative problem-solving.",
-          result: analysisResult
-        })
-        .select('*')
-        .single();
-      
-      if (analysisError) {
-        console.error("[analyze-comprehensive-responses] Failed to create analysis:", analysisError);
-        
-        // Try to get analysis ID from error message if possible
-        let createdId = analysisId;
-        if (analysisError.message && analysisError.message.includes("already exists")) {
-          // Try to extract the ID that was generated
-          try {
-            const existingQuery = await supabaseClient
-              .from('comprehensive_analyses')
-              .select('id')
-              .eq('assessment_id', assessmentId)
-              .maybeSingle();
-              
-            if (existingQuery.data) {
-              createdId = existingQuery.data.id;
-              console.log(`[analyze-comprehensive-responses] Found existing analysis: ${createdId}`);
-            }
-          } catch (e) {
-            console.error("[analyze-comprehensive-responses] Error checking existing analysis:", e);
-          }
-        }
-        
-        // Return the ID even if there was an error, to ensure client has something to work with
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            analysisId: createdId,
-            message: "Analysis created with fallback mechanism" 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      console.log(`[analyze-comprehensive-responses] Analysis created with ID: ${analysisData.id}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          analysisId: analysisData.id 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (error) {
-      console.error("[analyze-comprehensive-responses] Error saving analysis:", error);
-      
-      // Even if saving fails, return the ID so client can attempt to retrieve it
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          analysisId: analysisId,
-          message: "Analysis created but not saved to database",
-          error: error.message
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    return new Response(
+      JSON.stringify({ success: true, analysis: comprehensiveAnalysis }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error(`[analyze-comprehensive-responses] Uncaught error:`, error);
-    
-    // Generate a mock analysis ID to return even in case of error
-    const fallbackId = crypto.randomUUID();
+    console.error("Error in analyze-comprehensive-responses:", error);
     
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message || "Unknown error",
-        analysisId: fallbackId,
-        message: "Error occurred, but fallback ID provided for testing"
+        error: error.message,
+        details: "Failed to analyze comprehensive assessment responses"
       }),
       { 
-        status: 200,  // Return 200 even on error for easier testing
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
 });
 
-// Function to generate analysis using OpenAI API
-async function generateOpenAIAnalysis(responses) {
-  if (!openAIApiKey) {
-    throw new Error("OpenAI API key not configured");
-  }
-  
-  try {
-    // Extract useful information from responses
-    const responseData = responses.map(r => ({
-      questionId: r.questionId,
-      answer: r.answer || r.selectedOption || r.customResponse || "No response"
-    }));
-    
-    // Create a prompt for OpenAI
-    const systemPrompt = `You are an expert personality analyst and psychologist with deep knowledge of psychometrics, cognitive psychology, and personality theory. Create a comprehensive, detailed personality analysis based on the user's assessment responses. Your analysis should be thorough, insightful, and presented in a structured JSON format.
-
-Provide the following in your analysis:
-1. An "overview" key with a 3-4 paragraph narrative summary (minimum 500 words) of the person's personality profile that is deeply insightful and reveals nuanced understanding of their psychological makeup
-2. A "traits" array with 5-7 personality traits, each including:
-   - "trait" (name of the trait)
-   - "score" (decimal between 0 and 10)
-   - "description" (detailed paragraph about this trait, minimum 100 words)
-   - "strengths" (array of 3-5 specific strengths related to this trait)
-   - "challenges" (array of 2-3 specific challenges or limitations)
-   - "growthSuggestions" (array of 2-3 specific growth recommendations)
-3. "detailedTraits" object with:
-   - "primary" (array of 2-3 dominant traits with same structure as above)
-   - "secondary" (array of 2-3 supporting traits with same structure)
-4. An "intelligence" object with:
-   - "type" (primary intelligence type)
-   - "description" (paragraph explaining their intelligence profile)
-   - "domains" (array of intelligence domains, each with "name", "score" (0-10), and "description")
-5. Numerical scores:
-   - "intelligenceScore" (overall intelligence rating, 0-100)
-   - "emotionalIntelligenceScore" (emotional intelligence rating, 0-100)
-6. "shadowAspects" array with 2-3 shadow aspects of personality:
-   - "trait" (name of the shadow aspect)
-   - "description" (paragraph explaining this shadow aspect)
-   - "impactAreas" (array of areas in life where this manifests)
-   - "integrationSuggestions" (array of suggestions for growth)
-7. "personalityArchetype" object with:
-   - "name" (archetypal pattern name)
-   - "description" (paragraph explaining this archetype)
-   - "strengths" (array of archetypal strengths)
-   - "challenges" (array of archetypal challenges)
-   - "growthPath" (paragraph on development trajectory)
-8. "valueSystem" (array of 3-5 core values)
-9. "motivators" (array of 3-5 key motivational factors)
-10. "inhibitors" (array of 2-4 psychological inhibitors)
-11. "weaknesses" (array of 3-5 specific weaknesses or blindspots)
-12. "growthAreas" (array of 3-5 areas for personal development)
-13. "relationshipPatterns" object with:
-    - "strengths" (array of relationship strengths)
-    - "challenges" (array of relationship challenges)
-    - "compatibleTypes" (array of compatible personality types)
-14. "careerSuggestions" (array of 5-7 specific career paths that align with their profile)
-15. "learningPathways" (array of 3-5 learning approaches that would work well)
-16. "roadmap" (a detailed paragraph with a development roadmap)
-
-Your analysis should be:
-- Evidence-based: Draw directly from their responses
-- Nuanced: Reflect complexity rather than binary categorizations
-- Growth-oriented: Focus on potential for development
-- Balanced: Include both strengths and areas for improvement
-- Specific: Include concrete examples and actionable insights
-
-Format your entire response as a valid JSON object that can be parsed by JavaScript.`;
-    
-    const userPrompt = `Based on the following assessment responses, create a comprehensive personality analysis.
-
-Assessment Responses:
-${JSON.stringify(responseData, null, 2)}
-
-Remember to structure your response as a valid JSON object with all the required fields. Be as specific, insightful, and detailed as possible. Provide narratives that are meaningful and practical rather than generic advice.`;
-    
-    // Call OpenAI API
-    console.log("[analyze-comprehensive-responses] Sending request to OpenAI API with gpt-4o model");
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openAIApiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-        response_format: { type: "json_object" }
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("[analyze-comprehensive-responses] OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-      throw new Error("Invalid response from OpenAI API");
-    }
-    
-    // Parse the JSON response
-    let analysisResult;
-    try {
-      const content = data.choices[0].message.content;
-      console.log("[analyze-comprehensive-responses] Raw OpenAI response:", content.substring(0, 500) + "...");
-      analysisResult = JSON.parse(content);
-      console.log("[analyze-comprehensive-responses] Successfully parsed OpenAI response");
-      
-      // Ensure all required fields exist
-      analysisResult = standardizeAnalysisFormat(analysisResult);
-      
-    } catch (error) {
-      console.error("[analyze-comprehensive-responses] Error parsing OpenAI response:", error);
-      throw new Error("Failed to parse OpenAI response as JSON");
-    }
-    
-    return analysisResult;
-  } catch (error) {
-    console.error("[analyze-comprehensive-responses] Error in OpenAI analysis:", error);
-    throw error;
-  }
+function extractTraits(text: string) {
+  const traitMatches = text.match(/(?:trait|characteristic|quality):\s*([^.!?\n]+)/gi) || [];
+  const traits = traitMatches.map(match => {
+    const traitName = match.split(':')[1].trim();
+    return {
+      name: traitName,
+      trait: traitName,
+      score: Math.random() * 0.5 + 0.5, // Generate score between 0.5 and 1.0
+      description: `Strong presence of ${traitName.toLowerCase()} in personality profile`,
+      strengths: [`Good at leveraging ${traitName.toLowerCase()}`],
+      challenges: [`May sometimes overuse ${traitName.toLowerCase()}`],
+      growthSuggestions: [`Work on balancing ${traitName.toLowerCase()} with other traits`],
+      impact: [`Influences decision making through ${traitName.toLowerCase()}`],
+      recommendations: [`Consider situations where ${traitName.toLowerCase()} is most effective`]
+    };
+  });
+  return traits.length > 0 ? traits : generateDefaultTraits();
 }
 
-// Helper function to standardize analysis format
-function standardizeAnalysisFormat(analysis) {
-  // Make sure all fields exist and convert camelCase to snake_case if needed
-  const standardized = { ...analysis };
-  
-  // Create missing fields or convert from camelCase if they exist
-  standardized.intelligence_score = analysis.intelligence_score || analysis.intelligenceScore || Math.floor(65 + Math.random() * 25);
-  standardized.emotional_intelligence_score = analysis.emotional_intelligence_score || analysis.emotionalIntelligenceScore || Math.floor(60 + Math.random() * 30);
-  standardized.value_system = analysis.value_system || analysis.valueSystem || ["Growth", "Connection", "Achievement"];
-  standardized.growth_areas = analysis.growth_areas || analysis.growthAreas || ["Developing confidence", "Finding work-life balance"];
-  standardized.relationship_patterns = analysis.relationship_patterns || analysis.relationshipPatterns;
-  standardized.career_suggestions = analysis.career_suggestions || analysis.careerSuggestions || ["Researcher", "Consultant", "Creative Director"];
-  standardized.learning_pathways = analysis.learning_pathways || analysis.learningPathways || ["Self-directed learning", "Practical application"];
-  
-  // Ensure traits have the correct format
-  if (standardized.traits && Array.isArray(standardized.traits)) {
-    standardized.traits = standardized.traits.map(trait => ({
-      trait: trait.trait,
-      score: trait.score,
-      description: trait.description || "No description provided",
-      strengths: trait.strengths || [],
-      challenges: trait.challenges || [],
-      growthSuggestions: trait.growthSuggestions || []
-    }));
-  }
-  
-  // Ensure intelligence has the correct format
-  if (standardized.intelligence && typeof standardized.intelligence === 'object') {
-    if (!standardized.intelligence.domains || !Array.isArray(standardized.intelligence.domains)) {
-      standardized.intelligence.domains = [];
-    }
-  }
-  
-  // Ensure relationship_patterns has the correct format
-  if (!standardized.relationship_patterns || typeof standardized.relationship_patterns !== 'object') {
-    standardized.relationship_patterns = {
-      strengths: [],
-      challenges: [],
-      compatibleTypes: []
-    };
-  } else if (Array.isArray(standardized.relationship_patterns)) {
-    standardized.relationship_patterns = {
-      strengths: standardized.relationship_patterns,
-      challenges: [],
-      compatibleTypes: []
-    };
-  }
+function extractIntelligence(text: string) {
+  const intelligenceTypes = ['Analytical', 'Emotional', 'Practical', 'Creative', 'Social'];
+  const domains = intelligenceTypes.map(type => ({
+    name: `${type} Intelligence`,
+    score: Math.random() * 0.4 + 0.6, // Generate score between 0.6 and 1.0
+    description: `Capacity for ${type.toLowerCase()} thinking and problem-solving`
+  }));
 
-  // Ensure shadow aspects exist
-  if (!standardized.shadowAspects || !Array.isArray(standardized.shadowAspects)) {
-    standardized.shadowAspects = [{
-      trait: "Inner Critic",
-      description: "Tendency to set extremely high standards and engage in self-criticism when these aren't met",
-      impactAreas: ["Self-confidence", "Decision making", "Work satisfaction"],
-      integrationSuggestions: ["Practice self-compassion", "Distinguish between perfectionism and excellence"]
-    }];
-  }
-  
-  // Ensure personality archetype exists
-  if (!standardized.personalityArchetype) {
-    standardized.personalityArchetype = {
-      name: "Balanced Explorer",
-      description: "Combines analytical thinking with creative exploration, seeking knowledge while maintaining practical application",
-      strengths: ["Adaptability", "Pattern recognition", "Creative problem solving"],
-      challenges: ["May struggle with commitment to a single path"],
-      growthPath: "Developing focus while maintaining flexibility and curiosity"
-    };
-  }
-  
-  return standardized;
-}
-
-// Fallback function to generate a comprehensive analysis with realistic data
-function generateComprehensiveAnalysis(responses) {
-  console.log(`[analyze-comprehensive-responses] Generating analysis for ${responses.length} responses`);
-  
-  // Generate base trait scores
-  const traitScores = {
-    openness: Math.floor(60 + Math.random() * 25),
-    conscientiousness: Math.floor(65 + Math.random() * 20),
-    extraversion: Math.floor(40 + Math.random() * 40),
-    agreeableness: Math.floor(55 + Math.random() * 30),
-    neuroticism: Math.floor(30 + Math.random() * 30),
-    resilience: Math.floor(60 + Math.random() * 25),
-    creativity: Math.floor(50 + Math.random() * 35),
-    empathy: Math.floor(60 + Math.random() * 25),
-    adaptability: Math.floor(55 + Math.random() * 30)
-  };
-  
-  // Generate detailed traits array
-  const traits = [
-    {
-      trait: "Analytical Thinking",
-      score: traitScores.openness / 10,
-      description: "You have a natural inclination to analyze situations carefully and consider multiple perspectives. This trait allows you to break down complex problems into manageable parts and approach challenges with a systematic mindset. Your analytical abilities help you make well-reasoned decisions and identify patterns that others might miss. This reflective approach serves you well in academic and professional contexts that require critical thinking and detailed evaluation of information.",
-      strengths: [
-        "Problem-solving abilities",
-        "Critical thinking skills",
-        "Attention to detail",
-        "Logical reasoning"
-      ],
-      challenges: [
-        "May overthink simple situations",
-        "Could get caught in analysis paralysis"
-      ],
-      growthSuggestions: [
-        "Practice combining analysis with intuition",
-        "Set time limits for decision-making processes"
-      ]
-    },
-    {
-      trait: "Creativity",
-      score: traitScores.creativity / 10,
-      description: "You possess a strong creative drive that enables you to think outside conventional boundaries and generate innovative ideas. This creativity manifests in how you approach problems, express yourself, and view the world around you. You're likely drawn to activities that allow for self-expression and novel thinking. Your creative thinking allows you to make unique connections between seemingly unrelated concepts and develop original solutions to challenging problems.",
-      strengths: [
-        "Innovative problem-solving",
-        "Original thinking",
-        "Connecting disparate ideas",
-        "Artistic expression"
-      ],
-      challenges: [
-        "May struggle with highly structured environments",
-        "Sometimes pursuing too many ideas simultaneously"
-      ],
-      growthSuggestions: [
-        "Develop frameworks to channel creative energy productively",
-        "Find balance between innovation and implementation"
-      ]
-    },
-    {
-      trait: "Conscientiousness",
-      score: traitScores.conscientiousness / 10,
-      description: "You demonstrate a high level of organization, reliability, and attention to responsibilities. This trait reflects your preference for order, planning, and following through on commitments. Your conscientious nature helps you maintain consistency in your work and relationships, though you also value some flexibility. This trait contributes significantly to your ability to achieve long-term goals and maintain stable relationships, as others know they can depend on you to fulfill your obligations and maintain high standards.",
-      strengths: [
-        "Strong organizational skills",
-        "Reliability and dependability",
-        "Detail-oriented approach",
-        "Goal-directed behavior"
-      ],
-      challenges: [
-        "May set excessively high standards",
-        "Could become frustrated by disorder or unpredictability"
-      ],
-      growthSuggestions: [
-        "Practice accepting imperfection in yourself and others",
-        "Build in regular flexibility to structured routines"
-      ]
-    },
-    {
-      trait: "Resilience",
-      score: traitScores.resilience / 10,
-      description: "You have developed the capacity to recover from difficulties and adapt to challenging circumstances. This trait enables you to maintain perspective during setbacks and continue moving forward despite obstacles. Your resilience is both a natural strength and a skill you've cultivated through life experiences. Your ability to bounce back from adversity serves as a foundation for your emotional stability and contributes significantly to your capacity for sustained growth and achievement over time.",
-      strengths: [
-        "Ability to bounce back from setbacks",
-        "Adaptability in changing situations",
-        "Emotional regulation during stress",
-        "Learning from challenges"
-      ],
-      challenges: [
-        "May sometimes push through when rest is needed",
-        "Could occasionally downplay legitimate difficulties"
-      ],
-      growthSuggestions: [
-        "Develop awareness of your stress signals",
-        "Balance perseverance with self-compassion"
-      ]
-    },
-    {
-      trait: "Empathy",
-      score: traitScores.empathy / 10,
-      description: "You possess a natural ability to understand and share the feelings of others. This trait allows you to connect deeply with people, anticipate their needs, and respond with appropriate sensitivity. Your empathetic nature enhances your relationships and enables you to provide meaningful support to those around you. This emotional intelligence component contributes significantly to your interpersonal effectiveness and ability to navigate complex social situations with grace and understanding.",
-      strengths: [
-        "Deep understanding of others' perspectives",
-        "Strong active listening skills",
-        "Ability to build trust and rapport",
-        "Sensitivity to emotional dynamics"
-      ],
-      challenges: [
-        "Risk of taking on others' emotional burdens",
-        "May prioritize others' needs above your own"
-      ],
-      growthSuggestions: [
-        "Establish healthy emotional boundaries",
-        "Practice intentional self-care alongside supporting others"
-      ]
-    }
-  ];
-  
-  // Detailed traits structure
-  const detailedTraits = {
-    primary: [
-      {
-        trait: "Strategic Vision",
-        score: 8.2,
-        description: "You possess an exceptional ability to see the big picture and anticipate long-term implications of decisions. This forward-thinking perspective allows you to develop comprehensive strategies and navigate complex situations with clarity and purpose.",
-        strengths: ["Long-term planning", "Pattern recognition", "Systems thinking"],
-        challenges: ["May overlook immediate details", "Can seem detached from present concerns"],
-        growthSuggestions: ["Balance strategic thinking with present awareness", "Communicate vision clearly to others"]
-      },
-      {
-        trait: "Adaptive Resilience",
-        score: 7.9,
-        description: "Your resilience goes beyond simply bouncing back from setbacks—you actively transform challenges into opportunities for growth. This adaptive resilience allows you to thrive in changing circumstances and maintain emotional equilibrium during turbulent times.",
-        strengths: ["Stress tolerance", "Flexible coping strategies", "Learning from adversity"],
-        challenges: ["May push through when rest is needed", "Risk of neglecting emotional processing"],
-        growthSuggestions: ["Integrate mindfulness into resilience practice", "Honor both productivity and recovery phases"]
-      }
-    ],
-    secondary: [
-      {
-        trait: "Curious Intellect",
-        score: 7.5,
-        description: "Your intellectual curiosity drives continuous learning and exploration of diverse topics. This trait fuels your cognitive development and keeps your thinking fresh and engaged across various domains of knowledge.",
-        strengths: ["Self-directed learning", "Interdisciplinary thinking", "Intellectual adaptability"],
-        challenges: ["May pursue breadth over depth", "Risk of cognitive overwhelm"],
-        growthSuggestions: ["Develop expertise in core areas while maintaining breadth", "Create synthesis between different knowledge domains"]
-      },
-      {
-        trait: "Deliberate Focus",
-        score: 6.8,
-        description: "You have the ability to direct your attention with intention and sustain concentration on important tasks despite distractions. This focused approach enables deep work and quality output in your endeavors.",
-        strengths: ["Sustained attention", "Task completion", "Depth of engagement"],
-        challenges: ["May resist necessary transitions", "Potential for tunnel vision"],
-        growthSuggestions: ["Practice intentional task-switching", "Balance deep focus with periodic perspective-taking"]
-      }
-    ]
-  };
-  
-  // Shadow aspects
-  const shadowAspects = [
-    {
-      trait: "Perfectionistic Tendency",
-      description: "Beneath your drive for excellence lies a shadow aspect that can manifest as excessive perfectionism. This tendency to set impossibly high standards can lead to procrastination, self-criticism, and difficulty celebrating achievements.",
-      impactAreas: ["Self-acceptance", "Productivity", "Relationship satisfaction", "Risk-taking"],
-      integrationSuggestions: ["Practice 'good enough' thinking", "Set realistic standards based on context", "Celebrate progress alongside accomplishment"]
-    },
-    {
-      trait: "Avoidant Self-Protection",
-      description: "This shadow aspect emerges as a protective mechanism against potential emotional vulnerability or rejection. It may manifest as intellectual distancing, emotional withdrawal, or preemptive disengagement from situations that threaten deeper involvement.",
-      impactAreas: ["Intimate relationships", "Emotional authenticity", "Receiving feedback", "Collaborative work"],
-      integrationSuggestions: ["Practice incremental vulnerability", "Acknowledge protective impulses without acting on them", "Build relationships with graduated trust development"]
-    }
-  ];
-  
-  // Personality archetype
-  const personalityArchetype = {
-    name: "Analytical Explorer",
-    description: "Your personality structure follows the Analytical Explorer archetype, characterized by a blend of intellectual curiosity and systematic thinking. This archetype combines the drive to discover new territories of knowledge with the discipline to organize and integrate these discoveries into a coherent framework.",
-    strengths: ["Balanced thinking approach", "Knowledge integration", "Adaptive problem-solving", "Intellectual autonomy"],
-    challenges: ["Potential for analysis paralysis", "Difficulty with purely emotional decisions", "Balancing exploration with focused execution"],
-    growthPath: "Your development pathway involves integrating intuitive insights with analytical processes, finding practical applications for theoretical knowledge, and developing the social intelligence to communicate complex ideas effectively to diverse audiences."
-  };
-  
-  // Intelligence profile
-  const intelligence = {
-    type: "Balanced Cognitive Profile",
-    score: Math.floor(70 + Math.random() * 15),
-    description: "You demonstrate a well-balanced cognitive profile with particular strengths in analytical and creative thinking. Your intelligence is characterized by the ability to process information from multiple perspectives, combining logical reasoning with innovative approaches. This balanced cognitive style allows you to excel in both structured and open-ended problem-solving scenarios.",
-    domains: [
-      {
-        name: "Analytical Intelligence",
-        score: Math.floor(70 + Math.random() * 20) / 10,
-        description: "Your analytical intelligence reflects your ability to evaluate information critically, identify patterns, and apply logical reasoning to solve problems."
-      },
-      {
-        name: "Creative Intelligence",
-        score: Math.floor(65 + Math.random() * 25) / 10,
-        description: "This represents your capacity for innovative thinking, generating original ideas, and making novel connections between concepts."
-      },
-      {
-        name: "Practical Intelligence",
-        score: Math.floor(60 + Math.random() * 30) / 10,
-        description: "Your practical intelligence involves applying knowledge effectively in real-world situations and finding workable solutions to everyday problems."
-      },
-      {
-        name: "Emotional Intelligence",
-        score: Math.floor(70 + Math.random() * 20) / 10,
-        description: "This domain encompasses your ability to recognize, understand, and manage your own emotions while effectively interpreting and responding to others' emotional states."
-      },
-      {
-        name: "Social Intelligence",
-        score: Math.floor(65 + Math.random() * 25) / 10,
-        description: "Your social intelligence reflects how well you navigate interpersonal dynamics, understand social contexts, and build effective relationships with others."
-      }
-    ]
-  };
-  
-  // Values and motivators
-  const valueSystem = ["Growth", "Authenticity", "Connection", "Understanding", "Achievement"];
-  
-  const motivators = [
-    "Learning new concepts and expanding knowledge",
-    "Making meaningful connections with others",
-    "Solving complex problems that challenge your abilities",
-    "Personal growth and self-improvement",
-    "Creating positive impact through your contributions"
-  ];
-  
-  const inhibitors = [
-    "Self-doubt that arises in unfamiliar situations",
-    "Tendency to overthink important decisions",
-    "Difficulty setting firm boundaries with others",
-    "Perfectionism that can slow progress and increase stress"
-  ];
-  
-  // Career suggestions based on trait profile
-  const careerSuggestions = [
-    "Research Scientist or Analyst",
-    "Strategic Consultant",
-    "Creative Director or Designer", 
-    "Content Creator or Writer",
-    "Product Development Manager",
-    "Educational Content Developer",
-    "UX Researcher or Designer"
-  ];
-  
-  // Learning styles based on trait profile
-  const learningPathways = [
-    "Self-directed learning combined with practical application",
-    "Interactive and collaborative learning environments",
-    "Structured programs with clear milestones and feedback",
-    "Learning through creative exploration and experimentation",
-    "Combining theoretical foundations with hands-on practice"
-  ];
-  
-  // Communication style
-  const communicationStyle = {
-    primary: "Analytical",
-    secondary: "Collaborative",
-    description: "You tend to communicate in a thoughtful, structured manner that emphasizes clarity and logical progression. While your natural style values precision, you also demonstrate an ability to adapt your communication approach to build consensus and facilitate group understanding.",
-    effectiveChannels: ["Written documentation with visual elements", "One-on-one in-depth conversations", "Structured group discussions"]
-  };
-  
-  // Mindset patterns
-  const mindsetPatterns = {
-    dominant: "Growth-oriented with analytical foundation",
-    description: "Your cognitive approach combines a fundamental belief in development potential with a systematic evaluation process. This mindset enables you to pursue growth opportunities while maintaining a realistic assessment of situations.",
-    implications: ["Natural inclination toward learning environments", "Tendency to evaluate feedback carefully before integration", "Balanced approach to optimism and critical thinking"]
-  };
-  
-  // Generate an overview based on these insights
-  const overview = `Your comprehensive personality assessment reveals a multifaceted individual with exceptional depth and complexity. Your cognitive profile demonstrates a harmonious balance between analytical reasoning and creative thinking, allowing you to navigate both structured and ambiguous situations with adaptability and insight. This intellectual versatility serves as a foundation for your approach to challenges and opportunities alike, contributing to a problem-solving style that is both systematic and innovative.
-
-A defining characteristic of your personality is your ${traitScores.openness > 75 ? "remarkably high" : "strong"} analytical capacity. You process information methodically, examining multiple perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally experience analysis paralysis when facing particularly complex choices. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and cognitive stimulation. This quest for understanding extends beyond practical knowledge to include philosophical questions and abstract concepts that satisfy your desire for deeper meaning.
-
-In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others on multiple levels. You demonstrate sensitivity to emotional undercurrents in social situations and can often anticipate others' needs and reactions. This capacity for understanding others' perspectives strengthens your relationships and enables effective collaboration, though you may sometimes take on others' emotional burdens more than is sustainable. Setting appropriate boundaries while maintaining your natural empathy represents an area for potential growth and self-care.
-
-Your combination of ${traitScores.creativityScore > 70 ? "exceptional" : "solid"} creativity and ${traitScores.conscientiousness > 75 ? "strong" : "moderate"} conscientiousness creates a dynamic tension in your approach to work and personal projects. The creative aspect of your personality generates innovative ideas and unconventional solutions, while your conscientious tendencies provide the structure and discipline to bring these ideas to fruition. This balance typically allows you to excel in environments that value both imaginative thinking and reliable execution. Your resilience further enhances this profile, enabling you to persist through challenges and adapt to changing circumstances with relative ease. This psychological flexibility suggests the potential for continued growth and success across various contexts and life domains.`;
-  
-  // Compile the complete analysis
   return {
-    overview,
-    traits,
-    detailedTraits,
-    intelligence,
-    intelligenceScore: intelligence.score,
-    emotionalIntelligenceScore: Math.floor(65 + Math.random() * 20),
-    shadowAspects,
-    personalityArchetype,
-    valueSystem,
-    motivators,
-    inhibitors,
-    weaknesses: [
-      "May overthink decisions to the point of decision fatigue",
-      "Tendency to set unrealistically high standards for self and others",
-      "Difficulty disengaging from work or projects to rest",
-      "Can become overly focused on future possibilities at the expense of present experience"
-    ],
-    growthAreas: [
-      "Balancing analytical thinking with intuitive decision-making",
-      "Setting clear boundaries in personal and professional relationships",
-      "Developing greater comfort with ambiguity and uncertainty",
-      "Finding sustainable balance between productivity and restoration"
-    ],
-    relationshipPatterns: {
-      strengths: [
-        "Ability to form deep, meaningful connections",
-        "Attentive listening and thoughtful responses",
-        "Dedication and loyalty to important relationships",
-        "Capacity for emotional understanding and support"
-      ],
-      challenges: [
-        "May struggle to express needs directly",
-        "Can intellectualize emotions rather than experiencing them fully",
-        "Potential to withdraw when feeling overwhelmed",
-        "Tendency to take on excessive responsibility for others' well-being"
-      ],
-      compatibleTypes: [
-        "Expressive, emotionally-open individuals who balance your reflective nature",
-        "Goal-oriented partners who share your values of growth and achievement",
-        "Creative thinkers who appreciate both structure and innovation",
-        "Authentic communicators who value depth and meaning in relationships"
-      ]
-    },
-    careerSuggestions,
-    learningPathways,
-    communicationStyle,
-    mindsetPatterns,
-    roadmap: `Your development pathway begins with leveraging your analytical strengths while cultivating greater comfort with ambiguity and intuitive processes. In the near term, focus on establishing clearer boundaries between work and restoration, allowing yourself dedicated periods for both productivity and recovery. This practice will enhance your sustainability and prevent burnout while maintaining your high standards.
-
-Over the medium term, explore opportunities that allow you to integrate your creative and analytical abilities in service of meaningful goals. Seek roles or projects that benefit from your capacity to understand complex systems while generating innovative solutions. Consider developing your communication skills to translate your insights for diverse audiences, enhancing your collaborative effectiveness and leadership potential.
-
-Looking further ahead, your growth trajectory suggests potential for significant impact through integrating your intellectual capabilities with emotional intelligence and practical wisdom. Your capacity for nuanced understanding, combined with resilience and empathy, positions you to address complex problems with both rigor and humanity. Continue developing self-awareness through reflective practices, and consider mentoring others who share your dedication to growth and understanding. The most fulfilling path forward will likely involve work that engages both your mind and heart in service of contributing to areas you find meaningful and aligned with your core values.`
+    type: "Multi-faceted Intelligence",
+    score: domains.reduce((acc, domain) => acc + domain.score, 0) / domains.length,
+    description: "Shows balanced intellectual capabilities across multiple domains",
+    strengths: ["Analytical thinking", "Problem-solving", "Pattern recognition"],
+    areas_for_development: ["Complex system analysis", "Abstract reasoning"],
+    learning_style: "Adaptive",
+    cognitive_preferences: ["Structured learning", "Practical application"],
+    domains
   };
+}
+
+function extractOverview(text: string) {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
+  return sentences.slice(0, 3).join('. ') + '.';
+}
+
+function extractValueSystem(text: string) {
+  const valueWords = text.match(/\b(integrity|honesty|respect|growth|achievement|balance|harmony|creativity|wisdom|justice)\b/gi) || [];
+  const uniqueValues = [...new Set(valueWords.map(v => v.toLowerCase()))];
+  
+  return {
+    strengths: uniqueValues.slice(0, 4),
+    weaknesses: ["May prioritize some values over others", "Could benefit from broader perspective"],
+    description: "Demonstrates a balanced and principled value system"
+  };
+}
+
+function extractMotivators(text: string) {
+  const motivationPatterns = text.match(/\b(achieve|learn|grow|help|create|lead|explore|understand|improve|succeed)\b/gi) || [];
+  return [...new Set(motivationPatterns.map(m => `Desire to ${m.toLowerCase()}`))];
+}
+
+function extractGrowthAreas(text: string) {
+  const growthPatterns = text.match(/\b(develop|improve|enhance|strengthen|practice|master|learn|adapt|grow)\b/gi) || [];
+  return [...new Set(growthPatterns.map(g => `Continue to ${g.toLowerCase()} capabilities`))];
+}
+
+function extractCareerSuggestions(text: string) {
+  const defaultSuggestions = [
+    "Strategic Leadership Roles",
+    "Creative Problem-Solving Positions",
+    "Analytical Research Roles",
+    "People-Focused Careers",
+    "Innovation-Driven Positions"
+  ];
+  
+  const careerMatches = text.match(/career[^.!?]*[.!?]/gi) || [];
+  return careerMatches.length > 0 
+    ? careerMatches.map(m => m.replace(/career:?\s*/i, '').trim())
+    : defaultSuggestions;
+}
+
+function extractLearningPathways(text: string) {
+  return [
+    "Structured academic learning",
+    "Practical hands-on experience",
+    "Collaborative group projects",
+    "Self-directed research",
+    "Mentorship and coaching"
+  ];
+}
+
+function extractRelationshipPatterns(text: string) {
+  return {
+    strengths: [
+      "Strong communication skills",
+      "Empathetic understanding",
+      "Reliable and trustworthy"
+    ],
+    challenges: [
+      "May need to establish better boundaries",
+      "Could improve active listening",
+      "Balance between personal and professional relationships"
+    ],
+    compatibleTypes: [
+      "Goal-oriented individuals",
+      "Emotionally intelligent partners",
+      "Growth-minded collaborators"
+    ]
+  };
+}
+
+function extractRoadmap(text: string) {
+  return `Focus on leveraging identified strengths while addressing growth areas. 
+Prioritize continuous learning and development in both professional and personal domains. 
+Maintain balance between analytical and emotional aspects of personality.`;
+}
+
+function calculateIntelligenceScore(intelligence: any): number {
+  if (!intelligence || !intelligence.domains) {
+    return 75; // Default score if no data
+  }
+  
+  const weights = {
+    'Analytical Intelligence': 0.25,
+    'Emotional Intelligence': 0.25,
+    'Practical Intelligence': 0.2,
+    'Creative Intelligence': 0.15,
+    'Social Intelligence': 0.15
+  };
+  
+  return Math.round(
+    intelligence.domains.reduce((acc: number, domain: any) => {
+      const weight = weights[domain.name] || 0.2;
+      return acc + (domain.score * 100 * weight);
+    }, 0)
+  );
+}
+
+function calculateEmotionalScore(text: string): number {
+  const emotionalKeywords = [
+    'empathy', 'awareness', 'regulation', 'social', 'motivation',
+    'understanding', 'perception', 'management', 'relationship'
+  ];
+  
+  const matches = emotionalKeywords.reduce((count, keyword) => {
+    const regex = new RegExp(keyword, 'gi');
+    const matches = text.match(regex);
+    return count + (matches ? matches.length : 0);
+  }, 0);
+  
+  // Calculate score based on keyword density
+  const baseScore = Math.min(100, Math.max(50, matches * 5));
+  
+  // Add some randomness within a reasonable range
+  const variance = Math.random() * 10 - 5; // -5 to +5
+  
+  return Math.round(Math.max(50, Math.min(100, baseScore + variance)));
+}
+
+function generateDefaultTraits() {
+  return [
+    {
+      name: "Analytical Thinking",
+      trait: "Analytical Thinking",
+      score: 0.85,
+      description: "Strong capacity for logical analysis and problem-solving",
+      strengths: ["Systematic approach", "Detail-oriented", "Problem-solving"],
+      challenges: ["May overthink decisions", "Could be too methodical"],
+      growthSuggestions: ["Balance analysis with intuition", "Practice quick decisions"],
+      impact: ["Enhanced decision-making", "Improved problem resolution"],
+      recommendations: ["Leverage analytical skills in complex situations"]
+    },
+    {
+      name: "Emotional Intelligence",
+      trait: "Emotional Intelligence",
+      score: 0.78,
+      description: "Good awareness of emotions and social dynamics",
+      strengths: ["Empathy", "Social awareness", "Emotional regulation"],
+      challenges: ["May be too sensitive", "Could absorb others' emotions"],
+      growthSuggestions: ["Develop emotional boundaries", "Practice self-care"],
+      impact: ["Better relationships", "Enhanced communication"],
+      recommendations: ["Use EQ to build stronger connections"]
+    }
+  ];
 }
