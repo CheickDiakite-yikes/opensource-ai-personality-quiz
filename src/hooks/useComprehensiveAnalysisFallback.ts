@@ -3,22 +3,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis } from "@/utils/types";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useComprehensiveAnalysisFallback = (assessmentId: string | undefined) => {
+  const { user } = useAuth();
   const [isPolling, setIsPolling] = useState(false);
   const [foundAnalysis, setFoundAnalysis] = useState<ComprehensiveAnalysis | null>(null);
   const [hasAttemptedPolling, setHasAttemptedPolling] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
+  const [savedAnalysisId, setSavedAnalysisId] = useState<string | null>(null);
   
   // Function to poll for analysis completion
-  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 3) => {
+  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5) => {
     if (!id || hasAttemptedPolling) return null;
     
     setIsPolling(true);
     setHasAttemptedPolling(true);
     
     try {
-      // First, check if analysis already exists
+      // First, check if analysis already exists using flexible query
       const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -32,6 +35,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       if (existingAnalysis) {
         console.log("Found existing analysis for assessment:", id);
         setFoundAnalysis(existingAnalysis as unknown as ComprehensiveAnalysis);
+        setSavedAnalysisId(existingAnalysis.id);
         setIsPolling(false);
         toast.success("Analysis found!");
         return existingAnalysis;
@@ -66,16 +70,24 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
               toast.loading("Analyzing your responses...", { id: `poll-analysis-${id}` });
               
               // Try to analyze the responses - NEVER use mock data here
-              await supabase.functions.invoke(
+              const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
                 "analyze-comprehensive-responses",
                 {
                   body: { 
                     assessmentId: id,
+                    userId: user?.id,
                     responses: assessmentData.responses,
                     useMockData: false // Explicitly prevent mock data usage
                   }
                 }
               );
+
+              if (analysisError) {
+                console.error("Error invoking analysis function:", analysisError);
+              } else if (analysisResult?.analysisId) {
+                setSavedAnalysisId(analysisResult.analysisId);
+                console.log("Analysis triggered successfully, ID:", analysisResult.analysisId);
+              }
             }
           } catch (err) {
             console.error("Error triggering analysis:", err);
@@ -86,7 +98,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         const { data: analysis } = await supabase
           .from('comprehensive_analyses')
           .select('*')
-          .or(`id.eq.${id},assessment_id.eq.${id}`)
+          .or(`id.eq.${id},assessment_id.eq.${id}${savedAnalysisId ? `,id.eq.${savedAnalysisId}` : ''}`)
           .maybeSingle();
         
         if (analysis) {
@@ -99,10 +111,11 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         
         toast.loading(`Processing your assessment (${attempts}/${maxAttempts})...`, { id: `poll-analysis-${id}` });
         
-        // Wait before next polling attempt
+        // Wait before next polling attempt with exponential backoff
+        const delay = Math.min(2000 * Math.pow(1.5, attempts - 1), 10000); // Max 10 seconds
         setTimeout(() => {
           poll();
-        }, 5000);
+        }, delay);
       };
       
       // Start polling
@@ -114,7 +127,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       setIsPolling(false);
       return null;
     }
-  }, [hasAttemptedPolling]);
+  }, [hasAttemptedPolling, user, savedAnalysisId]);
   
   // Clean up polling on unmount
   useEffect(() => {
@@ -128,6 +141,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     isPolling,
     foundAnalysis,
     hasAttemptedPolling,
-    pollingAttempts
+    pollingAttempts,
+    savedAnalysisId
   };
 };

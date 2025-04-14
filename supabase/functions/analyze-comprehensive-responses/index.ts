@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -13,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { responses, assessmentId } = await req.json();
+    const { responses, assessmentId, userId } = await req.json();
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       console.error("Invalid responses format:", responses);
@@ -25,7 +24,7 @@ serve(async (req) => {
       throw new Error("Missing assessment ID");
     }
 
-    console.log(`Processing ${responses.length} responses for assessment ${assessmentId}`);
+    console.log(`Processing ${responses.length} responses for assessment ${assessmentId}, user ${userId || 'anonymous'}`);
 
     // Categorize responses by category for better analysis
     const categorizedResponses = responses.reduce((acc, response) => {
@@ -115,6 +114,7 @@ Provide a detailed analysis covering:
     const comprehensiveAnalysis = {
       id: analysisId,
       assessment_id: assessmentId,
+      user_id: userId || null,
       overview,
       traits,
       intelligence,
@@ -129,51 +129,75 @@ Provide a detailed analysis covering:
       roadmap
     };
 
-    // Save analysis to database
-    try {
-      const { error: dbError } = await fetch(
-        `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-          },
-          body: JSON.stringify({
-            id: analysisId,
-            assessment_id: assessmentId,
-            user_id: comprehensiveAnalysis.user_id || null,
-            overview: overview,
-            traits: traits,
-            intelligence: intelligence,
-            intelligence_score: comprehensiveAnalysis.intelligence_score,
-            emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
-            value_system: valueSystem,
-            motivators: motivators,
-            growth_areas: growthAreas,
-            relationship_patterns: relationshipPatterns,
-            career_suggestions: careerSuggestions,
-            learning_pathways: learningPathways,
-            roadmap: roadmap,
-            result: comprehensiveAnalysis
-          })
-        }
-      ).then(res => res.json());
+    // Save analysis to database with 3 retries
+    let dbError = null;
+    let saveSuccess = false;
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Attempt ${attempt} to save analysis to database...`);
+        
+        const { error } = await fetch(
+          `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+            },
+            body: JSON.stringify({
+              id: analysisId,
+              assessment_id: assessmentId,
+              user_id: userId || null,
+              overview: overview,
+              traits: traits,
+              intelligence: intelligence,
+              intelligence_score: comprehensiveAnalysis.intelligence_score,
+              emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
+              value_system: valueSystem,
+              motivators: motivators,
+              growth_areas: growthAreas,
+              relationship_patterns: relationshipPatterns,
+              career_suggestions: careerSuggestions,
+              learning_pathways: learningPathways,
+              roadmap: roadmap,
+              result: comprehensiveAnalysis
+            })
+          }
+        ).then(res => res.json());
 
-      if (dbError) {
-        console.error("Error saving analysis to database:", dbError);
-      } else {
-        console.log("Analysis saved to database successfully with ID:", analysisId);
+        if (error) {
+          console.error(`Error saving analysis on attempt ${attempt}:`, error);
+          dbError = error;
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.log("Analysis saved to database successfully with ID:", analysisId);
+          saveSuccess = true;
+          break;
+        }
+      } catch (error) {
+        console.error(`Exception on save attempt ${attempt}:`, error);
+        dbError = error;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    } catch (dbError) {
-      console.error("Exception saving analysis to database:", dbError);
+    }
+    
+    if (!saveSuccess) {
+      console.error("All attempts to save analysis failed, last error:", dbError);
+      throw new Error(`Failed to save analysis after 3 attempts: ${dbError?.message || "Unknown error"}`);
     }
 
     console.log("Analysis completed successfully, returning ID:", analysisId);
     
     return new Response(
-      JSON.stringify({ success: true, analysisId: analysisId, analysis: comprehensiveAnalysis }),
+      JSON.stringify({ 
+        success: true, 
+        analysisId: analysisId, 
+        analysis: comprehensiveAnalysis,
+        message: "Analysis completed and saved successfully" 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
