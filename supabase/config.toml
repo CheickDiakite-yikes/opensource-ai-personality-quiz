@@ -1,4 +1,11 @@
+
 project_id = "fhmvdprcmhkolyzuecrr"
+
+[api]
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
 [functions.analyze-comprehensive-responses]
 verify_jwt = false
