@@ -30,6 +30,9 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
       ? Math.round(trait.score) 
       : Math.round((trait.score / 100) * 10);
 
+  // Use trait.name or trait.trait depending on which one is available
+  const traitName = trait.name || trait.trait || "Unknown Trait";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -48,7 +51,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                 {index + 1}
               </span>
               <div>
-                <CardTitle className={`${isMobile ? 'text-sm' : 'text-lg'}`}>{trait.trait}</CardTitle>
+                <CardTitle className={`${isMobile ? 'text-sm' : 'text-lg'}`}>{traitName}</CardTitle>
                 <CardDescription className={`${isMobile ? 'text-[0.65rem]' : ''} line-clamp-1`}>
                   {trait.description.length > 80 && isMobile 
                     ? `${trait.description.substring(0, 80)}...` 
@@ -80,7 +83,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-0.5 text-[0.7rem] text-primary">Strengths</h4>
                     <ul className="space-y-0.5 text-[0.65rem]">
-                      {trait.strengths.slice(0, 2).map((strength, i) => (
+                      {trait.strengths?.slice(0, 2).map((strength, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {strength}
                         </li>
@@ -91,7 +94,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-0.5 text-[0.7rem] text-primary">Challenges</h4>
                     <ul className="space-y-0.5 text-[0.65rem]">
-                      {trait.challenges.slice(0, 2).map((challenge, i) => (
+                      {trait.challenges?.slice(0, 2).map((challenge, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {challenge}
                         </li>
@@ -102,7 +105,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-0.5 text-[0.7rem] text-primary">Growth Tips</h4>
                     <ul className="space-y-0.5 text-[0.65rem]">
-                      {trait.growthSuggestions.slice(0, 2).map((suggestion, i) => (
+                      {trait.growthSuggestions?.slice(0, 2).map((suggestion, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {suggestion}
                         </li>
@@ -116,7 +119,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-1 text-xs md:text-sm text-primary">Strengths</h4>
                     <ul className="space-y-1 text-xs md:text-sm">
-                      {trait.strengths.map((strength, i) => (
+                      {trait.strengths?.map((strength, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {strength}
                         </li>
@@ -127,7 +130,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-1 text-xs md:text-sm text-primary">Challenges</h4>
                     <ul className="space-y-1 text-xs md:text-sm">
-                      {trait.challenges.map((challenge, i) => (
+                      {trait.challenges?.map((challenge, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {challenge}
                         </li>
@@ -138,7 +141,7 @@ const PersonalityTraitCard: React.FC<PersonalityTraitCardProps> = ({ trait, inde
                   <div>
                     <h4 className="font-medium mb-1 text-xs md:text-sm text-primary">Growth Suggestions</h4>
                     <ul className="space-y-1 text-xs md:text-sm">
-                      {trait.growthSuggestions.map((suggestion, i) => (
+                      {trait.growthSuggestions?.map((suggestion, i) => (
                         <li key={i} className="text-muted-foreground">
                           • {suggestion}
                         </li>

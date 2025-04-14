@@ -1,3 +1,4 @@
+
 export enum QuestionCategory {
   PersonalityTraits = "PersonalityTraits",
   EmotionalIntelligence = "EmotionalIntelligence",
@@ -9,6 +10,15 @@ export enum QuestionCategory {
   DecisionMaking = "DecisionMaking",
   Creativity = "Creativity",
   Leadership = "Leadership"
+}
+
+// Assessment Response type
+export interface AssessmentResponse {
+  questionId: string;
+  selectedOption?: string;
+  customResponse?: string;
+  category: QuestionCategory;
+  timestamp: Date;
 }
 
 export interface AssessmentQuestion {
@@ -26,6 +36,9 @@ export interface ValueSystem {
   strengths: string[];
   weaknesses: string[];
   description: string;
+  // Adding compatibleTypes for type guard compatibility
+  compatibleTypes?: string[];
+  challenges?: string[];
 }
 
 export interface RelationshipPatterns {
@@ -40,7 +53,12 @@ export interface CognitiveStyle {
   description: string;
 }
 
+// Alias for backward compatibility
+export type CognitiveStyleType = CognitiveStyle | string;
+
 export interface PersonalityAnalysis {
+  id: string;
+  createdAt?: string;
   overview: string;
   traits: PersonalityTrait[];
   intelligence: Intelligence;
@@ -68,11 +86,15 @@ export interface PersonalityAnalysis {
 
 export interface PersonalityTrait {
   name: string;
+  trait: string; // Adding trait property
   score: number;
   description: string;
   impact: string[];
   recommendations: string[];
   relatedTraits?: string[];
+  strengths: string[]; // Adding strengths
+  challenges: string[]; // Adding challenges
+  growthSuggestions: string[]; // Adding growth suggestions
 }
 
 export interface Intelligence {
@@ -83,7 +105,11 @@ export interface Intelligence {
   areas_for_development: string[];
   learning_style: string;
   cognitive_preferences: string[];
+  domains?: string[];
 }
+
+// Alias for backward compatibility
+export type IntelligenceType = Intelligence;
 
 export interface ComprehensiveAnalysis {
   id: string;
@@ -102,4 +128,40 @@ export interface ComprehensiveAnalysis {
   careerSuggestions: string[];
   roadmap: string;
   learningPathways: string[];
+}
+
+// Activity tracking related types
+export enum ActivityCategory {
+  PersonalGrowth = "PersonalGrowth",
+  SelfReflection = "SelfReflection",
+  SocialConnection = "SocialConnection",
+  EmotionalWellbeing = "EmotionalWellbeing",
+  MindfulPractice = "MindfulPractice",
+  StressCoping = "StressCoping"
+}
+
+export interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  category: ActivityCategory;
+  duration: number; // in minutes
+  difficulty: "Easy" | "Moderate" | "Challenging";
+  completed?: boolean;
+  completedDate?: string;
+  recommendedFrequency?: string;
+  benefits: string[];
+  steps?: string[];
+}
+
+// Notification types
+export interface MotivationalNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: "motivational" | "reminder" | "milestone" | "tip";
+  createdAt: string;
+  read: boolean;
+  trait?: string;
+  link?: string;
 }

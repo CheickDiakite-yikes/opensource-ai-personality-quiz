@@ -18,7 +18,7 @@ const ComprehensiveTraitsSection: React.FC<ComprehensiveTraitsSectionProps> = ({
         {traits?.map((trait, index) => (
           <div key={index} className="border-b pb-6 last:border-b-0 last:pb-0">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-medium">{trait.trait}</h3>
+              <h3 className="text-lg font-medium">{trait.name || trait.trait}</h3>
               <Badge variant={trait.score > 7 ? "default" : "outline"} className="px-3 py-1">
                 {formatTraitScore(trait.score)}
               </Badge>

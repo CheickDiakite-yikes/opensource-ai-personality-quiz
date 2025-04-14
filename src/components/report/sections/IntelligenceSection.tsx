@@ -1,231 +1,99 @@
-
 import React from "react";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Brain, TrendingUp, Lightbulb, Check } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { Brain, BarChart, AlertCircle, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
-import { IntelligenceType } from "@/utils/types";
-import IntelligenceDomainChart from "../IntelligenceDomainChart";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatIntelligenceScore } from "@/utils/formatUtils";
+import { Intelligence } from "@/utils/types";
 
 interface IntelligenceSectionProps {
-  intelligence: IntelligenceType;
-  intelligenceScore: number;
-  emotionalIntelligenceScore: number;
+  intelligence: Intelligence;
+  intelligenceScore?: number;
+  emotionalIntelligenceScore?: number;
 }
 
-const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({ 
+const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
   intelligence,
   intelligenceScore,
   emotionalIntelligenceScore
 }) => {
-  const isMobile = useIsMobile();
-  const [expanded, setExpanded] = React.useState(!isMobile);
-  
-  // Ensure intelligence data exists
-  const hasIntelligenceData = intelligence && intelligence.type && intelligence.domains && intelligence.domains.length > 0;
-  const hasScores = typeof intelligenceScore === 'number' && typeof emotionalIntelligenceScore === 'number';
-  
   return (
-    <motion.div variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: 0.5,
-          ease: [0.22, 1, 0.36, 1]
-        }
-      }
-    }}>
-      <Card className="glass-panel overflow-hidden">
-        <CardHeader className={`bg-gradient-to-r from-amber-500/20 to-orange-500/20 ${isMobile ? 'p-3 pb-2' : 'pb-4'}`}>
-          <CardTitle className="flex items-center text-foreground text-base md:text-xl">
-            <Brain className="h-5 w-5 mr-2 text-orange-500" /> Cognitive Processing Profile
-          </CardTitle>
-          <CardDescription className="text-foreground/80">Your thinking style and problem-solving approaches</CardDescription>
-        </CardHeader>
+    <Card className="glass-panel overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 pb-4">
+        <CardTitle className="flex items-center">
+          <Brain className="h-5 w-5 mr-2 text-primary" /> Cognitive Intelligence
+        </CardTitle>
+        <CardDescription>
+          Your intellectual and problem-solving strengths
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+          <div>
+            <h3 className="text-sm font-medium mb-2 flex items-center">
+              <TrendingUp className="h-4 w-4 mr-1 text-blue-500" /> Cognitive Intelligence Score
+            </h3>
+            <div className="rounded-md bg-muted p-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-muted-foreground">Score</span>
+                <span className="font-medium">{formatIntelligenceScore(intelligenceScore || intelligence.score)}</span>
+              </div>
+              <Progress value={intelligenceScore || intelligence.score} className="h-2" />
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium mb-2 flex items-center">
+              <Lightbulb className="h-4 w-4 mr-1 text-amber-500" /> Emotional Intelligence Score
+            </h3>
+            <div className="rounded-md bg-muted p-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-muted-foreground">Score</span>
+                <span className="font-medium">{formatIntelligenceScore(emotionalIntelligenceScore || 0)}</span>
+              </div>
+              <Progress value={emotionalIntelligenceScore || 0} className="h-2" />
+            </div>
+          </div>
+        </div>
         
-        {isMobile ? (
-          <>
-            <Collapsible open={expanded} onOpenChange={setExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="w-full flex items-center justify-between py-1 px-3 border-t"
-                  size="sm"
-                >
-                  <span className="text-xs">{expanded ? "Collapse" : "Expand"} profile</span>
-                  {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="p-3 overflow-hidden">
-                  {hasScores ? (
-                    <div className="mb-3">
-                      <div className="flex justify-between mb-0.5 items-center">
-                        <h3 className="font-medium text-xs text-foreground flex items-center">
-                          Cognitive Flexibility Score
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[250px]">
-                                <p className="text-xs">Measures how efficiently you process information and adapt thinking strategies based on your assessment responses, not academic knowledge.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </h3>
-                        <span className="font-semibold text-xs text-foreground">{intelligenceScore}/100</span>
-                      </div>
-                      <Progress value={intelligenceScore} className="h-1.5 bg-foreground/20" indicatorClassName="bg-orange-500" />
-                      
-                      <div className="mt-3 flex justify-between mb-0.5 items-center">
-                        <h3 className="font-medium text-xs text-foreground flex items-center">
-                          Emotional Intelligence
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[250px]">
-                                <p className="text-xs">Measures your ability to understand and manage emotions, both your own and others', based on your assessment responses.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </h3>
-                        <span className="font-semibold text-xs text-foreground">{emotionalIntelligenceScore}/100</span>
-                      </div>
-                      <Progress value={emotionalIntelligenceScore} className="h-1.5 bg-foreground/20" indicatorClassName="bg-orange-500" />
-                    </div>
-                  ) : (
-                    <div className="p-2 mb-2 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-1.5">
-                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                      <p className="text-[0.65rem]">Cognitive scores not available</p>
-                    </div>
-                  )}
-                  
-                  {hasIntelligenceData ? (
-                    <div className="mt-3">
-                      <h3 className="font-medium text-xs mb-1 text-foreground">Type: {intelligence.type}</h3>
-                      <p className="text-[0.65rem] text-foreground/80 mb-2">{intelligence.description}</p>
-                      
-                      <div className="bg-secondary/20 rounded-md p-2 mb-2">
-                        <p className="text-[0.65rem] text-foreground/80">
-                          This profile reflects how you approach problems and process information, not academic ability. Different cognitive styles excel in different contexts.
-                        </p>
-                      </div>
-                      
-                      <h4 className="font-medium text-xs mb-1 flex items-center text-foreground">
-                        <BarChart className="h-3 w-3 mr-1 text-orange-500" />
-                        Cognitive Domains
-                      </h4>
-                      
-                      <div className="w-full overflow-x-auto">
-                        <div className="min-w-[280px]">
-                          <IntelligenceDomainChart domains={intelligence.domains} />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-2 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-1.5">
-                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                      <p className="text-[0.65rem]">Cognitive profile data not available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </>
-        ) : (
-          <CardContent className="pt-6">
-            {hasScores ? (
-              <div className="mb-4">
-                <div className="flex justify-between mb-1 items-center">
-                  <h3 className="font-medium text-sm md:text-base text-foreground flex items-center">
-                    Cognitive Flexibility Score
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[300px]">
-                          <p className="text-sm">Measures how efficiently you process information and adapt thinking strategies based on your assessment responses, not academic knowledge.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </h3>
-                  <span className="font-semibold text-sm md:text-base text-foreground">{intelligenceScore}/100</span>
-                </div>
-                <Progress value={intelligenceScore} className="h-2 bg-foreground/20" indicatorClassName="bg-orange-500" />
-                
-                <div className="mt-4 flex justify-between mb-1 items-center">
-                  <h3 className="font-medium text-sm md:text-base text-foreground flex items-center">
-                    Emotional Intelligence
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[300px]">
-                          <p className="text-sm">Measures your ability to understand and manage emotions, both your own and others', based on your assessment responses.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </h3>
-                  <span className="font-semibold text-sm md:text-base text-foreground">{emotionalIntelligenceScore}/100</span>
-                </div>
-                <Progress value={emotionalIntelligenceScore} className="h-2 bg-foreground/20" indicatorClassName="bg-orange-500" />
-              </div>
-            ) : (
-              <div className="p-3 md:p-4 mb-3 md:mb-4 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-                <p className="text-xs md:text-sm">Cognitive scores not available</p>
-              </div>
-            )}
-            
-            {hasIntelligenceData ? (
-              <div className="mt-4 md:mt-6">
-                <h3 className="font-medium text-base md:text-lg mb-2 text-foreground">Type: {intelligence.type}</h3>
-                <p className="text-sm md:text-base text-foreground/80 mb-3 md:mb-4">{intelligence.description}</p>
-                
-                <div className="bg-secondary/20 rounded-md p-3 md:p-4 mb-4">
-                  <p className="text-sm text-foreground/80">
-                    <strong>About this profile:</strong> This assessment measures your cognitive approaches and flexibility, not academic ability. It evaluates how you process information, recognize patterns, and adapt to new challenges based on your assessment responses. Different cognitive styles excel in different contexts and environments.
-                  </p>
-                </div>
-                
-                <h4 className="font-medium text-sm md:text-md mb-2 md:mb-3 flex items-center text-foreground">
-                  <BarChart className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2 text-orange-500" />
-                  Cognitive Domains
-                </h4>
-                
-                <div className={isMobile ? "w-full overflow-x-auto -mx-2 px-2" : ""}>
-                  <div className={isMobile ? "min-w-[300px]" : ""}>
-                    <IntelligenceDomainChart domains={intelligence.domains} />
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-medium text-lg mb-3">Cognitive Type</h3>
+            <p className="text-muted-foreground">{intelligence.type}</p>
+          </div>
+          
+          <div>
+            <h3 className="font-medium text-lg mb-3">Description</h3>
+            <p className="text-muted-foreground">{intelligence.description}</p>
+          </div>
+          
+          <div>
+            <h3 className="font-medium text-lg mb-3">Cognitive Strengths</h3>
+            <ul className="space-y-1">
+              {intelligence.strengths?.map((strength, i) => (
+                <li key={i} className="flex items-start">
+                  <div className="rounded-full bg-primary/10 p-1 mr-3 mt-0.5">
+                    <Check className="h-3 w-3 text-primary" />
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 md:p-4 bg-amber-900/20 text-amber-200 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-                <p className="text-xs md:text-sm">Cognitive profile data not available</p>
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
-    </motion.div>
+                  <span className="text-muted-foreground">{strength}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="font-medium text-lg mb-3">Areas for Development</h3>
+            <ul className="space-y-1">
+              {intelligence.areas_for_development?.map((area, i) => (
+                <li key={i} className="flex items-start">
+                  <div className="rounded-full border border-primary mr-3 h-5 w-5 flex-shrink-0 mt-0.5"></div>
+                  <span className="text-muted-foreground">{area}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,11 +1,13 @@
 
-import { ValueSystemType, CognitiveStyleType, RelationshipPatterns } from "@/utils/types";
+import { ValueSystemType, CognitiveStyle, RelationshipPatterns } from "@/utils/types";
 
 // Type guard to check if valueSystem is an object or array
 export const isValueSystemObject = (valueSystem: ValueSystemType): valueSystem is {
   strengths: string[];
-  challenges: string[];
-  compatibleTypes: string[];
+  weaknesses: string[];
+  description: string;
+  compatibleTypes?: string[];
+  challenges?: string[];
 } => {
   return typeof valueSystem === 'object' && !Array.isArray(valueSystem) && 'strengths' in valueSystem;
 };
@@ -16,10 +18,6 @@ export const isRelationshipObject = (patterns: RelationshipPatterns | string[]):
 };
 
 // Type guard for cognitive style
-export const isCognitiveStyleObject = (style: CognitiveStyleType): style is {
-  primary: string;
-  secondary: string;
-  description: string;
-} => {
-  return typeof style === 'object' && 'primary' in style;
+export const isCognitiveStyleObject = (style: CognitiveStyle | string): style is CognitiveStyle => {
+  return typeof style === 'object' && style !== null && 'primary' in style;
 };
