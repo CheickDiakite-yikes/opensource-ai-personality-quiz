@@ -104,7 +104,6 @@ export function useComprehensiveSubmission(
           if (retry === MAX_RETRIES) {
             console.error("All retries failed");
             // Instead of throwing an error, we'll handle the navigation to the report page
-            // The report page will try to poll for the analysis
             toast.warning("Analysis is taking longer than expected", { 
               id: "assessment-submission",
               description: "We'll take you to the report page where you can check the status."

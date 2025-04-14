@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import { corsHeaders } from "../_shared/cors.ts"
@@ -17,10 +16,11 @@ serve(async (req) => {
   }
   
   try {
-    const { assessmentId, responses } = await req.json();
+    const { assessmentId, responses, useMockData } = await req.json();
     
     console.log(`[analyze-comprehensive-responses] Processing comprehensive assessment: ${assessmentId}`);
     console.log(`[analyze-comprehensive-responses] Received ${responses?.length || 0} responses`);
+    console.log(`[analyze-comprehensive-responses] Using mock data: ${useMockData ? 'Yes' : 'No'}`);
     
     if (!assessmentId) {
       console.error("[analyze-comprehensive-responses] Missing assessment ID");
@@ -51,9 +51,13 @@ serve(async (req) => {
     } catch (error) {
       console.error("[analyze-comprehensive-responses] Error in assessment lookup:", error);
       
-      // For testing, create a test user ID
-      userId = "test-user";
-      console.log(`[analyze-comprehensive-responses] Created test user ID: ${userId}`);
+      if (useMockData) {
+        // ONLY create a test user ID if explicitly using mock data
+        userId = "test-user";
+        console.log(`[analyze-comprehensive-responses] Created test user ID: ${userId} for mock data`);
+      } else {
+        throw new Error(`Failed to find assessment: ${error.message}`);
+      }
     }
     
     // Generate comprehensive analysis based on responses
@@ -61,21 +65,41 @@ serve(async (req) => {
     
     let analysisResult;
     
+    // Ensure we have valid responses to analyze
+    if (!responses || responses.length === 0) {
+      throw new Error("No responses provided for analysis");
+    }
+    
+    // Check if this is a test/mock data request
+    if (useMockData === true) {
+      console.log("[analyze-comprehensive-responses] Explicitly using mock analysis as requested");
+      analysisResult = generateComprehensiveAnalysis(responses);
+    }
     // Use OpenAI for enhanced analysis
-    if (openAIApiKey && responses && responses.length > 0) {
+    else if (openAIApiKey) {
       try {
-        console.log("[analyze-comprehensive-responses] Attempting to use OpenAI for comprehensive analysis");
+        console.log("[analyze-comprehensive-responses] Using OpenAI for comprehensive analysis");
         analysisResult = await generateOpenAIAnalysis(responses);
         console.log("[analyze-comprehensive-responses] Successfully generated OpenAI analysis");
       } catch (error) {
         console.error("[analyze-comprehensive-responses] OpenAI analysis failed:", error);
-        console.log("[analyze-comprehensive-responses] Falling back to mock analysis");
-        analysisResult = generateComprehensiveAnalysis(responses || []);
+        
+        // Only fall back to mock analysis if useMockData is explicitly set to true or in development
+        if (useMockData === true) {
+          console.log("[analyze-comprehensive-responses] Falling back to mock analysis due to error");
+          analysisResult = generateComprehensiveAnalysis(responses);
+        } else {
+          throw new Error(`OpenAI analysis failed: ${error.message}. Please try again later.`);
+        }
       }
     } else {
-      // Fallback to mock analysis generation
-      console.log("[analyze-comprehensive-responses] Using mock analysis generator");
-      analysisResult = generateComprehensiveAnalysis(responses || []);
+      // Only use mock data if explicitly requested
+      if (useMockData === true) {
+        console.log("[analyze-comprehensive-responses] Using mock analysis generator (OpenAI key not available)");
+        analysisResult = generateComprehensiveAnalysis(responses);
+      } else {
+        throw new Error("OpenAI API key not configured and mock data not requested");
+      }
     }
     
     // Create a unique ID for the analysis
@@ -666,74 +690,4 @@ function generateComprehensiveAnalysis(responses) {
 
 A defining characteristic of your personality is your ${traitScores.openness > 75 ? "remarkably high" : "strong"} analytical capacity. You process information methodically, examining multiple perspectives before reaching conclusions. This thoughtful approach generally leads to well-reasoned decisions, though you may occasionally experience analysis paralysis when facing particularly complex choices. Your intellectual curiosity drives continuous learning and personal development, suggesting you thrive in environments that offer regular opportunities for growth and cognitive stimulation. This quest for understanding extends beyond practical knowledge to include philosophical questions and abstract concepts that satisfy your desire for deeper meaning.
 
-In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with others in meaningful ways. You demonstrate sensitivity to emotional dynamics and likely serve as a supportive presence in your relationships. This empathetic quality, combined with your analytical abilities, enables you to understand both the logical and emotional dimensions of complex situations. However, your tendency to absorb others' emotions may occasionally lead to emotional fatigue, suggesting a need for intentional boundaries and self-care practices.
-
-Your personality structure includes certain shadow aspects that influence your behavior in subtle but important ways. A perfectionist tendency manifests when you set exceptionally high standards for yourself that can impede progress and satisfaction. Similarly, an inclination toward self-protection through intellectual distancing may occasionally limit your emotional vulnerability in situations where deeper connection would be beneficial. Recognizing these patterns represents a significant opportunity for personal growth, allowing you to integrate these aspects of yourself more consciously and constructively.`;
-
-  // Relationship patterns
-  const relationshipPatterns = {
-    strengths: [
-      "Building deep and meaningful connections based on authentic understanding",
-      "Being a thoughtful and attentive listener in conversations",
-      "Providing insightful perspective and support to those close to you",
-      "Bringing intellectual curiosity and depth to relationships"
-    ],
-    challenges: [
-      "Setting and maintaining healthy boundaries when others need support",
-      "Balancing giving to others with necessary self-care",
-      "Expressing direct needs and wants clearly without over-analyzing",
-      "Managing the tendency to internalize others' problems or emotions"
-    ],
-    compatibleTypes: [
-      "Those who value authenticity and depth in relationships",
-      "Growth-minded individuals who appreciate intellectual discussion",
-      "People who balance your thinking style with complementary traits",
-      "Partners who respect both connection and independent growth"
-    ]
-  };
-  
-  // Growth areas and weaknesses
-  const growthAreas = [
-    "Developing greater confidence in your intuitive decision-making abilities",
-    "Finding balance between thorough analysis and timely action",
-    "Establishing clearer boundaries in personal and professional relationships",
-    "Embracing imperfection as part of the growth and creative process",
-    "Translating innovative ideas into practical implementation plans"
-  ];
-  
-  const weaknesses = [
-    "Tendency to overthink decisions, potentially leading to analysis paralysis",
-    "Difficulty setting and enforcing clear personal boundaries",
-    "Perfectionism that may delay completion of projects or cause undue stress",
-    "Occasionally taking on too many responsibilities due to difficulty saying no"
-  ];
-  
-  // Personal development roadmap
-  const roadmap = `Your personal development journey should focus on leveraging your analytical strengths while building confidence in your intuitive decision-making processes. In the short term, practicing setting clearer boundaries and embracing the concept of "good enough" will help you overcome perfectionist tendencies that may be limiting your progress in certain areas.
-
-In the medium term, explore opportunities that combine your analytical abilities with creative problem-solving, such as roles in research, strategic planning, or content development. These contexts would allow you to utilize your natural strengths while providing the intellectual stimulation you value. Consider developing expertise in areas where your combination of careful analysis and innovative thinking can create unique value.
-
-Long-term growth will come from integrating your analytical mindset with more intuitive approaches, allowing you to balance thoroughness with efficiency. Work on trusting your initial judgments more readily in low-risk situations to build this skill gradually. Additionally, seek environments and relationships that honor your need for both meaningful connection and independent thought. Your development path is one of integration—bringing together your capacity for deep analysis with practical implementation, and your empathetic understanding with healthy self-preservation.`;
-  
-  return {
-    traits,
-    detailedTraits,
-    intelligence,
-    intelligence_score: intelligence.score,
-    emotional_intelligence_score: Math.floor(70 + Math.random() * 15),
-    overview,
-    value_system: valueSystem,
-    motivators,
-    inhibitors,
-    weaknesses,
-    growth_areas: growthAreas,
-    relationship_patterns: relationshipPatterns,
-    career_suggestions: careerSuggestions,
-    learning_pathways: learningPathways,
-    roadmap,
-    shadowAspects,
-    personalityArchetype,
-    communicationStyle,
-    mindsetPatterns
-  };
-}
+In interpersonal contexts, your profile indicates a ${traitScores.empathy > 75 ? "remarkably" : "notably"} empathetic nature that allows you to connect with
