@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -25,12 +24,13 @@ const ComprehensiveReportLanding: React.FC = () => {
       
       try {
         setIsLoading(true);
+        console.log(`LANDING: Starting analysis fetch for user ${user.id}`);
         
         // Fetch all analyses using multiple approaches for redundancy
         const analysesFromAllSources = await fetchFromAllSources();
         
         if (analysesFromAllSources && analysesFromAllSources.length > 0) {
-          console.log(`Found ${analysesFromAllSources.length} analyses from all sources`);
+          console.log(`LANDING: Found ${analysesFromAllSources.length} analyses from all sources`);
           // Sort analyses by created_at in descending order (newest first)
           const sortedAnalyses = analysesFromAllSources.sort((a, b) => {
             const dateA = new Date(a.created_at || "1970-01-01");
@@ -38,12 +38,22 @@ const ComprehensiveReportLanding: React.FC = () => {
             return dateB.getTime() - dateA.getTime();
           });
           
+          // Log each analysis found
+          sortedAnalyses.forEach((analysis, index) => {
+            console.log(`LANDING: Analysis ${index + 1}: ID=${analysis.id}, Created=${analysis.created_at}`);
+          });
+          
           setAnalyses(sortedAnalyses);
+          
+          // If we're on this page but have analyses, store the latest ID in local storage
+          if (sortedAnalyses.length > 0) {
+            localStorage.setItem('latest_comprehensive_analysis_id', sortedAnalyses[0].id);
+          }
         } else {
-          console.warn("No analyses found for user");
+          console.warn("LANDING: No analyses found for user");
         }
       } catch (err) {
-        console.error("Error fetching comprehensive analyses:", err);
+        console.error("LANDING: Error fetching comprehensive analyses:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
         toast.error("Failed to retrieve your comprehensive reports");
       } finally {
@@ -51,7 +61,7 @@ const ComprehensiveReportLanding: React.FC = () => {
       }
     };
     
-    // Function to fetch analyses from all possible sources
+    // Function to fetch analyses from all possible sources with enhanced logging
     const fetchFromAllSources = async () => {
       if (!user) return [];
       
@@ -59,8 +69,11 @@ const ComprehensiveReportLanding: React.FC = () => {
       const analysisIds = new Set();
       let foundError = false;
       
+      console.log(`LANDING: Starting multi-source fetch for user ${user.id}`);
+      
       // 1. First try: Direct query from the comprehensive_analyses table
       try {
+        console.log("LANDING: METHOD 1 - Direct query from comprehensive_analyses table");
         const { data: directData, error: directError } = await supabase
           .from('comprehensive_analyses')
           .select('*')
@@ -68,47 +81,50 @@ const ComprehensiveReportLanding: React.FC = () => {
           .order('created_at', { ascending: false });
           
         if (directError) {
-          console.error("Error in direct query:", directError);
+          console.error("LANDING: Error in direct query:", directError);
           foundError = true;
         } else if (directData && Array.isArray(directData)) {
-          console.log(`Direct query found ${directData.length} analyses`);
+          console.log(`LANDING: METHOD 1 ✓ Direct query found ${directData.length} analyses`);
           directData.forEach(item => {
             if (!analysisIds.has(item.id)) {
               analysisIds.add(item.id);
               results.push(item);
             }
           });
+        } else {
+          console.log("LANDING: METHOD 1 ✗ No analyses found in direct query");
         }
       } catch (e) {
-        console.error("Exception in direct query:", e);
+        console.error("LANDING: Exception in direct query:", e);
         foundError = true;
       }
       
       // 2. Second try: Get analyses via assessments
       try {
+        console.log("LANDING: METHOD 2 - Query via assessments");
         const { data: assessments, error: assessmentsError } = await supabase
           .from('comprehensive_assessments')
           .select('id')
           .eq('user_id', user.id);
           
         if (assessmentsError) {
-          console.error("Error fetching assessments:", assessmentsError);
+          console.error("LANDING: Error fetching assessments:", assessmentsError);
         } else if (assessments && Array.isArray(assessments) && assessments.length > 0) {
-          console.log(`Found ${assessments.length} assessments, checking for analyses`);
+          console.log(`LANDING: METHOD 2 ✓ Found ${assessments.length} assessments, checking for analyses`);
           
           // For each assessment, check if there's a corresponding analysis
           for (const assessment of assessments) {
             try {
-              // Fixed: Use .select('*') instead of .maybeSingle() to handle multiple results
+              console.log(`LANDING: Looking for analyses for assessment ${assessment.id}`);
               const { data: linkedAnalyses, error: linkedError } = await supabase
                 .from('comprehensive_analyses')
                 .select('*')
                 .eq('assessment_id', assessment.id);
                 
               if (linkedError) {
-                console.error(`Error checking analysis for assessment ${assessment.id}:`, linkedError);
+                console.error(`LANDING: Error checking analysis for assessment ${assessment.id}:`, linkedError);
               } else if (linkedAnalyses && linkedAnalyses.length > 0) {
-                console.log(`Found ${linkedAnalyses.length} analyses for assessment ${assessment.id}`);
+                console.log(`LANDING: Found ${linkedAnalyses.length} analyses for assessment ${assessment.id}`);
                 
                 // Process each linked analysis
                 linkedAnalyses.forEach(linkedAnalysis => {
@@ -117,46 +133,56 @@ const ComprehensiveReportLanding: React.FC = () => {
                     results.push(linkedAnalysis);
                   }
                 });
+              } else {
+                console.log(`LANDING: No analyses found for assessment ${assessment.id}`);
               }
             } catch (assessErr) {
-              console.error(`Error processing assessment ${assessment.id}:`, assessErr);
+              console.error(`LANDING: Error processing assessment ${assessment.id}:`, assessErr);
             }
           }
+        } else {
+          console.log("LANDING: METHOD 2 ✗ No assessments found");
         }
       } catch (e) {
-        console.error("Exception in assessments query:", e);
+        console.error("LANDING: Exception in assessments query:", e);
       }
       
       // 3. Third try: Query with no user filter as fallback
       if (results.length === 0) {
         try {
+          console.log("LANDING: METHOD 3 - Unfiltered query as fallback");
           const { data: allAnalyses, error: allError } = await supabase
             .from('comprehensive_analyses')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(10);
+            .limit(20);
             
           if (allError) {
-            console.error("Error in unfiltered query:", allError);
+            console.error("LANDING: Error in unfiltered query:", allError);
           } else if (allAnalyses && Array.isArray(allAnalyses)) {
-            console.log(`Unfiltered query found ${allAnalyses.length} analyses`);
+            console.log(`LANDING: METHOD 3 ✓ Unfiltered query found ${allAnalyses.length} analyses`);
             
             // Filter client-side to find user's analyses
             const userAnalyses = allAnalyses.filter(a => a.user_id === user.id);
+            console.log(`LANDING: METHOD 3 ✓ Found ${userAnalyses.length} analyses for current user`);
+            
             userAnalyses.forEach(item => {
               if (!analysisIds.has(item.id)) {
                 analysisIds.add(item.id);
                 results.push(item);
               }
             });
+          } else {
+            console.log("LANDING: METHOD 3 ✗ No analyses found in unfiltered query");
           }
         } catch (e) {
-          console.error("Exception in unfiltered query:", e);
+          console.error("LANDING: Exception in unfiltered query:", e);
         }
       }
       
       // 4. Try using the database function as another method
       try {
+        console.log("LANDING: METHOD 4 - Using database function");
         // Get all analyses we have access to
         const { data: recentAnalyses, error: recentError } = await supabase
           .from('comprehensive_analyses')
@@ -165,7 +191,7 @@ const ComprehensiveReportLanding: React.FC = () => {
           .limit(20);
           
         if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
-          console.log(`Found ${recentAnalyses.length} recent analysis IDs, checking details`);
+          console.log(`LANDING: METHOD 4 ✓ Found ${recentAnalyses.length} recent analysis IDs, checking details`);
           
           // For each ID, try to get the full data using the RPC function
           for (const item of recentAnalyses) {
@@ -173,32 +199,62 @@ const ComprehensiveReportLanding: React.FC = () => {
               const { data: analysisData, error: rpcError } = await supabase
                 .rpc('get_comprehensive_analysis_by_id', { analysis_id: item.id });
                 
-              if (!rpcError && analysisData && !analysisIds.has(item.id)) {
-                console.log(`Retrieved analysis ${item.id} via RPC function`);
+              if (!rpcError && analysisData && analysisData.user_id === user.id && !analysisIds.has(item.id)) {
+                console.log(`LANDING: Retrieved analysis ${item.id} via RPC function`);
                 analysisIds.add(item.id);
                 results.push(analysisData);
+              } else if (rpcError) {
+                console.log(`LANDING: Error getting analysis ${item.id} via RPC: ${rpcError.message}`);
               }
             } catch (rpcErr) {
               // Continue to next item on error
+              console.error(`LANDING: Exception in RPC for analysis ${item.id}:`, rpcErr);
             }
           }
+        } else {
+          console.log("LANDING: METHOD 4 ✗ No recent analyses found");
         }
       } catch (recentErr) {
-        console.error("Error fetching recent analyses:", recentErr);
+        console.error("LANDING: Error fetching recent analyses:", recentErr);
       }
       
-      console.log(`Total analyses found from all sources: ${results.length}`);
+      console.log(`LANDING: Total analyses found from all sources: ${results.length}`);
       
       // If we found no analyses but encountered errors, try to recover by generating a test analysis
       if (results.length === 0 && foundError && user) {
-        toast.info("No analyses found. Auto-generating a test analysis...");
         try {
-          const testAnalysis = await pollForAnalysis("test-" + Date.now());
-          if (testAnalysis) {
-            results.push(testAnalysis);
+          console.log("LANDING: No analyses found. Checking for auto-recovery options");
+          // Check local storage for recent analysis ID
+          const latestId = localStorage.getItem('latest_comprehensive_analysis_id');
+          
+          if (latestId) {
+            console.log(`LANDING: Found latest analysis ID in storage: ${latestId}, trying to recover`);
+            const { data: storedAnalysis } = await supabase
+              .from('comprehensive_analyses')
+              .select('*')
+              .eq('id', latestId)
+              .maybeSingle();
+              
+            if (storedAnalysis) {
+              console.log(`LANDING: Successfully recovered analysis from storage ID`);
+              results.push(storedAnalysis);
+              return results;
+            }
+          }
+          
+          // If still no results, generate test analysis as last resort
+          if (results.length === 0) {
+            console.log("LANDING: Attempting to auto-generate a test analysis");
+            toast.info("No analyses found. Auto-generating a test analysis...");
+            const testId = "test-" + Date.now();
+            const testAnalysis = await pollForAnalysis(testId);
+            if (testAnalysis) {
+              console.log("LANDING: Successfully generated test analysis");
+              results.push(testAnalysis);
+            }
           }
         } catch (e) {
-          console.error("Failed to generate test analysis:", e);
+          console.error("LANDING: Failed to generate test analysis:", e);
         }
       }
       
@@ -209,6 +265,7 @@ const ComprehensiveReportLanding: React.FC = () => {
   }, [user, pollForAnalysis]);
 
   const handleViewReport = (analysisId: string) => {
+    console.log(`LANDING: Navigating to report page for analysis ${analysisId}`);
     navigate(`/comprehensive-report/${analysisId}`);
   };
 

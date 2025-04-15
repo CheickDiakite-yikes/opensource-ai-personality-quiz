@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -39,16 +38,17 @@ const ComprehensiveReportPage: React.FC = () => {
   const [fetchComplete, setFetchComplete] = useState<boolean>(false);
   const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
   
-  // Enhanced function to fetch comprehensive analysis with better error handling
+  // Enhanced function to fetch comprehensive analysis with better error handling and multiple methods
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
     if (!analysisId) {
       return null;
     }
 
+    console.log(`FETCH: Starting comprehensive fetch for analysis ID: ${analysisId}`);
+    
     try {
-      console.log(`Fetching comprehensive analysis with ID: ${analysisId}`);
-      
-      // First check if it exists directly in the database
+      // METHOD 1: Try direct database query first
+      console.log(`FETCH: Trying direct database query for ID: ${analysisId}`);
       const { data: directData, error: directError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -56,85 +56,113 @@ const ComprehensiveReportPage: React.FC = () => {
         .maybeSingle();
       
       if (directData && !directError) {
-        console.log("Found analysis directly in database");
+        console.log(`FETCH: ✓ Found analysis directly in database with ID: ${analysisId}`);
         return directData as unknown as ComprehensiveAnalysis;
+      } else if (directError) {
+        console.log(`FETCH: ✗ Error in direct query: ${directError.message}`);
+      } else {
+        console.log(`FETCH: ✗ No data found with direct query for ID: ${analysisId}`);
       }
       
-      // Also check if it exists as an assessment ID
+      // METHOD 2: Check if it's an assessment ID
+      console.log(`FETCH: Trying to find analysis by assessment ID: ${analysisId}`);
       const { data: byAssessmentId, error: assessmentError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
         .eq('assessment_id', analysisId)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
         
-      if (byAssessmentId && !assessmentError) {
-        console.log("Found analysis by assessment ID");
-        return byAssessmentId as unknown as ComprehensiveAnalysis;
+      if (!assessmentError && byAssessmentId && byAssessmentId.length > 0) {
+        console.log(`FETCH: ✓ Found ${byAssessmentId.length} analyses by assessment ID`);
+        // Return the most recent one
+        return byAssessmentId[0] as unknown as ComprehensiveAnalysis;
+      } else if (assessmentError) {
+        console.log(`FETCH: ✗ Error querying by assessment ID: ${assessmentError.message}`);
+      } else {
+        console.log(`FETCH: ✗ No analyses found by assessment ID`);
       }
       
-      // If we still haven't found it, try the edge function with a timeout
+      // METHOD 3: Try using database function
+      console.log(`FETCH: Trying RPC function for ID: ${analysisId}`);
       try {
-        // Set up timeout for the request (10 seconds)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        // Call the edge function to get the comprehensive analysis
-        const { data, error: functionError } = await supabase.functions.invoke(
-          "get-comprehensive-analysis",
-          {
-            body: { id: analysisId }
-          }
-        );
-        
-        clearTimeout(timeoutId);
-
-        if (functionError) {
-          console.error("Function error:", functionError);
-          throw new Error(`Edge function error: ${functionError.message}`);
-        }
-
-        if (!data) {
-          throw new Error("No analysis data returned from edge function");
-        }
-
-        console.log("Comprehensive analysis data:", data);
-        
-        // Check for message indicating fallback to most recent analysis
-        if (data.message) {
-          toast.info(data.message);
-        }
-        
-        return data as ComprehensiveAnalysis;
-      } catch (edgeFuncError) {
-        console.error("Edge function error:", edgeFuncError);
-        
-        // If it's a timeout, try one more approach
-        if (edgeFuncError.name === 'AbortError') {
-          console.log("Edge function request timed out, trying direct DB query for most recent analysis");
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_comprehensive_analysis_by_id', { analysis_id: analysisId });
           
-          // If all else fails, get the most recent analysis
-          const { data: recentAnalysis } = await supabase
-            .from('comprehensive_analyses')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-            
+        if (!rpcError && rpcData) {
+          console.log(`FETCH: ✓ Found analysis via RPC function`);
+          return rpcData as unknown as ComprehensiveAnalysis;
+        } else if (rpcError) {
+          console.log(`FETCH: ✗ RPC function error: ${rpcError.message}`);
+        } else {
+          console.log(`FETCH: ✗ No data returned from RPC function`);
+        }
+      } catch (rpcException) {
+        console.error(`FETCH: ✗ Exception calling RPC function:`, rpcException);
+      }
+      
+      // METHOD 4: Try any analysis with similar ID (partial match)
+      console.log(`FETCH: Trying partial ID match as last resort`);
+      try {
+        // Get all analyses and check IDs for potential matching substring
+        const { data: allAnalyses, error: allError } = await supabase
+          .from('comprehensive_analyses')
+          .select('id, created_at')
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (!allError && allAnalyses && allAnalyses.length > 0) {
+          console.log(`FETCH: Found ${allAnalyses.length} recent analyses to check for matches`);
+          
+          // Try to find exact match first
+          const exactMatch = allAnalyses.find(a => a.id === analysisId);
+          if (exactMatch) {
+            console.log(`FETCH: Found exact match in recent analyses list`);
+            const { data: matchData } = await supabase
+              .from('comprehensive_analyses')
+              .select('*')
+              .eq('id', exactMatch.id)
+              .single();
+              
+            if (matchData) {
+              return matchData as unknown as ComprehensiveAnalysis;
+            }
+          }
+          
+          // Check for any recent analysis (created in the last 30 minutes)
+          const recentAnalysis = allAnalyses.find(a => {
+            const createdAt = new Date(a.created_at);
+            return (Date.now() - createdAt.getTime()) < 30 * 60 * 1000; // 30 minutes
+          });
+          
           if (recentAnalysis) {
-            toast.info("Using most recent analysis as fallback");
-            return recentAnalysis as unknown as ComprehensiveAnalysis;
+            console.log(`FETCH: Found recent analysis created at ${recentAnalysis.created_at}`);
+            const { data: recentData } = await supabase
+              .from('comprehensive_analyses')
+              .select('*')
+              .eq('id', recentAnalysis.id)
+              .single();
+              
+            if (recentData) {
+              console.log(`FETCH: Using recent analysis as fallback`);
+              toast.info("Using most recent analysis as fallback");
+              return recentData as unknown as ComprehensiveAnalysis;
+            }
           }
         }
-        
-        throw edgeFuncError;
+      } catch (error) {
+        console.error(`FETCH: Error in fallback approach:`, error);
       }
+      
+      // If all methods fail, return null
+      console.log(`FETCH: ✗ All fetch methods failed for ID: ${analysisId}`);
+      return null;
     } catch (err) {
-      console.error("Error fetching comprehensive analysis:", err);
+      console.error("FETCH: Critical error fetching comprehensive analysis:", err);
       throw err;
     }
   }, []);
 
-  // Fetch comprehensive analysis
+  // Fetch comprehensive analysis with multiple fallback methods and retry on failure
   useEffect(() => {
     if (fetchComplete || foundAnalysis) return;
     
@@ -151,24 +179,50 @@ const ComprehensiveReportPage: React.FC = () => {
       }
 
       try {
-        const data = await fetchComprehensiveAnalysis(id);
+        console.log(`Starting analysis load for ID: ${id}`);
+        
+        // First attempt: Try standard fetch
+        let data = await fetchComprehensiveAnalysis(id);
+        
+        // If that fails, log the details
+        if (!data) {
+          console.log(`Standard fetch failed, examining ID format: ${id}`);
+          
+          // Check if we need to format the ID differently (in case it's a string that should be UUID)
+          if (id && id.length >= 32 && !id.includes('-')) {
+            // Format potential UUID string with dashes
+            const formattedId = `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`;
+            console.log(`Trying with formatted UUID: ${formattedId}`);
+            data = await fetchComprehensiveAnalysis(formattedId);
+          }
+        }
+        
         if (data && isMounted) {
+          console.log(`Successfully loaded analysis with ID: ${id}`);
           setAnalysis(data);
           setFetchComplete(true);
         } else if (isMounted && !isPolling && !hasAttemptedPolling) {
-          // If we couldn't load the analysis directly, check if it's an assessment ID
-          // and try to poll for its completion
+          // If we couldn't load the analysis directly, try polling
+          console.log(`Couldn't fetch analysis directly, starting polling for: ${id}`);
           toast.info("Checking if analysis is still processing...");
           pollForAnalysis(id);
+        } else if (isMounted) {
+          console.log(`Analysis not found and polling already attempted`);
+          setError(`Analysis with ID ${id} couldn't be found`);
+          setFetchComplete(true);
         }
       } catch (err) {
         if (isMounted) {
+          console.error(`Error in loadAnalysis:`, err);
           const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
           setError(errorMessage);
-          setDebugInfo(JSON.stringify(err, null, 2));
+          setDebugInfo(JSON.stringify({ 
+            error: errorMessage, 
+            id: id,
+            timestamp: new Date().toISOString() 
+          }, null, 2));
           setFetchComplete(true);
           
-          // Only show error toast if we're not already polling
           if (!isPolling && !hasAttemptedPolling) {
             toast.error("Failed to load analysis", {
               description: "There was a problem retrieving your comprehensive analysis"
@@ -189,18 +243,21 @@ const ComprehensiveReportPage: React.FC = () => {
     };
   }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isPolling, hasAttemptedPolling, foundAnalysis, fetchComplete]);
   
-  // Update analysis when foundAnalysis changes
+  // Update analysis when foundAnalysis changes from polling
   useEffect(() => {
     if (foundAnalysis && !analysis) {
+      console.log(`Setting analysis from polling results for ID: ${id}`);
       setAnalysis(foundAnalysis);
       setFetchComplete(true);
       setError(null);
     }
-  }, [foundAnalysis, analysis]);
+  }, [foundAnalysis, analysis, id]);
 
   const handleRetry = () => {
+    console.log(`Retrying analysis load (attempt ${retryCount + 1})`);
     setRetryCount(prev => prev + 1);
     setFetchComplete(false);
+    setError(null);
     toast.loading("Retrying analysis load...");
   };
   
@@ -208,7 +265,7 @@ const ComprehensiveReportPage: React.FC = () => {
     navigate('/comprehensive-report');
   };
   
-  // Enhanced createTestAnalysis with better timeout handling
+  // Test analysis creation function
   const handleCreateTestAnalysis = async () => {
     if (!user) {
       toast.error("You must be logged in to create a test analysis");
@@ -506,7 +563,15 @@ const ComprehensiveReportPage: React.FC = () => {
     );
   }
 
-  // Process data for safe rendering
+  // Process data for safe rendering - display analysis data safely
+  console.log(`Preparing to render analysis with ID: ${analysis?.id}`);
+  
+  // Check what data we have and log it
+  if (analysis) {
+    console.log(`Analysis overview length: ${analysis.overview?.length || 0}`);
+    console.log(`Analysis traits count: ${Array.isArray(analysis.traits) ? analysis.traits.length : 'not an array'}`);
+  }
+  
   const processedRelationships = isRelationshipObject(analysis?.relationshipPatterns) 
     ? analysis.relationshipPatterns 
     : { 
