@@ -29,10 +29,9 @@ export function useComprehensiveSubmission(
     }));
     
     // Validate we have enough responses
-    const minResponses = 25; // Lower threshold for testing
-    if (formattedResponses.length < minResponses) {
+    if (formattedResponses.length < 50) {
       toast.error(`Not enough responses to analyze: ${formattedResponses.length}/100`, {
-        description: `Please complete at least ${minResponses} questions for a thorough analysis`
+        description: "Please complete more questions for a thorough analysis"
       });
       return;
     }
@@ -46,44 +45,25 @@ export function useComprehensiveSubmission(
       setIsAnalyzing(true);
       toast.loading("Saving your assessment responses...", { id: "assessment-submission" });
       
-      // CRITICAL FIX: Retry logic for assessment saving
-      let saveAttempts = 0;
-      let assessmentData = null;
-      let assessmentError = null;
+      // Save assessment responses to Supabase with improved logging
+      console.log("Saving comprehensive assessment to Supabase...");
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from("comprehensive_assessments")
+        .insert({
+          user_id: user.id,
+          responses: formattedResponses as unknown as Json
+        })
+        .select('id')
+        .single();
       
-      while (saveAttempts < 3 && !assessmentData) {
-        try {
-          console.log(`Attempt ${saveAttempts + 1}: Saving comprehensive assessment to Supabase...`);
-          
-          const result = await supabase
-            .from("comprehensive_assessments")
-            .insert({
-              user_id: user.id,
-              responses: formattedResponses as unknown as Json
-            })
-            .select('id')
-            .single();
-            
-          if (result.error) {
-            console.error(`Error saving assessment (attempt ${saveAttempts + 1}):`, result.error);
-            assessmentError = result.error;
-            saveAttempts++;
-            // Wait before retry
-            if (saveAttempts < 3) await new Promise(r => setTimeout(r, 1000));
-          } else {
-            assessmentData = result.data;
-            break;
-          }
-        } catch (err) {
-          console.error(`Exception saving assessment (attempt ${saveAttempts + 1}):`, err);
-          saveAttempts++;
-          if (saveAttempts < 3) await new Promise(r => setTimeout(r, 1000));
-        }
+      if (assessmentError) {
+        console.error("Error saving assessment:", assessmentError);
+        throw new Error(assessmentError.message);
       }
       
       if (!assessmentData?.id) {
-        console.error("Failed to create assessment after multiple attempts:", assessmentError);
-        throw new Error("Failed to save your assessment. Please try again later.");
+        console.error("No assessment ID returned from database");
+        throw new Error("Failed to create assessment - no ID returned");
       }
       
       console.log("Assessment saved successfully with ID:", assessmentData.id);
@@ -93,112 +73,71 @@ export function useComprehensiveSubmission(
       
       toast.loading("Analyzing your responses...", { id: "assessment-submission" });
       
-      // CRITICAL FIX: Make multiple attempts to analyze with clear error handling
-      let analysisSuccess = false;
-      let analysisError = null;
-      let analysisData = null;
+      // Call Supabase Edge Function to analyze responses with improved logging
+      console.log(`Calling analyze-comprehensive-responses function with assessment ID: ${createdAssessmentId}`);
+      console.log(`Sending ${formattedResponses.length} responses for analysis`);
       
-      for (let attempt = 0; attempt < 3 && !analysisSuccess; attempt++) {
-        try {
-          console.log(`Analysis attempt ${attempt + 1} for assessment ID: ${createdAssessmentId}`);
-          
-          // Add response distribution logging
-          const categoryDistribution = formattedResponses.reduce((acc: Record<string, number>, curr) => {
-            acc[curr.category as string] = (acc[curr.category as string] || 0) + 1;
-            return acc;
-          }, {});
-          
-          console.log("Response distribution by category:", 
-            Object.entries(categoryDistribution)
-              .map(([category, count]) => `${category}: ${count}`)
-              .join(', ')
-          );
-          
-          // CRITICAL FIX: Enhanced error handling with timeout protection
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Analysis timed out after 30 seconds")), 30000);
-          });
-          
-          const analysisPromise = supabase.functions.invoke(
-            "analyze-comprehensive-responses",
-            {
-              body: { 
-                assessmentId: createdAssessmentId,
-                userId: user.id,
-                responses: formattedResponses,
-                forceAssociation: true,
-                retry: attempt > 0
-              }
-            }
-          );
-          
-          // Race between analysis and timeout
-          const result = await Promise.race([analysisPromise, timeoutPromise]) as any;
-          
-          if (result.error) {
-            console.error(`Analysis error on attempt ${attempt + 1}:`, result.error);
-            analysisError = result.error;
-            // Wait before retry
-            if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-            continue;
+      // Add response distribution logging
+      const categoryDistribution = formattedResponses.reduce((acc: Record<string, number>, curr) => {
+        acc[curr.category as string] = (acc[curr.category as string] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("Response distribution by category:", 
+        Object.entries(categoryDistribution)
+          .map(([category, count]) => `${category}: ${count}`)
+          .join(', ')
+      );
+      
+      // Call the edge function with improved error handling
+      const { data, error } = await supabase.functions.invoke(
+        "analyze-comprehensive-responses",
+        {
+          body: { 
+            assessmentId: createdAssessmentId,
+            responses: formattedResponses
           }
-          
-          if (!result.data) {
-            console.error(`Invalid analysis response on attempt ${attempt + 1}:`, result);
-            // Wait before retry
-            if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-            continue;
-          }
-          
-          analysisData = result.data;
-          analysisSuccess = true;
-          console.log("Analysis successful:", analysisData);
-          break;
-          
-        } catch (err) {
-          console.error(`Exception during analysis attempt ${attempt + 1}:`, err);
-          analysisError = err;
-          // Wait before retry
-          if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
         }
+      );
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Analysis failed: ${error.message}`);
       }
       
-      // Clear stored progress after successful submission regardless of analysis result
+      console.log("Edge function response:", data);
+      
+      if (!data) {
+        throw new Error("No data returned from analysis function");
+      }
+      
+      // Clear stored progress after successful submission
       localStorage.removeItem("comprehensive_assessment_progress");
       console.log("Assessment progress cleared from localStorage");
       
-      // CRITICAL FIX: Always navigate to report even if analysis is still processing
-      if (analysisSuccess) {
-        // Show success message
-        toast.success("Analysis complete!", { id: "assessment-submission" });
-        
-        // Navigate to the comprehensive report page
-        const analysisId = analysisData?.analysisId || 
-                          (analysisData?.analysis && analysisData.analysis.id) || 
-                          createdAssessmentId;
-                          
-        console.log(`Navigating to report page with ID: ${analysisId}`);
-        navigate(`/comprehensive-report/${analysisId}`);
+      // Show success message
+      toast.success("Analysis complete!", { id: "assessment-submission" });
+      
+      // Navigate to the comprehensive report page
+      if (data.analysis && data.analysis.id) {
+        console.log(`Navigating to report page with ID: ${data.analysis.id}`);
+        navigate(`/comprehensive-report/${data.analysis.id}`);
+      } else if (data.analysisId) {
+        console.log(`Navigating to report page with ID: ${data.analysisId}`);
+        navigate(`/comprehensive-report/${data.analysisId}`);
       } else {
-        // If analysis failed but assessment was saved, direct to the assessment ID page anyway
-        toast.warning("Assessment saved, but analysis is still processing", { 
-          id: "assessment-submission",
-          duration: 8000,
-          description: "You'll be redirected to view your results. Processing may take a moment."
-        });
-        
-        console.log(`Redirecting to assessment page with ID: ${createdAssessmentId} since analysis is pending`);
-        navigate(`/comprehensive-report/${createdAssessmentId}`);
+        console.error("No analysis ID in response:", data);
+        throw new Error("Analysis completed but no ID was returned");
       }
       
     } catch (error) {
       console.error("Error submitting assessment:", error);
       
-      // Always handle the case where the assessment was created but analysis failed
+      // Check if the assessment was created but analysis failed
       if (createdAssessmentId) {
-        toast.warning("Your assessment was saved but analysis is still processing", { 
+        toast.error("Your assessment was saved but analysis failed", { 
           id: "assessment-submission",
-          description: "You'll be redirected to the report page where processing will continue."
+          description: "We'll try to analyze it again when you view your reports."
         });
         
         // Navigate to the assessment ID, the report page will handle polling

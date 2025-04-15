@@ -141,38 +141,12 @@ export interface PersonalityAnalysis {
   };
 }
 
-// Database representation of comprehensive analysis (snake_case)
-export interface DbComprehensiveAnalysis {
-  id: string;
-  created_at: string;
-  user_id?: string;
-  assessment_id: string;
-  overview?: string;
-  traits?: any;
-  intelligence?: any;
-  intelligence_score?: number;
-  emotional_intelligence_score?: number;
-  cognitive_style?: any;
-  value_system?: any;
-  motivators?: any[];
-  inhibitors?: any[];
-  growth_areas?: any[];
-  weaknesses?: any[];
-  relationship_patterns?: any;
-  career_suggestions?: any[];
-  learning_pathways?: any[];
-  roadmap?: string;
-  result?: any;
-}
-
 export interface ComprehensiveAnalysis {
   id: string;
   created_at?: string;
-  user_id?: string;       
-  assessment_id?: string; 
-  createdAt?: string;
+  assessment_id: string;
   overview: string;
-  traits: any[];
+  traits: any;
   intelligence: any;
   intelligenceScore: number;
   emotionalIntelligenceScore: number;

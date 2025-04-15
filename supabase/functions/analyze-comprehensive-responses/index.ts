@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { responses, assessmentId, userId, forceAssociation, retry } = await req.json();
+    const { responses, assessmentId } = await req.json();
     
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       console.error("Invalid responses format:", responses);
@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error("Missing assessment ID");
     }
 
-    console.log(`${retry ? "RETRY: " : ""}Processing ${responses.length} responses for assessment ${assessmentId}, user ${userId || 'anonymous'}`);
+    console.log(`Processing ${responses.length} responses for assessment ${assessmentId}`);
 
     // Categorize responses by category for better analysis
     const categorizedResponses = responses.reduce((acc, response) => {
@@ -68,316 +68,115 @@ Provide a detailed analysis covering:
 
     console.log("Calling OpenAI for analysis...");
     
-    // CRITICAL FIX: Add timeout logic for OpenAI call
-    let timedOut = false;
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      console.log("OpenAI call timed out after 25 seconds");
-    }, 25000);
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: analysisPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.5,
+      }),
+    });
+
+    const aiResponse = await response.json();
     
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: analysisPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-          frequency_penalty: 0.5,
-          presence_penalty: 0.5,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-      if (timedOut) {
-        throw new Error("OpenAI request timed out");
-      }
-
-      const aiResponse = await response.json();
-      
-      if (!aiResponse.choices || !aiResponse.choices[0]?.message?.content) {
-        console.error("Invalid AI response:", aiResponse);
-        throw new Error("Invalid AI response format");
-      }
-
-      const analysisText = aiResponse.choices[0].message.content;
-      
-      console.log("AI analysis received, extracting structured data...");
-
-      // Extract structured data from AI response
-      const traits = extractTraits(analysisText);
-      const intelligence = extractIntelligence(analysisText);
-      const overview = extractOverview(analysisText);
-      const valueSystem = extractValueSystem(analysisText);
-      const motivators = extractMotivators(analysisText);
-      const growthAreas = extractGrowthAreas(analysisText);
-      const careerSuggestions = extractCareerSuggestions(analysisText);
-      const learningPathways = extractLearningPathways(analysisText);
-      const relationshipPatterns = extractRelationshipPatterns(analysisText);
-      const roadmap = extractRoadmap(analysisText);
-
-      // Create analysis object with all required fields
-      const analysisId = crypto.randomUUID();
-      const comprehensiveAnalysis = {
-        id: analysisId,
-        assessment_id: assessmentId,
-        user_id: userId || null,
-        overview,
-        traits,
-        intelligence,
-        intelligence_score: calculateIntelligenceScore(intelligence),
-        emotional_intelligence_score: calculateEmotionalScore(analysisText),
-        value_system: valueSystem,
-        motivators,
-        growth_areas: growthAreas,
-        career_suggestions: careerSuggestions,
-        learning_pathways: learningPathways,
-        relationship_patterns: relationshipPatterns,
-        roadmap
-      };
-
-      // CRITICAL FIX: Improved save logic with 5 retries and better error handling
-      let dbError = null;
-      let saveSuccess = false;
-      
-      for (let attempt = 1; attempt <= 5; attempt++) {
-        try {
-          console.log(`Attempt ${attempt} to save analysis to database...`);
-          
-          // Always ensure we have userId if forceAssociation is true
-          if (forceAssociation && userId) {
-            console.log("Force association enabled - ensuring user_id is set");
-            comprehensiveAnalysis.user_id = userId;
-          }
-          
-          // CRITICAL FIX: Use upsert instead of insert to avoid duplication errors
-          const response = await fetch(
-            `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                'Prefer': 'resolution=merge-duplicates'
-              },
-              body: JSON.stringify({
-                id: analysisId,
-                assessment_id: assessmentId,
-                user_id: comprehensiveAnalysis.user_id,
-                overview: overview,
-                traits: traits,
-                intelligence: intelligence,
-                intelligence_score: comprehensiveAnalysis.intelligence_score,
-                emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
-                value_system: valueSystem,
-                motivators: motivators,
-                growth_areas: growthAreas,
-                relationship_patterns: relationshipPatterns,
-                career_suggestions: careerSuggestions,
-                learning_pathways: learningPathways,
-                roadmap: roadmap,
-                result: comprehensiveAnalysis
-              })
-            }
-          );
-          
-          // FIX: Properly handle the response and check for errors
-          if (response.ok) {
-            const responseData = await response.text();
-            const error = responseData && responseData.length > 0 ? JSON.parse(responseData).error : null;
-            
-            if (error) {
-              console.error(`Error saving analysis on attempt ${attempt}:`, error);
-              dbError = error;
-              // Wait before retrying with exponential backoff
-              await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
-            } else {
-              console.log("Analysis saved to database successfully with ID:", analysisId);
-              saveSuccess = true;
-              break;
-            }
-          } else {
-            console.error(`Error response (${response.status}) saving analysis on attempt ${attempt}`);
-            // Wait before retrying with exponential backoff
-            await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
-          }
-        } catch (error) {
-          console.error(`Exception on save attempt ${attempt}:`, error);
-          dbError = error;
-          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
-        }
-      }
-      
-      // CRITICAL FIX: Create a background task to retry saving if it failed
-      if (!saveSuccess) {
-        console.error("All attempts to save analysis failed, last error:", dbError);
-        console.log("Scheduling background retry task...");
-        
-        // Use Deno's setInterval to create a background task
-        const bgTaskId = setInterval(async () => {
-          try {
-            console.log("Background task: attempting to save analysis");
-            const bgResponse = await fetch(
-              `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                  'Prefer': 'resolution=merge-duplicates'
-                },
-                body: JSON.stringify({
-                  id: analysisId,
-                  assessment_id: assessmentId,
-                  user_id: comprehensiveAnalysis.user_id,
-                  overview: overview,
-                  traits: traits,
-                  intelligence: intelligence,
-                  intelligence_score: comprehensiveAnalysis.intelligence_score,
-                  emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
-                  result: comprehensiveAnalysis
-                })
-              }
-            );
-            
-            // FIX: Safe JSON parsing for background task
-            if (bgResponse.ok) {
-              const bgResponseText = await bgResponse.text();
-              const bgError = bgResponseText && bgResponseText.trim().length > 0 ? 
-                JSON.parse(bgResponseText).error : null;
-              
-              if (bgError) {
-                console.log("Background save attempt failed:", bgError);
-              } else {
-                console.log("Background save succeeded!");
-                clearInterval(bgTaskId);
-              }
-            } else {
-              console.log(`Background save failed with status: ${bgResponse.status}`);
-            }
-          } catch (e) {
-            console.error("Background save exception:", e);
-          }
-        }, 10000); // Try every 10 seconds
-        
-        // Make sure to clear interval after max time
-        setTimeout(() => {
-          clearInterval(bgTaskId);
-          console.log("Background save task terminated after timeout");
-        }, 60000); // Run for max 1 minute
-      }
-
-      console.log("Analysis completed successfully, returning ID:", analysisId);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          analysisId: analysisId, 
-          analysis: comprehensiveAnalysis,
-          message: "Analysis completed and saved successfully" 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (openAiError) {
-      console.error("OpenAI API error:", openAiError);
-      
-      // If OpenAI fails, generate fallback using local helpers
-      console.log("Generating fallback analysis without OpenAI");
-      
-      const fallbackAnalysisId = crypto.randomUUID();
-      const fallbackAnalysis = {
-        id: fallbackAnalysisId,
-        assessment_id: assessmentId,
-        user_id: userId || null,
-        overview: `Analysis of ${responses.length} responses across multiple personality dimensions.`,
-        traits: generateDefaultTraits(),
-        intelligence: {
-          type: "Multi-faceted Intelligence",
-          score: 0.75,
-          description: "Shows balanced intellectual capabilities across multiple domains",
-          strengths: ["Analytical thinking", "Problem-solving", "Pattern recognition"],
-          areas_for_development: ["Complex system analysis", "Abstract reasoning"],
-          learning_style: "Adaptive",
-          cognitive_preferences: ["Structured learning", "Practical application"],
-          domains: [
-            {
-              name: "Analytical Intelligence",
-              score: 0.8,
-              description: "Capacity for analytical thinking"
-            },
-            {
-              name: "Emotional Intelligence",
-              score: 0.7,
-              description: "Capacity for emotional intelligence"
-            }
-          ]
-        },
-        intelligence_score: 75,
-        emotional_intelligence_score: 70,
-        value_system: {
-          strengths: ["Achievement", "Growth", "Balance"],
-          weaknesses: ["May prioritize some values over others"],
-          description: "Demonstrates a balanced value system"
-        },
-        motivators: ["Achievement", "Learning", "Connection"],
-        growth_areas: ["Continue to develop capabilities"],
-        career_suggestions: ["Careers that balance analytical and social skills"],
-        learning_pathways: ["Structured academic learning", "Hands-on experience"],
-        relationship_patterns: {
-          strengths: ["Communication", "Empathy"],
-          challenges: ["Setting boundaries"],
-          compatibleTypes: ["Growth-minded individuals"]
-        },
-        roadmap: "Focus on leveraging strengths while developing growth areas."
-      };
-      
-      // Try to save the fallback analysis
-      try {
-        const fallbackResponse = await fetch(
-          `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-              ...fallbackAnalysis,
-              result: fallbackAnalysis
-            })
-          }
-        );
-        
-        if (fallbackResponse.ok) {
-          console.log("Fallback analysis saved with ID:", fallbackAnalysisId);
-        } else {
-          console.error("Error saving fallback analysis:", await fallbackResponse.text());
-        }
-      } catch (e) {
-        console.error("Error saving fallback analysis:", e);
-      }
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          analysisId: fallbackAnalysisId,
-          analysis: fallbackAnalysis,
-          message: "Fallback analysis generated due to AI service error"
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!aiResponse.choices || !aiResponse.choices[0]?.message?.content) {
+      console.error("Invalid AI response:", aiResponse);
+      throw new Error("Invalid AI response format");
     }
+
+    const analysisText = aiResponse.choices[0].message.content;
+    
+    console.log("AI analysis received, extracting structured data...");
+
+    // Extract structured data from AI response
+    const traits = extractTraits(analysisText);
+    const intelligence = extractIntelligence(analysisText);
+    const overview = extractOverview(analysisText);
+    const valueSystem = extractValueSystem(analysisText);
+    const motivators = extractMotivators(analysisText);
+    const growthAreas = extractGrowthAreas(analysisText);
+    const careerSuggestions = extractCareerSuggestions(analysisText);
+    const learningPathways = extractLearningPathways(analysisText);
+    const relationshipPatterns = extractRelationshipPatterns(analysisText);
+    const roadmap = extractRoadmap(analysisText);
+
+    // Create analysis object with all required fields
+    const analysisId = crypto.randomUUID();
+    const comprehensiveAnalysis = {
+      id: analysisId,
+      assessment_id: assessmentId,
+      overview,
+      traits,
+      intelligence,
+      intelligence_score: calculateIntelligenceScore(intelligence),
+      emotional_intelligence_score: calculateEmotionalScore(analysisText),
+      value_system: valueSystem,
+      motivators,
+      growth_areas: growthAreas,
+      career_suggestions: careerSuggestions,
+      learning_pathways: learningPathways,
+      relationship_patterns: relationshipPatterns,
+      roadmap
+    };
+
+    // Save analysis to database
+    try {
+      const { error: dbError } = await fetch(
+        `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': `${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+          },
+          body: JSON.stringify({
+            id: analysisId,
+            assessment_id: assessmentId,
+            user_id: comprehensiveAnalysis.user_id || null,
+            overview: overview,
+            traits: traits,
+            intelligence: intelligence,
+            intelligence_score: comprehensiveAnalysis.intelligence_score,
+            emotional_intelligence_score: comprehensiveAnalysis.emotional_intelligence_score,
+            value_system: valueSystem,
+            motivators: motivators,
+            growth_areas: growthAreas,
+            relationship_patterns: relationshipPatterns,
+            career_suggestions: careerSuggestions,
+            learning_pathways: learningPathways,
+            roadmap: roadmap,
+            result: comprehensiveAnalysis
+          })
+        }
+      ).then(res => res.json());
+
+      if (dbError) {
+        console.error("Error saving analysis to database:", dbError);
+      } else {
+        console.log("Analysis saved to database successfully with ID:", analysisId);
+      }
+    } catch (dbError) {
+      console.error("Exception saving analysis to database:", dbError);
+    }
+
+    console.log("Analysis completed successfully, returning ID:", analysisId);
+    
+    return new Response(
+      JSON.stringify({ success: true, analysisId: analysisId, analysis: comprehensiveAnalysis }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
     console.error("Error in analyze-comprehensive-responses:", error);
     

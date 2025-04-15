@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis } from "@/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertTriangle, ArrowLeft, RefreshCw, Bug, Sparkles, Save } from "lucide-react";
+import { AlertTriangle, ArrowLeft, RefreshCw, Bug, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isRelationshipObject } from "@/components/report/utils/typeGuards";
@@ -22,7 +22,6 @@ import ComprehensiveRelationshipsSection from "./sections/ComprehensiveRelations
 import ComprehensiveGrowthSection from "./sections/ComprehensiveGrowthSection";
 import ComprehensiveCareerSection from "./sections/ComprehensiveCareerSection";
 import { useComprehensiveAnalysisFallback } from "@/hooks/useComprehensiveAnalysisFallback";
-import ComprehensiveReportHistory from "./ComprehensiveReportHistory";
 
 const ComprehensiveReportPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -35,20 +34,10 @@ const ComprehensiveReportPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState<number>(0);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
   const [fetchComplete, setFetchComplete] = useState<boolean>(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
-  const { 
-    pollForAnalysis, 
-    isPolling, 
-    foundAnalysis, 
-    hasAttemptedPolling, 
-    savedAnalysisId, 
-    reportHistory, 
-    fetchReportHistory 
-  } = useComprehensiveAnalysisFallback(id);
+  const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
   
   // Enhanced function to fetch comprehensive analysis with better error handling
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
@@ -63,16 +52,24 @@ const ComprehensiveReportPage: React.FC = () => {
       const { data: directData, error: directError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
-        .or(`id.eq.${analysisId},assessment_id.eq.${analysisId}`)
+        .eq('id', analysisId)
         .maybeSingle();
       
-      if (directError) {
-        console.log("Error checking for existing analysis:", directError);
-      }
-      
-      if (directData) {
+      if (directData && !directError) {
         console.log("Found analysis directly in database");
         return directData as unknown as ComprehensiveAnalysis;
+      }
+      
+      // Also check if it exists as an assessment ID
+      const { data: byAssessmentId, error: assessmentError } = await supabase
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('assessment_id', analysisId)
+        .maybeSingle();
+        
+      if (byAssessmentId && !assessmentError) {
+        console.log("Found analysis by assessment ID");
+        return byAssessmentId as unknown as ComprehensiveAnalysis;
       }
       
       // If we still haven't found it, try the edge function with a timeout
@@ -136,14 +133,6 @@ const ComprehensiveReportPage: React.FC = () => {
       throw err;
     }
   }, []);
-  
-  // Load report history when user changes
-  useEffect(() => {
-    if (user && !isLoadingHistory) {
-      setIsLoadingHistory(true);
-      fetchReportHistory().finally(() => setIsLoadingHistory(false));
-    }
-  }, [user, fetchReportHistory]);
 
   // Fetch comprehensive analysis
   useEffect(() => {
@@ -209,64 +198,6 @@ const ComprehensiveReportPage: React.FC = () => {
     }
   }, [foundAnalysis, analysis]);
 
-  // Save analysis explicitly to user account
-  const saveAnalysisToUserAccount = async () => {
-    if (!user || !analysis) {
-      toast.error("You must be logged in to save analyses to your account");
-      return;
-    }
-    
-    setIsSaving(true);
-    
-    try {
-      // First check if the analysis already has the user_id
-      if (analysis.user_id === user.id) {
-        toast.info("Analysis is already saved to your account");
-        setIsSaving(false);
-        return;
-      }
-      
-      toast.loading("Saving analysis to your account...", { id: "saving-analysis" });
-      
-      // Update the analysis with the user's ID
-      const { error } = await supabase
-        .from('comprehensive_analyses')
-        .update({ user_id: user.id })
-        .eq('id', analysis.id);
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Update local state
-      setAnalysis({
-        ...analysis,
-        user_id: user.id
-      });
-      
-      // Refresh report history after saving
-      fetchReportHistory();
-      
-      toast.success("Analysis saved to your account", { id: "saving-analysis" });
-    } catch (error) {
-      console.error("Error saving analysis to user account:", error);
-      toast.error("Failed to save analysis", { 
-        id: "saving-analysis",
-        description: error instanceof Error ? error.message : "Unknown error"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Handle switching to a different report
-  const handleSwitchReport = (reportId: string) => {
-    if (reportId === id) return; // Already viewing this report
-    
-    // Navigate to the selected report
-    navigate(`/comprehensive-report/${reportId}`);
-  };
-
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     setFetchComplete(false);
@@ -275,20 +206,6 @@ const ComprehensiveReportPage: React.FC = () => {
   
   const handleGoBack = () => {
     navigate('/comprehensive-report');
-  };
-  
-  // Function to refresh report history
-  const handleRefreshHistory = async () => {
-    toast.loading("Refreshing your report history...", { id: "refresh-history" });
-    setIsLoadingHistory(true);
-    try {
-      await fetchReportHistory();
-      toast.success("Report history refreshed", { id: "refresh-history" });
-    } catch (error) {
-      toast.error("Failed to refresh report history", { id: "refresh-history" });
-    } finally {
-      setIsLoadingHistory(false);
-    }
   };
   
   // Enhanced createTestAnalysis with better timeout handling
@@ -335,15 +252,13 @@ const ComprehensiveReportPage: React.FC = () => {
         {
           body: { 
             assessmentId: assessmentData.id,
-            userId: user.id,
             responses: [
               { 
                 questionId: "test-1", 
                 answer: testPrompt || "I am someone who enjoys thinking deeply about problems and finding creative solutions. I value both analytical thinking and emotional intelligence."
               },
               { questionId: "test-2", answer: "I prefer working in collaborative environments where ideas can be freely shared." }
-            ],
-            forceAssociation: true // Ensure the analysis is always saved with user ID
+            ]
           }
         }
       );
@@ -367,9 +282,6 @@ const ComprehensiveReportPage: React.FC = () => {
           id: "test-analysis",
           description: `Analysis ID: ${data.analysisId}`
         });
-        
-        // Refresh history after creating a new analysis
-        fetchReportHistory();
         
         // Navigate to the new analysis
         navigate(`/comprehensive-report/${data.analysisId}`);
@@ -611,9 +523,6 @@ const ComprehensiveReportPage: React.FC = () => {
   const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
   const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
 
-  // Determine if analysis can be saved to user account
-  const canSaveToAccount = user && analysis && (!analysis.user_id || analysis.user_id !== user.id);
-
   // Render analysis data
   return (
     <div className="container py-6 md:py-10 px-4 space-y-8">
@@ -622,48 +531,7 @@ const ComprehensiveReportPage: React.FC = () => {
         <p className="text-muted-foreground">
           Analysis ID: {safeString(analysis?.id)}
         </p>
-        {user && analysis && !analysis.user_id && (
-          <div className="mt-2 text-sm text-amber-600">
-            This analysis is not yet saved to your account.
-          </div>
-        )}
       </div>
-      
-      {/* Add save to account button when applicable */}
-      {canSaveToAccount && (
-        <div className="flex justify-center">
-          <Button 
-            onClick={saveAnalysisToUserAccount}
-            disabled={isSaving}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {isSaving ? "Saving..." : "Save to My Account"}
-          </Button>
-        </div>
-      )}
-      
-      {/* Report history component */}
-      {user && reportHistory && reportHistory.length > 0 && (
-        <div className="max-w-3xl mx-auto">
-          <ComprehensiveReportHistory 
-            reports={reportHistory}
-            currentReportId={analysis?.id || ''}
-            onSelectReport={handleSwitchReport}
-          />
-          <div className="flex justify-end mb-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefreshHistory}
-              disabled={isLoadingHistory}
-            >
-              <RefreshCw className="h-3 w-3 mr-1" />
-              {isLoadingHistory ? "Refreshing..." : "Refresh History"}
-            </Button>
-          </div>
-        </div>
-      )}
       
       {/* Report navigation tabs */}
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -689,7 +557,6 @@ const ComprehensiveReportPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Tab content sections */}
         <TabsContent value="personality" className="space-y-6">
           <ComprehensiveTraitsSection
             traits={analysis?.traits || []}
