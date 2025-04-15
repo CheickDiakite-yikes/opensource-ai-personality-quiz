@@ -35,283 +35,130 @@ const ComprehensiveReportPage: React.FC = () => {
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
-  const [fetchComplete, setFetchComplete] = useState<boolean>(false);
-  const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
+  const { pollForAnalysis, isPolling, foundAnalysis } = useComprehensiveAnalysisFallback(id);
   
-  // First, try to directly call the edge function to get the analysis
-  useEffect(() => {
-    if (!id || fetchComplete || foundAnalysis) return;
+  // Primary fetch function that directly calls the edge function
+  const fetchAnalysisFromEdgeFunction = useCallback(async (analysisId: string) => {
+    if (!analysisId) return null;
     
-    const callEdgeFunction = async () => {
-      try {
-        console.log(`Directly calling get-comprehensive-analysis for ID: ${id}`);
-        const { data, error } = await supabase.functions.invoke(
-          "get-comprehensive-analysis",
-          {
-            method: 'POST',
-            body: { id }
-          }
-        );
-        
-        if (error) {
-          console.error("Edge function error:", error);
-        } else if (data) {
-          console.log("Successfully retrieved analysis via edge function:", data);
-          setAnalysis(data);
-          setFetchComplete(true);
-          setIsLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.error("Error calling edge function:", err);
-      }
-      
-      // If edge function fails, continue with other fetch methods
-    };
-    
-    callEdgeFunction();
-  }, [id, fetchComplete, foundAnalysis]);
-  
-  // Enhanced function to fetch comprehensive analysis with better error handling and multiple methods
-  const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
-    if (!analysisId) {
-      return null;
-    }
-
-    console.log(`FETCH: Starting comprehensive fetch for analysis ID: ${analysisId}`);
-    
+    console.log(`Calling get-comprehensive-analysis edge function for ID: ${analysisId}`);
     try {
-      // METHOD 0: Try edge function first (this is new)
-      try {
-        console.log("FETCH: Trying edge function for direct analysis retrieval");
-        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-          "get-comprehensive-analysis",
-          {
-            method: 'POST',
-            body: { id: analysisId }
-          }
-        );
-        
-        if (!edgeFunctionError && edgeFunctionData) {
-          console.log(`FETCH: ✓ Found analysis via edge function for ID: ${analysisId}`);
-          return edgeFunctionData as unknown as ComprehensiveAnalysis;
-        } else if (edgeFunctionError) {
-          console.error("FETCH: ✗ Edge function error:", edgeFunctionError);
+      const { data, error } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          method: 'POST',
+          body: { id: analysisId }
         }
-      } catch (edgeErr) {
-        console.error("FETCH: ✗ Exception calling edge function:", edgeErr);
-      }
-    
-      // METHOD 1: Try direct database query first
-      console.log(`FETCH: Trying direct database query for ID: ${analysisId}`);
-      const { data: directData, error: directError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('id', analysisId)
-        .maybeSingle();
+      );
       
-      if (directData && !directError) {
-        console.log(`FETCH: ✓ Found analysis directly in database with ID: ${analysisId}`);
-        return directData as unknown as ComprehensiveAnalysis;
-      } else if (directError) {
-        console.log(`FETCH: ✗ Error in direct query: ${directError.message}`);
-      } else {
-        console.log(`FETCH: ✗ No data found with direct query for ID: ${analysisId}`);
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
       }
       
-      // METHOD 2: Check if it's an assessment ID
-      console.log(`FETCH: Trying to find analysis by assessment ID: ${analysisId}`);
-      const { data: byAssessmentId, error: assessmentError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('assessment_id', analysisId)
-        .order('created_at', { ascending: false });
-        
-      if (!assessmentError && byAssessmentId && byAssessmentId.length > 0) {
-        console.log(`FETCH: ✓ Found ${byAssessmentId.length} analyses by assessment ID`);
-        // Return the most recent one
-        return byAssessmentId[0] as unknown as ComprehensiveAnalysis;
-      } else if (assessmentError) {
-        console.log(`FETCH: ✗ Error querying by assessment ID: ${assessmentError.message}`);
-      } else {
-        console.log(`FETCH: ✗ No analyses found by assessment ID`);
+      if (!data) {
+        throw new Error('No data returned from edge function');
       }
       
-      // METHOD 3: Try using database function
-      console.log(`FETCH: Trying RPC function for ID: ${analysisId}`);
-      try {
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_comprehensive_analysis_by_id', { analysis_id: analysisId });
-          
-        if (!rpcError && rpcData) {
-          console.log(`FETCH: ✓ Found analysis via RPC function`);
-          return rpcData as unknown as ComprehensiveAnalysis;
-        } else if (rpcError) {
-          console.log(`FETCH: ✗ RPC function error: ${rpcError.message}`);
-        } else {
-          console.log(`FETCH: ✗ No data returned from RPC function`);
-        }
-      } catch (rpcException) {
-        console.error(`FETCH: ✗ Exception calling RPC function:`, rpcException);
-      }
-      
-      // METHOD 4: Try any analysis with similar ID (partial match)
-      console.log(`FETCH: Trying partial ID match as last resort`);
-      try {
-        // Get all analyses and check IDs for potential matching substring
-        const { data: allAnalyses, error: allError } = await supabase
-          .from('comprehensive_analyses')
-          .select('id, created_at')
-          .order('created_at', { ascending: false })
-          .limit(20);
-          
-        if (!allError && allAnalyses && allAnalyses.length > 0) {
-          console.log(`FETCH: Found ${allAnalyses.length} recent analyses to check for matches`);
-          
-          // Try to find exact match first
-          const exactMatch = allAnalyses.find(a => a.id === analysisId);
-          if (exactMatch) {
-            console.log(`FETCH: Found exact match in recent analyses list`);
-            const { data: matchData } = await supabase
-              .from('comprehensive_analyses')
-              .select('*')
-              .eq('id', exactMatch.id)
-              .single();
-              
-            if (matchData) {
-              return matchData as unknown as ComprehensiveAnalysis;
-            }
-          }
-          
-          // Check for any recent analysis (created in the last 30 minutes)
-          const recentAnalysis = allAnalyses.find(a => {
-            const createdAt = new Date(a.created_at);
-            return (Date.now() - createdAt.getTime()) < 30 * 60 * 1000; // 30 minutes
-          });
-          
-          if (recentAnalysis) {
-            console.log(`FETCH: Found recent analysis created at ${recentAnalysis.created_at}`);
-            const { data: recentData } = await supabase
-              .from('comprehensive_analyses')
-              .select('*')
-              .eq('id', recentAnalysis.id)
-              .single();
-              
-            if (recentData) {
-              console.log(`FETCH: Using recent analysis as fallback`);
-              toast.info("Using most recent analysis as fallback");
-              return recentData as unknown as ComprehensiveAnalysis;
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`FETCH: Error in fallback approach:`, error);
-      }
-      
-      // If all methods fail, return null
-      console.log(`FETCH: ✗ All fetch methods failed for ID: ${analysisId}`);
-      return null;
+      console.log(`Successfully retrieved analysis via edge function for ID: ${analysisId}`);
+      return data as ComprehensiveAnalysis;
     } catch (err) {
-      console.error("FETCH: Critical error fetching comprehensive analysis:", err);
+      console.error("Error calling edge function:", err);
       throw err;
     }
   }, []);
 
-  // Fetch comprehensive analysis with multiple fallback methods and retry on failure
+  // Load analysis when component mounts or ID changes
   useEffect(() => {
-    if (fetchComplete || foundAnalysis) return;
+    if (!id) {
+      setError("No analysis ID provided");
+      setIsLoading(false);
+      return;
+    }
     
     let isMounted = true;
     
-    async function loadAnalysis() {
-      if (!id) {
-        if (isMounted) {
-          setIsLoading(false);
-          setError("No analysis ID provided");
-          setFetchComplete(true);
-        }
-        return;
-      }
-
+    const loadAnalysis = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        console.log(`Starting analysis load for ID: ${id}`);
+        console.log(`Loading analysis with ID: ${id}`);
+        toast.loading("Fetching your analysis...", { id: "loading-analysis" });
         
-        // First attempt: Try standard fetch
-        let data = await fetchComprehensiveAnalysis(id);
+        // First try: Direct edge function call (this is now our primary method)
+        try {
+          const analysisData = await fetchAnalysisFromEdgeFunction(id);
+          if (analysisData && isMounted) {
+            setAnalysis(analysisData);
+            setIsLoading(false);
+            toast.success("Analysis loaded successfully", { id: "loading-analysis" });
+            return;
+          }
+        } catch (edgeError) {
+          console.error("Edge function fetch failed:", edgeError);
+          // Continue with fallback methods
+        }
         
-        // If that fails, log the details
-        if (!data) {
-          console.log(`Standard fetch failed, examining ID format: ${id}`);
+        // If edge function fails or returns no data, try polling approach
+        if (isMounted && !analysis) {
+          console.log("Edge function approach failed, trying polling mechanism");
+          const polledAnalysis = await pollForAnalysis(id);
           
-          // Check if we need to format the ID differently (in case it's a string that should be UUID)
-          if (id && id.length >= 32 && !id.includes('-')) {
-            // Format potential UUID string with dashes
-            const formattedId = `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`;
-            console.log(`Trying with formatted UUID: ${formattedId}`);
-            data = await fetchComprehensiveAnalysis(formattedId);
+          if (polledAnalysis && isMounted) {
+            setAnalysis(polledAnalysis);
+            setIsLoading(false);
+            toast.success("Analysis found", { id: "loading-analysis" });
+            return;
           }
         }
         
-        if (data && isMounted) {
-          console.log(`Successfully loaded analysis with ID: ${id}`);
-          setAnalysis(data);
-          setFetchComplete(true);
-        } else if (isMounted && !isPolling && !hasAttemptedPolling) {
-          // If we couldn't load the analysis directly, try polling
-          console.log(`Couldn't fetch analysis directly, starting polling for: ${id}`);
-          toast.info("Checking if analysis is still processing...");
-          pollForAnalysis(id);
-        } else if (isMounted) {
-          console.log(`Analysis not found and polling already attempted`);
-          setError(`Analysis with ID ${id} couldn't be found`);
-          setFetchComplete(true);
+        // If we get here, both approaches failed
+        if (isMounted) {
+          setError(`Could not find analysis with ID: ${id}`);
+          toast.error("Analysis not found", { 
+            id: "loading-analysis", 
+            description: "The analysis ID does not exist or you may not have access to it." 
+          });
         }
       } catch (err) {
+        console.error("Error loading analysis:", err);
         if (isMounted) {
-          console.error(`Error in loadAnalysis:`, err);
-          const errorMessage = err instanceof Error ? err.message : "Failed to load analysis";
-          setError(errorMessage);
-          setDebugInfo(JSON.stringify({ 
-            error: errorMessage, 
+          setError(err instanceof Error ? err.message : "An unknown error occurred");
+          toast.error("Error loading analysis", { 
+            id: "loading-analysis", 
+            description: err instanceof Error ? err.message : "Please try again later" 
+          });
+          setDebugInfo(JSON.stringify({
+            error: err instanceof Error ? err.message : "Unknown error",
             id: id,
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
           }, null, 2));
-          setFetchComplete(true);
-          
-          if (!isPolling && !hasAttemptedPolling) {
-            toast.error("Failed to load analysis", {
-              description: "There was a problem retrieving your comprehensive analysis"
-            });
-          }
         }
       } finally {
         if (isMounted) {
           setIsLoading(false);
         }
       }
-    }
-
+    };
+    
     loadAnalysis();
     
     return () => {
       isMounted = false;
     };
-  }, [id, retryCount, fetchComprehensiveAnalysis, pollForAnalysis, isPolling, hasAttemptedPolling, foundAnalysis, fetchComplete]);
+  }, [id, pollForAnalysis, retryCount, fetchAnalysisFromEdgeFunction]);
   
-  // Update analysis when foundAnalysis changes from polling
+  // Update local state if foundAnalysis changes via polling
   useEffect(() => {
     if (foundAnalysis && !analysis) {
-      console.log(`Setting analysis from polling results for ID: ${id}`);
       setAnalysis(foundAnalysis);
-      setFetchComplete(true);
       setError(null);
     }
-  }, [foundAnalysis, analysis, id]);
-
+  }, [foundAnalysis, analysis]);
+  
   const handleRetry = () => {
-    console.log(`Retrying analysis load (attempt ${retryCount + 1})`);
     setRetryCount(prev => prev + 1);
-    setFetchComplete(false);
     setError(null);
     toast.loading("Retrying analysis load...");
   };
@@ -423,7 +270,7 @@ const ComprehensiveReportPage: React.FC = () => {
     }
   };
 
-  if (isLoading && !fetchComplete) {
+  if (isLoading) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">
         <div className="text-center">

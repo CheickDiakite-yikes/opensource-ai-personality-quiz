@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis } from "@/utils/types";
@@ -150,48 +149,63 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     return 0;
   };
   
+  // Function to directly call the edge function for analysis retrieval
+  const fetchWithEdgeFunction = useCallback(async (id: string): Promise<ComprehensiveAnalysis | null> => {
+    if (!id) return null;
+    
+    try {
+      console.log(`Directly calling get-comprehensive-analysis edge function for ID: ${id}`);
+      
+      const { data, error } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          method: 'POST',
+          body: { id }
+        }
+      );
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        return null;
+      }
+      
+      if (data) {
+        console.log("Successfully retrieved analysis via edge function:", data);
+        // We trust the edge function to return proper data structure
+        return data as unknown as ComprehensiveAnalysis;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error("Error calling edge function:", err);
+      return null;
+    }
+  }, []);
+  
   // Function to poll for analysis completion with enhanced error handling and retries
-  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5) => {
+  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5): Promise<ComprehensiveAnalysis | null> => {
     if (!id) return null;
     
     setIsPolling(true);
     setHasAttemptedPolling(true);
     
     try {
+      // First try: use the edge function directly (now our primary method)
+      const edgeFunctionResult = await fetchWithEdgeFunction(id);
+      if (edgeFunctionResult) {
+        console.log(`Edge function found analysis for ID: ${id}`);
+        setFoundAnalysis(edgeFunctionResult);
+        setIsPolling(false);
+        return edgeFunctionResult;
+      }
+      
+      // If edge function fails, continue with legacy polling methods
+      console.log(`Starting polling mechanism for ID: ${id} after edge function failed`);
+      
       // Comprehensive search for existing analysis using multiple methods
       console.log(`Starting comprehensive analysis polling for ID: ${id}`);
       
-      // Method 1: Directly call get-comprehensive-analysis edge function
-      try {
-        console.log("Calling get-comprehensive-analysis edge function directly");
-        toast.loading("Fetching analysis from server...", { id: "edge-function-call" });
-        
-        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-          "get-comprehensive-analysis",
-          {
-            method: 'POST',
-            body: { id }
-          }
-        );
-        
-        if (edgeFunctionError) {
-          console.error("Error from edge function:", edgeFunctionError);
-          toast.error("Server error", { id: "edge-function-call" });
-        } else if (edgeFunctionData) {
-          console.log("Analysis found via edge function:", edgeFunctionData);
-          toast.success("Analysis retrieved from server!", { id: "edge-function-call" });
-          const analysis = convertToAnalysis(edgeFunctionData);
-          if (analysis) {
-            setFoundAnalysis(analysis);
-            setIsPolling(false);
-            return analysis;
-          }
-        }
-      } catch (edgeErr) {
-        console.error("Exception calling edge function:", edgeErr);
-      }
-      
-      // Method 2: Check if analysis already exists with exact ID match
+      // Method 1: Check if analysis already exists with exact ID match
       const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -213,7 +227,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       }
       
-      // Method 3: Check if analysis exists with assessment ID
+      // Method 2: Check if analysis exists with assessment ID
       const { data: byAssessmentId, error: assessmentError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -240,7 +254,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       }
       
-      // Method 4: Try using the Supabase RPC function
+      // Method 3: Try using the Supabase RPC function
       try {
         const { data: rpcData, error: rpcError } = await supabase
           .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
@@ -261,9 +275,23 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         console.error("Exception calling RPC function:", rpcErr);
       }
       
-      // Method 5: Try to trigger analysis if needed
+      // Method 4: Try to trigger analysis if needed
       let attempts = 0;
       const poll = async () => {
+        try {
+          // Try edge function first on each poll attempt
+          const edgeResult = await fetchWithEdgeFunction(id);
+          if (edgeResult) {
+            console.log(`Edge function found analysis on polling attempt ${attempts}`);
+            setFoundAnalysis(edgeResult);
+            setIsPolling(false);
+            toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
+            return;
+          }
+        } catch (edgeErr) {
+          console.error("Error checking via edge function during polling:", edgeErr);
+        }
+        
         if (attempts >= maxAttempts) {
           console.log(`Polling complete - reached max attempts (${maxAttempts})`);
           setIsPolling(false);
@@ -378,7 +406,10 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       setIsPolling(false);
       return null;
     }
-  }, [convertToAnalysis]);
+    
+    // Return null here since the real result comes through the state update
+    return null;
+  }, [fetchWithEdgeFunction, convertToAnalysis]);
   
   // Clean up polling on unmount
   useEffect(() => {
@@ -389,6 +420,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
 
   return {
     pollForAnalysis,
+    fetchWithEdgeFunction,
     isPolling,
     foundAnalysis,
     hasAttemptedPolling,

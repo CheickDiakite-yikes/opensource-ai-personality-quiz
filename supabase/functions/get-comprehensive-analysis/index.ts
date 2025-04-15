@@ -32,22 +32,26 @@ serve(async (req) => {
 
     console.log(`Edge function: Fetching comprehensive analysis with ID: ${analysisId}`);
 
-    // Method 1: Try direct table query
-    const { data: directData, error: directError } = await supabaseClient
+    // First attempt: Check if it matches exactly with the analysis ID
+    console.log(`Edge function: Attempting exact ID match for: ${analysisId}`);
+    let { data: directData, error: directError } = await supabaseClient
       .from('comprehensive_analyses')
       .select('*')
       .eq('id', analysisId)
       .maybeSingle();
 
-    if (!directError && directData) {
+    if (directData) {
       console.log(`Edge function: Found analysis directly with ID: ${analysisId}`);
       return new Response(
         JSON.stringify(directData),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
+    } else if (directError) {
+      console.error(`Edge function: Error in direct fetch: ${directError.message}`);
     }
 
-    // Method 2: Check if it's an assessment ID
+    // Second attempt: Check if it matches an assessment ID
+    console.log(`Edge function: Attempting to find by assessment ID: ${analysisId}`);
     const { data: assessmentData, error: assessmentError } = await supabaseClient
       .from('comprehensive_analyses')
       .select('*')
@@ -55,14 +59,17 @@ serve(async (req) => {
       .order('created_at', { ascending: false });
 
     if (!assessmentError && assessmentData && assessmentData.length > 0) {
-      console.log(`Edge function: Found analysis via assessment ID: ${analysisId}`);
+      console.log(`Edge function: Found ${assessmentData.length} analyses by assessment ID`);
       return new Response(
         JSON.stringify(assessmentData[0]),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
+    } else if (assessmentError) {
+      console.error(`Edge function: Error in assessment ID fetch: ${assessmentError.message}`);
     }
 
-    // Method 3: Try using RPC function
+    // Third attempt: Try using RPC function
+    console.log(`Edge function: Attempting to use RPC function for ID: ${analysisId}`);
     try {
       const { data: rpcData, error: rpcError } = await supabaseClient.rpc(
         'get_comprehensive_analysis_by_id',
@@ -75,28 +82,76 @@ serve(async (req) => {
           JSON.stringify(rpcData),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
+      } else if (rpcError) {
+        console.error(`Edge function: Error in RPC call: ${rpcError.message}`);
       }
     } catch (rpcErr) {
-      console.error("Edge function: Error calling RPC:", rpcErr);
+      console.error(`Edge function: Exception in RPC call: ${rpcErr}`);
+    }
+    
+    // Fourth attempt: Try a UUID format conversion (in case the ID is formatted differently)
+    if (analysisId.length >= 32 && !analysisId.includes('-')) {
+      try {
+        // Format as UUID with dashes
+        const formattedId = `${analysisId.slice(0, 8)}-${analysisId.slice(8, 12)}-${analysisId.slice(12, 16)}-${analysisId.slice(16, 20)}-${analysisId.slice(20)}`;
+        console.log(`Edge function: Trying with UUID formatted ID: ${formattedId}`);
+        
+        const { data: formattedData, error: formattedError } = await supabaseClient
+          .from('comprehensive_analyses')
+          .select('*')
+          .eq('id', formattedId)
+          .maybeSingle();
+          
+        if (!formattedError && formattedData) {
+          console.log(`Edge function: Found analysis with formatted UUID: ${formattedId}`);
+          return new Response(
+            JSON.stringify(formattedData),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
+      } catch (formatErr) {
+        console.error(`Edge function: UUID format error: ${formatErr}`);
+      }
     }
 
-    // Method 4: Search for recent analyses that might match
+    // Fifth attempt: Get recent analyses and check for partial matches
+    console.log(`Edge function: Looking for recent analyses as fallback`);
     const { data: recentAnalyses, error: recentError } = await supabaseClient
       .from('comprehensive_analyses')
-      .select('id, created_at')
+      .select('id, created_at, assessment_id')
       .order('created_at', { ascending: false })
       .limit(10);
 
     if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
       console.log(`Edge function: Found ${recentAnalyses.length} recent analyses to check`);
       
-      // Try to find the analysis in the most recent ones
+      // Try to find an exact match in recent analyses first
+      const exactMatch = recentAnalyses.find(a => a.id === analysisId || a.assessment_id === analysisId);
+      if (exactMatch) {
+        console.log(`Edge function: Found exact match in recent analyses: ${exactMatch.id}`);
+        
+        const { data: matchData } = await supabaseClient
+          .from('comprehensive_analyses')
+          .select('*')
+          .eq('id', exactMatch.id)
+          .single();
+          
+        if (matchData) {
+          return new Response(
+            JSON.stringify(matchData),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
+      }
+      
+      // Try to find analyses created in the last 15 minutes
       const recentMatch = recentAnalyses.find(a => {
         const createdAt = new Date(a.created_at);
         return (Date.now() - createdAt.getTime()) < 15 * 60 * 1000; // 15 minutes
       });
       
       if (recentMatch) {
+        console.log(`Edge function: Using recent analysis ${recentMatch.id} as fallback`);
         const { data: matchData } = await supabaseClient
           .from('comprehensive_analyses')
           .select('*')
@@ -104,7 +159,6 @@ serve(async (req) => {
           .single();
           
         if (matchData) {
-          console.log(`Edge function: Using recent analysis ${recentMatch.id} as fallback`);
           return new Response(
             JSON.stringify(matchData),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -113,9 +167,30 @@ serve(async (req) => {
       }
     }
 
-    // No analysis found
+    // Final attempt: Check if we received a partial UUID and try a LIKE query
+    if (analysisId.length >= 8) {
+      const partialPattern = `%${analysisId.substr(-8)}%`; // Use last 8 chars for the match
+      console.log(`Edge function: Trying partial match with pattern: ${partialPattern}`);
+      
+      const { data: partialData, error: partialError } = await supabaseClient
+        .from('comprehensive_analyses')
+        .select('*')
+        .ilike('id', partialPattern)
+        .limit(1);
+        
+      if (!partialError && partialData && partialData.length > 0) {
+        console.log(`Edge function: Found analysis by partial ID match: ${partialData[0].id}`);
+        return new Response(
+          JSON.stringify(partialData[0]),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+    }
+
+    // No analysis found after all attempts
+    console.log(`Edge function: Failed to find analysis with ID: ${analysisId} after all attempts`);
     return new Response(
-      JSON.stringify({ error: 'Analysis not found' }),
+      JSON.stringify({ error: 'Analysis not found', id: analysisId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
     );
     
