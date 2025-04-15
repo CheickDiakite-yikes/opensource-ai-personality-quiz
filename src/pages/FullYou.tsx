@@ -264,10 +264,10 @@ const FullYou = () => {
                           <div className="bg-gray-200 h-3 rounded-full w-full">
                             <div 
                               className="bg-blue-500 h-3 rounded-full" 
-                              style={{ width: `${analysis.intelligence_score || 50}%` }}
+                              style={{ width: `${analysis.intelligenceScore || 50}%` }}
                             ></div>
                           </div>
-                          <span className="ml-2 font-medium">{analysis.intelligence_score || 50}%</span>
+                          <span className="ml-2 font-medium">{analysis.intelligenceScore || 50}%</span>
                         </div>
                       </div>
                       
@@ -278,10 +278,10 @@ const FullYou = () => {
                           <div className="bg-gray-200 h-3 rounded-full w-full">
                             <div 
                               className="bg-green-500 h-3 rounded-full" 
-                              style={{ width: `${analysis.emotional_intelligence_score || 50}%` }}
+                              style={{ width: `${analysis.emotionalIntelligenceScore || 50}%` }}
                             ></div>
                           </div>
-                          <span className="ml-2 font-medium">{analysis.emotional_intelligence_score || 50}%</span>
+                          <span className="ml-2 font-medium">{analysis.emotionalIntelligenceScore || 50}%</span>
                         </div>
                       </div>
                     </div>
@@ -378,9 +378,9 @@ const FullYou = () => {
                 
                 <div className="mt-8">
                   <h3 className="text-xl font-medium mb-4">Value System</h3>
-                  {analysis.value_system && Array.isArray(analysis.value_system) ? (
+                  {analysis.valueSystem && Array.isArray(analysis.valueSystem) ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {analysis.value_system.map((value: string, index: number) => (
+                      {analysis.valueSystem.map((value: string, index: number) => (
                         <div key={index} className="bg-secondary/20 rounded-lg p-3 text-center">
                           {value}
                         </div>
@@ -398,13 +398,13 @@ const FullYou = () => {
               <Card className="p-8">
                 <h2 className="text-2xl font-bold mb-6">Relationships</h2>
                 <div className="space-y-8">
-                  {analysis.relationship_patterns && typeof analysis.relationship_patterns === 'object' ? (
+                  {analysis.relationshipPatterns && typeof analysis.relationshipPatterns === 'object' ? (
                     <>
-                      {analysis.relationship_patterns.strengths && Array.isArray(analysis.relationship_patterns.strengths) && (
+                      {analysis.relationshipPatterns.strengths && Array.isArray(analysis.relationshipPatterns.strengths) && (
                         <div>
                           <h3 className="text-xl font-medium mb-4">Relationship Strengths</h3>
                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {analysis.relationship_patterns.strengths.map((strength: string, index: number) => (
+                            {analysis.relationshipPatterns.strengths.map((strength: string, index: number) => (
                               <li key={index} className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
                                 {strength}
                               </li>
@@ -413,11 +413,11 @@ const FullYou = () => {
                         </div>
                       )}
                       
-                      {analysis.relationship_patterns.challenges && Array.isArray(analysis.relationship_patterns.challenges) && (
+                      {analysis.relationshipPatterns.challenges && Array.isArray(analysis.relationshipPatterns.challenges) && (
                         <div>
                           <h3 className="text-xl font-medium mb-4">Relationship Challenges</h3>
                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {analysis.relationship_patterns.challenges.map((challenge: string, index: number) => (
+                            {analysis.relationshipPatterns.challenges.map((challenge: string, index: number) => (
                               <li key={index} className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
                                 {challenge}
                               </li>
@@ -426,11 +426,11 @@ const FullYou = () => {
                         </div>
                       )}
                       
-                      {analysis.relationship_patterns.compatibleTypes && Array.isArray(analysis.relationship_patterns.compatibleTypes) && (
+                      {analysis.relationshipPatterns.compatibleTypes && Array.isArray(analysis.relationshipPatterns.compatibleTypes) && (
                         <div>
                           <h3 className="text-xl font-medium mb-4">Compatible Types</h3>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {analysis.relationship_patterns.compatibleTypes.map((type: string, index: number) => (
+                            {analysis.relationshipPatterns.compatibleTypes.map((type: string, index: number) => (
                               <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-center">
                                 {type}
                               </div>
@@ -445,9 +445,9 @@ const FullYou = () => {
                   
                   <div>
                     <h3 className="text-xl font-medium mb-4">Learning Pathways</h3>
-                    {analysis.learning_pathways && Array.isArray(analysis.learning_pathways) ? (
+                    {analysis.learningPathways && Array.isArray(analysis.learningPathways) ? (
                       <ul className="space-y-3">
-                        {analysis.learning_pathways.map((pathway: string, index: number) => (
+                        {analysis.learningPathways.map((pathway: string, index: number) => (
                           <li key={index} className="border-l-4 border-primary pl-3 py-1">
                             {pathway}
                           </li>
@@ -467,9 +467,9 @@ const FullYou = () => {
                 <h2 className="text-2xl font-bold mb-6">Career Insights</h2>
                 <div>
                   <h3 className="text-xl font-medium mb-4">Career Suggestions</h3>
-                  {analysis.career_suggestions && Array.isArray(analysis.career_suggestions) ? (
+                  {analysis.careerSuggestions && Array.isArray(analysis.careerSuggestions) ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {analysis.career_suggestions.map((career: string, index: number) => (
+                      {analysis.careerSuggestions.map((career: string, index: number) => (
                         <div key={index} className="bg-secondary/20 p-4 rounded-lg">
                           <p>{career}</p>
                         </div>
@@ -482,9 +482,9 @@ const FullYou = () => {
                 
                 <div className="mt-8">
                   <h3 className="text-xl font-medium mb-4">Work Values</h3>
-                  {analysis.value_system && Array.isArray(analysis.value_system) ? (
+                  {analysis.valueSystem && Array.isArray(analysis.valueSystem) ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {analysis.value_system.slice(0, 9).map((value: string, index: number) => (
+                      {analysis.valueSystem.slice(0, 9).map((value: string, index: number) => (
                         <div key={index} className="bg-primary/10 rounded-lg p-3 text-center">
                           {value}
                         </div>
@@ -505,9 +505,9 @@ const FullYou = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                   <div>
                     <h3 className="text-xl font-medium mb-4">Growth Areas</h3>
-                    {analysis.growth_areas && Array.isArray(analysis.growth_areas) ? (
+                    {analysis.growthAreas && Array.isArray(analysis.growthAreas) ? (
                       <ul className="space-y-3">
-                        {analysis.growth_areas.map((area: string, index: number) => (
+                        {analysis.growthAreas.map((area: string, index: number) => (
                           <li key={index} className="bg-secondary/20 p-3 rounded-lg">
                             {area}
                           </li>

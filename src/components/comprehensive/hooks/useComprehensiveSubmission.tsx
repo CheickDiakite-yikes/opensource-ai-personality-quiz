@@ -71,25 +71,32 @@ export function useComprehensiveSubmission(
       // Store the ID for use in the catch block if needed
       createdAssessmentId = assessmentData.id;
       
-      toast.loading("Analyzing your responses...", { id: "assessment-submission" });
+      toast.loading("Analyzing your responses with advanced AI...", { id: "assessment-submission" });
       
-      // Enhanced analysis instructions for more sophisticated output
+      // Enhanced analysis instructions for more sophisticated output based on research
       const enhancedInstructions = {
-        systemInstruction: `You are a professional personality analyst with expertise in psychology, cognitive science, and human development. 
-Your task is to create an insightful, nuanced, and actionable analysis based on comprehensive assessment responses. 
-Your analysis should be detailed, specific to this individual, and demonstrate a sophisticated understanding of personality psychology.
+        systemInstruction: `You are a world-class personality analyst with expertise in multiple psychological frameworks including Big Five, MBTI, Jungian psychology, attachment theory, cognitive behavioral patterns, and positive psychology. 
+
+Your task is to create an exceptionally insightful, evidence-based, and transformative psychological profile based on comprehensive assessment responses.
+
+Your analysis should demonstrate extraordinary depth, be highly personalized, and reflect the latest understanding in personality psychology, cognitive science, and human development research.
 
 Structure your analysis with these key components:
-1. A thorough overview that captures the essence of the individual's personality
-2. 5-7 primary personality traits with scores out of 10 and detailed descriptions
-3. Intelligence analysis including multiple dimensions of intelligence
-4. Emotional intelligence assessment with specific strengths and growth areas
-5. Clear motivational factors and potential inhibitors
-6. Actionable growth opportunities tailored to their specific profile
-7. Relationship patterns and compatibility insights
-8. Career suggestions aligned with their cognitive style and values
-9. A personalized development roadmap with concrete next steps`,
-        temperature: 0.7, // Balanced between creativity and consistency
+1. A profound overview that captures the essence of the individual's unique psychological makeup and core identity 
+2. 7-9 primary personality traits with nuanced scores (1-10) that include both strengths and growth edges
+3. Multi-dimensional intelligence analysis covering cognitive, emotional, creative, practical, and social intelligences
+4. Emotional intelligence assessment with detailed components: self-awareness, self-regulation, motivation, empathy, and social skills
+5. Value system analysis connecting to established frameworks like Schwartz's Basic Human Values
+6. Precise motivational drivers and inhibitors with psychological underpinnings
+7. Relationship patterns based on attachment theory and interpersonal dynamics research
+8. Career alignment analysis based on Holland's vocational types and contemporary workplace psychology
+9. Learning style analysis incorporating neuropsychological research
+10. A developmental roadmap with specific growth strategies supported by positive psychology findings
+
+Your analysis MUST include actionable insights that enable personal transformation. It should be written with empathy and nuance, avoiding deterministic language while acknowledging the complexity of human personality.
+
+Balance scientific precision with accessibility. Use language that is sophisticated yet understandable. Support insights with subtle references to psychological theories without explicitly naming them.`,
+        temperature: 0.75, // Balanced between consistency and creative insight
         responseFormat: "json" // Ensure structured output
       };
       
@@ -138,7 +145,7 @@ Structure your analysis with these key components:
       console.log("Assessment progress cleared from localStorage");
       
       // Show success message
-      toast.success("Analysis complete!", { id: "assessment-submission" });
+      toast.success("Advanced analysis complete!", { id: "assessment-submission" });
       
       // Navigate to the comprehensive report page
       if (data.analysis && data.analysis.id) {
