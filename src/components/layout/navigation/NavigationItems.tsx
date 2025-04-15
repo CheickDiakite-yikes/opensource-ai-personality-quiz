@@ -1,66 +1,54 @@
-import { User, Brain, BarChart, ClipboardList, Home, LogOut, BookCopy, FileText } from "lucide-react";
-import { useLocation } from "react-router-dom";
 
-export interface NavigationItem {
-  name: string;
-  path: string;
-  icon: React.ComponentType<{ className?: string }>;
-  requiresAuth: boolean;
-  description?: string;
-}
+import { Home, Brain, LineChart, User, BarChart2, Share2, Activity, BookOpen } from "lucide-react";
 
-export const useNavigationItems = () => {
-  const location = useLocation();
-  
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path);
-  };
-
-  // Navigation items used in both sidebar and mobile menu
-  const navigationItems: NavigationItem[] = [
-    { 
-      name: "Assessment", 
-      path: "/assessment", 
-      icon: Brain, 
-      requiresAuth: true,
-      description: "Standard 25-question personality assessment"
-    },
-    { 
-      name: "Report", 
-      path: "/report", 
-      icon: ClipboardList, 
-      requiresAuth: true,
-      description: "View your standard assessment results"
-    },
-    { 
-      name: "Comprehensive", 
-      path: "/comprehensive-assessment", 
-      icon: BookCopy, 
-      requiresAuth: true,
-      description: "In-depth 100-question comprehensive assessment"
-    },
-    { 
-      name: "Full Report", 
-      path: "/comprehensive-report", 
-      icon: FileText, 
-      requiresAuth: true,
-      description: "View your in-depth comprehensive analysis"
-    },
-    { 
-      name: "Tracker", 
-      path: "/tracker", 
-      icon: BarChart, 
-      requiresAuth: true,
-      description: "Track your personal growth journey"
-    },
-    { 
-      name: "Profile", 
-      path: "/profile", 
-      icon: User, 
-      requiresAuth: true,
-      description: "View and manage your profile"
-    },
-  ];
-
-  return { navigationItems, isActive };
-};
+export const mainNavItems = [
+  {
+    title: "Home",
+    href: "/",
+    icon: Home,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+  {
+    title: "Assessment",
+    href: "/assessment",
+    icon: Brain,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+  {
+    title: "Report",
+    href: "/report",
+    icon: BarChart2,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+  {
+    title: "Full You",
+    href: "/full-you",
+    icon: BookOpen,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+  {
+    title: "Growth Tracker",
+    href: "/tracker",
+    icon: Activity,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+  {
+    title: "Comprehensive",
+    href: "/comprehensive-assessment",
+    icon: Share2,
+    showOnMobile: false,
+    showOnDesktop: true,
+  },
+  {
+    title: "Profile",
+    href: "/profile",
+    icon: User,
+    showOnMobile: true,
+    showOnDesktop: true,
+  },
+];

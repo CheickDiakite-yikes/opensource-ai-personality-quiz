@@ -15,6 +15,7 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
+const FullYou = lazy(() => import("@/pages/FullYou"));
 
 // Comprehensive Assessment Components
 const ComprehensiveAssessmentPage = lazy(() => import("@/components/comprehensive/ComprehensiveAssessmentPage"));
@@ -111,6 +112,15 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <TraitsPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          {/* New "Full You" route */}
+          <Route path="full-you" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <FullYou />
               </Suspense>
             </PrivateRoute>
           } />
