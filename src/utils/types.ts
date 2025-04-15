@@ -1,4 +1,3 @@
-
 export enum QuestionCategory {
   PersonalityTraits = "PersonalityTraits",
   EmotionalIntelligence = "EmotionalIntelligence",
@@ -145,19 +144,31 @@ export interface ComprehensiveAnalysis {
   id: string;
   created_at?: string;
   assessment_id: string;
+  user_id?: string;
   overview: string;
   traits: any;
   intelligence: any;
-  intelligenceScore: number;
-  emotionalIntelligenceScore: number;
+  intelligence_score?: number; // Database field name
+  intelligenceScore: number;   // Processed field for components 
+  emotional_intelligence_score?: number; // Database field name
+  emotionalIntelligenceScore: number;    // Processed field for components
+  value_system?: any;          // Database field name
+  valueSystem?: any;           // Processed field for components
   motivators: string[];
   inhibitors: string[];
-  growthAreas: string[];
+  growthAreas: string[];       // Processed field for components
+  growth_areas?: any;          // Database field name
   weaknesses: string[];
-  relationshipPatterns: any;
-  careerSuggestions: string[];
+  relationshipPatterns: any;   // Processed field for components
+  relationship_patterns?: any; // Database field name
+  careerSuggestions: string[]; // Processed field for components
+  career_suggestions?: any;    // Database field name
   roadmap: string;
-  learningPathways: string[];
+  learningPathways: string[];  // Processed field for components
+  learning_pathways?: any;     // Database field name
+  cognitive_style?: any;       // Database field name
+  cognitiveStyle?: any;        // Processed field for components
+  result?: any;                // Raw result field from database
 }
 
 export interface Activity {

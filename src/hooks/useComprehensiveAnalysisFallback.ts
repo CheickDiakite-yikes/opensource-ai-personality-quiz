@@ -77,6 +77,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       const careerSuggestions = ensureArray(resultData.career_suggestions || resultData.careerSuggestions || data.career_suggestions);
       const roadmap = resultData.roadmap || data.roadmap || "";
       const learningPathways = ensureArray(resultData.learning_pathways || resultData.learningPathways || data.learning_pathways);
+      const valueSystem = resultData.value_system || resultData.valueSystem || data.value_system || [];
+      const cognitiveStyle = resultData.cognitive_style || resultData.cognitiveStyle || data.cognitive_style || {};
 
       // Process traits to ensure they have proper structure
       const processedTraits = traits.map(trait => {
@@ -111,24 +113,36 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         };
       });
       
-      // Build the final analysis object
+      // Build the final analysis object with both database and component naming conventions
       const analysis: ComprehensiveAnalysis = {
         id: data.id || "",
         created_at: data.created_at || new Date().toISOString(),
         assessment_id: data.assessment_id || assessmentId || "",
+        user_id: data.user_id,
         overview: typeof overview === 'string' ? overview : "No overview available",
         traits: processedTraits,
         intelligence: typeof intelligence === 'object' ? intelligence : {},
+        intelligence_score: intelligenceScore,
         intelligenceScore: intelligenceScore,
+        emotional_intelligence_score: emotionalIntelligenceScore,
         emotionalIntelligenceScore: emotionalIntelligenceScore,
+        value_system: valueSystem,
+        valueSystem: valueSystem,
         motivators: motivators,
         inhibitors: inhibitors,
+        growth_areas: growthAreas,
         growthAreas: growthAreas,
         weaknesses: weaknesses,
+        relationship_patterns: relationshipPatterns,
         relationshipPatterns: relationshipPatterns,
+        career_suggestions: careerSuggestions,
         careerSuggestions: careerSuggestions,
         roadmap: typeof roadmap === 'string' ? roadmap : "No roadmap available",
-        learningPathways: learningPathways
+        learning_pathways: learningPathways,
+        learningPathways: learningPathways,
+        cognitive_style: cognitiveStyle,
+        cognitiveStyle: cognitiveStyle,
+        result: data.result
       };
       
       addLog(`Conversion complete. Analysis has ${analysis.traits.length} traits and overview length: ${analysis.overview?.length || 0}`);
@@ -156,14 +170,20 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           intelligence: {},
           intelligenceScore: 0,
           emotionalIntelligenceScore: 0,
+          value_system: [],
+          valueSystem: [],
           motivators: [],
           inhibitors: [],
           growthAreas: [],
+          growth_areas: [],
           weaknesses: [],
           relationshipPatterns: {},
+          relationship_patterns: {},
           careerSuggestions: [],
+          career_suggestions: [],
           roadmap: "Error loading analysis data",
-          learningPathways: []
+          learningPathways: [],
+          learning_pathways: []
         };
       } catch {
         return null;
@@ -205,7 +225,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     
     setIsLoadingUserAnalyses(true);
     try {
-      addLog(`Fetching all comprehensive analyses for user: ${user.id} via edge function`);
+      addLog(`Fetching all comprehensive analyses for user ${user.id}`);
       
       const { data, error } = await supabase.functions.invoke(
         "get-comprehensive-analysis",
@@ -213,82 +233,51 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           method: 'POST',
           body: { 
             user_id: user.id,
-            fetch_all: true
+            fetch_all: true 
           }
         }
       );
-      
+
       if (error) {
-        addLog(`Edge function error fetching user analyses: ${JSON.stringify(error)}`);
-        
-        toast.error("Failed to fetch your analyses", {
-          description: "Please try refreshing the page"
-        });
+        addLog(`Error fetching analyses: ${error.message}`);
         return [];
       }
       
       if (!data || !Array.isArray(data) || data.length === 0) {
-        addLog("No analyses found for user via edge function");
+        addLog("No analyses found for user");
         return [];
       }
       
-      addLog(`Edge function found ${data.length} analyses for user ${user.id}`);
+      addLog(`Found ${data.length} analyses for user`);
       
-      // Convert all analyses to the proper format
-      const analyses: ComprehensiveAnalysis[] = data
-        .map(item => {
-          const analysis = convertToAnalysis(item);
-          if (!analysis) {
-            addLog(`Failed to convert analysis item: ${item.id}`);
-          }
-          return analysis;
-        })
-        .filter(Boolean) as ComprehensiveAnalysis[];
+      const convertedAnalyses = data.map(item => convertToAnalysis(item))
+        .filter((analysis): analysis is ComprehensiveAnalysis => analysis !== null);
       
-      // Sort analyses by date (newest first)
-      const sortedAnalyses = analyses.sort((a, b) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-      
-      setUserAnalyses(sortedAnalyses);
-      return sortedAnalyses;
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Unknown error";
-      addLog(`Error in fetchAllUserAnalyses: ${errMsg}`);
-      
-      if (error instanceof Error) {
-        addLog(`Error stack: ${error.stack}`);
-      }
-      
-      toast.error("Failed to fetch your analyses", {
-        description: "Please try again later"
-      });
+      setUserAnalyses(convertedAnalyses);
+      return convertedAnalyses;
+    } catch (err) {
+      addLog(`Exception in fetchAllUserAnalyses: ${err instanceof Error ? err.message : String(err)}`);
       return [];
     } finally {
       setIsLoadingUserAnalyses(false);
     }
   }, [user, convertToAnalysis, addLog]);
   
-  // Function to directly call the edge function for analysis retrieval
+  // Function to fetch analysis using edge function
   const fetchWithEdgeFunction = useCallback(async (id: string): Promise<ComprehensiveAnalysis | null> => {
-    if (!id) {
-      addLog("Cannot fetch with edge function - no ID provided");
-      return null;
-    }
-    
     try {
-      addLog(`Directly calling get-comprehensive-analysis edge function for ID: ${id}`);
+      addLog(`Fetching analysis with ID ${id} using edge function`);
       
       const { data, error } = await supabase.functions.invoke(
         "get-comprehensive-analysis",
         {
           method: 'POST',
-          body: { id }
+          body: { analysis_id: id }
         }
       );
-      
+
       if (error) {
-        addLog(`Edge function error: ${JSON.stringify(error)}`);
+        addLog(`Edge function error: ${error.message}`);
         return null;
       }
       
@@ -297,162 +286,73 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         return null;
       }
       
-      addLog("Successfully retrieved analysis via edge function");
-      
-      // Convert the data to a ComprehensiveAnalysis object
-      const analysis = convertToAnalysis(data);
-      return analysis;
+      addLog("Successfully received data from edge function");
+      return convertToAnalysis(data);
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
-      addLog(`Error calling edge function: ${errMsg}`);
-      
-      if (err instanceof Error) {
-        addLog(`Error stack: ${err.stack}`);
-      }
-      
+      addLog(`Exception in fetchWithEdgeFunction: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }, [convertToAnalysis, addLog]);
   
-  // Function to poll for analysis completion with enhanced error handling and retries
-  const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5): Promise<ComprehensiveAnalysis | null> => {
-    if (!id) {
-      addLog("Cannot poll for analysis - no ID provided");
-      return null;
-    }
-    
+  // Function to poll for analysis completion
+  const pollForAnalysis = useCallback(async (id: string): Promise<ComprehensiveAnalysis | null> => {
+    addLog(`Starting polling for analysis with ID ${id}`);
     setIsPolling(true);
     setHasAttemptedPolling(true);
+    setPollingAttempts(0);
     
     try {
-      // First try: use the edge function directly (now our primary method)
-      addLog(`Starting analysis polling for ID: ${id} using edge function`);
-      const edgeFunctionResult = await fetchWithEdgeFunction(id);
-      
-      if (edgeFunctionResult) {
-        addLog(`Edge function found analysis for ID: ${id}`);
-        setFoundAnalysis(edgeFunctionResult);
+      // Try to directly fetch the analysis first
+      const directResult = await fetchWithEdgeFunction(id);
+      if (directResult) {
+        addLog("Successfully fetched analysis on first attempt");
+        setFoundAnalysis(directResult);
         setIsPolling(false);
-        toast.success("Analysis found!", { id: `poll-analysis-${id}` });
-        return edgeFunctionResult;
+        return directResult;
       }
       
-      // If edge function fails, continue with legacy polling methods
-      addLog(`Edge function failed to find analysis for ID: ${id}, starting polling`);
-      
-      // Method 4: Try to trigger analysis if needed
+      // If not found, start polling
       let attempts = 0;
-      const poll = async () => {
-        try {
-          // Try edge function first on each poll attempt
-          addLog(`Polling attempt ${attempts + 1}/${maxAttempts} for ID: ${id}`);
-          const edgeResult = await fetchWithEdgeFunction(id);
-          
-          if (edgeResult) {
-            addLog(`Edge function found analysis on polling attempt ${attempts}`);
-            setFoundAnalysis(edgeResult);
-            setIsPolling(false);
-            toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
-            return;
-          }
-          
-          addLog(`No analysis found on polling attempt ${attempts + 1}`);
-        } catch (edgeErr) {
-          const errMsg = edgeErr instanceof Error ? edgeErr.message : "Unknown error";
-          addLog(`Error checking via edge function during polling: ${errMsg}`);
-        }
-        
-        if (attempts >= maxAttempts) {
-          addLog(`Polling complete - reached max attempts (${maxAttempts})`);
-          setIsPolling(false);
-          toast.error("Could not retrieve analysis after multiple attempts");
-          return;
-        }
-        
+      const maxAttempts = 5;
+      let foundResult: ComprehensiveAnalysis | null = null;
+      
+      while (attempts < maxAttempts) {
         attempts++;
         setPollingAttempts(attempts);
         
-        addLog(`Polling for analysis of assessment ${id} - attempt ${attempts}/${maxAttempts}`);
+        addLog(`Polling attempt ${attempts}/${maxAttempts}`);
         
-        if (attempts === 1) {
-          // On first attempt, try to trigger the analysis
-          try {
-            addLog("Attempting to trigger analysis creation via edge function");
-            const triggerResponse = await supabase.functions.invoke(
-              "analyze-comprehensive-responses",
-              {
-                body: { 
-                  assessmentId: id,
-                  forceRun: true
-                }
-              }
-            );
-            
-            if (triggerResponse.error) {
-              addLog(`Error triggering analysis: ${JSON.stringify(triggerResponse.error)}`);
-            } else {
-              addLog("Successfully triggered analysis creation");
-            }
-          } catch (err) {
-            const errMsg = err instanceof Error ? err.message : "Unknown error";
-            addLog(`Exception when triggering analysis: ${errMsg}`);
-            
-            if (err instanceof Error && err.stack) {
-              addLog(`Error stack: ${err.stack}`);
-            }
-          }
+        // Wait 3 seconds between attempts (increasing with each attempt)
+        await new Promise(resolve => setTimeout(resolve, 3000 * attempts));
+        
+        // Try to get the analysis
+        const result = await fetchWithEdgeFunction(id);
+        
+        if (result) {
+          addLog(`Found analysis on polling attempt ${attempts}`);
+          foundResult = result;
+          setFoundAnalysis(result);
+          break;
         }
         
-        // Wait before next polling attempt
-        setTimeout(() => {
-          poll();
-        }, 5000);
-      };
-      
-      // Start polling
-      poll();
-      
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Unknown error";
-      addLog(`Error in pollForAnalysis: ${errMsg}`);
-      
-      if (error instanceof Error && error.stack) {
-        addLog(`Error stack: ${error.stack}`);
+        addLog(`Analysis not found on attempt ${attempts}`);
       }
       
-      toast.error("Error retrieving analysis");
+      if (!foundResult) {
+        addLog(`Analysis not found after ${maxAttempts} attempts`);
+      }
+      
+      return foundResult;
+    } finally {
       setIsPolling(false);
-      return null;
     }
-    
-    // Return null here since the real result comes through the state update
-    return null;
   }, [fetchWithEdgeFunction, addLog]);
   
-  // Clean up polling on unmount
-  useEffect(() => {
-    return () => {
-      setIsPolling(false);
-    };
-  }, []);
-
-  // When user changes, attempt to fetch all of their analyses
-  useEffect(() => {
-    if (user && !isLoadingUserAnalyses && userAnalyses.length === 0) {
-      fetchAllUserAnalyses().then(analyses => {
-        addLog(`Initial user analyses fetch found ${analyses.length} analyses`);
-      });
-    }
-  }, [user, isLoadingUserAnalyses, userAnalyses.length, fetchAllUserAnalyses, addLog]);
-
   return {
-    pollForAnalysis,
+    pollForAnalysis, 
     fetchWithEdgeFunction,
-    fetchAllUserAnalyses,
     isPolling,
-    isLoadingUserAnalyses,
     foundAnalysis,
-    userAnalyses,
     hasAttemptedPolling,
     pollingAttempts,
     conversionError,
