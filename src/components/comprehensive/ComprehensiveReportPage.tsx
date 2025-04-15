@@ -860,4 +860,3 @@ const ComprehensiveReportPage: React.FC = () => {
           <p className="text-muted-foreground">
             ID: {id || "No report ID provided"}
           </p>
-        </div>
