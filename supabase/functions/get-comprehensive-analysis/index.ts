@@ -22,10 +22,75 @@ serve(async (req) => {
     // Parse request body
     const requestData = await req.json();
     const analysisId = requestData.id;
+    const userId = requestData.user_id;
+    const fetchAll = !!requestData.fetch_all;
+    
+    console.log(`Edge function: Request received with params - ID: ${analysisId}, User ID: ${userId}, Fetch All: ${fetchAll}`);
+    console.log(`Edge function: Request URL: ${req.url}`);
+    console.log(`Edge function: Request headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
+    console.log(`Edge function: ENV vars set: SUPABASE_URL=${!!Deno.env.get('SUPABASE_URL')}, SERVICE_ROLE_KEY=${!!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`);
 
+    // If fetch_all is true and userId is provided, return all analyses for that user
+    if (fetchAll && userId) {
+      console.log(`Edge function: Fetching all analyses for user: ${userId}`);
+      const { data: allUserAnalyses, error: userError } = await supabaseClient
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (userError) {
+        console.error(`Edge function: Error fetching user analyses: ${userError.message}`);
+        console.error(`Edge function: Error details: ${JSON.stringify(userError)}`);
+        return new Response(
+          JSON.stringify({ error: 'Error fetching user analyses', details: userError.message }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      if (allUserAnalyses && allUserAnalyses.length > 0) {
+        console.log(`Edge function: Found ${allUserAnalyses.length} analyses for user ${userId}`);
+        return new Response(
+          JSON.stringify(allUserAnalyses),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } else {
+        console.log(`Edge function: No analyses found for user ${userId}`);
+        return new Response(
+          JSON.stringify({ error: 'No analyses found for user', user_id: userId }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        );
+      }
+    }
+
+    // If analysisId is not provided but userId is, return the latest analysis for that user
+    if (!analysisId && userId) {
+      console.log(`Edge function: Fetching latest analysis for user: ${userId}`);
+      const { data: latestAnalysis, error: latestError } = await supabaseClient
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestError) {
+        console.error(`Edge function: Error fetching latest analysis: ${latestError.message}`);
+        console.error(`Edge function: Error details: ${JSON.stringify(latestError)}`);
+      } else if (latestAnalysis) {
+        console.log(`Edge function: Found latest analysis for user: ${userId}`);
+        return new Response(
+          JSON.stringify(latestAnalysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+    }
+
+    // If no analysis ID is provided and no user ID or the above methods failed, return an error
     if (!analysisId) {
+      console.error("Edge function: Missing analysis ID or user ID");
       return new Response(
-        JSON.stringify({ error: 'Missing analysis ID' }),
+        JSON.stringify({ error: 'Missing analysis ID or user ID' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -48,6 +113,7 @@ serve(async (req) => {
       );
     } else if (directError) {
       console.error(`Edge function: Error in direct fetch: ${directError.message}`);
+      console.error(`Edge function: Error details: ${JSON.stringify(directError)}`);
     }
 
     // Second attempt: Check if it matches an assessment ID
@@ -66,6 +132,7 @@ serve(async (req) => {
       );
     } else if (assessmentError) {
       console.error(`Edge function: Error in assessment ID fetch: ${assessmentError.message}`);
+      console.error(`Edge function: Error details: ${JSON.stringify(assessmentError)}`);
     }
 
     // Third attempt: Try using RPC function
@@ -84,9 +151,11 @@ serve(async (req) => {
         );
       } else if (rpcError) {
         console.error(`Edge function: Error in RPC call: ${rpcError.message}`);
+        console.error(`Edge function: Error details: ${JSON.stringify(rpcError)}`);
       }
     } catch (rpcErr) {
       console.error(`Edge function: Exception in RPC call: ${rpcErr}`);
+      console.error(`Edge function: Stacktrace: ${rpcErr.stack}`);
     }
     
     // Fourth attempt: Try a UUID format conversion (in case the ID is formatted differently)
@@ -108,9 +177,13 @@ serve(async (req) => {
             JSON.stringify(formattedData),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
+        } else if (formattedError) {
+          console.error(`Edge function: Error in formatted UUID fetch: ${formattedError.message}`);
+          console.error(`Edge function: Error details: ${JSON.stringify(formattedError)}`);
         }
       } catch (formatErr) {
         console.error(`Edge function: UUID format error: ${formatErr}`);
+        console.error(`Edge function: Stacktrace: ${formatErr.stack}`);
       }
     }
 
@@ -124,13 +197,14 @@ serve(async (req) => {
 
     if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
       console.log(`Edge function: Found ${recentAnalyses.length} recent analyses to check`);
+      console.log(`Edge function: Recent analyses IDs: ${recentAnalyses.map(a => a.id).join(', ')}`);
       
       // Try to find an exact match in recent analyses first
       const exactMatch = recentAnalyses.find(a => a.id === analysisId || a.assessment_id === analysisId);
       if (exactMatch) {
         console.log(`Edge function: Found exact match in recent analyses: ${exactMatch.id}`);
         
-        const { data: matchData } = await supabaseClient
+        const { data: matchData, error: matchError } = await supabaseClient
           .from('comprehensive_analyses')
           .select('*')
           .eq('id', exactMatch.id)
@@ -141,6 +215,9 @@ serve(async (req) => {
             JSON.stringify(matchData),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
+        } else if (matchError) {
+          console.error(`Edge function: Error fetching matched analysis: ${matchError.message}`);
+          console.error(`Edge function: Error details: ${JSON.stringify(matchError)}`);
         }
       }
       
@@ -152,7 +229,7 @@ serve(async (req) => {
       
       if (recentMatch) {
         console.log(`Edge function: Using recent analysis ${recentMatch.id} as fallback`);
-        const { data: matchData } = await supabaseClient
+        const { data: matchData, error: matchError } = await supabaseClient
           .from('comprehensive_analyses')
           .select('*')
           .eq('id', recentMatch.id)
@@ -163,8 +240,14 @@ serve(async (req) => {
             JSON.stringify(matchData),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
+        } else if (matchError) {
+          console.error(`Edge function: Error fetching recent fallback analysis: ${matchError.message}`);
+          console.error(`Edge function: Error details: ${JSON.stringify(matchError)}`);
         }
       }
+    } else if (recentError) {
+      console.error(`Edge function: Error fetching recent analyses: ${recentError.message}`);
+      console.error(`Edge function: Error details: ${JSON.stringify(recentError)}`);
     }
 
     // Final attempt: Check if we received a partial UUID and try a LIKE query
@@ -184,21 +267,41 @@ serve(async (req) => {
           JSON.stringify(partialData[0]),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
+      } else if (partialError) {
+        console.error(`Edge function: Error in partial match query: ${partialError.message}`);
+        console.error(`Edge function: Error details: ${JSON.stringify(partialError)}`);
       }
     }
 
     // No analysis found after all attempts
     console.log(`Edge function: Failed to find analysis with ID: ${analysisId} after all attempts`);
+    console.log(`Edge function: User ID: ${userId}, Fetch All: ${fetchAll}`);
     return new Response(
-      JSON.stringify({ error: 'Analysis not found', id: analysisId }),
+      JSON.stringify({ 
+        error: 'Analysis not found', 
+        id: analysisId,
+        requestParameters: {
+          userId,
+          fetchAll,
+          idLength: analysisId?.length,
+          idFormat: analysisId?.includes('-') ? 'with-dashes' : 'no-dashes'
+        }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
     );
     
   } catch (error) {
     console.error("Edge function error:", error);
+    console.error("Edge function error stack:", error.stack);
+    console.error("Edge function error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     
     return new Response(
-      JSON.stringify({ error: 'Server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Server error', 
+        details: error.message,
+        stack: error.stack,
+        name: error.name
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

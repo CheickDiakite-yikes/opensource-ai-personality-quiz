@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -9,6 +10,7 @@ import TraitsDetail from "./TraitsDetail";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const TraitsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +18,7 @@ const TraitsPage: React.FC = () => {
     analysis, 
     isLoading, 
     fetchAnalysisById,
-    forceFetchAllAnalyses // New function from our updated hook
+    forceFetchAllAnalyses 
   } = useAIAnalysis();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -36,7 +38,25 @@ const TraitsPage: React.FC = () => {
         console.log(`[TraitsPage] Attempting to load analysis directly with ID: ${id}`);
         
         try {
-          // First try the direct fetch
+          // First try the edge function
+          console.log("[TraitsPage] Attempting to use edge function");
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+            "get-comprehensive-analysis",
+            {
+              method: 'POST',
+              body: { id }
+            }
+          );
+          
+          if (edgeError) {
+            console.error("[TraitsPage] Edge function error:", edgeError);
+          } else if (edgeData) {
+            console.log("[TraitsPage] Successfully loaded analysis with edge function");
+            setDirectAnalysis(edgeData);
+            return;
+          }
+          
+          // Then try the direct fetch if edge function fails
           const fetchedAnalysis = await fetchAnalysisById(id);
           
           if (fetchedAnalysis) {
@@ -96,7 +116,26 @@ const TraitsPage: React.FC = () => {
     toast.loading("Refreshing analysis data...", { id: "traits-refresh" });
     
     try {
-      // First try normal refresh
+      // First try edge function
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          method: 'POST',
+          body: { id }
+        }
+      );
+      
+      if (edgeError) {
+        console.error("[TraitsPage] Edge function error during refresh:", edgeError);
+      } else if (edgeData) {
+        console.log("[TraitsPage] Successfully refreshed analysis with edge function");
+        setDirectAnalysis(edgeData);
+        toast.success("Analysis data refreshed", { id: "traits-refresh" });
+        setIsRefreshing(false);
+        return;
+      }
+      
+      // If edge function fails, try normal refresh
       const refreshedAnalysis = await fetchAnalysisById(id);
       
       if (refreshedAnalysis) {
