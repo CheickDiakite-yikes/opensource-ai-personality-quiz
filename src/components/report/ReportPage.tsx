@@ -12,7 +12,6 @@ import ReportSkeleton from "./skeletons/ReportSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
 import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
-import { supabase } from "@/integrations/supabase/client";
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +35,6 @@ const ReportPage: React.FC = () => {
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [isLoadingAllAnalyses, setIsLoadingAllAnalyses] = useState(false);
   const [directlyFetchedAnalysis, setDirectlyFetchedAnalysis] = useState<PersonalityAnalysis | null>(null);
-  const [edgeFunctionAttempted, setEdgeFunctionAttempted] = useState(false);
   
   // Extract the analysis history and ensure it's a stable reference
   const analysisHistory = useMemo(() => {
@@ -60,38 +58,6 @@ const ReportPage: React.FC = () => {
       });
     }
   }, [location.state, forcedRefresh, refreshAnalysis]);
-
-  // Try to fetch analysis using edge function first
-  useEffect(() => {
-    if (id && !analysis && !stableAnalysis && !directlyFetchedAnalysis && !edgeFunctionAttempted) {
-      setEdgeFunctionAttempted(true);
-      
-      const tryEdgeFunction = async () => {
-        try {
-          console.log("ReportPage: Attempting to fetch analysis with edge function");
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
-            "get-comprehensive-analysis",
-            {
-              method: 'POST',
-              body: { id }
-            }
-          );
-          
-          if (edgeError) {
-            console.error("ReportPage: Edge function error:", edgeError);
-          } else if (edgeData) {
-            console.log("ReportPage: Successfully fetched analysis with edge function");
-            setDirectlyFetchedAnalysis(edgeData);
-            return;
-          }
-        } catch (error) {
-          console.error("ReportPage: Error using edge function:", error);
-        }
-      };
-      
-      tryEdgeFunction();
-    }
-  }, [id, analysis, stableAnalysis, directlyFetchedAnalysis, edgeFunctionAttempted]);
 
   // Emergency load if coming directly to URL with ID
   useEffect(() => {
@@ -146,29 +112,6 @@ const ReportPage: React.FC = () => {
         
         // If we have an ID from the URL, try to load that specific analysis
         if (id) {
-          // Try edge function first
-          try {
-            console.log("ReportPage loadAnalysis: Trying edge function");
-            const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
-              "get-comprehensive-analysis",
-              {
-                method: 'POST',
-                body: { id }
-              }
-            );
-            
-            if (edgeError) {
-              console.error("ReportPage loadAnalysis: Edge function error:", edgeError);
-            } else if (edgeData) {
-              console.log("ReportPage loadAnalysis: Successfully fetched with edge function");
-              setStableAnalysis(edgeData);
-              return;
-            }
-          } catch (edgeError) {
-            console.error("ReportPage loadAnalysis: Edge function exception:", edgeError);
-          }
-          
-          // If edge function fails, try other methods
           const success = setCurrentAnalysis(id);
           
           // If setCurrentAnalysis fails, try to fetch the analysis directly
@@ -289,31 +232,7 @@ const ReportPage: React.FC = () => {
     
     setIsChangingAnalysis(true);
     
-    // Try edge function first
-    try {
-      console.log("handleAnalysisChange: Trying edge function");
-      const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
-        "get-comprehensive-analysis",
-        {
-          method: 'POST',
-          body: { id: analysisId }
-        }
-      );
-      
-      if (edgeError) {
-        console.error("handleAnalysisChange: Edge function error:", edgeError);
-      } else if (edgeData) {
-        console.log("handleAnalysisChange: Successfully fetched with edge function");
-        setStableAnalysis(edgeData);
-        navigate(`/report/${analysisId}`, { replace: false });
-        setIsChangingAnalysis(false);
-        return;
-      }
-    } catch (edgeError) {
-      console.error("handleAnalysisChange: Edge function exception:", edgeError);
-    }
-    
-    // If edge function fails, try normal methods
+    // First try to set the current analysis using the normal method
     const success = setCurrentAnalysis(analysisId);
     
     // If that fails, try to fetch it directly
@@ -363,32 +282,6 @@ const ReportPage: React.FC = () => {
   const handleManualRefresh = async () => {
     toast.loading("Refreshing your analyses...", { id: "refresh-toast" });
     try {
-      // Try edge function first for current ID
-      if (id) {
-        try {
-          console.log("handleManualRefresh: Trying edge function");
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
-            "get-comprehensive-analysis",
-            {
-              method: 'POST',
-              body: { id }
-            }
-          );
-          
-          if (edgeError) {
-            console.error("handleManualRefresh: Edge function error:", edgeError);
-          } else if (edgeData) {
-            console.log("handleManualRefresh: Successfully refreshed with edge function");
-            setDirectlyFetchedAnalysis(edgeData);
-            toast.success("Successfully refreshed your analysis", { id: "refresh-toast" });
-            return;
-          }
-        } catch (edgeError) {
-          console.error("handleManualRefresh: Edge function exception:", edgeError);
-        }
-      }
-      
-      // If edge function fails or no ID, fall back to normal methods
       await loadAllAnalysesFromSupabase();
       toast.success("Successfully refreshed your analyses", { id: "refresh-toast" });
       

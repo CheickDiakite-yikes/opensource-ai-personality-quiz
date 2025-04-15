@@ -17,7 +17,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { AssessmentErrorHandler } from "../assessment/AssessmentErrorHandler";
 import { FixAnalysisButton } from "../analysis/FixAnalysisButton";
-import { supabase } from "@/integrations/supabase/client";
+
+// ShareProfile import has been removed
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -46,31 +47,8 @@ const ProfilePage: React.FC = () => {
       try {
         setIsRefreshingData(true);
         
-        // Try to directly fetch analyses using edge function if user is logged in
+        // Try to load all analyses first to ensure we have complete history
         if (user) {
-          console.log("ProfilePage: Fetching analyses using edge function");
-          try {
-            const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-              "get-comprehensive-analysis",
-              {
-                method: 'POST',
-                body: { 
-                  user_id: user.id,
-                  fetch_all: true 
-                }
-              }
-            );
-            
-            if (edgeFunctionError) {
-              console.error("Edge function error:", edgeFunctionError);
-            } else if (edgeFunctionData && Array.isArray(edgeFunctionData) && edgeFunctionData.length > 0) {
-              console.log(`ProfilePage: Edge function found ${edgeFunctionData.length} analyses`);
-            }
-          } catch (edgeError) {
-            console.error("Error calling edge function:", edgeError);
-          }
-          
-          // Also load analyses from Supabase as backup
           await loadAllAnalysesFromSupabase();
         }
         
@@ -134,35 +112,14 @@ const ProfilePage: React.FC = () => {
     
     setIsRefreshingData(true);
     try {
-      // Directly use edge function for comprehensive analysis
+      // Try to load all analyses
       if (user) {
-        try {
-          console.log("ProfilePage: Manual refresh using edge function");
-          const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-            "get-comprehensive-analysis",
-            {
-              method: 'POST',
-              body: { 
-                user_id: user.id,
-                fetch_all: true 
-              }
-            }
-          );
-          
-          if (edgeFunctionError) {
-            console.error("Edge function error during manual refresh:", edgeFunctionError);
-          } else if (edgeFunctionData && Array.isArray(edgeFunctionData) && edgeFunctionData.length > 0) {
-            console.log(`ProfilePage: Manual refresh found ${edgeFunctionData.length} analyses`);
-            toast.success(`Found ${edgeFunctionData.length} analyses`, {
-              description: "Your profile has been updated with the latest data"
-            });
-          }
-        } catch (edgeError) {
-          console.error("Error calling edge function during manual refresh:", edgeError);
+        const allAnalyses = await loadAllAnalysesFromSupabase();
+        if (allAnalyses && allAnalyses.length > 0) {
+          toast.success(`Found ${allAnalyses.length} analyses`, {
+            description: "Your profile has been updated with the latest data"
+          });
         }
-        
-        // Still use local function as backup
-        await loadAllAnalysesFromSupabase();
       }
       
       // Refresh to update state
@@ -224,6 +181,8 @@ const ProfilePage: React.FC = () => {
         <TraitsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <InsightsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <GrowthPathwayCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        
+        {/* ShareProfile component has been removed */}
       </div>
     </div>
   );

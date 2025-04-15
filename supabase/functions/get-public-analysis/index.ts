@@ -57,29 +57,7 @@ Deno.serve(async (req) => {
 
     console.log(`[get-public-analysis] Getting public analysis with ID: ${id}`);
 
-    // Try comprehensive_analyses table first
-    try {
-      console.log("[get-public-analysis] Checking comprehensive_analyses table first");
-      const { data: comprehensiveData, error: comprehensiveError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      
-      if (comprehensiveError) {
-        console.error("[get-public-analysis] Error fetching from comprehensive_analyses:", comprehensiveError);
-      } else if (comprehensiveData) {
-        console.log(`[get-public-analysis] Found analysis in comprehensive_analyses: ${comprehensiveData.id}`);
-        return new Response(
-          JSON.stringify(comprehensiveData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (e) {
-      console.error("[get-public-analysis] Exception checking comprehensive_analyses:", e);
-    }
-
-    // Try direct table access for analyses table with improved error handling
+    // Try direct table access first with improved error handling
     try {
       const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
@@ -105,25 +83,6 @@ Deno.serve(async (req) => {
     // If not found by id, try looking by assessment_id
     try {
       console.log("[get-public-analysis] Analysis not found by ID, trying assessment_id");
-      
-      // Try comprehensive_analyses first
-      const { data: compAssessmentData, error: compAssessmentError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .eq('assessment_id', id)
-        .maybeSingle();
-        
-      if (compAssessmentError) {
-        console.error("[get-public-analysis] Error fetching comprehensive by assessment_id:", compAssessmentError);
-      } else if (compAssessmentData) {
-        console.log(`[get-public-analysis] Found comprehensive by assessment_id: ${compAssessmentData.id}`);
-        return new Response(
-          JSON.stringify(compAssessmentData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Then try analyses table
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('analyses')
         .select('*')
@@ -148,26 +107,6 @@ Deno.serve(async (req) => {
     // If still not found, try a more flexible search
     try {
       console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
-      
-      // Try comprehensive_analyses first
-      const { data: compFlexData, error: compFlexError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .filter('id', 'ilike', `%${id.slice(-8)}%`)
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (compFlexError) {
-        console.error("[get-public-analysis] Error in comprehensive flexible search:", compFlexError);
-      } else if (compFlexData && compFlexData.length > 0) {
-        console.log(`[get-public-analysis] Found comprehensive via flexible search: ${compFlexData[0].id}`);
-        return new Response(
-          JSON.stringify(compFlexData[0]),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Then try analyses table
       const { data: flexData, error: flexError } = await supabase
         .from('analyses')
         .select('*')
@@ -189,31 +128,9 @@ Deno.serve(async (req) => {
       // Continue to next approach
     }
 
-    // Try one last approach - get the most recent analysis from either table
+    // Try one last approach - get the most recent analysis, if any
     try {
       console.log("[get-public-analysis] No matching analysis found, getting most recent analysis");
-      
-      // Try comprehensive_analyses first
-      const { data: recentCompData, error: recentCompError } = await supabase
-        .from('comprehensive_analyses')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (recentCompError) {
-        console.error("[get-public-analysis] Error fetching recent comprehensive analysis:", recentCompError);
-      } else if (recentCompData && recentCompData.length > 0) {
-        console.log(`[get-public-analysis] Found most recent comprehensive analysis: ${recentCompData[0].id}`);
-        return new Response(
-          JSON.stringify({ 
-            ...recentCompData[0],
-            message: "Requested analysis not found, returning most recent comprehensive analysis instead" 
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Then try analyses table
       const { data: recentData, error: recentError } = await supabase
         .from('analyses')
         .select('*')
