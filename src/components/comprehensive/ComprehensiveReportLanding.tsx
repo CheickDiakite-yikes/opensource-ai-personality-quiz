@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -163,7 +164,11 @@ const ComprehensiveReportLanding: React.FC = () => {
             console.log(`LANDING: METHOD 3 ✓ Unfiltered query found ${allAnalyses.length} analyses`);
             
             // Filter client-side to find user's analyses
-            const userAnalyses = allAnalyses.filter(a => a.user_id === user.id);
+            const userAnalyses = allAnalyses.filter(a => {
+              // Fix: Type-guard to ensure a is an object with a user_id property
+              return typeof a === 'object' && a !== null && 'user_id' in a && a.user_id === user.id;
+            });
+            
             console.log(`LANDING: METHOD 3 ✓ Found ${userAnalyses.length} analyses for current user`);
             
             userAnalyses.forEach(item => {
@@ -199,7 +204,13 @@ const ComprehensiveReportLanding: React.FC = () => {
               const { data: analysisData, error: rpcError } = await supabase
                 .rpc('get_comprehensive_analysis_by_id', { analysis_id: item.id });
                 
-              if (!rpcError && analysisData && analysisData.user_id === user.id && !analysisIds.has(item.id)) {
+              // Fix: Add proper type check for analysisData
+              if (!rpcError && analysisData && 
+                  typeof analysisData === 'object' && 
+                  analysisData !== null &&
+                  'user_id' in analysisData && 
+                  analysisData.user_id === user.id && 
+                  !analysisIds.has(item.id)) {
                 console.log(`LANDING: Retrieved analysis ${item.id} via RPC function`);
                 analysisIds.add(item.id);
                 results.push(analysisData);
