@@ -25,7 +25,7 @@ export function useComprehensiveSubmission(
     const formattedResponses: ComprehensiveSubmissionResponse[] = Object.values(responses).map(response => ({
       questionId: response.questionId,
       answer: response.selectedOption === "Other" ? response.customResponse : response.selectedOption,
-      category: response.category // Now properly typed
+      category: response.category 
     }));
     
     // Validate we have enough responses
@@ -73,7 +73,27 @@ export function useComprehensiveSubmission(
       
       toast.loading("Analyzing your responses...", { id: "assessment-submission" });
       
-      // Call Supabase Edge Function to analyze responses with improved logging
+      // Enhanced analysis instructions for more sophisticated output
+      const enhancedInstructions = {
+        systemInstruction: `You are a professional personality analyst with expertise in psychology, cognitive science, and human development. 
+Your task is to create an insightful, nuanced, and actionable analysis based on comprehensive assessment responses. 
+Your analysis should be detailed, specific to this individual, and demonstrate a sophisticated understanding of personality psychology.
+
+Structure your analysis with these key components:
+1. A thorough overview that captures the essence of the individual's personality
+2. 5-7 primary personality traits with scores out of 10 and detailed descriptions
+3. Intelligence analysis including multiple dimensions of intelligence
+4. Emotional intelligence assessment with specific strengths and growth areas
+5. Clear motivational factors and potential inhibitors
+6. Actionable growth opportunities tailored to their specific profile
+7. Relationship patterns and compatibility insights
+8. Career suggestions aligned with their cognitive style and values
+9. A personalized development roadmap with concrete next steps`,
+        temperature: 0.7, // Balanced between creativity and consistency
+        responseFormat: "json" // Ensure structured output
+      };
+      
+      // Call Supabase Edge Function to analyze responses with improved instructions
       console.log(`Calling analyze-comprehensive-responses function with assessment ID: ${createdAssessmentId}`);
       console.log(`Sending ${formattedResponses.length} responses for analysis`);
       
@@ -89,13 +109,15 @@ export function useComprehensiveSubmission(
           .join(', ')
       );
       
-      // Call the edge function with improved error handling
+      // Call the edge function with enhanced instructions
       const { data, error } = await supabase.functions.invoke(
         "analyze-comprehensive-responses",
         {
           body: { 
             assessmentId: createdAssessmentId,
-            responses: formattedResponses
+            responses: formattedResponses,
+            enhancedAnalysis: true, // Flag to use advanced analysis
+            instructions: enhancedInstructions
           }
         }
       );
