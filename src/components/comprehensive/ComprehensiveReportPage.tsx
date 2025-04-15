@@ -38,6 +38,40 @@ const ComprehensiveReportPage: React.FC = () => {
   const [fetchComplete, setFetchComplete] = useState<boolean>(false);
   const { pollForAnalysis, isPolling, foundAnalysis, hasAttemptedPolling } = useComprehensiveAnalysisFallback(id);
   
+  // First, try to directly call the edge function to get the analysis
+  useEffect(() => {
+    if (!id || fetchComplete || foundAnalysis) return;
+    
+    const callEdgeFunction = async () => {
+      try {
+        console.log(`Directly calling get-comprehensive-analysis for ID: ${id}`);
+        const { data, error } = await supabase.functions.invoke(
+          "get-comprehensive-analysis",
+          {
+            method: 'POST',
+            body: { id }
+          }
+        );
+        
+        if (error) {
+          console.error("Edge function error:", error);
+        } else if (data) {
+          console.log("Successfully retrieved analysis via edge function:", data);
+          setAnalysis(data);
+          setFetchComplete(true);
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error calling edge function:", err);
+      }
+      
+      // If edge function fails, continue with other fetch methods
+    };
+    
+    callEdgeFunction();
+  }, [id, fetchComplete, foundAnalysis]);
+  
   // Enhanced function to fetch comprehensive analysis with better error handling and multiple methods
   const fetchComprehensiveAnalysis = useCallback(async (analysisId: string) => {
     if (!analysisId) {
@@ -47,6 +81,27 @@ const ComprehensiveReportPage: React.FC = () => {
     console.log(`FETCH: Starting comprehensive fetch for analysis ID: ${analysisId}`);
     
     try {
+      // METHOD 0: Try edge function first (this is new)
+      try {
+        console.log("FETCH: Trying edge function for direct analysis retrieval");
+        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
+          "get-comprehensive-analysis",
+          {
+            method: 'POST',
+            body: { id: analysisId }
+          }
+        );
+        
+        if (!edgeFunctionError && edgeFunctionData) {
+          console.log(`FETCH: ✓ Found analysis via edge function for ID: ${analysisId}`);
+          return edgeFunctionData as unknown as ComprehensiveAnalysis;
+        } else if (edgeFunctionError) {
+          console.error("FETCH: ✗ Edge function error:", edgeFunctionError);
+        }
+      } catch (edgeErr) {
+        console.error("FETCH: ✗ Exception calling edge function:", edgeErr);
+      }
+    
       // METHOD 1: Try direct database query first
       console.log(`FETCH: Trying direct database query for ID: ${analysisId}`);
       const { data: directData, error: directError } = await supabase
@@ -368,7 +423,6 @@ const ComprehensiveReportPage: React.FC = () => {
     }
   };
 
-  // Loading state
   if (isLoading && !fetchComplete) {
     return (
       <div className="container py-6 md:py-10 px-4 space-y-8">

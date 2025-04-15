@@ -161,7 +161,37 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       // Comprehensive search for existing analysis using multiple methods
       console.log(`Starting comprehensive analysis polling for ID: ${id}`);
       
-      // Method 1: Check if analysis already exists with exact ID match
+      // Method 1: Directly call get-comprehensive-analysis edge function
+      try {
+        console.log("Calling get-comprehensive-analysis edge function directly");
+        toast.loading("Fetching analysis from server...", { id: "edge-function-call" });
+        
+        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
+          "get-comprehensive-analysis",
+          {
+            method: 'POST',
+            body: { id }
+          }
+        );
+        
+        if (edgeFunctionError) {
+          console.error("Error from edge function:", edgeFunctionError);
+          toast.error("Server error", { id: "edge-function-call" });
+        } else if (edgeFunctionData) {
+          console.log("Analysis found via edge function:", edgeFunctionData);
+          toast.success("Analysis retrieved from server!", { id: "edge-function-call" });
+          const analysis = convertToAnalysis(edgeFunctionData);
+          if (analysis) {
+            setFoundAnalysis(analysis);
+            setIsPolling(false);
+            return analysis;
+          }
+        }
+      } catch (edgeErr) {
+        console.error("Exception calling edge function:", edgeErr);
+      }
+      
+      // Method 2: Check if analysis already exists with exact ID match
       const { data: existingAnalysis, error: existingError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -183,7 +213,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       }
       
-      // Method 2: Check if analysis exists with assessment ID (fix: use select() instead of maybeSingle())
+      // Method 3: Check if analysis exists with assessment ID
       const { data: byAssessmentId, error: assessmentError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
@@ -210,7 +240,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       }
       
-      // Method 3: Try using the Supabase RPC function
+      // Method 4: Try using the Supabase RPC function
       try {
         const { data: rpcData, error: rpcError } = await supabase
           .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
@@ -231,38 +261,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         console.error("Exception calling RPC function:", rpcErr);
       }
       
-      // Method 4: Check for any recent analyses that might match our criteria
-      try {
-        const { data: recentAnalyses, error: recentError } = await supabase
-          .from('comprehensive_analyses')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
-          console.log(`Checking ${recentAnalyses.length} recent analyses for potential matches`);
-          
-          // Look for a match by timestamp (created within the last 15 minutes)
-          const potentialMatch = recentAnalyses.find(a => 
-            (Date.now() - new Date(a.created_at).getTime()) < 900000 // 15 minutes
-          );
-          
-          if (potentialMatch) {
-            console.log("Found recent analysis that might match:", potentialMatch.id);
-            const analysis = convertToAnalysis(potentialMatch);
-            if (analysis) {
-              setFoundAnalysis(analysis);
-              setIsPolling(false);
-              toast.success("Recent analysis found!");
-              return analysis;
-            }
-          }
-        }
-      } catch (recentErr) {
-        console.error("Error checking recent analyses:", recentErr);
-      }
-      
-      // If no existing analysis found yet, start polling
+      // Method 5: Try to trigger analysis if needed
       let attempts = 0;
       const poll = async () => {
         if (attempts >= maxAttempts) {
@@ -280,37 +279,47 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         if (attempts === 1) {
           // On first attempt, try to trigger the analysis
           try {
-            // Get the assessment data to pass to the analysis function
-            const { data: assessmentData } = await supabase
-              .from('comprehensive_assessments')
-              .select('*')
-              .eq('id', id)
-              .maybeSingle();
-              
-            if (assessmentData?.responses) {
-              toast.loading("Analyzing your responses...", { id: `poll-analysis-${id}` });
-              
-              // Try to analyze the responses
-              await supabase.functions.invoke(
-                "analyze-comprehensive-responses",
-                {
-                  body: { 
-                    assessmentId: id,
-                    responses: assessmentData.responses,
-                    useMockData: false // Explicitly prevent mock data usage
-                  }
+            console.log("Attempting to trigger analysis creation via edge function");
+            await supabase.functions.invoke(
+              "analyze-comprehensive-responses",
+              {
+                body: { 
+                  assessmentId: id,
+                  forceRun: true
                 }
-              ).catch(err => {
-                console.error("Error triggering analysis:", err);
-                // Even if invoke fails, continue polling as analysis might be triggered by other means
-              });
-            }
+              }
+            ).catch(err => {
+              console.error("Error triggering analysis:", err);
+            });
           } catch (err) {
             console.error("Error triggering analysis:", err);
           }
         }
         
-        // Always check all possible methods to find the analysis
+        // Check for analysis using multiple methods
+        try {
+          // Check by direct ID using edge function
+          const { data: edgeFunctionData } = await supabase.functions.invoke(
+            "get-comprehensive-analysis",
+            {
+              method: 'POST',
+              body: { id }
+            }
+          );
+          
+          if (edgeFunctionData) {
+            console.log("Analysis found via edge function on attempt", attempts);
+            const analysis = convertToAnalysis(edgeFunctionData);
+            if (analysis) {
+              setFoundAnalysis(analysis);
+              setIsPolling(false);
+              toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
+              return;
+            }
+          }
+        } catch (edgeErr) {
+          console.error("Error checking via edge function:", edgeErr);
+        }
         
         // Check by direct ID
         const { data: checkById } = await supabase
@@ -330,7 +339,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Check by assessment ID (fixed to handle multiple analyses)
+        // Check by assessment ID
         const { data: checkByAssessment } = await supabase
           .from('comprehensive_analyses')
           .select('*')
@@ -349,50 +358,6 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
             setIsPolling(false);
             toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
             return;
-          }
-        }
-        
-        // Try RPC function again
-        try {
-          const { data: rpcData } = await supabase
-            .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
-            
-          if (rpcData) {
-            console.log("Analysis found via RPC on attempt", attempts);
-            const analysis = convertToAnalysis(rpcData);
-            if (analysis) {
-              setFoundAnalysis(analysis);
-              setIsPolling(false);
-              toast.success("Analysis completed via database function!", { id: `poll-analysis-${id}` });
-              return;
-            }
-          }
-        } catch (rpcErr) {
-          // Continue to next check
-        }
-        
-        // Check recent analyses (might be missing assessment_id link)
-        const { data: recentAnalyses } = await supabase
-          .from('comprehensive_analyses')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        if (recentAnalyses && recentAnalyses.length > 0) {
-          // Check if any recent analysis might match our criteria
-          const matchingAnalysis = recentAnalyses.find(a => 
-            (Date.now() - new Date(a.created_at).getTime()) < 300000 // Created in last 5 minutes
-          );
-          
-          if (matchingAnalysis) {
-            console.log("Found recent analysis that might match our request", matchingAnalysis.id);
-            const analysis = convertToAnalysis(matchingAnalysis);
-            if (analysis) {
-              setFoundAnalysis(analysis);
-              setIsPolling(false);
-              toast.success("Recent analysis found!", { id: `poll-analysis-${id}` });
-              return;
-            }
           }
         }
         

@@ -1,28 +1,32 @@
 
-project_id = "fhmvdprcmhkolyzuecrr"
+project_id = "your-project-id"
 
 [api]
+enabled = true
 port = 54321
 schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
 
-[functions.analyze-comprehensive-responses]
-verify_jwt = false
-insert_mode = "upsert"
+[db]
+port = 54322
 
-[functions.get-public-analysis]
-verify_jwt = false
-insert_mode = "upsert"
+[studio]
+enabled = true
+port = 54323
 
-[functions.analyze-responses]
-verify_jwt = false
-insert_mode = "upsert"
+[inbucket]
+enabled = false
 
-[functions.generate-activity] 
-verify_jwt = true
-insert_mode = "upsert"
+[storage]
+enabled = true
 
-[functions.get-comprehensive-analysis]
-verify_jwt = false
-insert_mode = "upsert"
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+# Enable the Functions docker image
+# This doesn't affect Edge Functions, which always use the Edge Runtime
+[functions.serve]
+enabled = true
+port = 54324
