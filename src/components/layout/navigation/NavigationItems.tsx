@@ -1,4 +1,5 @@
 
+import { useLocation } from "react-router-dom";
 import { Home, Brain, LineChart, User, BarChart2, Share2, Activity, BookOpen } from "lucide-react";
 
 export const mainNavItems = [
@@ -52,3 +53,27 @@ export const mainNavItems = [
     showOnDesktop: true,
   },
 ];
+
+export const useNavigationItems = () => {
+  const location = useLocation();
+  
+  // Create a list of navigation items that includes properties needed by components
+  const navigationItems = mainNavItems.map((item) => ({
+    name: item.title,
+    path: item.href,
+    icon: item.icon,
+    requiresAuth: item.href !== "/" && item.href !== "/auth", // Assume all routes except home and auth require auth
+    showOnMobile: item.showOnMobile,
+    showOnDesktop: item.showOnDesktop,
+  }));
+  
+  // Function to check if a path is active (exact match or starts with path for nested routes)
+  const isActive = (path: string): boolean => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+  
+  return { navigationItems, isActive };
+};
