@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -38,6 +37,15 @@ const ComprehensiveReportPage: React.FC = () => {
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
   const { pollForAnalysis, isPolling, foundAnalysis, fetchAllUserAnalyses } = useComprehensiveAnalysisFallback(id);
+  const [requestLogs, setRequestLogs] = useState<string[]>([]);
+  
+  // Add request log with timestamp
+  const addLog = useCallback((message: string) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = `${timestamp}: ${message}`;
+    console.log(`ComprehensiveReportPage - ${logEntry}`);
+    setRequestLogs(prev => [logEntry, ...prev.slice(0, 99)]);
+  }, []);
   
   // If no id provided, we're on the landing page and should fetch all analyses
   useEffect(() => {
@@ -45,10 +53,11 @@ const ComprehensiveReportPage: React.FC = () => {
       const fetchAllAnalyses = async () => {
         setIsLoading(true);
         try {
-          console.log("Fetching all analyses for user", user.id);
+          addLog(`Fetching all analyses for user ${user.id}`);
           
           // First try the edge function to get all analyses for the user
           try {
+            addLog("Calling edge function for all user analyses");
             const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
               "get-comprehensive-analysis",
               {
@@ -61,31 +70,59 @@ const ComprehensiveReportPage: React.FC = () => {
             );
             
             if (edgeError) {
-              console.error("Edge function error fetching all analyses:", edgeError);
+              addLog(`Edge function error fetching all analyses: ${JSON.stringify(edgeError)}`);
+              throw new Error(`Edge function error: ${edgeError.message || JSON.stringify(edgeError)}`);
             } else if (edgeData && Array.isArray(edgeData)) {
-              console.log(`Found ${edgeData.length} analyses via edge function`);
+              addLog(`Found ${edgeData.length} analyses via edge function`);
               setAnalyses(edgeData);
               setIsLoading(false);
               return;
+            } else {
+              addLog(`Edge function returned unexpected data format: ${JSON.stringify(edgeData)}`);
+              throw new Error("Edge function returned unexpected data format");
             }
           } catch (edgeErr) {
-            console.error("Error calling edge function for all analyses:", edgeErr);
+            addLog(`Error calling edge function for all analyses: ${edgeErr instanceof Error ? edgeErr.message : String(edgeErr)}`);
+            
+            // Detailed error capture
+            if (edgeErr instanceof Error) {
+              setDebugInfo(prev => {
+                const newInfo = {
+                  timestamp: new Date().toISOString(),
+                  message: edgeErr.message,
+                  stack: edgeErr.stack,
+                  name: edgeErr.name,
+                  ...prev ? JSON.parse(prev) : {}
+                };
+                return JSON.stringify(newInfo, null, 2);
+              });
+            }
           }
           
           // Fallback to the hook method if edge function fails
+          addLog("Edge function failed, falling back to hook method");
           const allAnalyses = await fetchAllUserAnalyses();
           
           if (allAnalyses && allAnalyses.length > 0) {
+            addLog(`Hook method found ${allAnalyses.length} analyses`);
             setAnalyses(allAnalyses);
           } else {
-            console.log("No analyses found for user");
+            addLog("No analyses found for user with fallback method either");
           }
         } catch (error) {
-          console.error("Error fetching all analyses:", error);
+          addLog(`Error fetching all analyses: ${error instanceof Error ? error.message : String(error)}`);
           setError("Failed to load your analyses. Please try refreshing the page.");
+          
+          // Detailed error capture
           setDebugInfo(JSON.stringify({
-            error: error instanceof Error ? error.message : "Unknown error",
-            timestamp: new Date().toISOString()
+            error: error instanceof Error ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name
+            } : String(error),
+            timestamp: new Date().toISOString(),
+            userId: user?.id,
+            route: "/comprehensive-report"
           }, null, 2));
         } finally {
           setIsLoading(false);
@@ -94,13 +131,13 @@ const ComprehensiveReportPage: React.FC = () => {
       
       fetchAllAnalyses();
     }
-  }, [user, id, fetchAllUserAnalyses]);
+  }, [user, id, fetchAllUserAnalyses, addLog]);
   
   // Primary fetch function that directly calls the edge function
   const fetchAnalysisFromEdgeFunction = useCallback(async (analysisId: string) => {
     if (!analysisId) return null;
     
-    console.log(`Calling get-comprehensive-analysis edge function for ID: ${analysisId}`);
+    addLog(`Calling get-comprehensive-analysis edge function for ID: ${analysisId}`);
     try {
       const { data, error } = await supabase.functions.invoke(
         "get-comprehensive-analysis",
@@ -111,21 +148,40 @@ const ComprehensiveReportPage: React.FC = () => {
       );
       
       if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
+        addLog(`Edge function error: ${JSON.stringify(error)}`);
+        throw new Error(`Edge function error: ${error.message || JSON.stringify(error)}`);
       }
       
       if (!data) {
+        addLog('No data returned from edge function');
         throw new Error('No data returned from edge function');
       }
       
-      console.log(`Successfully retrieved analysis via edge function for ID: ${analysisId}`);
+      addLog(`Successfully retrieved analysis via edge function for ID: ${analysisId}`);
       return data as ComprehensiveAnalysis;
     } catch (err) {
-      console.error("Error calling edge function:", err);
+      addLog(`Error calling edge function: ${err instanceof Error ? err.message : String(err)}`);
+      
+      // Detailed error capture
+      if (err instanceof Error) {
+        setDebugInfo(prev => {
+          const newInfo = {
+            timestamp: new Date().toISOString(),
+            edgeFunctionError: {
+              message: err.message,
+              stack: err.stack,
+              name: err.name
+            },
+            analysisId,
+            ...prev ? JSON.parse(prev) : {}
+          };
+          return JSON.stringify(newInfo, null, 2);
+        });
+      }
+      
       throw err;
     }
-  }, []);
+  }, [addLog]);
 
   // Load analysis when component mounts or ID changes
   useEffect(() => {
@@ -141,29 +197,32 @@ const ComprehensiveReportPage: React.FC = () => {
       setError(null);
       
       try {
-        console.log(`Loading analysis with ID: ${id}`);
+        addLog(`Loading analysis with ID: ${id}`);
         toast.loading("Fetching your analysis...", { id: "loading-analysis" });
         
         // First try: Direct edge function call (this is now our primary method)
         try {
+          addLog("Attempting to fetch analysis with direct edge function call");
           const analysisData = await fetchAnalysisFromEdgeFunction(id);
           if (analysisData && isMounted) {
+            addLog(`Analysis loaded successfully: ${analysisData.id}`);
             setAnalysis(analysisData);
             setIsLoading(false);
             toast.success("Analysis loaded successfully", { id: "loading-analysis" });
             return;
           }
         } catch (edgeError) {
-          console.error("Edge function fetch failed:", edgeError);
+          addLog(`Edge function fetch failed: ${edgeError instanceof Error ? edgeError.message : String(edgeError)}`);
           // Continue with fallback methods
         }
         
         // If edge function fails or returns no data, try polling approach
         if (isMounted && !analysis) {
-          console.log("Edge function approach failed, trying polling mechanism");
+          addLog("Edge function approach failed, trying polling mechanism");
           const polledAnalysis = await pollForAnalysis(id);
           
           if (polledAnalysis && isMounted) {
+            addLog(`Analysis found via polling: ${polledAnalysis.id}`);
             setAnalysis(polledAnalysis);
             setIsLoading(false);
             toast.success("Analysis found", { id: "loading-analysis" });
@@ -173,24 +232,48 @@ const ComprehensiveReportPage: React.FC = () => {
         
         // If we get here, both approaches failed
         if (isMounted) {
-          setError(`Could not find analysis with ID: ${id}`);
+          const errorMessage = `Could not find analysis with ID: ${id}`;
+          addLog(errorMessage);
+          setError(errorMessage);
           toast.error("Analysis not found", { 
             id: "loading-analysis", 
             description: "The analysis ID does not exist or you may not have access to it." 
           });
+          
+          // Add diagnostic information
+          setDebugInfo(JSON.stringify({
+            timestamp: new Date().toISOString(),
+            analysisId: id,
+            userId: user?.id,
+            requestInfo: {
+              attempts: retryCount,
+              methods: ["edge-function", "polling"],
+              isPolling: isPolling
+            }
+          }, null, 2));
         }
       } catch (err) {
-        console.error("Error loading analysis:", err);
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "An unknown error occurred");
+          const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+          addLog(`Error loading analysis: ${errorMessage}`);
+          setError(errorMessage);
+          
           toast.error("Error loading analysis", { 
             id: "loading-analysis", 
-            description: err instanceof Error ? err.message : "Please try again later" 
+            description: errorMessage 
           });
+          
+          // Detailed error capture
           setDebugInfo(JSON.stringify({
-            error: err instanceof Error ? err.message : "Unknown error",
+            error: err instanceof Error ? {
+              message: err.message,
+              stack: err.stack,
+              name: err.name
+            } : String(err),
             id: id,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            userId: user?.id,
+            route: `/comprehensive-report/${id}`
           }, null, 2));
         }
       } finally {
@@ -205,32 +288,37 @@ const ComprehensiveReportPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, pollForAnalysis, retryCount, fetchAnalysisFromEdgeFunction, analysis]);
+  }, [id, pollForAnalysis, retryCount, fetchAnalysisFromEdgeFunction, analysis, isPolling, user, addLog]);
   
   // Update local state if foundAnalysis changes via polling
   useEffect(() => {
     if (foundAnalysis && !analysis) {
+      addLog(`Found analysis via polling: ${foundAnalysis.id}`);
       setAnalysis(foundAnalysis);
       setError(null);
     }
-  }, [foundAnalysis, analysis]);
+  }, [foundAnalysis, analysis, addLog]);
   
   const handleRetry = () => {
+    addLog(`Manually retrying analysis load, attempt #${retryCount + 1}`);
     setRetryCount(prev => prev + 1);
     setError(null);
     toast.loading("Retrying analysis load...");
   };
   
   const handleGoBack = () => {
+    addLog("Navigating back to reports list");
     navigate('/comprehensive-report');
   };
   
   const handleManualRefresh = async () => {
+    addLog("Manual refresh requested");
     setIsLoading(true);
     toast.loading("Refreshing analyses...", { id: "refresh-toast" });
     
     try {
       // Fetch all user analyses using edge function
+      addLog(`Fetching all analyses for user ${user?.id} via edge function`);
       const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
         "get-comprehensive-analysis",
         {
@@ -243,17 +331,36 @@ const ComprehensiveReportPage: React.FC = () => {
       );
       
       if (edgeError) {
-        console.error("Edge function error during refresh:", edgeError);
+        addLog(`Edge function error during refresh: ${JSON.stringify(edgeError)}`);
         toast.error("Error refreshing analyses", { id: "refresh-toast" });
       } else if (edgeData && Array.isArray(edgeData)) {
+        addLog(`Found ${edgeData.length} analyses during refresh`);
         setAnalyses(edgeData);
         toast.success(`Found ${edgeData.length} analyses`, { id: "refresh-toast" });
       } else {
+        addLog("No analyses found during refresh");
         toast.error("No analyses found", { id: "refresh-toast" });
       }
     } catch (error) {
-      console.error("Error during manual refresh:", error);
+      addLog(`Error during manual refresh: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Failed to refresh analyses", { id: "refresh-toast" });
+      
+      // Detailed error capture
+      if (error instanceof Error) {
+        setDebugInfo(prev => {
+          const newInfo = {
+            timestamp: new Date().toISOString(),
+            refreshError: {
+              message: error.message,
+              stack: error.stack,
+              name: error.name
+            },
+            userId: user?.id,
+            ...prev ? JSON.parse(prev) : {}
+          };
+          return JSON.stringify(newInfo, null, 2);
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -268,9 +375,11 @@ const ComprehensiveReportPage: React.FC = () => {
     
     setIsCreatingTest(true);
     try {
+      addLog("Creating test analysis");
       toast.loading("Creating test analysis...", { id: "test-analysis" });
       
       // Create a test assessment first
+      addLog("Creating test assessment record");
       const { data: assessmentData, error: assessmentError } = await supabase
         .from("comprehensive_assessments")
         .insert({
@@ -287,10 +396,11 @@ const ComprehensiveReportPage: React.FC = () => {
         .single();
         
       if (assessmentError || !assessmentData) {
+        addLog(`Failed to create test assessment: ${JSON.stringify(assessmentError)}`);
         throw new Error(`Failed to create test assessment: ${assessmentError?.message || "Unknown error"}`);
       }
       
-      console.log("Created test assessment:", assessmentData);
+      addLog(`Created test assessment: ${assessmentData.id}`);
       
       // Setup timeout for the request (60 seconds)
       const timeoutPromise = new Promise((_, reject) =>
@@ -298,6 +408,7 @@ const ComprehensiveReportPage: React.FC = () => {
       );
       
       // Call the edge function
+      addLog("Calling analyze-comprehensive-responses edge function");
       const analysisPromise = supabase.functions.invoke(
         "analyze-comprehensive-responses",
         {
@@ -323,12 +434,17 @@ const ComprehensiveReportPage: React.FC = () => {
           })
         ]) as any;
         
-        if (error) throw new Error(error.message);
+        if (error) {
+          addLog(`Edge function error during analysis: ${JSON.stringify(error)}`);
+          throw new Error(error.message);
+        }
         
         if (!data?.analysisId) {
+          addLog(`Analysis completed but no analysis ID was returned: ${JSON.stringify(data)}`);
           throw new Error("Analysis completed but no analysis ID was returned");
         }
         
+        addLog(`Test analysis created successfully: ${data.analysisId}`);
         toast.success("Test analysis created!", { 
           id: "test-analysis",
           description: `Analysis ID: ${data.analysisId}`
@@ -337,7 +453,7 @@ const ComprehensiveReportPage: React.FC = () => {
         // Navigate to the new analysis
         navigate(`/comprehensive-report/${data.analysisId}`);
       } catch (timeoutError) {
-        console.error("Analysis timed out:", timeoutError);
+        addLog(`Analysis timed out: ${timeoutError instanceof Error ? timeoutError.message : String(timeoutError)}`);
         toast.warning("Analysis is taking longer than expected", { 
           id: "test-analysis",
           description: "Your test has been saved. We'll try to retrieve the results."
@@ -348,7 +464,7 @@ const ComprehensiveReportPage: React.FC = () => {
       }
       
     } catch (err) {
-      console.error("Error creating test analysis:", err);
+      addLog(`Error creating test analysis: ${err instanceof Error ? err.message : String(err)}`);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       
       toast.error("Failed to create test analysis", { 
@@ -356,7 +472,19 @@ const ComprehensiveReportPage: React.FC = () => {
         description: errorMessage
       });
       
-      setDebugInfo(JSON.stringify(err, null, 2));
+      // Detailed error capture
+      if (err instanceof Error) {
+        setDebugInfo(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          testAnalysisError: {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+          },
+          userId: user?.id,
+          customPrompt: !!testPrompt
+        }, null, 2));
+      }
     } finally {
       setIsCreatingTest(false);
     }
@@ -398,6 +526,24 @@ const ComprehensiveReportPage: React.FC = () => {
             <h2 className="text-xl font-semibold mb-2">Error Loading Reports</h2>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={handleRetry}>Try Again</Button>
+            
+            {debugInfo && (
+              <div className="mt-6 p-4 border rounded-md bg-muted/30">
+                <p className="font-medium text-sm mb-2">Debug Information:</p>
+                <pre className="text-xs overflow-auto max-h-48 p-2 bg-background/80 rounded whitespace-pre-wrap">
+                  {debugInfo}
+                </pre>
+              </div>
+            )}
+            
+            {requestLogs.length > 0 && (
+              <div className="mt-6 p-4 border rounded-md bg-muted/30">
+                <p className="font-medium text-sm mb-2">Request Logs:</p>
+                <pre className="text-xs overflow-auto max-h-48 p-2 bg-background/80 rounded whitespace-pre-wrap">
+                  {requestLogs.join('\n')}
+                </pre>
+              </div>
+            )}
           </Card>
         ) : analyses.length > 0 ? (
           <div className="space-y-4">
@@ -476,6 +622,23 @@ const ComprehensiveReportPage: React.FC = () => {
                     {isCreatingTest ? "Creating..." : "Generate Test Analysis"}
                   </Button>
                 </div>
+              </div>
+            )}
+            
+            {requestLogs.length > 0 && (
+              <div className="mt-6 p-4 border rounded-md bg-muted/30">
+                <p className="font-medium text-sm mb-2">Request Logs:</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mb-2"
+                  onClick={() => setRequestLogs([])}
+                >
+                  Clear Logs
+                </Button>
+                <pre className="text-xs overflow-auto max-h-48 p-2 bg-background/80 rounded whitespace-pre-wrap">
+                  {requestLogs.join('\n')}
+                </pre>
               </div>
             )}
           </Card>
@@ -577,8 +740,25 @@ const ComprehensiveReportPage: React.FC = () => {
             {debugInfo && (
               <div className="mt-6 p-4 bg-muted rounded-md w-full max-w-lg mx-auto">
                 <p className="text-sm font-medium mb-2">Debug Information:</p>
-                <pre className="text-xs overflow-auto text-left whitespace-pre-wrap">
+                <pre className="text-xs overflow-auto text-left whitespace-pre-wrap max-h-64">
                   {debugInfo}
+                </pre>
+              </div>
+            )}
+            
+            {requestLogs.length > 0 && (
+              <div className="mt-6 p-4 border rounded-md bg-muted/30 w-full max-w-lg mx-auto">
+                <p className="font-medium text-sm mb-2">Request Logs:</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mb-2"
+                  onClick={() => setRequestLogs([])}
+                >
+                  Clear Logs
+                </Button>
+                <pre className="text-xs overflow-auto max-h-48 p-2 bg-background/80 rounded whitespace-pre-wrap">
+                  {requestLogs.join('\n')}
                 </pre>
               </div>
             )}
@@ -649,6 +829,23 @@ const ComprehensiveReportPage: React.FC = () => {
               </div>
             </div>
           )}
+          
+          {requestLogs.length > 0 && (
+            <div className="mt-6 p-4 border rounded-md bg-muted/30">
+              <p className="font-medium text-sm mb-2">Request Logs:</p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="mb-2"
+                onClick={() => setRequestLogs([])}
+              >
+                Clear Logs
+              </Button>
+              <pre className="text-xs overflow-auto max-h-48 p-2 bg-background/80 rounded whitespace-pre-wrap">
+                {requestLogs.join('\n')}
+              </pre>
+            </div>
+          )}
         </Card>
       </div>
     );
@@ -664,178 +861,3 @@ const ComprehensiveReportPage: React.FC = () => {
             ID: {id || "No report ID provided"}
           </p>
         </div>
-        
-        <Card className="p-8 text-center">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            <h2 className="text-xl font-semibold">Analysis in Progress</h2>
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Your comprehensive analysis is currently being processed. This may take a few minutes as our AI generates detailed insights.
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  // Process data for safe rendering - display analysis data safely
-  console.log(`Preparing to render analysis with ID: ${analysis?.id}`);
-  
-  // Check what data we have and log it
-  if (analysis) {
-    console.log(`Analysis overview length: ${analysis.overview?.length || 0}`);
-    console.log(`Analysis traits count: ${Array.isArray(analysis.traits) ? analysis.traits.length : 'not an array'}`);
-  }
-  
-  const processedRelationships = isRelationshipObject(analysis?.relationshipPatterns) 
-    ? analysis.relationshipPatterns 
-    : { 
-        strengths: Array.isArray(analysis?.relationshipPatterns) ? ensureStringItems(analysis?.relationshipPatterns) : [],
-        challenges: [],
-        compatibleTypes: []
-      };
-
-  // Ensure all arrays have default values and are properly stringified
-  const safeMotivators = ensureStringItems(analysis?.motivators || []);
-  const safeInhibitors = ensureStringItems(analysis?.inhibitors || []);
-  const safeGrowthAreas = ensureStringItems(analysis?.growthAreas || []);
-  const safeWeaknesses = ensureStringItems(analysis?.weaknesses || []);
-  const safeLearningPathways = ensureStringItems(analysis?.learningPathways || []);
-  const safeCareerSuggestions = ensureStringItems(analysis?.careerSuggestions || []);
-
-  // Render analysis data
-  return (
-    <div className="container py-6 md:py-10 px-4 space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Comprehensive Report</h1>
-        <p className="text-muted-foreground">
-          Analysis ID: {safeString(analysis?.id)}
-        </p>
-      </div>
-      
-      {/* Report navigation tabs */}
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="personality">Traits</TabsTrigger>
-          <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
-          <TabsTrigger value="motivation">Motivators</TabsTrigger>
-          <TabsTrigger value="relationships">Relationships</TabsTrigger>
-          <TabsTrigger value="growth">Growth</TabsTrigger>
-          <TabsTrigger value="career">Career</TabsTrigger>
-        </TabsList>
-        
-        {/* Tab content sections */}
-        <TabsContent value="overview" className="space-y-6">
-          <ComprehensiveOverviewSection 
-            overview={safeString(analysis?.overview)}
-            traits={analysis?.traits}
-            intelligenceScore={analysis?.intelligenceScore}
-            emotionalIntelligenceScore={analysis?.emotionalIntelligenceScore}
-            motivators={safeMotivators}
-            growthAreas={safeGrowthAreas}
-          />
-        </TabsContent>
-        
-        <TabsContent value="personality" className="space-y-6">
-          <ComprehensiveTraitsSection
-            traits={analysis?.traits || []}
-          />
-        </TabsContent>
-        
-        <TabsContent value="intelligence" className="space-y-6">
-          <ComprehensiveIntelligenceSection
-            intelligence={analysis?.intelligence}
-            intelligenceScore={analysis?.intelligenceScore}
-            emotionalIntelligenceScore={analysis?.emotionalIntelligenceScore}
-          />
-        </TabsContent>
-        
-        <TabsContent value="motivation" className="space-y-6">
-          <ComprehensiveMotivationSection
-            motivators={safeMotivators}
-            inhibitors={safeInhibitors}
-          />
-        </TabsContent>
-        
-        <TabsContent value="relationships" className="space-y-6">
-          <ComprehensiveRelationshipsSection
-            relationshipPatterns={processedRelationships}
-          />
-        </TabsContent>
-        
-        <TabsContent value="growth" className="space-y-6">
-          <ComprehensiveGrowthSection
-            growthAreas={safeGrowthAreas}
-            weaknesses={safeWeaknesses}
-            learningPathways={safeLearningPathways}
-          />
-        </TabsContent>
-        
-        <TabsContent value="career" className="space-y-6">
-          <ComprehensiveCareerSection
-            careerSuggestions={safeCareerSuggestions}
-            roadmap={safeString(analysis?.roadmap || "")}
-          />
-        </TabsContent>
-      </Tabs>
-      
-      {/* Footer navigation */}
-      <div className="flex flex-wrap gap-4 justify-center mt-8">
-        <Button variant="outline" onClick={handleGoBack} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" /> Back to Reports List
-        </Button>
-        {user && (
-          <Button 
-            variant="secondary" 
-            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-            className="flex items-center gap-2"
-          >
-            {showAdvancedOptions ? (
-              <>
-                <Bug className="h-4 w-4" /> Hide Options
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" /> Create New Test Analysis
-              </>
-            )}
-          </Button>
-        )}
-      </div>
-      
-      {/* Advanced options panel */}
-      {showAdvancedOptions && (
-        <Card className="p-6 mt-4 max-w-lg mx-auto">
-          <h3 className="text-lg font-medium mb-3">Create New Test Analysis</h3>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="newTestPrompt" className="block text-sm font-medium mb-1">
-                Custom Personality Description
-              </label>
-              <textarea 
-                id="newTestPrompt"
-                value={testPrompt}
-                onChange={(e) => setTestPrompt(e.target.value)}
-                placeholder="Describe your personality traits, preferences, and characteristics for the AI to analyze..."
-                className="w-full p-3 border rounded-md h-24"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                The more detailed your description, the more accurate the analysis will be.
-              </p>
-            </div>
-            <Button 
-              onClick={handleCreateTestAnalysis} 
-              disabled={isCreatingTest}
-              className="w-full"
-            >
-              {isCreatingTest ? "Creating..." : "Generate New Analysis"}
-            </Button>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-};
-
-export default ComprehensiveReportPage;

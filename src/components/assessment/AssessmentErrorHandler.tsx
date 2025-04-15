@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ interface AssessmentErrorProps {
   description?: string;
   showRetry?: boolean;
   errorDetails?: string;
-  onRetry?: () => void;  // Added this prop to fix the TypeScript error
+  onRetry?: () => void;
+  debugLogs?: string[];
 }
 
 export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({ 
@@ -19,9 +20,11 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
   description = "We're having trouble displaying your analysis results. This can happen when the AI generates incomplete data.",
   showRetry = true,
   errorDetails,
-  onRetry
+  onRetry,
+  debugLogs = []
 }) => {
   const navigate = useNavigate();
+  const [showTechnical, setShowTechnical] = useState(false);
   
   return (
     <div className="mx-auto max-w-3xl p-4">
@@ -41,10 +44,26 @@ export const AssessmentErrorHandler: React.FC<AssessmentErrorProps> = ({
             <li>Try providing more in-depth responses for key questions</li>
           </ol>
           
-          {errorDetails && (
-            <div className="mt-4 p-3 bg-muted/30 rounded text-xs">
+          <Button
+            variant="outline"
+            onClick={() => setShowTechnical(!showTechnical)}
+            size="sm"
+            className="mt-4 mb-2"
+          >
+            {showTechnical ? "Hide Technical Details" : "Show Technical Details"}
+          </Button>
+          
+          {showTechnical && errorDetails && (
+            <div className="mt-2 p-3 bg-muted/30 rounded text-xs">
               <p className="font-medium mb-1">Technical Details:</p>
-              <p className="font-mono whitespace-pre-wrap overflow-auto max-h-32">{errorDetails}</p>
+              <pre className="font-mono whitespace-pre-wrap overflow-auto max-h-32">{errorDetails}</pre>
+            </div>
+          )}
+          
+          {showTechnical && debugLogs && debugLogs.length > 0 && (
+            <div className="mt-2 p-3 bg-muted/30 rounded text-xs">
+              <p className="font-medium mb-1">Debug Logs:</p>
+              <pre className="font-mono whitespace-pre-wrap overflow-auto max-h-60">{debugLogs.join('\n')}</pre>
             </div>
           )}
           
