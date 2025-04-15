@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,7 @@ const ComprehensiveReportPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState<ComprehensiveAnalysis | null>(null);
+  const [analyses, setAnalyses] = useState<ComprehensiveAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
@@ -35,7 +37,64 @@ const ComprehensiveReportPage: React.FC = () => {
   const [isCreatingTest, setIsCreatingTest] = useState<boolean>(false);
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
-  const { pollForAnalysis, isPolling, foundAnalysis } = useComprehensiveAnalysisFallback(id);
+  const { pollForAnalysis, isPolling, foundAnalysis, fetchAllUserAnalyses } = useComprehensiveAnalysisFallback(id);
+  
+  // If no id provided, we're on the landing page and should fetch all analyses
+  useEffect(() => {
+    if (!id && user) {
+      const fetchAllAnalyses = async () => {
+        setIsLoading(true);
+        try {
+          console.log("Fetching all analyses for user", user.id);
+          
+          // First try the edge function to get all analyses for the user
+          try {
+            const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+              "get-comprehensive-analysis",
+              {
+                method: 'POST',
+                body: { 
+                  user_id: user.id,
+                  fetch_all: true 
+                }
+              }
+            );
+            
+            if (edgeError) {
+              console.error("Edge function error fetching all analyses:", edgeError);
+            } else if (edgeData && Array.isArray(edgeData)) {
+              console.log(`Found ${edgeData.length} analyses via edge function`);
+              setAnalyses(edgeData);
+              setIsLoading(false);
+              return;
+            }
+          } catch (edgeErr) {
+            console.error("Error calling edge function for all analyses:", edgeErr);
+          }
+          
+          // Fallback to the hook method if edge function fails
+          const allAnalyses = await fetchAllUserAnalyses();
+          
+          if (allAnalyses && allAnalyses.length > 0) {
+            setAnalyses(allAnalyses);
+          } else {
+            console.log("No analyses found for user");
+          }
+        } catch (error) {
+          console.error("Error fetching all analyses:", error);
+          setError("Failed to load your analyses. Please try refreshing the page.");
+          setDebugInfo(JSON.stringify({
+            error: error instanceof Error ? error.message : "Unknown error",
+            timestamp: new Date().toISOString()
+          }, null, 2));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchAllAnalyses();
+    }
+  }, [user, id, fetchAllUserAnalyses]);
   
   // Primary fetch function that directly calls the edge function
   const fetchAnalysisFromEdgeFunction = useCallback(async (analysisId: string) => {
@@ -71,8 +130,7 @@ const ComprehensiveReportPage: React.FC = () => {
   // Load analysis when component mounts or ID changes
   useEffect(() => {
     if (!id) {
-      setError("No analysis ID provided");
-      setIsLoading(false);
+      // We're on the landing page, not the individual report page
       return;
     }
     
@@ -147,7 +205,7 @@ const ComprehensiveReportPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, pollForAnalysis, retryCount, fetchAnalysisFromEdgeFunction]);
+  }, [id, pollForAnalysis, retryCount, fetchAnalysisFromEdgeFunction, analysis]);
   
   // Update local state if foundAnalysis changes via polling
   useEffect(() => {
@@ -165,6 +223,40 @@ const ComprehensiveReportPage: React.FC = () => {
   
   const handleGoBack = () => {
     navigate('/comprehensive-report');
+  };
+  
+  const handleManualRefresh = async () => {
+    setIsLoading(true);
+    toast.loading("Refreshing analyses...", { id: "refresh-toast" });
+    
+    try {
+      // Fetch all user analyses using edge function
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          method: 'POST',
+          body: { 
+            user_id: user?.id,
+            fetch_all: true 
+          }
+        }
+      );
+      
+      if (edgeError) {
+        console.error("Edge function error during refresh:", edgeError);
+        toast.error("Error refreshing analyses", { id: "refresh-toast" });
+      } else if (edgeData && Array.isArray(edgeData)) {
+        setAnalyses(edgeData);
+        toast.success(`Found ${edgeData.length} analyses`, { id: "refresh-toast" });
+      } else {
+        toast.error("No analyses found", { id: "refresh-toast" });
+      }
+    } catch (error) {
+      console.error("Error during manual refresh:", error);
+      toast.error("Failed to refresh analyses", { id: "refresh-toast" });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Test analysis creation function
@@ -269,6 +361,128 @@ const ComprehensiveReportPage: React.FC = () => {
       setIsCreatingTest(false);
     }
   };
+  
+  // Render landing page with list of all analyses (if no id provided)
+  if (!id) {
+    return (
+      <div className="container py-6 md:py-10 px-4 space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-2">Comprehensive Reports</h1>
+          <p className="text-muted-foreground">
+            View your detailed personality analysis reports
+          </p>
+        </div>
+        
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+        
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-16 w-full rounded-md" />
+            <Skeleton className="h-16 w-full rounded-md" />
+            <Skeleton className="h-16 w-full rounded-md" />
+          </div>
+        ) : error ? (
+          <Card className="p-6 text-center">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Error Loading Reports</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={handleRetry}>Try Again</Button>
+          </Card>
+        ) : analyses.length > 0 ? (
+          <div className="space-y-4">
+            {analyses.map((item) => (
+              <Card 
+                key={item.id} 
+                className="p-4 hover:bg-secondary/5 transition-colors cursor-pointer"
+                onClick={() => navigate(`/comprehensive-report/${item.id}`)}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">
+                      {new Date(item.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </h3>
+                    <p className="text-sm text-muted-foreground truncate max-w-xl">
+                      {item.overview 
+                        ? item.overview.substring(0, 100) + (item.overview.length > 100 ? '...' : '')
+                        : 'No overview available'}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="whitespace-nowrap">
+                    View Report
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-8 text-center">
+            <h2 className="text-xl mb-4">No Analyses Found</h2>
+            <p className="text-muted-foreground mb-6">
+              You don't have any comprehensive personality analyses yet.
+            </p>
+            
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Button onClick={() => navigate("/comprehensive-assessment")}>
+                Take Assessment
+              </Button>
+              {user && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                >
+                  Create Test Analysis
+                </Button>
+              )}
+            </div>
+            
+            {showAdvancedOptions && (
+              <div className="mt-8 p-6 bg-muted rounded-md max-w-lg mx-auto">
+                <h3 className="font-medium mb-3">Create Test Analysis</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="testPrompt" className="block text-sm font-medium mb-1">
+                      Custom Personality Description (Optional)
+                    </label>
+                    <textarea 
+                      id="testPrompt"
+                      value={testPrompt}
+                      onChange={(e) => setTestPrompt(e.target.value)}
+                      placeholder="Describe your personality traits, preferences, and characteristics..."
+                      className="w-full p-3 border rounded-md h-24"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleCreateTestAnalysis} 
+                    disabled={isCreatingTest}
+                    className="w-full"
+                  >
+                    {isCreatingTest ? "Creating..." : "Generate Test Analysis"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
