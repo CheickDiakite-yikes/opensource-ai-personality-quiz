@@ -158,7 +158,7 @@ Provide a detailed analysis covering:
           }
           
           // CRITICAL FIX: Use upsert instead of insert to avoid duplication errors
-          const { error } = await fetch(
+          const response = await fetch(
             `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
             {
               method: 'POST',
@@ -187,17 +187,27 @@ Provide a detailed analysis covering:
                 result: comprehensiveAnalysis
               })
             }
-          ).then(res => res.json());
-
-          if (error) {
-            console.error(`Error saving analysis on attempt ${attempt}:`, error);
-            dbError = error;
+          );
+          
+          // FIX: Properly handle the response and check for errors
+          if (response.ok) {
+            const responseData = await response.text();
+            const error = responseData && responseData.length > 0 ? JSON.parse(responseData).error : null;
+            
+            if (error) {
+              console.error(`Error saving analysis on attempt ${attempt}:`, error);
+              dbError = error;
+              // Wait before retrying with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
+            } else {
+              console.log("Analysis saved to database successfully with ID:", analysisId);
+              saveSuccess = true;
+              break;
+            }
+          } else {
+            console.error(`Error response (${response.status}) saving analysis on attempt ${attempt}`);
             // Wait before retrying with exponential backoff
             await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt - 1), 5000)));
-          } else {
-            console.log("Analysis saved to database successfully with ID:", analysisId);
-            saveSuccess = true;
-            break;
           }
         } catch (error) {
           console.error(`Exception on save attempt ${attempt}:`, error);
@@ -215,7 +225,7 @@ Provide a detailed analysis covering:
         const bgTaskId = setInterval(async () => {
           try {
             console.log("Background task: attempting to save analysis");
-            const { error: bgError } = await fetch(
+            const bgResponse = await fetch(
               `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
               {
                 method: 'POST',
@@ -237,13 +247,22 @@ Provide a detailed analysis covering:
                   result: comprehensiveAnalysis
                 })
               }
-            ).then(res => res.json());
+            );
             
-            if (bgError) {
-              console.log("Background save attempt failed:", bgError);
+            // FIX: Safe JSON parsing for background task
+            if (bgResponse.ok) {
+              const bgResponseText = await bgResponse.text();
+              const bgError = bgResponseText && bgResponseText.trim().length > 0 ? 
+                JSON.parse(bgResponseText).error : null;
+              
+              if (bgError) {
+                console.log("Background save attempt failed:", bgError);
+              } else {
+                console.log("Background save succeeded!");
+                clearInterval(bgTaskId);
+              }
             } else {
-              console.log("Background save succeeded!");
-              clearInterval(bgTaskId);
+              console.log(`Background save failed with status: ${bgResponse.status}`);
             }
           } catch (e) {
             console.error("Background save exception:", e);
@@ -323,7 +342,7 @@ Provide a detailed analysis covering:
       
       // Try to save the fallback analysis
       try {
-        await fetch(
+        const fallbackResponse = await fetch(
           `https://fhmvdprcmhkolyzuecrr.supabase.co/rest/v1/comprehensive_analyses`,
           {
             method: 'POST',
@@ -339,7 +358,12 @@ Provide a detailed analysis covering:
             })
           }
         );
-        console.log("Fallback analysis saved with ID:", fallbackAnalysisId);
+        
+        if (fallbackResponse.ok) {
+          console.log("Fallback analysis saved with ID:", fallbackAnalysisId);
+        } else {
+          console.error("Error saving fallback analysis:", await fallbackResponse.text());
+        }
       } catch (e) {
         console.error("Error saving fallback analysis:", e);
       }
