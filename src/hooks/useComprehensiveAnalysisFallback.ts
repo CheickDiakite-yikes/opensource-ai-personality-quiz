@@ -2,13 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveAnalysis } from "@/utils/types";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useComprehensiveAnalysisFallback = (assessmentId: string | undefined) => {
+  const { user } = useAuth();
   const [isPolling, setIsPolling] = useState(false);
   const [foundAnalysis, setFoundAnalysis] = useState<ComprehensiveAnalysis | null>(null);
+  const [userAnalyses, setUserAnalyses] = useState<ComprehensiveAnalysis[]>([]);
   const [hasAttemptedPolling, setHasAttemptedPolling] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const [conversionError, setConversionError] = useState<string | null>(null);
+  const [isLoadingUserAnalyses, setIsLoadingUserAnalyses] = useState(false);
   
   // Enhanced function to safely convert database result to ComprehensiveAnalysis
   const convertToAnalysis = useCallback((data: any): ComprehensiveAnalysis | null => {
@@ -148,6 +152,57 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     }
     return 0;
   };
+  
+  // Function to fetch all analyses for the current user
+  const fetchAllUserAnalyses = useCallback(async (): Promise<ComprehensiveAnalysis[]> => {
+    if (!user) return [];
+    
+    setIsLoadingUserAnalyses(true);
+    try {
+      console.log(`Fetching all comprehensive analyses for user: ${user.id}`);
+      
+      const { data, error } = await supabase.functions.invoke(
+        "get-comprehensive-analysis",
+        {
+          method: 'POST',
+          body: { 
+            user_id: user.id,
+            fetch_all: true
+          }
+        }
+      );
+      
+      if (error) {
+        console.error("Error fetching user analyses:", error);
+        return [];
+      }
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.log("No analyses found for user");
+        return [];
+      }
+      
+      console.log(`Found ${data.length} analyses for user ${user.id}`);
+      
+      // Convert all analyses to the proper format
+      const analyses: ComprehensiveAnalysis[] = data
+        .map(item => convertToAnalysis(item))
+        .filter(Boolean) as ComprehensiveAnalysis[];
+      
+      // Sort analyses by date (newest first)
+      const sortedAnalyses = analyses.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setUserAnalyses(sortedAnalyses);
+      return sortedAnalyses;
+    } catch (error) {
+      console.error("Error in fetchAllUserAnalyses:", error);
+      return [];
+    } finally {
+      setIsLoadingUserAnalyses(false);
+    }
+  }, [user, convertToAnalysis]);
   
   // Function to directly call the edge function for analysis retrieval
   const fetchWithEdgeFunction = useCallback(async (id: string): Promise<ComprehensiveAnalysis | null> => {
@@ -418,11 +473,21 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     };
   }, []);
 
+  // When user changes, attempt to fetch all of their analyses
+  useEffect(() => {
+    if (user && !isLoadingUserAnalyses && userAnalyses.length === 0) {
+      fetchAllUserAnalyses();
+    }
+  }, [user, isLoadingUserAnalyses, userAnalyses.length, fetchAllUserAnalyses]);
+
   return {
     pollForAnalysis,
     fetchWithEdgeFunction,
+    fetchAllUserAnalyses,
     isPolling,
+    isLoadingUserAnalyses,
     foundAnalysis,
+    userAnalyses,
     hasAttemptedPolling,
     pollingAttempts,
     conversionError

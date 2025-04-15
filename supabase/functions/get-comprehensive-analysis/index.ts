@@ -22,10 +22,69 @@ serve(async (req) => {
     // Parse request body
     const requestData = await req.json();
     const analysisId = requestData.id;
+    const userId = requestData.user_id;
+    const fetchAll = !!requestData.fetch_all;
 
+    console.log(`Edge function: Request received with params - ID: ${analysisId}, User ID: ${userId}, Fetch All: ${fetchAll}`);
+
+    // If fetch_all is true and userId is provided, return all analyses for that user
+    if (fetchAll && userId) {
+      console.log(`Edge function: Fetching all analyses for user: ${userId}`);
+      const { data: allUserAnalyses, error: userError } = await supabaseClient
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (userError) {
+        console.error(`Edge function: Error fetching user analyses: ${userError.message}`);
+        return new Response(
+          JSON.stringify({ error: 'Error fetching user analyses', details: userError.message }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      if (allUserAnalyses && allUserAnalyses.length > 0) {
+        console.log(`Edge function: Found ${allUserAnalyses.length} analyses for user ${userId}`);
+        return new Response(
+          JSON.stringify(allUserAnalyses),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } else {
+        console.log(`Edge function: No analyses found for user ${userId}`);
+        return new Response(
+          JSON.stringify({ error: 'No analyses found for user', user_id: userId }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        );
+      }
+    }
+
+    // If analysisId is not provided but userId is, return the latest analysis for that user
+    if (!analysisId && userId) {
+      console.log(`Edge function: Fetching latest analysis for user: ${userId}`);
+      const { data: latestAnalysis, error: latestError } = await supabaseClient
+        .from('comprehensive_analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestError) {
+        console.error(`Edge function: Error fetching latest analysis: ${latestError.message}`);
+      } else if (latestAnalysis) {
+        console.log(`Edge function: Found latest analysis for user: ${userId}`);
+        return new Response(
+          JSON.stringify(latestAnalysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+    }
+
+    // If no analysis ID is provided and no user ID or the above methods failed, return an error
     if (!analysisId) {
       return new Response(
-        JSON.stringify({ error: 'Missing analysis ID' }),
+        JSON.stringify({ error: 'Missing analysis ID or user ID' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
