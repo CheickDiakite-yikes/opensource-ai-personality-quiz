@@ -11,62 +11,113 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const [conversionError, setConversionError] = useState<string | null>(null);
   
-  // Function to safely convert database result to ComprehensiveAnalysis
+  // Enhanced function to safely convert database result to ComprehensiveAnalysis
   const convertToAnalysis = useCallback((data: any): ComprehensiveAnalysis | null => {
     if (!data) return null;
     
     try {
-      // Handle different data structures that might be returned
-      // If it's already in the right format, just return it
-      if (data.id && (data.traits || data.overview)) {
-        return data as unknown as ComprehensiveAnalysis;
-      }
+      console.log("Converting analysis data:", JSON.stringify(data).substring(0, 200) + "...");
       
-      // If the analysis is wrapped in a result property
-      if (data.result) {
-        const resultData = typeof data.result === 'string' 
-          ? JSON.parse(data.result) 
-          : data.result;
+      // First, attempt to extract any nested result data
+      let resultData = data;
+      
+      // If the data is wrapped in a result property that's a string, parse it
+      if (data.result && typeof data.result === 'string') {
+        try {
+          const parsedResult = JSON.parse(data.result);
+          console.log("Successfully parsed string result into object");
           
-        return {
-          id: data.id || resultData.id,
-          created_at: data.created_at || resultData.created_at,
-          assessment_id: data.assessment_id || resultData.assessment_id,
-          overview: data.overview || resultData.overview || "",
-          traits: data.traits || resultData.traits || [],
-          intelligence: data.intelligence || resultData.intelligence || {},
-          intelligenceScore: data.intelligence_score || resultData.intelligenceScore || 0,
-          emotionalIntelligenceScore: data.emotional_intelligence_score || resultData.emotionalIntelligenceScore || 0,
-          motivators: data.motivators || resultData.motivators || [],
-          inhibitors: data.inhibitors || resultData.inhibitors || [],
-          growthAreas: data.growth_areas || resultData.growthAreas || [],
-          weaknesses: data.weaknesses || resultData.weaknesses || [],
-          relationshipPatterns: data.relationship_patterns || resultData.relationshipPatterns || {},
-          careerSuggestions: data.career_suggestions || resultData.careerSuggestions || [],
-          roadmap: data.roadmap || resultData.roadmap || "",
-          learningPathways: data.learning_pathways || resultData.learningPathways || []
-        } as ComprehensiveAnalysis;
+          // If the parsed result has all the key fields we need, use it directly
+          if (parsedResult.traits || parsedResult.overview || parsedResult.intelligence) {
+            resultData = {
+              ...data,
+              ...parsedResult,
+            };
+          }
+        } catch (parseErr) {
+          console.error("Error parsing result string:", parseErr);
+        }
+      } 
+      // If result is an object, merge it with the data
+      else if (data.result && typeof data.result === 'object') {
+        resultData = {
+          ...data,
+          ...data.result,
+        };
       }
       
-      // Generic conversion as fallback
-      return {
+      // Extract different possible field structures
+      // This handles fields that could be in different places based on how the data was saved
+      const traits = ensureArray(resultData.traits || data.traits);
+      const overview = resultData.overview || data.overview || "";
+      const intelligence = resultData.intelligence || data.intelligence || {};
+      const intelligenceScore = extractNumber(resultData.intelligence_score || resultData.intelligenceScore || data.intelligence_score || 0);
+      const emotionalIntelligenceScore = extractNumber(resultData.emotional_intelligence_score || resultData.emotionalIntelligenceScore || data.emotional_intelligence_score || 0);
+      const motivators = ensureArray(resultData.motivators || data.motivators);
+      const inhibitors = ensureArray(resultData.inhibitors || data.inhibitors);
+      const growthAreas = ensureArray(resultData.growth_areas || resultData.growthAreas || data.growth_areas);
+      const weaknesses = ensureArray(resultData.weaknesses || data.weaknesses);
+      const relationshipPatterns = resultData.relationship_patterns || resultData.relationshipPatterns || data.relationship_patterns || {};
+      const careerSuggestions = ensureArray(resultData.career_suggestions || resultData.careerSuggestions || data.career_suggestions);
+      const roadmap = resultData.roadmap || data.roadmap || "";
+      const learningPathways = ensureArray(resultData.learning_pathways || resultData.learningPathways || data.learning_pathways);
+
+      // Process traits to ensure they have proper structure
+      const processedTraits = traits.map(trait => {
+        // If trait is just a string, convert to object format
+        if (typeof trait === 'string') {
+          return {
+            name: trait,
+            trait: trait,
+            score: 5,
+            description: `You have a significant presence of the ${trait} trait.`,
+            impact: [],
+            recommendations: [],
+            strengths: [`Related to your ${trait}`],
+            challenges: [],
+            growthSuggestions: []
+          };
+        }
+        
+        // If trait is an object but missing fields, fill them in
+        const name = trait.name || trait.trait || "Unknown Trait";
+        
+        return {
+          name: name,
+          trait: trait.trait || name,
+          score: extractNumber(trait.score !== undefined ? trait.score : 5),
+          description: trait.description || `This trait reflects aspects of your personality relating to ${name}.`,
+          impact: ensureArray(trait.impact),
+          recommendations: ensureArray(trait.recommendations),
+          strengths: ensureArray(trait.strengths),
+          challenges: ensureArray(trait.challenges),
+          growthSuggestions: ensureArray(trait.growthSuggestions)
+        };
+      });
+      
+      // Build the final analysis object
+      const analysis: ComprehensiveAnalysis = {
         id: data.id || "",
         created_at: data.created_at || new Date().toISOString(),
         assessment_id: data.assessment_id || assessmentId || "",
-        overview: data.overview || "",
-        traits: Array.isArray(data.traits) ? data.traits : [],
-        intelligence: data.intelligence || {},
-        intelligenceScore: Number(data.intelligence_score || 0),
-        emotionalIntelligenceScore: Number(data.emotional_intelligence_score || 0),
-        motivators: Array.isArray(data.motivators) ? data.motivators : [],
-        inhibitors: Array.isArray(data.inhibitors) ? data.inhibitors : [],
-        growthAreas: Array.isArray(data.growth_areas) ? data.growth_areas : [],
-        weaknesses: Array.isArray(data.weaknesses) ? data.weaknesses : [],
-        relationshipPatterns: data.relationship_patterns || {},
-        careerSuggestions: Array.isArray(data.career_suggestions) ? data.career_suggestions : [],
-        roadmap: data.roadmap || "",
-        learningPathways: Array.isArray(data.learning_pathways) ? data.learning_pathways : []
-      } as ComprehensiveAnalysis;
+        overview: typeof overview === 'string' ? overview : "No overview available",
+        traits: processedTraits,
+        intelligence: typeof intelligence === 'object' ? intelligence : {},
+        intelligenceScore: intelligenceScore,
+        emotionalIntelligenceScore: emotionalIntelligenceScore,
+        motivators: motivators,
+        inhibitors: inhibitors,
+        growthAreas: growthAreas,
+        weaknesses: weaknesses,
+        relationshipPatterns: relationshipPatterns,
+        careerSuggestions: careerSuggestions,
+        roadmap: typeof roadmap === 'string' ? roadmap : "No roadmap available",
+        learningPathways: learningPathways
+      };
+      
+      console.log(`Conversion complete. Analysis has ${analysis.traits.length} traits and overview length: ${analysis.overview?.length || 0}`);
+      
+      return analysis;
     } catch (err) {
       console.error("Error converting data to analysis:", err);
       setConversionError(err instanceof Error ? err.message : "Unknown conversion error");
@@ -74,7 +125,32 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     }
   }, [assessmentId]);
   
-  // Function to poll for analysis completion
+  // Helper function to ensure a value is an array
+  const ensureArray = (value: any): any[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [value];
+      } catch {
+        return [value];
+      }
+    }
+    return [value];
+  };
+  
+  // Helper function to extract a number safely
+  const extractNumber = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+  
+  // Function to poll for analysis completion with enhanced error handling and retries
   const pollForAnalysis = useCallback(async (id: string, maxAttempts = 5) => {
     if (!id) return null;
     
@@ -83,6 +159,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     
     try {
       // Comprehensive search for existing analysis using multiple methods
+      console.log(`Starting comprehensive analysis polling for ID: ${id}`);
       
       // Method 1: Check if analysis already exists with exact ID match
       const { data: existingAnalysis, error: existingError } = await supabase
@@ -126,6 +203,27 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           toast.success("Analysis found via assessment ID!");
           return analysis;
         }
+      }
+      
+      // Method 3: Try using the Supabase RPC function
+      try {
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_comprehensive_analysis_by_id', { analysis_id: id })
+          
+        if (rpcError) {
+          console.error("Error calling RPC function:", rpcError);
+        } else if (rpcData) {
+          console.log("Found analysis via RPC function:", typeof rpcData);
+          const analysis = convertToAnalysis(rpcData);
+          if (analysis) {
+            setFoundAnalysis(analysis);
+            setIsPolling(false);
+            toast.success("Analysis found via database function!");
+            return analysis;
+          }
+        }
+      } catch (rpcErr) {
+        console.error("Exception calling RPC function:", rpcErr);
       }
       
       // If no existing analysis found yet, start polling
@@ -212,6 +310,25 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
             toast.success("Analysis completed!", { id: `poll-analysis-${id}` });
             return;
           }
+        }
+        
+        // Try RPC function again
+        try {
+          const { data: rpcData } = await supabase
+            .rpc('get_comprehensive_analysis_by_id', { analysis_id: id })
+            
+          if (rpcData) {
+            console.log("Analysis found via RPC on attempt", attempts);
+            const analysis = convertToAnalysis(rpcData);
+            if (analysis) {
+              setFoundAnalysis(analysis);
+              setIsPolling(false);
+              toast.success("Analysis completed via database function!", { id: `poll-analysis-${id}` });
+              return;
+            }
+          }
+        } catch (rpcErr) {
+          // Continue to next check
         }
         
         // Check recent analyses (might be missing assessment_id link)
