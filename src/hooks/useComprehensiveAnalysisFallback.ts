@@ -183,20 +183,25 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       }
       
-      // Method 2: Check if analysis exists with assessment ID
+      // Method 2: Check if analysis exists with assessment ID (fix: use select() instead of maybeSingle())
       const { data: byAssessmentId, error: assessmentError } = await supabase
         .from('comprehensive_analyses')
         .select('*')
-        .eq('assessment_id', id)
-        .maybeSingle();
+        .eq('assessment_id', id);
       
       if (assessmentError) {
         console.log("Error checking for existing analysis by assessment ID:", assessmentError);
       }
       
-      if (byAssessmentId) {
-        console.log("Found existing analysis for assessment ID:", id);
-        const analysis = convertToAnalysis(byAssessmentId);
+      if (byAssessmentId && byAssessmentId.length > 0) {
+        console.log(`Found ${byAssessmentId.length} existing analyses for assessment ID:`, id);
+        
+        // Use the most recent analysis if there are multiple
+        const mostRecent = byAssessmentId.sort((a, b) => {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        })[0];
+        
+        const analysis = convertToAnalysis(mostRecent);
         if (analysis) {
           setFoundAnalysis(analysis);
           setIsPolling(false);
@@ -208,8 +213,8 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       // Method 3: Try using the Supabase RPC function
       try {
         const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_comprehensive_analysis_by_id', { analysis_id: id })
-          
+          .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
+        
         if (rpcError) {
           console.error("Error calling RPC function:", rpcError);
         } else if (rpcData) {
@@ -224,6 +229,37 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         }
       } catch (rpcErr) {
         console.error("Exception calling RPC function:", rpcErr);
+      }
+      
+      // Method 4: Check for any recent analyses that might match our criteria
+      try {
+        const { data: recentAnalyses, error: recentError } = await supabase
+          .from('comprehensive_analyses')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
+          console.log(`Checking ${recentAnalyses.length} recent analyses for potential matches`);
+          
+          // Look for a match by timestamp (created within the last 15 minutes)
+          const potentialMatch = recentAnalyses.find(a => 
+            (Date.now() - new Date(a.created_at).getTime()) < 900000 // 15 minutes
+          );
+          
+          if (potentialMatch) {
+            console.log("Found recent analysis that might match:", potentialMatch.id);
+            const analysis = convertToAnalysis(potentialMatch);
+            if (analysis) {
+              setFoundAnalysis(analysis);
+              setIsPolling(false);
+              toast.success("Recent analysis found!");
+              return analysis;
+            }
+          }
+        }
+      } catch (recentErr) {
+        console.error("Error checking recent analyses:", recentErr);
       }
       
       // If no existing analysis found yet, start polling
@@ -294,16 +330,20 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
           }
         }
         
-        // Check by assessment ID
+        // Check by assessment ID (fixed to handle multiple analyses)
         const { data: checkByAssessment } = await supabase
           .from('comprehensive_analyses')
           .select('*')
-          .eq('assessment_id', id)
-          .maybeSingle();
+          .eq('assessment_id', id);
           
-        if (checkByAssessment) {
-          console.log("Analysis found by assessment ID match on attempt", attempts);
-          const analysis = convertToAnalysis(checkByAssessment);
+        if (checkByAssessment && checkByAssessment.length > 0) {
+          console.log(`Found ${checkByAssessment.length} analyses by assessment ID match on attempt ${attempts}`);
+          // Use the most recent analysis
+          const mostRecent = checkByAssessment.sort((a, b) => {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          })[0];
+          
+          const analysis = convertToAnalysis(mostRecent);
           if (analysis) {
             setFoundAnalysis(analysis);
             setIsPolling(false);
@@ -315,7 +355,7 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
         // Try RPC function again
         try {
           const { data: rpcData } = await supabase
-            .rpc('get_comprehensive_analysis_by_id', { analysis_id: id })
+            .rpc('get_comprehensive_analysis_by_id', { analysis_id: id });
             
           if (rpcData) {
             console.log("Analysis found via RPC on attempt", attempts);

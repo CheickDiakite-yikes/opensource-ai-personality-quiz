@@ -98,17 +98,28 @@ const ComprehensiveReportLanding: React.FC = () => {
           
           // For each assessment, check if there's a corresponding analysis
           for (const assessment of assessments) {
-            const { data: linkedAnalysis, error: linkedError } = await supabase
-              .from('comprehensive_analyses')
-              .select('*')
-              .eq('assessment_id', assessment.id)
-              .maybeSingle();
-              
-            if (linkedError) {
-              console.error(`Error checking analysis for assessment ${assessment.id}:`, linkedError);
-            } else if (linkedAnalysis && !analysisIds.has(linkedAnalysis.id)) {
-              analysisIds.add(linkedAnalysis.id);
-              results.push(linkedAnalysis);
+            try {
+              // Fixed: Use .select('*') instead of .maybeSingle() to handle multiple results
+              const { data: linkedAnalyses, error: linkedError } = await supabase
+                .from('comprehensive_analyses')
+                .select('*')
+                .eq('assessment_id', assessment.id);
+                
+              if (linkedError) {
+                console.error(`Error checking analysis for assessment ${assessment.id}:`, linkedError);
+              } else if (linkedAnalyses && linkedAnalyses.length > 0) {
+                console.log(`Found ${linkedAnalyses.length} analyses for assessment ${assessment.id}`);
+                
+                // Process each linked analysis
+                linkedAnalyses.forEach(linkedAnalysis => {
+                  if (!analysisIds.has(linkedAnalysis.id)) {
+                    analysisIds.add(linkedAnalysis.id);
+                    results.push(linkedAnalysis);
+                  }
+                });
+              }
+            } catch (assessErr) {
+              console.error(`Error processing assessment ${assessment.id}:`, assessErr);
             }
           }
         }
@@ -142,6 +153,38 @@ const ComprehensiveReportLanding: React.FC = () => {
         } catch (e) {
           console.error("Exception in unfiltered query:", e);
         }
+      }
+      
+      // 4. Try using the database function as another method
+      try {
+        // Get all analyses we have access to
+        const { data: recentAnalyses, error: recentError } = await supabase
+          .from('comprehensive_analyses')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (!recentError && recentAnalyses && recentAnalyses.length > 0) {
+          console.log(`Found ${recentAnalyses.length} recent analysis IDs, checking details`);
+          
+          // For each ID, try to get the full data using the RPC function
+          for (const item of recentAnalyses) {
+            try {
+              const { data: analysisData, error: rpcError } = await supabase
+                .rpc('get_comprehensive_analysis_by_id', { analysis_id: item.id });
+                
+              if (!rpcError && analysisData && !analysisIds.has(item.id)) {
+                console.log(`Retrieved analysis ${item.id} via RPC function`);
+                analysisIds.add(item.id);
+                results.push(analysisData);
+              }
+            } catch (rpcErr) {
+              // Continue to next item on error
+            }
+          }
+        }
+      } catch (recentErr) {
+        console.error("Error fetching recent analyses:", recentErr);
       }
       
       console.log(`Total analyses found from all sources: ${results.length}`);
