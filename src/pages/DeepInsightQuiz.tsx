@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,14 @@ const DeepInsightQuiz: React.FC = () => {
   const completedQuestions = Object.keys(responses).length;
   const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
   const hasPartialProgress = completedQuestions > 0;
+
+  // Debug current question and response
+  useEffect(() => {
+    if (currentQuestion) {
+      console.log(`Current question (${currentQuestionIndex}):`, currentQuestion.id);
+      console.log(`Current response for ${currentQuestion.id}:`, responses[currentQuestion.id]);
+    }
+  }, [currentQuestion, currentQuestionIndex, responses]);
   
   return (
     <motion.div 

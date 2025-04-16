@@ -32,12 +32,14 @@ export const useDeepInsightStorage = (
           savedProgress.currentQuestionIndex >= 0 &&
           savedProgress.currentQuestionIndex < totalQuestions
         ) {
+          console.log("Found saved progress:", savedProgress);
+          
           // Set restored session flag first before changing any state
           if (setIsRestoredSession) {
             setIsRestoredSession(true);
           }
           
-          // Wait briefly to ensure flag is set before updating state
+          // Wait to ensure flag is set before updating state
           setTimeout(() => {
             setResponses(savedProgress.responses);
             setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
@@ -56,7 +58,7 @@ export const useDeepInsightStorage = (
               );
               console.log("Deep Insight quiz progress restored:", savedProgress);
             }
-          }, 100);
+          }, 200); // Increased timeout for more reliable state updates
         }
       }
     } catch (error) {

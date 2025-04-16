@@ -26,7 +26,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isLastQuestion,
   error,
 }) => {
-  const { control, handleSubmit, setValue, watch } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
@@ -45,6 +45,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   }, [question.id, currentResponse, setValue]);
 
+  const processSubmit = (data: Record<string, string>) => {
+    // Make sure we're submitting the correct question ID
+    const formattedData = {
+      [question.id]: data[question.id]
+    };
+    console.log(`Processing submission for question ${question.id} with value:`, formattedData[question.id]);
+    onSubmit(formattedData);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -54,7 +63,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         )}
       </CardHeader>
       <CardContent>
-        <form id="quiz-form" onSubmit={handleSubmit(onSubmit)}>
+        <form id="quiz-form" onSubmit={handleSubmit(processSubmit)}>
           <Controller
             control={control}
             name={question.id}
