@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../utils/analysis/analysisGenerator";
-import { CircleStar, Rocket, XCircle, Briefcase } from "lucide-react";
+import { AnalysisData } from "../utils/analysis/types";
+import { Sparkles, Rocket, XCircle, Briefcase } from "lucide-react";
 
 interface StrengthsChallengesCardsProps {
   analysis: AnalysisData;
@@ -23,7 +24,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CircleStar className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-primary" />
               Core Strengths
             </CardTitle>
           </CardHeader>

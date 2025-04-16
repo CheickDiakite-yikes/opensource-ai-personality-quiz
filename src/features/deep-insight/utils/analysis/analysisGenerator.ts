@@ -1,140 +1,348 @@
-
 import { DeepInsightResponses } from "../../types";
-import { AnalysisData } from "./types";
+import { PersonalityAnalysis } from "@/utils/types";
 import { analyzeResponsePatterns } from "./patternAnalyzer";
-import { determinePersonalityTraits, determineSecondaryTrait } from "./personalityTraits";
+import { determinePersonalityTraits } from "./personalityTraits";
 import { generateStrengthsAndChallenges } from "./strengthsChallenges";
-
-// Fix the re-export using "export type" for TypeScript's isolatedModules
-export type { AnalysisData };
+import { AnalysisData, ResponsePatternAnalysis } from "./types";
 
 /**
- * Main function to generate analysis from user responses
+ * Main function to generate a complete analysis from assessment responses
  */
 export const generateAnalysisFromResponses = (responses: DeepInsightResponses): AnalysisData => {
+  console.log("Starting analysis generation from responses");
+  
   // Analyze response patterns
-  const { 
-    percentages, 
-    primaryChoice, 
-    secondaryChoice, 
-    responseSignature 
-  } = analyzeResponsePatterns(responses);
+  const responsePatterns = analyzeResponsePatterns(responses);
   
   // Determine personality traits
-  const { 
-    primaryTrait, 
-    analyticalScore, 
-    emotionalScore, 
-    adaptabilityScore,
-    decisionMakingStyle,
-    learningStyle,
-    emotionalAwareness
-  } = determinePersonalityTraits(primaryChoice);
-  
-  // Get secondary trait
-  const secondaryTrait = determineSecondaryTrait(secondaryChoice);
+  const traitsAnalysis = determinePersonalityTraits(responsePatterns.primaryChoice, responsePatterns.secondaryChoice);
   
   // Generate strengths and challenges
-  const { 
-    strengths, 
-    challenges, 
-    growthAreas, 
-    recommendations 
-  } = generateStrengthsAndChallenges(primaryChoice, secondaryChoice);
+  const strengthsChallenges = generateStrengthsAndChallenges(responsePatterns.primaryChoice, responsePatterns.secondaryChoice);
   
-  // Create metadata
-  const uniqueId = `analysis-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const now = new Date().toISOString();
-  
-  // Generate final analysis
-  return {
-    id: uniqueId,
-    createdAt: now,
-    overview: `Based on your unique response pattern (${responseSignature}), you appear to be primarily a ${primaryTrait} with strong ${secondaryTrait} tendencies. Your responses reveal a thoughtful approach to various situations, with particular strengths in ${strengths.slice(0, 2).join(" and ")}. You demonstrate a balanced combination of analytical thinking, emotional awareness, and adaptability, with your strongest dimension being your ${primaryChoice === 'a' ? 'analytical capabilities' : primaryChoice === 'b' ? 'emotional intelligence' : primaryChoice === 'c' ? 'adaptability' : 'creative vision'}.`,
-    traits: [
-      {
-        trait: "Analytical Thinking",
-        score: analyticalScore,
-        description: "Your analytical abilities help you understand complex situations and make reasoned decisions.",
-        strengths: ["Methodical problem-solving", "Critical evaluation", "Pattern recognition"],
-        challenges: ["May sometimes overthink decisions", "Could benefit from trusting intuition more"],
-        growthSuggestions: ["Balance analysis with action", "Incorporate more intuitive approaches"]
-      },
-      {
-        trait: "Emotional Intelligence",
-        score: emotionalScore,
-        description: "Your emotional awareness influences how you understand yourself and connect with others.",
-        strengths: ["Self-awareness", "Empathy", "Relationship management"],
-        challenges: ["Balancing emotional needs with practical considerations"],
-        growthSuggestions: ["Practice mindfulness to deepen emotional awareness", "Seek feedback on interpersonal interactions"]
-      },
-      {
-        trait: "Adaptability",
-        score: adaptabilityScore,
-        description: "Your flexibility in handling change and new situations is a key part of your approach to life.",
-        strengths: ["Willingness to adjust when necessary", "Resilience when facing obstacles"],
-        challenges: ["May need time to fully embrace major changes"],
-        growthSuggestions: ["Intentionally seek new experiences", "Practice reframing challenges as opportunities"]
-      }
-    ],
-    intelligence: {
-      type: "Integrated",
-      score: (analyticalScore + emotionalScore) / 2,
-      description: "You exhibit balanced capabilities across analytical, emotional, and practical domains.",
-      domains: [
-        { name: "Logical-Mathematical", score: analyticalScore, description: "Your analytical and systematic thinking abilities." },
-        { name: "Interpersonal", score: emotionalScore, description: "Your understanding of others' motivations and feelings." },
-        { name: "Adaptability", score: adaptabilityScore, description: "Your ability to adjust to new situations and information." }
-      ]
-    },
-    intelligenceScore: Math.round((analyticalScore + emotionalScore + adaptabilityScore) / 3),
-    emotionalIntelligenceScore: Math.round(emotionalScore),
-    cognitiveStyle: {
-      primary: primaryTrait,
-      secondary: secondaryTrait,
-      description: `Your thinking style combines elements of ${primaryTrait.toLowerCase()} approaches with ${secondaryTrait.toLowerCase()} tendencies, creating a unique cognitive profile.`
-    },
-    valueSystem: {
-      strengths: ["Integrity", "Growth", "Connection", "Understanding"],
-      challenges: ["Balancing competing priorities", "Recognizing when values conflict"],
-      compatibleTypes: ["Growth-oriented individuals", "People with complementary strengths"]
-    },
-    motivators: ["Personal growth", "Meaningful achievement", "Understanding complex systems", "Authentic connection"],
-    inhibitors: ["Self-doubt", "Perfectionism", "Fear of making wrong choices"],
-    weaknesses: ["May struggle with ambiguity", "Sometimes hesitant to take risks", "Occasional perfectionism"],
-    growthAreas: growthAreas,
-    relationshipPatterns: {
-      strengths: ["Good listening skills", "Thoughtfulness", "Depth of connection"],
-      challenges: ["May withhold feelings to maintain harmony", "Could be more assertive about needs"],
-      compatibleTypes: ["Open communicators", "Growth-oriented individuals", "Those who appreciate depth"]
-    },
-    careerSuggestions: ["Strategic advisor", "Research specialist", "Program developer", "Systems analyst", "Consultant", "Educator"],
-    learningPathways: ["Structured courses with practical applications", "Collaborative learning environments", "Self-directed deep dives"],
-    roadmap: "Focus on leveraging your natural strengths while developing in areas that will complement your core tendencies. Consider engaging in activities that challenge your comfort zone in small, progressive steps.",
+  // Create the analysis object
+  const analysis: AnalysisData = {
+    id: generateUniqueId(),
+    createdAt: new Date().toISOString(),
+    overview: generateOverview(traitsAnalysis.primaryTrait, responsePatterns),
+    
+    // Core traits
     coreTraits: {
-      primary: primaryTrait,
-      secondary: secondaryTrait,
-      strengths: strengths,
-      challenges: challenges
+      primary: traitsAnalysis.primaryTrait,
+      secondary: determineSupportingTrait(traitsAnalysis),
+      strengths: strengthsChallenges.strengths,
+      challenges: strengthsChallenges.challenges
     },
+    
+    // Traits data
+    traits: generateTraits(traitsAnalysis, responsePatterns),
+    
+    // Intelligence data
+    intelligence: {
+      type: determineIntelligenceType(traitsAnalysis),
+      score: traitsAnalysis.analyticalScore * 10,
+      description: generateIntelligenceDescription(traitsAnalysis),
+      domains: generateIntelligenceDomains(traitsAnalysis)
+    },
+    
+    // Intelligence scores
+    intelligenceScore: Math.round(traitsAnalysis.analyticalScore * 10),
+    emotionalIntelligenceScore: Math.round(traitsAnalysis.emotionalScore * 10),
+    
+    // Cognitive style
+    cognitiveStyle: {
+      primary: determineCognitiveStyleName(traitsAnalysis),
+      secondary: determineSecondaryCognitiveStyle(traitsAnalysis),
+      description: generateCognitiveStyleDescription(traitsAnalysis)
+    },
+    
+    // Cognitive patterning
     cognitivePatterning: {
-      decisionMaking: decisionMakingStyle,
-      learningStyle: learningStyle,
-      attention: "Your attention is most focused when dealing with content that aligns with your values and interests. Your response pattern suggests you can maintain strong focus when engaged with meaningful material."
+      decisionMaking: traitsAnalysis.decisionMakingStyle,
+      learningStyle: traitsAnalysis.learningStyle,
+      attention: generateAttentionPattern(traitsAnalysis, responsePatterns)
     },
+    
+    // Emotional architecture
     emotionalArchitecture: {
-      emotionalAwareness: emotionalAwareness,
-      regulationStyle: "You tend to process emotions through a combination of reflection and discussion. This balanced approach helps you manage emotional experiences effectively in most situations.",
-      empathicCapacity: "You demonstrate good empathy for others, particularly those whose experiences you can relate to. You're able to perspective-take while maintaining appropriate emotional boundaries."
+      emotionalAwareness: traitsAnalysis.emotionalAwareness,
+      regulationStyle: generateEmotionalRegulationStyle(traitsAnalysis),
+      empathicCapacity: generateEmpathicCapacity(traitsAnalysis)
     },
+    
+    // Interpersonal dynamics
     interpersonalDynamics: {
-      attachmentStyle: "Your attachment style shows a balanced approach to relationships, valuing both connection and independence.",
-      communicationPattern: "You communicate thoughtfully and prefer depth over small talk. You listen well and generally express your thoughts clearly.",
-      conflictResolution: "Your approach to conflict emphasizes finding common ground while addressing issues directly but tactfully."
+      attachmentStyle: generateAttachmentStyle(traitsAnalysis),
+      communicationPattern: generateCommunicationPattern(traitsAnalysis),
+      conflictResolution: generateConflictResolutionStyle(traitsAnalysis)
     },
+    
+    // Value system
+    valueSystem: generateValueSystem(traitsAnalysis),
+    
+    // Motivators and inhibitors
+    motivators: generateMotivators(traitsAnalysis, responsePatterns),
+    inhibitors: generateInhibitors(traitsAnalysis, responsePatterns),
+    
+    // Growth areas
+    weaknesses: strengthsChallenges.challenges.slice(0, 3),
+    growthAreas: strengthsChallenges.growthAreas,
+    
+    // Relationship patterns
+    relationshipPatterns: {
+      strengths: generateRelationshipStrengths(traitsAnalysis),
+      challenges: generateRelationshipChallenges(traitsAnalysis),
+      compatibleTypes: generateCompatibleTypes(traitsAnalysis)
+    },
+    
+    // Career and learning
+    careerSuggestions: generateCareerSuggestions(traitsAnalysis),
+    learningPathways: generateLearningPathways(traitsAnalysis),
+    
+    // Roadmap
+    roadmap: generateGrowthRoadmap(traitsAnalysis),
+    
+    // Growth potential
     growthPotential: {
-      developmentAreas: growthAreas,
-      recommendations: recommendations
-    }
+      developmentAreas: strengthsChallenges.growthAreas,
+      recommendations: strengthsChallenges.recommendations
+    },
+    
+    // Include the response patterns in the analysis
+    responsePatterns
   };
+  
+  console.log("Analysis generation complete");
+  return analysis;
+};
+
+// Generate a unique ID for the analysis
+const generateUniqueId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+};
+
+// Generate an overview based on primary trait and response patterns
+const generateOverview = (primaryTrait: string, responsePatterns: ResponsePatternAnalysis): string => {
+  let overview = `Based on your responses, you exhibit a strong ${primaryTrait} trait. `;
+  
+  if (responsePatterns.primaryChoice === 'a') {
+    overview += "You tend to approach situations with a logical and analytical mindset.";
+  } else if (responsePatterns.primaryChoice === 'b') {
+    overview += "You prioritize emotional connections and empathy in your interactions.";
+  } else if (responsePatterns.primaryChoice === 'c') {
+    overview += "You are adaptable and focus on practical solutions to challenges.";
+  } else {
+    overview += "You demonstrate creativity and innovative thinking in your approach.";
+  }
+  
+  return overview;
+};
+
+// Determine a supporting trait based on trait analysis
+const determineSupportingTrait = (traitsAnalysis: any): string => {
+  const { analyticalScore, emotionalScore, adaptabilityScore } = traitsAnalysis;
+  
+  if (emotionalScore > analyticalScore && emotionalScore > adaptabilityScore) {
+    return "Emotional Intelligence";
+  } else if (adaptabilityScore > analyticalScore && adaptabilityScore > emotionalScore) {
+    return "Adaptability";
+  } else {
+    return "Analytical Thinking";
+  }
+};
+
+// Generate traits data
+const generateTraits = (traitsAnalysis: any, responsePatterns: ResponsePatternAnalysis) => {
+  const traits = [
+    {
+      trait: traitsAnalysis.primaryTrait,
+      score: traitsAnalysis.analyticalScore,
+      description: "A measure of your analytical and problem-solving abilities.",
+      strengths: ["Logical reasoning", "Critical thinking", "Problem decomposition"],
+      challenges: ["Overthinking", "Analysis paralysis", "Ignoring intuition"],
+      growthSuggestions: ["Trust your gut", "Balance logic with emotion", "Embrace uncertainty"]
+    },
+    {
+      trait: "Emotional Intelligence",
+      score: traitsAnalysis.emotionalScore,
+      description: "Reflects your capacity to understand and manage emotions.",
+      strengths: ["Empathy", "Social awareness", "Relationship management"],
+      challenges: ["Oversensitivity", "Emotional reactivity", "Difficulty with conflict"],
+      growthSuggestions: ["Set boundaries", "Practice self-care", "Develop assertiveness"]
+    },
+    {
+      trait: "Adaptability",
+      score: traitsAnalysis.adaptabilityScore,
+      description: "Indicates your ability to adjust and thrive in changing environments.",
+      strengths: ["Flexibility", "Resourcefulness", "Open-mindedness"],
+      challenges: ["Impulsivity", "Lack of planning", "Difficulty with routine"],
+      growthSuggestions: ["Plan ahead", "Reflect on experiences", "Embrace structure"]
+    }
+  ];
+  
+  return traits;
+};
+
+// Determine intelligence type
+const determineIntelligenceType = (traitsAnalysis: any) => {
+  if (traitsAnalysis.analyticalScore > traitsAnalysis.emotionalScore) {
+    return "Analytical Intelligence";
+  } else {
+    return "Emotional Intelligence";
+  }
+};
+
+// Generate intelligence description
+const generateIntelligenceDescription = (traitsAnalysis: any): string => {
+  return `Your intelligence is characterized by a strong focus on ${determineIntelligenceType(traitsAnalysis)}.`;
+};
+
+// Generate intelligence domains
+const generateIntelligenceDomains = (traitsAnalysis: any) => {
+  return [
+    {
+      name: "Logical Reasoning",
+      score: traitsAnalysis.analyticalScore,
+      description: "Your ability to draw logical conclusions from information."
+    },
+    {
+      name: "Emotional Perception",
+      score: traitsAnalysis.emotionalScore,
+      description: "Your skill in recognizing and interpreting emotions in yourself and others."
+    }
+  ];
+};
+
+// Determine cognitive style name
+const determineCognitiveStyleName = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.decisionMakingStyle.includes("Intuitive")) {
+    return "Intuitive Thinker";
+  } else {
+    return "Analytical Thinker";
+  }
+};
+
+// Determine secondary cognitive style
+const determineSecondaryCognitiveStyle = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.learningStyle.includes("Visual")) {
+    return "Visual Learner";
+  } else {
+    return "Auditory Learner";
+  }
+};
+
+// Generate cognitive style description
+const generateCognitiveStyleDescription = (traitsAnalysis: any): string => {
+  return `You have an ${determineCognitiveStyleName(traitsAnalysis)} style, which means you prefer to process information in a ${determineSecondaryCognitiveStyle(traitsAnalysis)} manner.`;
+};
+
+// Generate attention pattern
+const generateAttentionPattern = (traitsAnalysis: any, responsePatterns: ResponsePatternAnalysis): string => {
+  if (responsePatterns.primaryChoice === 'a') {
+    return "You have a focused attention pattern, preferring to concentrate on one task at a time.";
+  } else {
+    return "You have a flexible attention pattern, able to switch between tasks as needed.";
+  }
+};
+
+// Generate emotional regulation style
+const generateEmotionalRegulationStyle = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.emotionalAwareness.includes("High")) {
+    return "You have a balanced emotional regulation style, able to manage your emotions effectively.";
+  } else {
+    return "You have a developing emotional regulation style, and may benefit from practicing emotional management techniques.";
+  }
+};
+
+// Generate empathic capacity
+const generateEmpathicCapacity = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.emotionalScore > 7) {
+    return "You have a high empathic capacity, able to understand and share the feelings of others.";
+  } else {
+    return "You have a moderate empathic capacity, and can improve your ability to connect with others emotionally.";
+  }
+};
+
+// Generate attachment style
+const generateAttachmentStyle = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.adaptabilityScore > 7) {
+    return "You have a secure attachment style, comfortable with intimacy and independence.";
+  } else {
+    return "You have an anxious attachment style, seeking reassurance and validation from others.";
+  }
+};
+
+// Generate communication pattern
+const generateCommunicationPattern = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.decisionMakingStyle.includes("Collaborative")) {
+    return "You have a collaborative communication pattern, valuing input from others.";
+  } else {
+    return "You have a direct communication pattern, preferring to express your thoughts and feelings clearly.";
+  }
+};
+
+// Generate conflict resolution style
+const generateConflictResolutionStyle = (traitsAnalysis: any): string => {
+  if (traitsAnalysis.emotionalScore > 7) {
+    return "You have a compassionate conflict resolution style, seeking to understand and address the needs of all parties.";
+  } else {
+    return "You have a assertive conflict resolution style, standing up for your beliefs and needs.";
+  }
+};
+
+// Generate value system
+const generateValueSystem = (traitsAnalysis: any) => {
+  return ["Integrity", "Compassion", "Innovation"];
+};
+
+// Generate motivators
+const generateMotivators = (traitsAnalysis: any, responsePatterns: ResponsePatternAnalysis): string[] => {
+  const motivators = ["Recognition", "Achievement", "Personal Growth"];
+  
+  if (responsePatterns.primaryChoice === 'd') {
+    motivators.push("Creative Expression");
+  }
+  
+  return motivators;
+};
+
+// Generate inhibitors
+const generateInhibitors = (traitsAnalysis: any, responsePatterns: ResponsePatternAnalysis): string[] => {
+  const inhibitors = ["Criticism", "Routine", "Lack of Autonomy"];
+  
+  if (responsePatterns.primaryChoice === 'a') {
+    inhibitors.push("Ambiguity");
+  }
+  
+  return inhibitors;
+};
+
+// Generate relationship strengths
+const generateRelationshipStrengths = (traitsAnalysis: any): string[] => {
+  return ["Empathy", "Communication", "Support"];
+};
+
+// Generate relationship challenges
+const generateRelationshipChallenges = (traitsAnalysis: any): string[] => {
+  return ["Conflict Avoidance", "Emotional Reactivity", "Boundary Setting"];
+};
+
+// Generate compatible types
+const generateCompatibleTypes = (traitsAnalysis: any): string[] => {
+  return ["Analytical", "Creative", "Emotional"];
+};
+
+// Generate career suggestions
+const generateCareerSuggestions = (traitsAnalysis: any): string[] => {
+  return ["Data Scientist", "Therapist", "Entrepreneur"];
+};
+
+// Generate learning pathways
+const generateLearningPathways = (traitsAnalysis: any): string[] => {
+  return ["Online Courses", "Mentorship", "Workshops"];
+};
+
+// Generate growth roadmap
+const generateGrowthRoadmap = (traitsAnalysis: any): string => {
+  return "Focus on developing your emotional intelligence and communication skills to enhance your relationships and career.";
 };

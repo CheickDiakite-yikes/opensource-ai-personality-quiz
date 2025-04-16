@@ -29,6 +29,7 @@ export interface AnalysisData extends PersonalityAnalysis {
     developmentAreas: string[];
     recommendations: string[];
   };
+  responsePatterns: ResponsePatternAnalysis;
 }
 
 // Pattern analysis response interface

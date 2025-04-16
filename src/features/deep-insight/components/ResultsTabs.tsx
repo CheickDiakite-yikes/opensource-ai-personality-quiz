@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Brain, Heart, Lightbulb, Compass, Users, Briefcase, Sparkles, ScrollText } from "lucide-react";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../utils/analysis/analysisGenerator";
+import { AnalysisData } from "../utils/analysis/types";
 
 interface ResultsTabsProps {
   analysis: AnalysisData;
@@ -127,7 +128,9 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants
                 <div className="bg-secondary/10 p-3 rounded-md">
                   <h4 className="text-sm font-medium mb-1">Most Compatible Types</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
-                    {analysis.relationshipPatterns.compatibleTypes?.map((type, index) => (
+                    {analysis.relationshipPatterns && typeof analysis.relationshipPatterns === 'object' && 
+                     'compatibleTypes' in analysis.relationshipPatterns && 
+                     analysis.relationshipPatterns.compatibleTypes?.map((type, index) => (
                       <li key={index}>{type}</li>
                     ))}
                   </ul>

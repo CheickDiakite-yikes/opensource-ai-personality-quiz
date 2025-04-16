@@ -9,6 +9,11 @@ import { PersonalOverviewCard } from "@/features/deep-insight/components/Persona
 import { ResultsTabs } from "@/features/deep-insight/components/ResultsTabs";
 import { StrengthsChallengesCards } from "@/features/deep-insight/components/StrengthsChallengesCards";
 import { ResultsActions } from "@/features/deep-insight/components/ResultsActions";
+import PersonalityTraitsChart from "@/features/deep-insight/components/visualization/PersonalityTraitsChart";
+import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
+import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ChartBar, PieChart, Activity } from "lucide-react";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
@@ -57,6 +62,45 @@ const DeepInsightResults: React.FC = () => {
         
         {/* Personal Overview */}
         <PersonalOverviewCard analysis={analysis} itemVariants={itemVariants} />
+        
+        {/* Visualizations Section */}
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          custom={4}
+        >
+          <h2 className="text-2xl font-bold mb-4">Visualized Insights</h2>
+          
+          <Tabs defaultValue="traits" className="w-full">
+            <TabsList className="w-full justify-start mb-4">
+              <TabsTrigger value="traits" className="flex items-center gap-2">
+                <ChartBar className="h-4 w-4" />
+                <span>Personality Traits</span>
+              </TabsTrigger>
+              <TabsTrigger value="patterns" className="flex items-center gap-2">
+                <PieChart className="h-4 w-4" />
+                <span>Response Patterns</span>
+              </TabsTrigger>
+              <TabsTrigger value="cognitive" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                <span>Cognitive Profile</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="traits" className="mt-0">
+              <PersonalityTraitsChart traits={analysis.traits} />
+            </TabsContent>
+            
+            <TabsContent value="patterns" className="mt-0">
+              <ResponsePatternChart patternData={analysis.responsePatterns} />
+            </TabsContent>
+            
+            <TabsContent value="cognitive" className="mt-0">
+              <CognitiveStrengthsChart analysis={analysis} />
+            </TabsContent>
+          </Tabs>
+        </motion.div>
         
         {/* Detailed Analysis Tabs */}
         <ResultsTabs analysis={analysis} itemVariants={itemVariants} />
