@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
-import { generateAnalysisFromResponses, AnalysisData } from "../utils/analysisGenerator";
+import { generateAnalysisFromResponses, AnalysisData } from "../utils/analysis/analysisGenerator";
 
 // Fix the re-export using "export type" for TypeScript's isolatedModules
 export type { AnalysisData };

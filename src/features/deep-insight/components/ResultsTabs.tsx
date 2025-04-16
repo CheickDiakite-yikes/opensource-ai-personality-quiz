@@ -1,10 +1,9 @@
-
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Brain, Heart, Lightbulb, Compass, Users, Briefcase, Sparkles, ScrollText } from "lucide-react";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../utils/analysisGenerator";
+import { AnalysisData } from "../utils/analysis/analysisGenerator";
 
 interface ResultsTabsProps {
   analysis: AnalysisData;
@@ -12,6 +11,7 @@ interface ResultsTabsProps {
 }
 
 export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants }) => {
+  
   return (
     <motion.div
       variants={itemVariants}
@@ -42,6 +42,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants
             <span className="hidden sm:inline">Growth</span>
           </TabsTrigger>
         </TabsList>
+        
         
         <TabsContent value="cognitive">
           <Card>
@@ -95,6 +96,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants
           </Card>
         </TabsContent>
         
+        
         <TabsContent value="interpersonal">
           <Card>
             <CardHeader>
@@ -134,6 +136,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants
             </CardContent>
           </Card>
         </TabsContent>
+        
         
         <TabsContent value="career">
           <Card>
