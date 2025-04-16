@@ -1,156 +1,150 @@
 
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
+import { PersonalityAnalysis } from "@/utils/types";
 
-// Mock AI analysis function (in real app, this would call an API)
-export const generateMockAnalysis = (responses: Record<string, string>) => {
-  // For demo purposes, we'll just return a predefined analysis
+// Mock analysis generator function (in a real app, this would call an AI service)
+const generateAnalysisFromResponses = (responses: DeepInsightResponses): PersonalityAnalysis => {
+  console.log("Processing responses:", responses);
+  
+  // In a real implementation, this would call an AI service to analyze the responses
+  // For now, we're returning a mock analysis
   return {
-    overview: "You are a thoughtful and introspective individual who carefully weighs options before making decisions. You have a rich inner life and tend to be selective in social situations, preferring meaningful connections over numerous casual acquaintances. Your approach to personal growth is balanced between structured self-improvement and following your intuition.",
-    coreTraits: {
-      primary: "Analytical Thinker",
-      secondary: "Selective Socializer",
-      strengths: [
-        "Deep critical thinking abilities",
-        "Strong attention to detail",
-        "Authentic and genuine in relationships",
-        "Self-reflective and growth-minded"
-      ],
-      challenges: [
-        "May overthink decisions at times",
-        "Can be reluctant to open up in new social settings",
-        "Might be too self-critical during setbacks",
-        "Sometimes struggles to balance reflection with action"
+    id: `analysis-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    overview: "Based on your responses, you appear to be thoughtful, introspective, and value both structure and creativity. You demonstrate strong analytical abilities balanced with emotional awareness.",
+    traits: [
+      {
+        trait: "Analytical Thinking",
+        score: 85,
+        description: "You have a structured approach to problem-solving and decision making, carefully weighing options before acting.",
+        strengths: ["Methodical problem-solving", "Strategic planning", "Critical evaluation"],
+        challenges: ["May sometimes overthink decisions", "Could benefit from trusting intuition more"],
+        growthSuggestions: ["Practice making quicker decisions in low-stakes situations", "Balance analysis with action"]
+      },
+      {
+        trait: "Emotional Intelligence",
+        score: 78,
+        description: "You demonstrate good awareness of your own emotions and consideration for others' feelings.",
+        strengths: ["Self-awareness", "Empathy", "Relationship management"],
+        challenges: ["Balancing emotional needs with practical considerations"],
+        growthSuggestions: ["Practice mindfulness to deepen emotional awareness", "Seek feedback on interpersonal interactions"]
+      },
+      {
+        trait: "Adaptability",
+        score: 72,
+        description: "You show flexibility in handling change, though you may prefer some stability.",
+        strengths: ["Willingness to adjust when necessary", "Resilience when facing obstacles"],
+        challenges: ["May need time to fully embrace major changes"],
+        growthSuggestions: ["Intentionally seek new experiences", "Practice reframing challenges as opportunities"]
+      }
+    ],
+    intelligence: {
+      type: "Integrated",
+      score: 82,
+      description: "You exhibit balanced capabilities across analytical, emotional, and practical domains.",
+      domains: [
+        { name: "Logical-Mathematical", score: 84, description: "Strong analytical and systematic thinking" },
+        { name: "Interpersonal", score: 79, description: "Good understanding of others' motivations and feelings" },
+        { name: "Intrapersonal", score: 81, description: "Solid self-awareness and reflection capabilities" }
       ]
     },
-    cognitivePatterning: {
-      decisionMaking: "You favor a methodical approach to decisions, carefully weighing evidence and options. When faced with complexity, you're likely to spend time analyzing rather than making snap judgments.",
-      learningStyle: "Your learning thrives when you can deeply understand concepts rather than memorize facts. You connect new information to existing knowledge frameworks and prefer to master topics thoroughly.",
-      attention: "Your attention is selective and deep rather than broad and scattered. You can focus intently on subjects of interest but may tune out when topics don't engage your curiosity."
+    intelligenceScore: 82,
+    emotionalIntelligenceScore: 78,
+    cognitiveStyle: {
+      primary: "Analytical",
+      secondary: "Reflective",
+      description: "You tend to process information systematically while taking time to consider implications."
     },
-    emotionalArchitecture: {
-      emotionalAwareness: "You have well-developed emotional awareness, particularly regarding your own internal states. You're able to recognize and name your feelings with nuance and understand their origins.",
-      regulationStyle: "You tend to process emotions internally before expressing them. This gives you emotional stability but might sometimes create delays in communicating your feelings to others.",
-      empathicCapacity: "You have strong empathic abilities, particularly one-on-one. You're able to tune into others' emotional states and respond with appropriate support."
+    valueSystem: {
+      strengths: ["Integrity", "Balance", "Personal growth"],
+      challenges: ["Balancing idealism with pragmatism"],
+      compatibleTypes: ["Other growth-oriented individuals", "Those who value intellectual exchange"]
     },
-    interpersonalDynamics: {
-      attachmentStyle: "Your attachment style shows a preference for deep, meaningful connections with a select group rather than wide social circles. Trust builds gradually for you, but once established, your loyalty is steadfast.",
-      communicationPattern: "You communicate thoughtfully and with precision. You value listening and understanding before expressing your own perspective.",
-      conflictResolution: "In conflict, you tend to step back to analyze the situation before responding. You prefer finding common ground and mutual understanding over winning arguments."
+    motivators: ["Meaningful achievement", "Learning and growth", "Making positive impact"],
+    inhibitors: ["Excessive self-criticism", "Overthinking", "Fear of making wrong choices"],
+    weaknesses: ["May struggle with ambiguity", "Sometimes hesitant to take risks", "Could delegate more effectively"],
+    growthAreas: ["Developing greater comfort with uncertainty", "Trusting intuition alongside analysis", "Building resilience in the face of setbacks"],
+    relationshipPatterns: {
+      strengths: ["Loyalty", "Thoughtfulness", "Good listening skills"],
+      challenges: ["May withhold feelings to maintain harmony", "Could be more assertive about needs"],
+      compatibleTypes: ["Open communicators", "Growth-oriented individuals", "Those who appreciate depth"]
     },
-    growthPotential: {
-      developmentAreas: [
-        "Embracing more spontaneity in decision-making",
-        "Expanding comfort in broader social settings",
-        "Balancing self-reflection with active engagement",
-        "Communicating emotions more readily with trusted others"
-      ],
-      recommendations: [
-        "Practice making some decisions with less analysis to develop intuitive judgment",
-        "Set small, progressive goals for social interaction in new contexts",
-        "Establish reflection routines that conclude with concrete action steps",
-        "Create regular check-ins with trusted friends to share emotional experiences"
-      ]
-    }
+    careerSuggestions: ["Strategic advisor", "Research specialist", "Program developer", "Systems analyst", "Consultant"],
+    learningPathways: ["Structured courses with practical applications", "Collaborative learning environments", "Self-directed deep dives into topics of interest"],
+    roadmap: "Focus on developing comfort with uncertainty while leveraging your analytical strengths. Practice more spontaneity in low-stakes situations and celebrate small risks taken. Consider mindfulness practices to balance your analytical tendencies with intuitive insights."
   };
 };
 
-export interface AnalysisData {
-  overview: string;
-  coreTraits: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  };
-  cognitivePatterning: {
-    decisionMaking: string;
-    learningStyle: string;
-    attention: string;
-  };
-  emotionalArchitecture: {
-    emotionalAwareness: string;
-    regulationStyle: string;
-    empathicCapacity: string;
-  };
-  interpersonalDynamics: {
-    attachmentStyle: string;
-    communicationPattern: string;
-    conflictResolution: string;
-  };
-  growthPotential: {
-    developmentAreas: string[];
-    recommendations: string[];
-  };
-}
-
 export const useDeepInsightResults = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   
+  // Effect to handle generating analysis from responses
   useEffect(() => {
-    const loadAnalysis = async () => {
+    const generateAnalysis = async () => {
       try {
-        // Check if we have responses in state
-        const responses = location.state?.responses as DeepInsightResponses | undefined;
+        // Retrieve responses from location state
+        const responseData = location.state?.responses;
         
-        if (!responses) {
-          console.error("No responses found in location state");
+        if (!responseData) {
           setError("No assessment data found. Please complete the assessment first.");
           setLoading(false);
           return;
         }
         
-        console.log("Processing responses:", responses);
+        // In a real app, we would call an API to analyze the responses
+        // For now, we'll simulate a delay and generate a mock analysis
+        setLoading(true);
         
-        // In a real implementation, this would call an API with the responses
-        // For now, simulate API call with timeout
+        // Simulate API call delay
         setTimeout(() => {
-          try {
-            const mockResult = generateMockAnalysis(responses);
-            setAnalysis(mockResult);
-            setLoading(false);
-          } catch (err) {
-            console.error("Error generating analysis:", err);
-            setError("Failed to generate your analysis. Please try again.");
-            setLoading(false);
-          }
-        }, 1500);
+          const generatedAnalysis = generateAnalysisFromResponses(responseData);
+          setAnalysis(generatedAnalysis);
+          setLoading(false);
+        }, 3000); // 3 second delay to simulate processing
+        
       } catch (e) {
-        console.error("Error loading analysis:", e);
-        setError("An error occurred while loading your results.");
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+        console.error("Error generating analysis:", errorMessage);
+        setError("Failed to generate your analysis. Please try again later.");
         setLoading(false);
+        toast.error("Something went wrong while generating your analysis.");
       }
     };
-
-    loadAnalysis();
+    
+    generateAnalysis();
   }, [location.state]);
   
-  // Redirect if accessed directly without responses
-  useEffect(() => {
-    if (!location.state?.responses && !loading && !analysis) {
-      console.log("No data found, redirecting to assessment page");
-      toast.error("Please complete the assessment first");
-      navigate("/deep-insight");
-    }
-  }, [location.state, loading, analysis, navigate]);
-  
-  // Save analysis function
-  const saveAnalysis = () => {
+  // Function to save the analysis
+  const saveAnalysis = async () => {
     try {
-      // In a real app, save to database here
-      toast.success("Report saved to your profile!");
-      console.log("Analysis saved");
-      return true;
+      if (!analysis) return;
+      
+      // In a real app, we would save to a database
+      toast.success("Your analysis has been saved!");
+      
+      // If connected to Supabase, we would do something like:
+      // await supabase
+      //   .from('analyses')
+      //   .insert({
+      //     user_id: user?.id,
+      //     result: analysis,
+      //     // other fields...
+      //   });
+      
+      console.log("Analysis saved for user:", user?.id);
+      
     } catch (e) {
-      console.error("Error saving analysis:", e);
-      toast.error("Failed to save your analysis");
-      return false;
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+      console.error("Error saving analysis:", errorMessage);
+      toast.error("Failed to save your analysis. Please try again.");
     }
   };
   
