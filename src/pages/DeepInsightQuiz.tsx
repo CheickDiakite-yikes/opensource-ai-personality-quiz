@@ -7,6 +7,7 @@ import { QuestionCard } from "@/features/deep-insight/components/QuestionCard";
 import { QuizProgress } from "@/features/deep-insight/components/QuizProgress";
 import { useDeepInsightQuiz } from "@/features/deep-insight/hooks/useDeepInsightQuiz";
 import { deepInsightQuestions } from "@/features/deep-insight/data/questions";
+import { Button } from "@/components/ui/button";
 
 // Main component
 const DeepInsightQuiz: React.FC = () => {
@@ -18,12 +19,17 @@ const DeepInsightQuiz: React.FC = () => {
     responses,
     error,
     handleSubmitQuestion,
-    handlePrevious
+    handlePrevious,
+    clearSavedProgress
   } = useDeepInsightQuiz(totalQuestions);
   
   const currentQuestion = deepInsightQuestions[currentQuestionIndex];
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  
+  // Calculate progress percentage for display
+  const progressPercentage = ((Object.keys(responses).length / totalQuestions) * 100).toFixed(0);
+  const hasPartialProgress = Object.keys(responses).length > 0;
   
   return (
     <motion.div 
@@ -42,11 +48,26 @@ const DeepInsightQuiz: React.FC = () => {
             Discover your authentic self through this comprehensive personality assessment. 
             Answer thoughtfully to receive a detailed analysis of your inner workings.
           </p>
+          
+          {hasPartialProgress && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>You've completed {progressPercentage}% of the assessment.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2" 
+                onClick={clearSavedProgress}
+              >
+                Start Over
+              </Button>
+            </div>
+          )}
         </header>
         
         <QuizProgress 
           currentQuestionIndex={currentQuestionIndex} 
-          totalQuestions={totalQuestions} 
+          totalQuestions={totalQuestions}
+          currentCategory={currentQuestion.category}
         />
         
         <QuestionCard 

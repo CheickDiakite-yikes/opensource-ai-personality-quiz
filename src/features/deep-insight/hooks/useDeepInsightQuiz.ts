@@ -3,12 +3,22 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
+import { useDeepInsightStorage } from "./useDeepInsightStorage";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Use the storage hook to handle saving/restoring progress
+  const { clearSavedProgress } = useDeepInsightStorage(
+    responses,
+    currentQuestionIndex,
+    setResponses,
+    setCurrentQuestionIndex,
+    totalQuestions
+  );
   
   // Reset error when question changes
   useEffect(() => {
@@ -64,6 +74,9 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     try {
       console.log("All responses collected:", finalResponses);
       
+      // Clear saved progress since quiz is completed
+      clearSavedProgress();
+      
       // In a real implementation, we would send these responses to an API
       toast.success("Your Deep Insight assessment is complete!");
       navigate("/deep-insight/results", { 
@@ -82,6 +95,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     responses,
     error,
     handleSubmitQuestion,
-    handlePrevious
+    handlePrevious,
+    clearSavedProgress
   };
 };
