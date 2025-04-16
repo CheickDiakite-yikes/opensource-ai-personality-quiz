@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,6 +13,25 @@ export interface AnalysisData extends PersonalityAnalysis {
     secondary: string;
     strengths: string[];
     challenges: string[];
+  };
+  cognitivePatterning: {
+    decisionMaking: string;
+    learningStyle: string;
+    attention: string;
+  };
+  emotionalArchitecture: {
+    emotionalAwareness: string;
+    regulationStyle: string;
+    empathicCapacity: string;
+  };
+  interpersonalDynamics: {
+    attachmentStyle: string;
+    communicationPattern: string;
+    conflictResolution: string;
+  };
+  growthPotential: {
+    developmentAreas: string[];
+    recommendations: string[];
   };
 }
 
@@ -97,6 +117,38 @@ const generateAnalysisFromResponses = (responses: DeepInsightResponses): Analysi
         "Potential over-analysis",
         "Balancing emotional and logical approaches",
         "Risk aversion"
+      ]
+    },
+    // Add the missing fields that are being accessed in ResultsTabs.tsx
+    cognitivePatterning: {
+      decisionMaking: "You tend to gather all available information before making decisions, weighing pros and cons carefully. This methodical approach serves you well for complex choices but may slow you down for simpler ones.",
+      learningStyle: "You learn best through a combination of conceptual understanding and practical application. You prefer to grasp underlying principles before moving to specific examples.",
+      attention: "Your attention is most focused when dealing with complex, intellectually stimulating content. You may need to consciously maintain focus on routine tasks."
+    },
+    emotionalArchitecture: {
+      emotionalAwareness: "You have good awareness of your emotional states and can generally identify what you're feeling and why. This self-awareness serves as a foundation for your emotional intelligence.",
+      regulationStyle: "You tend to process emotions internally before expressing them. This thoughtful approach helps you respond rather than react, though sometimes emotions may be held back too much.",
+      empathicCapacity: "You demonstrate strong empathy, particularly for those closest to you. You can often sense others' emotional states and adjust your approach accordingly."
+    },
+    interpersonalDynamics: {
+      attachmentStyle: "Your attachment style shows a balanced approach to relationships, valuing both independence and connection. You form deep bonds while maintaining healthy boundaries.",
+      communicationPattern: "You communicate thoughtfully and prefer depth over small talk. You listen well but may sometimes hesitate to express your full perspective to avoid conflict.",
+      conflictResolution: "Your conflict resolution approach emphasizes finding common ground and mutual understanding. You prefer to address issues directly but tactfully."
+    },
+    growthPotential: {
+      developmentAreas: [
+        "Embracing uncertainty and ambiguity",
+        "Developing more spontaneity in decision-making",
+        "Expressing emotions more openly",
+        "Setting clearer boundaries in relationships",
+        "Taking more calculated risks"
+      ],
+      recommendations: [
+        "Practice making quick decisions in low-stakes situations",
+        "Keep a reflection journal to track emotional patterns",
+        "Engage in activities that require improvisation",
+        "Practice assertive communication techniques",
+        "Set small, progressive challenges that push your comfort zone"
       ]
     }
   } as AnalysisData;
