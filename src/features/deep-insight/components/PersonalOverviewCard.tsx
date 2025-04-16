@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../hooks/useDeepInsightResults";
+import { AnalysisData } from "../utils/analysisGenerator";
 
 interface PersonalOverviewCardProps {
   analysis: AnalysisData;

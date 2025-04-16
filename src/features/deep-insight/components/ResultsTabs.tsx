@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Brain, Heart, Lightbulb, Compass } from "lucide-react";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../hooks/useDeepInsightResults";
+import { AnalysisData } from "../utils/analysisGenerator";
 
 interface ResultsTabsProps {
   analysis: AnalysisData;

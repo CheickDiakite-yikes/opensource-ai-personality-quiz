@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../hooks/useDeepInsightResults";
+import { AnalysisData } from "../utils/analysisGenerator";
 
 interface StrengthsChallengesCardsProps {
   analysis: AnalysisData;
