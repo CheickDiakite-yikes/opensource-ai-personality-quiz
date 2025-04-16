@@ -16,7 +16,8 @@ export const useDeepInsightStorage = (
   currentQuestionIndex: number,
   setResponses: (responses: DeepInsightResponses) => void,
   setCurrentQuestionIndex: (index: number) => void,
-  totalQuestions: number
+  totalQuestions: number,
+  setIsRestoredSession?: (isRestored: boolean) => void
 ) => {
   // Load saved progress on initial mount
   useEffect(() => {
@@ -33,6 +34,11 @@ export const useDeepInsightStorage = (
         ) {
           setResponses(savedProgress.responses);
           setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
+          
+          // Mark this as a restored session to prevent false validation errors
+          if (setIsRestoredSession) {
+            setIsRestoredSession(true);
+          }
           
           // Calculate how many questions were answered
           const answeredQuestions = Object.keys(savedProgress.responses).length;
@@ -53,7 +59,7 @@ export const useDeepInsightStorage = (
     } catch (error) {
       console.error("Error loading saved Deep Insight quiz progress:", error);
     }
-  }, [setResponses, setCurrentQuestionIndex, totalQuestions]);
+  }, [setResponses, setCurrentQuestionIndex, totalQuestions, setIsRestoredSession]);
   
   // Save progress whenever responses or currentQuestionIndex changes
   useEffect(() => {

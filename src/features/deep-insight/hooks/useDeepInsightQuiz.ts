@@ -9,6 +9,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
+  const [isRestoredSession, setIsRestoredSession] = useState(false);
   const navigate = useNavigate();
   
   // Use the storage hook to handle saving/restoring progress
@@ -17,13 +18,22 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     currentQuestionIndex,
     setResponses,
     setCurrentQuestionIndex,
-    totalQuestions
+    totalQuestions,
+    setIsRestoredSession
   );
   
   // Reset error when question changes
   useEffect(() => {
     setError(null);
   }, [currentQuestionIndex]);
+  
+  // Reset error when coming from a restored session to prevent false validation errors
+  useEffect(() => {
+    if (isRestoredSession) {
+      setError(null);
+      setIsRestoredSession(false);
+    }
+  }, [isRestoredSession]);
   
   const handleSubmitQuestion = (data: Record<string, string>) => {
     try {

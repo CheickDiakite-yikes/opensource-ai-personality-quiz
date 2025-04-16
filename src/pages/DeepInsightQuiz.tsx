@@ -28,8 +28,9 @@ const DeepInsightQuiz: React.FC = () => {
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   
   // Calculate progress percentage for display
-  const progressPercentage = ((Object.keys(responses).length / totalQuestions) * 100).toFixed(0);
-  const hasPartialProgress = Object.keys(responses).length > 0;
+  const completedQuestions = Object.keys(responses).length;
+  const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
+  const hasPartialProgress = completedQuestions > 0;
   
   return (
     <motion.div 
@@ -51,7 +52,7 @@ const DeepInsightQuiz: React.FC = () => {
           
           {hasPartialProgress && (
             <div className="mt-4 text-sm text-muted-foreground">
-              <p>You've completed {progressPercentage}% of the assessment.</p>
+              <p>You've completed {completedQuestions} of {totalQuestions} questions ({progressPercentage}%).</p>
               <Button 
                 variant="outline" 
                 size="sm" 

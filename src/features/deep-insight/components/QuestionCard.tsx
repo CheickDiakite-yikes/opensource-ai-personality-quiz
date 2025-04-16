@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -26,11 +26,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isLastQuestion,
   error,
 }) => {
-  const { control, handleSubmit } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
   });
+
+  // Update form value when question or currentResponse changes
+  useEffect(() => {
+    setValue(question.id, currentResponse || "");
+  }, [question.id, currentResponse, setValue]);
 
   return (
     <Card className="w-full">
