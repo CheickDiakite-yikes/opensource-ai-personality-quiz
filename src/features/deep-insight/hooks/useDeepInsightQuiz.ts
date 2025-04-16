@@ -31,6 +31,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   useEffect(() => {
     if (isRestoredSession) {
       setError(null);
+      console.log("Restored session detected, clearing validation errors");
       setIsRestoredSession(false);
     }
   }, [isRestoredSession]);
@@ -40,8 +41,11 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       const questionId = Object.keys(data)[0];
       const responseValue = data[questionId];
       
+      // Debug log to check what's being submitted
+      console.log(`Submitting question ${questionId} with response:`, responseValue);
+      
       // Validate response
-      if (!responseValue) {
+      if (!responseValue || responseValue.trim() === '') {
         setError("Please select an answer before continuing");
         toast.error("Please select an answer");
         return;

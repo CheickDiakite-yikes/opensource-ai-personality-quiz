@@ -32,28 +32,31 @@ export const useDeepInsightStorage = (
           savedProgress.currentQuestionIndex >= 0 &&
           savedProgress.currentQuestionIndex < totalQuestions
         ) {
-          setResponses(savedProgress.responses);
-          setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
-          
-          // Mark this as a restored session to prevent false validation errors
+          // Set restored session flag first before changing any state
           if (setIsRestoredSession) {
             setIsRestoredSession(true);
           }
           
-          // Calculate how many questions were answered
-          const answeredQuestions = Object.keys(savedProgress.responses).length;
-          
-          // Format the last updated time
-          const lastUpdated = new Date(savedProgress.lastUpdated);
-          const timeAgo = getTimeAgo(lastUpdated);
-          
-          if (answeredQuestions > 0) {
-            toast.info(
-              `Progress restored (${answeredQuestions} questions answered)`, 
-              { description: `Last active ${timeAgo}` }
-            );
-            console.log("Deep Insight quiz progress restored:", savedProgress);
-          }
+          // Wait briefly to ensure flag is set before updating state
+          setTimeout(() => {
+            setResponses(savedProgress.responses);
+            setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
+            
+            // Calculate how many questions were answered
+            const answeredQuestions = Object.keys(savedProgress.responses).length;
+            
+            // Format the last updated time
+            const lastUpdated = new Date(savedProgress.lastUpdated);
+            const timeAgo = getTimeAgo(lastUpdated);
+            
+            if (answeredQuestions > 0) {
+              toast.info(
+                `Progress restored (${answeredQuestions} questions answered)`, 
+                { description: `Last active ${timeAgo}` }
+              );
+              console.log("Deep Insight quiz progress restored:", savedProgress);
+            }
+          }, 100);
         }
       }
     } catch (error) {

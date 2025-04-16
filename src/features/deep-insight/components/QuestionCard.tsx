@@ -26,15 +26,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isLastQuestion,
   error,
 }) => {
-  const { control, handleSubmit, setValue } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue, watch } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
   });
 
+  // For debugging
+  const watchedValue = watch(question.id);
+  console.log(`Current form value for ${question.id}:`, watchedValue);
+  console.log(`Current response prop for ${question.id}:`, currentResponse);
+
   // Update form value when question or currentResponse changes
   useEffect(() => {
-    setValue(question.id, currentResponse || "");
+    if (currentResponse) {
+      console.log(`Setting form value for ${question.id} to:`, currentResponse);
+      setValue(question.id, currentResponse);
+    }
   }, [question.id, currentResponse, setValue]);
 
   return (
