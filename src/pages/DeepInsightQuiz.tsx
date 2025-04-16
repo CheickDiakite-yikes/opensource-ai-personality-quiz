@@ -1,13 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormControl, FormLabel } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Sparkles } from "lucide-react";
+import { Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -84,54 +83,95 @@ const deepInsightQuestions: DeepInsightQuestion[] = [
   },
 ];
 
+// Form type
+type QuizFormData = Record<string, string>;
+
 // Main component
-const DeepInsightQuiz = () => {
+const DeepInsightQuiz: React.FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const form = useForm();
+  
+  const { control, handleSubmit, setValue, formState: { errors } } = useForm<QuizFormData>({
+    defaultValues: {
+      [deepInsightQuestions[0].id]: ""
+    }
+  });
   
   const currentQuestion = deepInsightQuestions[currentQuestionIndex];
   const totalQuestions = deepInsightQuestions.length;
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
   
-  const handleNext = (data: Record<string, string>) => {
-    // Get the current question's response
-    const currentResponse = data[currentQuestion.id];
+  useEffect(() => {
+    // Set initial value from responses if available
+    if (responses[currentQuestion.id]) {
+      setValue(currentQuestion.id, responses[currentQuestion.id]);
+    }
     
-    // Save response
-    setResponses({
-      ...responses,
-      [currentQuestion.id]: currentResponse
-    });
-    
-    // Move to next question or submit if done
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      form.reset({ [deepInsightQuestions[currentQuestionIndex + 1].id]: "" });
-    } else {
-      // Submit all responses
-      handleSubmit();
+    // Log current question for debugging
+    console.log(`Rendering question ${currentQuestionIndex + 1} of ${totalQuestions}`);
+  }, [currentQuestionIndex, setValue, responses, currentQuestion.id]);
+  
+  const onSubmitQuestion = (data: QuizFormData) => {
+    try {
+      // Validate response
+      if (!data[currentQuestion.id]) {
+        setError("Please select an answer before continuing");
+        toast.error("Please select an answer");
+        return;
+      }
+      
+      setError(null);
+      
+      // Save response
+      const updatedResponses = {
+        ...responses,
+        [currentQuestion.id]: data[currentQuestion.id]
+      };
+      
+      setResponses(updatedResponses);
+      console.log(`Saved response for question ${currentQuestion.id}:`, data[currentQuestion.id]);
+      
+      // Move to next question or submit if done
+      if (currentQuestionIndex < totalQuestions - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        // Submit all responses
+        handleCompleteQuiz(updatedResponses);
+      }
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+      console.error("Error processing question:", errorMessage);
+      setError("An error occurred. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
   
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      form.setValue(currentQuestion.id, responses[currentQuestion.id] || "");
+      setError(null);
     }
   };
   
-  const handleSubmit = () => {
-    // In a real implementation, we would send these responses to an API
-    console.log("All responses:", responses);
-    
-    // For now, just navigate to results page with responses as state
-    toast.success("Your Deep Insight assessment is complete!");
-    navigate("/deep-insight/results", { 
-      state: { responses } 
-    });
+  const handleCompleteQuiz = (finalResponses: Record<string, string>) => {
+    try {
+      console.log("All responses collected:", finalResponses);
+      
+      // In a real implementation, we would send these responses to an API
+      // For now, just navigate to results page with responses as state
+      toast.success("Your Deep Insight assessment is complete!");
+      navigate("/deep-insight/results", { 
+        state: { responses: finalResponses } 
+      });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+      console.error("Error completing quiz:", errorMessage);
+      setError("Failed to complete the assessment. Please try again.");
+      toast.error("Failed to submit your responses. Please try again.");
+    }
   };
   
   return (
@@ -164,6 +204,14 @@ const DeepInsightQuiz = () => {
           </div>
         </div>
         
+        {/* Error display */}
+        {error && (
+          <div className="bg-destructive/15 text-destructive rounded-md p-3 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            <p>{error}</p>
+          </div>
+        )}
+        
         {/* Question card */}
         <Card className="w-full">
           <CardHeader>
@@ -173,54 +221,46 @@ const DeepInsightQuiz = () => {
             )}
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleNext)}>
-                <FormField
-                  control={form.control}
-                  name={currentQuestion.id}
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-3"
-                        >
-                          {currentQuestion.options.map((option) => (
-                            <FormItem
-                              key={option.id}
-                              className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition cursor-pointer"
-                            >
-                              <FormControl>
-                                <RadioGroupItem value={option.id} />
-                              </FormControl>
-                              <FormLabel className="cursor-pointer font-normal flex-1">
-                                {option.text}
-                              </FormLabel>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex justify-between mt-6">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handlePrevious}
-                    disabled={currentQuestionIndex === 0}
+            <form id="quiz-form" onSubmit={handleSubmit(onSubmitQuestion)}>
+              <Controller
+                control={control}
+                name={currentQuestion.id}
+                rules={{ required: "Please select an answer" }}
+                render={({ field }) => (
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="flex flex-col space-y-3"
                   >
-                    Previous
-                  </Button>
-                  <Button type="submit">
-                    {currentQuestionIndex < totalQuestions - 1 ? "Next" : "Complete"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                    {currentQuestion.options.map((option) => (
+                      <label 
+                        key={option.id}
+                        className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition cursor-pointer"
+                      >
+                        <RadioGroupItem value={option.id} id={option.id} />
+                        <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          {option.text}
+                        </span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                )}
+              />
+            </form>
           </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentQuestionIndex === 0}
+            >
+              Previous
+            </Button>
+            <Button type="submit" form="quiz-form">
+              {currentQuestionIndex < totalQuestions - 1 ? "Next" : "Complete"}
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </motion.div>

@@ -1,16 +1,30 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Brain, ArrowRight, Users, LineChart, Star } from "lucide-react";
+import { Sparkles, Brain, ArrowRight, Users, LineChart, Star, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
-const DeepInsight = () => {
+const DeepInsight: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
   
   const startAssessment = () => {
-    navigate("/deep-insight/quiz");
+    try {
+      if (!user && !isLoading) {
+        toast.error("Please sign in to take the assessment");
+        navigate("/auth");
+        return;
+      }
+      
+      navigate("/deep-insight/quiz");
+    } catch (e) {
+      console.error("Navigation error:", e);
+      toast.error("An error occurred. Please try again.");
+    }
   };
   
   const container = {
@@ -69,10 +83,14 @@ const DeepInsight = () => {
                 Unlike traditional personality tests that place you in rigid categories,
                 our AI-powered analysis provides nuanced insights specific to you.
               </p>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm mt-4 p-3 bg-background/50 rounded-md">
+                <Shield className="h-4 w-4 flex-shrink-0" />
+                <span>Your responses are kept private and secure. We respect your privacy.</span>
+              </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={startAssessment} size="lg" className="w-full sm:w-auto">
-                Start Assessment
+              <Button onClick={startAssessment} size="lg" className="w-full sm:w-auto" disabled={isLoading}>
+                {isLoading ? "Loading..." : "Start Assessment"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -159,7 +177,7 @@ const DeepInsight = () => {
         </motion.div>
         
         <motion.div className="flex justify-center" variants={item}>
-          <Button onClick={startAssessment} size="lg" variant="default" className="gap-2">
+          <Button onClick={startAssessment} size="lg" variant="default" className="gap-2" disabled={isLoading}>
             <Sparkles className="h-4 w-4" />
             Begin Your Deep Insight Journey
           </Button>

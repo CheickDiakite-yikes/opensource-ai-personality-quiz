@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
-import { Sparkles, Brain, Heart, Lightbulb, Compass, ArrowLeft } from "lucide-react";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Sparkles, Brain, Heart, Lightbulb, Compass, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { 
   Card, CardHeader, CardTitle, CardDescription, CardContent 
 } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock AI analysis function (in real app, this would call an API)
 const generateMockAnalysis = (responses: Record<string, string>) => {
@@ -64,36 +66,89 @@ const generateMockAnalysis = (responses: Record<string, string>) => {
 };
 
 // Result component
-const DeepInsightResults = () => {
+const DeepInsightResults: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    // In a real implementation, this would call an API with the responses
-    const responses = location.state?.responses || {};
-    
-    // Simulate API call with timeout
-    const timer = setTimeout(() => {
-      const mockResult = generateMockAnalysis(responses);
-      setAnalysis(mockResult);
-      setLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
+    const loadAnalysis = async () => {
+      try {
+        // Check if we have responses in state
+        const responses = location.state?.responses;
+        
+        if (!responses) {
+          console.error("No responses found in location state");
+          setError("No assessment data found. Please complete the assessment first.");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Processing responses:", responses);
+        
+        // In a real implementation, this would call an API with the responses
+        // For now, simulate API call with timeout
+        setTimeout(() => {
+          try {
+            const mockResult = generateMockAnalysis(responses);
+            setAnalysis(mockResult);
+            setLoading(false);
+          } catch (err) {
+            console.error("Error generating analysis:", err);
+            setError("Failed to generate your analysis. Please try again.");
+            setLoading(false);
+          }
+        }, 1500);
+      } catch (e) {
+        console.error("Error loading analysis:", e);
+        setError("An error occurred while loading your results.");
+        setLoading(false);
+      }
+    };
+
+    loadAnalysis();
   }, [location.state]);
+  
+  // Redirect if accessed directly without responses
+  useEffect(() => {
+    if (!location.state?.responses && !loading && !analysis) {
+      console.log("No data found, redirecting to assessment page");
+      toast.error("Please complete the assessment first");
+      navigate("/deep-insight");
+    }
+  }, [location.state, loading, analysis, navigate]);
   
   if (loading) {
     return (
       <div className="container max-w-4xl py-16 flex flex-col items-center justify-center gap-4">
         <div className="relative">
-          <Sparkles className="h-16 w-16 text-primary animate-pulse" />
-          <div className="absolute top-0 left-0 h-16 w-16 animate-spin border-4 border-primary border-t-transparent rounded-full opacity-50"></div>
+          <Loader2 className="h-16 w-16 text-primary animate-spin" />
         </div>
         <h2 className="text-2xl font-bold">Generating your deep insight analysis...</h2>
         <p className="text-muted-foreground text-center max-w-md">
           Our AI is carefully analyzing your responses to create a comprehensive personality profile.
         </p>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="container max-w-4xl py-16">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        
+        <div className="flex justify-center">
+          <Button onClick={() => navigate("/deep-insight")} variant="default">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Return to Deep Insight
+          </Button>
+        </div>
       </div>
     );
   }
@@ -379,7 +434,16 @@ const DeepInsightResults = () => {
         >
           <Button 
             className="flex items-center gap-2" 
-            onClick={() => toast.success("Report saved to your profile!")}
+            onClick={() => {
+              try {
+                // In a real app, save to database here
+                toast.success("Report saved to your profile!");
+                console.log("Analysis saved for user:", user?.id);
+              } catch (e) {
+                console.error("Error saving analysis:", e);
+                toast.error("Failed to save your analysis");
+              }
+            }}
           >
             <Sparkles className="h-4 w-4" />
             Save This Analysis
