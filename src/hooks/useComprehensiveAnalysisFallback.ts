@@ -351,11 +351,14 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
   return {
     pollForAnalysis, 
     fetchWithEdgeFunction,
+    fetchAllUserAnalyses, // Export the fetchAllUserAnalyses function
     isPolling,
     foundAnalysis,
     hasAttemptedPolling,
     pollingAttempts,
     conversionError,
+    userAnalyses, // Export the userAnalyses state
+    isLoadingUserAnalyses, // Export the isLoadingUserAnalyses state
     debugLogs
   };
 };
