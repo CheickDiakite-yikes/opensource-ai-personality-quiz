@@ -23,7 +23,7 @@ const IntelligenceProfileCard: React.FC<IntelligenceProfileCardProps> = ({ analy
           <CardTitle className="flex items-center text-foreground">
             <Brain className="h-5 w-5 mr-2 text-orange-500" /> Cognitive Processing Profile
           </CardTitle>
-          <CardDescription className="text-foreground/80">Your thinking style and information processing approaches</CardDescription>
+          <CardDescription className="text-foreground/80">Your thinking style and cognitive approaches</CardDescription>
         </CardHeader>
         <CardContent className={`${isMobile ? 'p-4 pt-3' : 'pt-6'}`}>
           <div className={`flex ${isMobile ? 'flex-col' : 'flex-col md:flex-row'} gap-6 items-center`}>
@@ -32,7 +32,7 @@ const IntelligenceProfileCard: React.FC<IntelligenceProfileCardProps> = ({ analy
               <div className="absolute inset-2 rounded-full bg-card flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-3xl font-bold">{analysis.intelligenceScore}</div>
-                  <div className="text-xs text-muted-foreground">Flexibility Score</div>
+                  <div className="text-xs text-muted-foreground">Cognitive Score</div>
                 </div>
               </div>
             </div>

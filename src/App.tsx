@@ -15,12 +15,6 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
-const FullYou = lazy(() => import("@/pages/FullYou"));
-
-// Comprehensive Assessment Components
-const ComprehensiveAssessmentPage = lazy(() => import("@/components/comprehensive/ComprehensiveAssessmentPage"));
-const ComprehensiveReportPage = lazy(() => import("@/components/comprehensive/ComprehensiveReportPage"));
-const ComprehensiveReportLanding = lazy(() => import("@/components/comprehensive/ComprehensiveReportLanding"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -115,39 +109,6 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          
-          {/* New "Full You" route */}
-          <Route path="full-you" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <FullYou />
-              </Suspense>
-            </PrivateRoute>
-          } />
-
-          {/* Comprehensive Assessment Routes */}
-          <Route path="comprehensive-assessment" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <ComprehensiveAssessmentPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="comprehensive-report" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <ComprehensiveReportLanding />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="comprehensive-report/:id" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <ComprehensiveReportPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
               <NotFound />

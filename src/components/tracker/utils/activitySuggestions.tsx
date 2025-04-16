@@ -98,54 +98,5 @@ export const activitySuggestionsByCategory: Record<ActivityCategory, string[]> =
     "Take on a task that plays to your natural abilities",
     "Learn about how to further develop one of your strengths",
     "Ask others what they see as your key strengths"
-  ],
-  // Add remaining categories to satisfy the Record<ActivityCategory, string[]> type
-  [ActivityCategory.PersonalGrowth]: [
-    "Learn something new about yourself today",
-    "Identify a habit you'd like to change and make a concrete plan",
-    "Explore a new interest or hobby",
-    "Read a personal development book",
-    "Set a meaningful goal with clear steps to achieve it",
-    "Attend a workshop or seminar for skill development"
-  ],
-  [ActivityCategory.SelfReflection]: [
-    "Journal about your values and how you live them",
-    "Meditate on your past week and note insights",
-    "Consider a challenge you've faced and what you learned",
-    "Reflect on your strengths and how to use them more",
-    "Think about what energizes you and what drains you",
-    "Write about where you'd like to be in five years"
-  ],
-  [ActivityCategory.SocialConnection]: [
-    "Reach out to someone you haven't spoken to in a while",
-    "Practice active listening in a conversation today",
-    "Attend a community event or group meeting",
-    "Express gratitude to someone important in your life",
-    "Have a meaningful conversation about something that matters",
-    "Offer help to someone in your community"
-  ],
-  [ActivityCategory.EmotionalWellbeing]: [
-    "Practice a calming breathing technique",
-    "Express an emotion creatively through art or music",
-    "Write about your feelings regarding a current situation",
-    "Use positive affirmations to shift negative thoughts",
-    "Accept your emotions without judgment for a day",
-    "Do something purely for joy and pleasure"
-  ],
-  [ActivityCategory.MindfulPractice]: [
-    "Eat a meal mindfully, noticing all sensations",
-    "Take a mindful walk focusing on each step",
-    "Practice a body scan meditation",
-    "Do a daily task with complete presence and attention",
-    "Notice five things you can see, four you can touch, three you can hear, two you can smell, and one you can taste",
-    "Set aside 10 minutes for silent awareness"
-  ],
-  [ActivityCategory.StressCoping]: [
-    "Practice progressive muscle relaxation",
-    "Take a break from news and social media",
-    "Go for a nature walk or spend time outdoors",
-    "Try a stress-relieving physical activity",
-    "Use the 4-7-8 breathing technique when feeling stressed",
-    "Create boundaries around work or stressful situations"
   ]
 };

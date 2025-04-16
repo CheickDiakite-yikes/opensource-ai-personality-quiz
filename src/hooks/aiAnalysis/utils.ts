@@ -1,4 +1,4 @@
-import { PersonalityAnalysis, PersonalityTrait, Intelligence, ValueSystem, CognitiveStyle } from "@/utils/types";
+import { PersonalityAnalysis } from "@/utils/types";
 
 // Helper function to safely convert Supabase data to PersonalityAnalysis
 export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => {
@@ -9,81 +9,25 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       const baseAnalysis = {
         id: item.id || item.result.id || '',
         createdAt: item.created_at || item.result.createdAt || new Date().toISOString(),
-        // Optional fields for compatibility
-        userId: item.user_id || item.result.userId,
-        assessmentId: item.assessment_id || item.result.assessmentId
+        userId: item.user_id || item.result.userId || '',
+        assessmentId: item.assessment_id || item.result.assessmentId || ''
       };
       
-      // If traits exist, ensure their scores are properly formatted and have all required properties
-      let normalizedTraits: PersonalityTrait[] = [];
-      if (item.result.traits && Array.isArray(item.result.traits)) {
-        normalizedTraits = item.result.traits.map((trait: any) => ({
-          // Add required fields if they don't exist
-          name: trait.name || trait.trait || "Unknown trait",
-          trait: trait.trait || trait.name || "Unknown trait", // Keep backwards compatibility
-          score: trait.score || 0,
-          description: trait.description || "No description available",
-          impact: trait.impact || [],
-          recommendations: trait.recommendations || [],
-          strengths: trait.strengths || [],
-          challenges: trait.challenges || [],
-          growthSuggestions: trait.growthSuggestions || []
+      // If traits exist, ensure their scores are properly formatted
+      let normalizedTraits = item.result.traits;
+      if (normalizedTraits && Array.isArray(normalizedTraits)) {
+        normalizedTraits = normalizedTraits.map(trait => ({
+          ...trait,
+          // Keep the original score to preserve the data format
+          score: trait.score
         }));
-      }
-      
-      // Ensure intelligence has all required fields
-      const normalizedIntelligence: Intelligence = {
-        ...item.result.intelligence,
-        type: item.result.intelligence?.type || "General Intelligence",
-        score: item.result.intelligence?.score || 50,
-        description: item.result.intelligence?.description || "No description available",
-        // Add required fields if they don't exist
-        strengths: item.result.intelligence?.strengths || [],
-        areas_for_development: item.result.intelligence?.areas_for_development || [],
-        learning_style: item.result.intelligence?.learning_style || "Visual",
-        cognitive_preferences: item.result.intelligence?.cognitive_preferences || []
-      };
-      
-      // Normalize cognitive style
-      let cogStyle: CognitiveStyle;
-      if (typeof item.result.cognitiveStyle === 'string') {
-        cogStyle = {
-          primary: item.result.cognitiveStyle,
-          secondary: "Balanced",
-          description: "Default cognitive style"
-        };
-      } else {
-        cogStyle = {
-          primary: item.result.cognitiveStyle?.primary || "Analytical",
-          secondary: item.result.cognitiveStyle?.secondary || "Balanced",
-          description: item.result.cognitiveStyle?.description || "Default cognitive style"
-        };
-      }
-      
-      // Normalize value system
-      let valSystem: ValueSystem;
-      if (Array.isArray(item.result.valueSystem)) {
-        valSystem = {
-          strengths: item.result.valueSystem || [],
-          weaknesses: [],
-          description: "Values derived from assessment"
-        };
-      } else {
-        valSystem = {
-          strengths: item.result.valueSystem?.strengths || [],
-          weaknesses: item.result.valueSystem?.weaknesses || [],
-          description: item.result.valueSystem?.description || "Values derived from assessment"
-        };
       }
       
       // Merge with the result, but keep the base values if they're more reliable
       return {
         ...item.result,
         ...baseAnalysis,
-        traits: normalizedTraits,
-        intelligence: normalizedIntelligence,
-        cognitiveStyle: cogStyle,
-        valueSystem: valSystem,
+        traits: normalizedTraits || item.result.traits,
         // Keep intelligence scores as-is (0-100 scale)
         intelligenceScore: item.result.intelligenceScore || item.intelligence_score || 50,
         emotionalIntelligenceScore: item.result.emotionalIntelligenceScore || item.emotional_intelligence_score || 50
@@ -91,93 +35,55 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
     }
     
     // Otherwise construct from individual fields with type safety and fallbacks
-    let normalizedTraits: PersonalityTrait[] = [];
-    if (item.traits && Array.isArray(item.traits) && item.traits.length > 0) {
-      normalizedTraits = item.traits.map((trait: any) => ({
-        name: trait.name || trait.trait || "Unknown trait",
-        trait: trait.trait || trait.name || "Unknown trait", // Keep backwards compatibility
-        score: trait.score || 0,
-        description: trait.description || "No description available",
-        impact: trait.impact || [],
-        recommendations: trait.recommendations || [],
-        strengths: trait.strengths || [],
-        challenges: trait.challenges || [],
-        growthSuggestions: trait.growthSuggestions || []
+    let normalizedTraits = item.traits;
+    if (normalizedTraits && Array.isArray(normalizedTraits) && normalizedTraits.length > 0) {
+      normalizedTraits = normalizedTraits.map(trait => ({
+        ...trait,
+        // Keep the original score to preserve the data format
+        score: trait.score
       }));
     } else {
       normalizedTraits = [{
-        name: "Analysis Incomplete", 
-        trait: "Analysis Incomplete",
-        score: 5, 
+        trait: "Analysis Incomplete", 
+        score: 0.5, 
         description: "This analysis didn't generate enough trait data.",
-        impact: ["Limited insights available"],
-        recommendations: ["Consider retaking the assessment"],
         strengths: ["Not available"],
         challenges: ["Not available"],
         growthSuggestions: ["Consider retaking the assessment"]
       }];
     }
     
-    // Create default intelligence if missing
-    const defaultIntelligence: Intelligence = { 
-      type: 'General Intelligence', 
-      score: 50, 
-      description: 'Intelligence data was not fully processed.',
-      strengths: ["Analytical thinking"],
-      areas_for_development: ["Consider completing the full assessment"],
-      learning_style: "Visual",
-      cognitive_preferences: ["Logical reasoning"],
-      domains: [{
-        name: "General Intelligence",
-        score: 50,
-        description: "Intelligence data was incomplete in this analysis."
-      }]
-    };
-    
-    // Create normalized value system
-    const valueSystem: ValueSystem = {
-      strengths: Array.isArray(item.value_system) ? item.value_system : [],
-      weaknesses: [],
-      description: "Core values from assessment"
-    };
-    
-    // Create normalized cognitive style
-    const cognitiveStyle: CognitiveStyle = {
-      primary: typeof item.cognitive_style === 'string' ? item.cognitive_style : 'Analytical',
-      secondary: 'Balanced',
-      description: 'Cognitive style preference'
-    };
-    
     return {
       id: item.id || '',
       createdAt: item.created_at || new Date().toISOString(),
       overview: item.overview || 'No overview available for this analysis.',
       traits: normalizedTraits,
-      intelligence: item.intelligence ? {
-        ...item.intelligence,
-        strengths: item.intelligence.strengths || [],
-        areas_for_development: item.intelligence.areas_for_development || [],
-        learning_style: item.intelligence.learning_style || "Visual",
-        cognitive_preferences: item.intelligence.cognitive_preferences || []
-      } : defaultIntelligence,
+      intelligence: item.intelligence || { 
+        type: 'General Intelligence', 
+        score: 0.5, 
+        description: 'Intelligence data was not fully processed.',
+        domains: [{
+          name: "General Intelligence",
+          score: 0.5,
+          description: "Intelligence data was incomplete in this analysis."
+        }]
+      },
       // Keep intelligence scores as-is (0-100 scale)
       intelligenceScore: item.intelligence_score || 50,
       emotionalIntelligenceScore: item.emotional_intelligence_score || 50,
-      cognitiveStyle: cognitiveStyle,
-      valueSystem: valueSystem,
+      cognitiveStyle: item.cognitive_style || 'Not determined',
+      valueSystem: Array.isArray(item.value_system) ? item.value_system : [],
       motivators: Array.isArray(item.motivators) ? item.motivators : [],
       inhibitors: Array.isArray(item.inhibitors) ? item.inhibitors : [],
       weaknesses: Array.isArray(item.weaknesses) ? item.weaknesses : [],
       growthAreas: Array.isArray(item.growth_areas) ? item.growth_areas : [],
-      relationshipPatterns: {
-        strengths: Array.isArray(item.relationship_patterns) ? item.relationship_patterns : [],
-        challenges: [],
-        compatibleTypes: []
-      },
-      careerSuggestions: Array.isArray(item.career_suggestions) ? item.careerSuggestions : [],
-      learningPathways: Array.isArray(item.learning_pathways) ? item.learningPathways : [],
+      relationshipPatterns: Array.isArray(item.relationship_patterns) ? item.relationship_patterns : [],
+      careerSuggestions: Array.isArray(item.career_suggestions) ? item.career_suggestions : [],
+      learningPathways: Array.isArray(item.learning_pathways) ? item.learning_pathways : [],
       roadmap: item.roadmap || '',
-    } as PersonalityAnalysis;
+      userId: item.user_id || '',
+      assessmentId: item.assessment_id || ''
+    };
   } catch (error) {
     console.error("Error converting Supabase data to PersonalityAnalysis:", error);
     console.error("Problematic data:", item);
@@ -188,50 +94,23 @@ export const convertToPersonalityAnalysis = (item: any): PersonalityAnalysis => 
       createdAt: new Date().toISOString(),
       overview: "Error processing analysis data. Please try again.",
       traits: [{
-        name: "Error Processing Data",
         trait: "Error Processing Data", 
-        score: 5, 
+        score: 0.5, 
         description: "There was an error processing your analysis data.",
-        impact: ["Unable to determine impact"],
-        recommendations: ["Please try taking the assessment again"],
         strengths: ["Not available due to error"],
         challenges: ["Not available due to error"],
         growthSuggestions: ["Please try taking the assessment again"]
       }],
       intelligence: { 
         type: 'Error', 
-        score: 50, 
+        score: 0.5, 
         description: 'Error processing intelligence data',
-        strengths: [],
-        areas_for_development: [],
-        learning_style: "Visual",
-        cognitive_preferences: [],
         domains: []
       },
       intelligenceScore: 50,
       emotionalIntelligenceScore: 50,
-      cognitiveStyle: {
-        primary: "Unknown",
-        secondary: "Unknown",
-        description: "Could not determine cognitive style"
-      },
-      valueSystem: {
-        strengths: [],
-        weaknesses: [],
-        description: "Could not determine values"
-      },
-      motivators: [],
-      inhibitors: [],
-      weaknesses: [],
-      growthAreas: [],
-      relationshipPatterns: {
-        strengths: [],
-        challenges: [],
-        compatibleTypes: []
-      },
-      careerSuggestions: [],
-      learningPathways: [],
-      roadmap: "Please retake the assessment for a personalized growth roadmap"
+      userId: item?.user_id || '',
+      assessmentId: item?.assessment_id || ''
     } as PersonalityAnalysis;
   }
 };
@@ -275,8 +154,8 @@ export const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): Personality
   return [...analyses].sort((a, b) => {
     // Try to parse dates and compare them
     try {
-      const dateA = new Date(a.createdAt || "").getTime();
-      const dateB = new Date(b.createdAt || "").getTime();
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
       return dateB - dateA; // Sort newest first
     } catch (e) {
       console.warn("Error sorting dates:", e);

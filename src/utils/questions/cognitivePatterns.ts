@@ -1,33 +1,35 @@
+
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
+// Questions focused on Cognitive Patterns - Enhanced with cognitive flexibility, thinking styles, and ambiguity tolerance
 export const cognitivePatternQuestions: AssessmentQuestion[] = [
   {
     id: "11",
     category: QuestionCategory.CognitivePatterns,
-    question: "When encountering a complex problem with no clear solution, what approach yields the best results for you?",
+    question: "When acquiring a complex new skill or subject, which approach yields the best results for you?",
     options: [
-      "Breaking it down into smaller, manageable components",
-      "Exploring multiple perspectives and potential frameworks",
-      "Looking for patterns or similarities to solved problems",
-      "Collaborating with others to gain diverse insights",
-      "Taking time to observe and understand the full context"
+      "Building a theoretical foundation before attempting practical application",
+      "Diving into hands-on practice and learning through trial and error",
+      "Alternating between conceptual understanding and practical application",
+      "Observing experts and then modeling their techniques with my own adaptations",
+      "Breaking down the subject into smaller components to master sequentially"
     ],
     allowCustomResponse: true,
-    weight: 1.0
+    weight: 0.9
   },
   {
     id: "12",
     category: QuestionCategory.CognitivePatterns,
-    question: "How do you typically process and integrate new information that challenges your existing beliefs?",
+    question: "When faced with an ambiguous problem with no clear solution, how do you typically approach it?",
     options: [
-      "I systematically evaluate evidence for both perspectives",
-      "I look for ways to synthesize both viewpoints",
-      "I seek additional sources and expert opinions",
-      "I reflect on my potential biases and assumptions",
-      "I test both old and new ideas against real experiences"
+      "I explore multiple potential frameworks before committing to one approach",
+      "I break it down into smaller, more defined components to tackle individually",
+      "I seek analogies from seemingly unrelated fields that might provide insight",
+      "I gather diverse perspectives to see the problem from different angles",
+      "I start with what's certain and methodically work toward the uncertain areas"
     ],
     allowCustomResponse: true,
-    weight: 0.9
+    weight: 1.0
   },
   {
     id: "13",

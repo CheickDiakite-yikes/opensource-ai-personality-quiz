@@ -142,7 +142,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onToggleComplete 
                     <div className="mt-3">
                       <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium mb-1 text-amber-500/90`}>Benefits:</h4>
                       <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-300 leading-relaxed`}>
-                        {isMobile && typeof activity.benefits === 'string' && activity.benefits.length > 100 
+                        {isMobile && activity.benefits.length > 100 
                           ? `${activity.benefits.substring(0, 100)}...` 
                           : activity.benefits}
                       </p>

@@ -1,3 +1,4 @@
+
 import { AssessmentQuestion, QuestionCategory } from "../types";
 
 // Questions focused on Emotional Intelligence - Enhanced with Mayer-Salovey-Caruso model and regulatory dimensions
@@ -5,13 +6,13 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "6",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "When someone expresses strong emotions that you find challenging, how do you typically respond?",
+    question: "When someone close to you is experiencing intense distress, how do you most naturally respond?",
     options: [
-      "I focus on understanding their perspective fully before responding",
-      "I acknowledge their feelings while maintaining emotional boundaries",
-      "I share similar experiences to build connection and understanding",
-      "I look for practical ways to help improve their situation",
-      "I create space for them to process their emotions safely"
+      "I listen fully without interruption, validating their feelings before offering help",
+      "I share relevant experiences to show understanding of their situation",
+      "I focus on practical solutions to help resolve what's causing their distress",
+      "I give them space, recognizing some people process emotions privately",
+      "I offer physical comfort and reassurance through my presence"
     ],
     allowCustomResponse: true,
     weight: 1.0
@@ -19,13 +20,13 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
   {
     id: "7",
     category: QuestionCategory.EmotionalIntelligence,
-    question: "How do you handle situations where your emotional reaction differs significantly from others?",
+    question: "When you experience a complex emotional reaction (like simultaneous anxiety, excitement, and uncertainty), how do you typically process it?",
     options: [
-      "I reflect on why our responses might differ based on experiences",
-      "I try to understand their emotional perspective while honoring mine",
-      "I look for common ground despite our different reactions",
-      "I express my view while acknowledging the validity of theirs",
-      "I use the difference to learn about diverse emotional experiences"
+      "I journal or internally reflect until I understand each component feeling",
+      "I talk through my emotions with someone who helps me gain clarity",
+      "I identify the physical sensations associated with each emotion",
+      "I analyze the situation triggering these emotions rather than the feelings themselves",
+      "I accept the emotional complexity without needing to fully dissect it"
     ],
     allowCustomResponse: true,
     weight: 0.9

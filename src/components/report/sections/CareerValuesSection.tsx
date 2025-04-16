@@ -1,69 +1,167 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase } from "lucide-react";
-import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Briefcase, Award } from "lucide-react";
+import { ValueSystemType } from "@/utils/types";
+import { isValueSystemObject } from "../utils/typeGuards";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface CareerValuesSectionProps {
-  careerSuggestions: StringOrObject[];
-  valueSystem: StringOrObject[] | any;
+  careerSuggestions: string[];
+  valueSystem: ValueSystemType;
 }
 
-const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ careerSuggestions = [], valueSystem = [] }) => {
-  // Convert any object items to strings
-  const safeCareers = ensureStringItems(careerSuggestions);
+const CareerValuesSection: React.FC<CareerValuesSectionProps> = ({ 
+  careerSuggestions,
+  valueSystem 
+}) => {
+  const isMobile = useIsMobile();
+  const [careersOpen, setCareersOpen] = React.useState(!isMobile);
+  const [valuesOpen, setValuesOpen] = React.useState(!isMobile);
   
-  // Handle various formats of valueSystem
-  const values = Array.isArray(valueSystem) 
-    ? ensureStringItems(valueSystem)
-    : ensureStringItems(valueSystem?.strengths || []);
+  // Extract values to display based on valueSystem type
+  const valuesToDisplay = isValueSystemObject(valueSystem) 
+    ? valueSystem.strengths 
+    : valueSystem;
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-primary" />
-          <span>Career & Values</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium">Career Suggestions</h3>
+    <motion.div variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1]
+        }
+      }
+    }} className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-6'}`}>
+      {/* Career Suggestions Card */}
+      <Card className="glass-panel overflow-hidden">
+        <CardHeader className={`bg-gradient-to-r from-blue-500/10 to-indigo-500/10 ${isMobile ? 'px-3 py-2' : 'pb-4'}`}>
+          <CardTitle className={`flex items-center ${isMobile ? 'text-base' : ''}`}>
+            <Briefcase className="h-5 w-5 mr-2 text-primary" /> Career Suggestions
+          </CardTitle>
+          <CardDescription>Potential career paths that match your profile</CardDescription>
+        </CardHeader>
+        
+        {isMobile ? (
+          <Collapsible open={careersOpen} onOpenChange={setCareersOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {careersOpen ? "Collapse" : "Expand"} ({careerSuggestions.length})
+                </span>
+                {careersOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <ul className="space-y-1.5">
+                  {careerSuggestions.map((career, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 mt-0.5 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{career}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-6">
+            <ul className="space-y-2">
+              {careerSuggestions.map((career, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span>{career}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        )}
+      </Card>
+      
+      {/* Values Card */}
+      <Card className="glass-panel overflow-hidden">
+        <CardHeader className={`bg-gradient-to-r from-indigo-500/10 to-purple-500/10 ${isMobile ? 'px-3 py-2' : 'pb-4'}`}>
+          <CardTitle className={`flex items-center ${isMobile ? 'text-base' : ''}`}>
+            <Award className="h-5 w-5 mr-2 text-primary" /> Your Core Values
+          </CardTitle>
+          <CardDescription>Principles that guide your decisions</CardDescription>
+        </CardHeader>
+        
+        {isMobile ? (
+          <Collapsible open={valuesOpen} onOpenChange={setValuesOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {valuesOpen ? "Collapse" : "Expand"} ({valuesToDisplay.length})
+                </span>
+                {valuesOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <div className="grid grid-cols-1 gap-1.5">
+                  {valuesToDisplay.map((value, index) => (
+                    <div
+                      key={index}
+                      className="border border-border/40 p-1.5 rounded-md flex items-center bg-card/30"
+                    >
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-5 w-5 text-xs text-primary mr-2 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {safeCareers.slice(0, 6).map((career, index) => (
-                <div 
-                  key={index} 
-                  className="border border-border/40 py-2 px-3 rounded-md text-center"
+              {valuesToDisplay.map((value, index) => (
+                <div
+                  key={index}
+                  className="border border-border/40 p-3 rounded-md flex items-center bg-card/30"
                 >
-                  {career}
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span>{value}</span>
                 </div>
               ))}
             </div>
-            {(!safeCareers || safeCareers.length === 0) && (
-              <p className="text-muted-foreground italic">No career suggestions available</p>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium">Core Values</h3>
-            <div className="flex flex-wrap gap-2">
-              {values.slice(0, 8).map((value, index) => (
-                <div 
-                  key={index} 
-                  className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
-                >
-                  {value}
-                </div>
-              ))}
-            </div>
-            {(!values || values.length === 0) && (
-              <p className="text-muted-foreground italic">No core values identified</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        )}
+      </Card>
+    </motion.div>
   );
 };
 

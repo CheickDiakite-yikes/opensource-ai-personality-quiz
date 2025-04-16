@@ -1,5 +1,5 @@
 import React from "react";
-import { PersonalityAnalysis, RelationshipPatterns, ValueSystemType, CognitiveStyle } from "@/utils/types";
+import { PersonalityAnalysis, RelationshipPatterns, ValueSystemType, CognitiveStyleType } from "@/utils/types";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { HelpCircle } from "lucide-react";
@@ -65,7 +65,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
     return Array.isArray(value);
   };
   
-  const isCognitiveStyleObject = (value: CognitiveStyle | string): value is CognitiveStyle => {
+  const isCognitiveStyleObject = (value: CognitiveStyleType): value is { primary: string; secondary: string; description: string } => {
     return typeof value === 'object' && value !== null;
   };
   
@@ -207,8 +207,7 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
       <div className="space-y-3">
         <h3 className="font-semibold">Compatible With</h3>
         <div className="flex flex-wrap gap-2">
-          {isRelationshipPatternObject(analysis.relationshipPatterns) && 
-           analysis.relationshipPatterns.compatibleTypes ? 
+          {isRelationshipPatternObject(analysis.relationshipPatterns) ? 
             analysis.relationshipPatterns.compatibleTypes.map((type, index) => (
               <div 
                 key={index} 
@@ -217,16 +216,14 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ analysis }) => {
                 {type}
               </div>
             )) :
-            Array.isArray(analysis.relationshipPatterns) ?
-              analysis.relationshipPatterns.map((type, index) => (
-                <div 
-                  key={index} 
-                  className="px-3 py-1 bg-muted rounded-full text-sm"
-                >
-                  {type}
-                </div>
-              )) :
-              <div className="text-muted-foreground text-sm">No compatibility data available</div>
+            analysis.relationshipPatterns.map((type, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1 bg-muted rounded-full text-sm"
+              >
+                {type}
+              </div>
+            ))
           }
         </div>
       </div>

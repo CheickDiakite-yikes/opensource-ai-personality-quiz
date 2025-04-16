@@ -7,7 +7,6 @@ import GhibliHeroAnimation from "@/components/home/GhibliHeroAnimation";
 import PageTransition from "@/components/ui/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { safeString } from "@/utils/formatUtils"; 
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -27,9 +26,6 @@ const HomePage: React.FC = () => {
       featuresElement.scrollIntoView({ behavior: "smooth" });
     }
   };
-  
-  // Safety check: Make sure nothing from user object is directly rendered without stringification
-  const userName = user ? safeString(user.email) || "User" : "";
   
   return (
     <PageTransition>

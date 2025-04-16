@@ -21,17 +21,10 @@ export const useActivityFilters = (activities: Activity[]) => {
       return [...filtered].sort((a, b) => a.category.localeCompare(b.category));
     } else if (sortBy === 'date') {
       return [...filtered].sort((a, b) => {
-        const dateA = a.completedAt || a.createdAt;
-        const dateB = b.completedAt || b.createdAt;
-        
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        
-        const timeA = dateA instanceof Date ? dateA.getTime() : new Date(dateA).getTime();
-        const timeB = dateB instanceof Date ? dateB.getTime() : new Date(dateB).getTime();
-        
-        return timeB - timeA;
+        if (a.completed && b.completed && a.completedAt && b.completedAt) {
+          return b.completedAt.getTime() - a.completedAt.getTime();
+        }
+        return a.completed ? 1 : -1;
       });
     }
     

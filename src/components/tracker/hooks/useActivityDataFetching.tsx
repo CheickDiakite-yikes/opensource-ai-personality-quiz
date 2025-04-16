@@ -5,7 +5,6 @@ import { sampleActivities } from "../data/sampleActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types";
 
 export const useActivityDataFetching = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -36,21 +35,6 @@ export const useActivityDataFetching = () => {
     return [];
   };
   
-  // Format benefits to ensure it's a string
-  const formatBenefits = (benefits: any): string => {
-    if (!benefits) return "";
-    
-    if (typeof benefits === 'string') {
-      return benefits;
-    }
-    
-    if (Array.isArray(benefits)) {
-      return benefits.join(", ");
-    }
-    
-    return String(benefits);
-  };
-  
   // Function to create initial activities for new users
   const createInitialActivities = useCallback(async (userId: string) => {
     try {
@@ -64,8 +48,8 @@ export const useActivityDataFetching = () => {
         category: activity.category,
         completed: false,
         user_id: userId,
-        steps: Array.isArray(activity.steps) ? activity.steps : [],
-        benefits: typeof activity.benefits === 'string' ? activity.benefits : ""
+        steps: activity.steps || [],
+        benefits: activity.benefits || ""
       }));
       
       // Insert them into Supabase
@@ -93,7 +77,7 @@ export const useActivityDataFetching = () => {
         completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
         createdAt: item.created_at ? new Date(item.created_at) : new Date(),
         steps: formatSteps(item.steps),
-        benefits: formatBenefits(item.benefits),
+        benefits: item.benefits || "",
         user_id: item.user_id
       }));
     } catch (error) {
@@ -153,7 +137,7 @@ export const useActivityDataFetching = () => {
             completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
             createdAt: item.created_at ? new Date(item.created_at) : new Date(),
             steps: formatSteps(item.steps),
-            benefits: formatBenefits(item.benefits),
+            benefits: item.benefits || "",
             user_id: item.user_id
           };
         });

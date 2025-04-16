@@ -1,7 +1,7 @@
 
 import React, { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
-import { PersonalityAnalysis, RelationshipPatterns, Intelligence } from "@/utils/types";
+import { PersonalityAnalysis, RelationshipPatterns } from "@/utils/types";
 import OverviewSection from "./sections/OverviewSection";
 import PersonalityTraitsSection from "./sections/PersonalityTraitsSection";
 import IntelligenceSection from "./sections/IntelligenceSection";
@@ -14,7 +14,6 @@ import RoadmapSection from "./sections/RoadmapSection";
 import { isRelationshipObject } from "./utils/typeGuards";
 import ReportSectionSkeleton from "./skeletons/ReportSectionSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { safeString, ensureStringItems, deepEnsureString, formatTraitScore } from "@/utils/formatUtils";
 
 interface ReportTabContentProps {
   analysis: PersonalityAnalysis;
@@ -48,59 +47,10 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
   
   const isMobile = useIsMobile();
   
-  // Process data safely to prevent React render errors
-  const processedTraits = Array.isArray(traits) ? traits : [];
-  
-  // Ensure intelligence has the correct structure to satisfy Intelligence type
-  const processedIntelligence: Intelligence = React.useMemo(() => {
-    if (intelligence && typeof intelligence === 'object') {
-      // Ensure all required fields are present with sensible defaults
-      return {
-        type: intelligence.type || '',
-        score: intelligence.score || 0,
-        description: intelligence.description || '',
-        strengths: Array.isArray(intelligence.strengths) ? intelligence.strengths : [],
-        areas_for_development: Array.isArray(intelligence.areas_for_development) ? intelligence.areas_for_development : [],
-        learning_style: intelligence.learning_style || '',
-        cognitive_preferences: Array.isArray(intelligence.cognitive_preferences) ? intelligence.cognitive_preferences : [],
-        domains: intelligence.domains || []
-      };
-    }
-    return {
-      type: '',
-      score: 0,
-      description: '',
-      strengths: [],
-      areas_for_development: [],
-      learning_style: '',
-      cognitive_preferences: []
-    };
-  }, [intelligence]);
-  
-  // Ensure everything is properly stringified
-  const safeMotivators = ensureStringItems(motivators || []);
-  const safeInhibitors = ensureStringItems(inhibitors || []);
-  const safeWeaknesses = ensureStringItems(weaknesses || []);
-  const safeGrowthAreas = ensureStringItems(growthAreas || []);
-  const safeLearningPathways = ensureStringItems(learningPathways || []);
-  const safeCareerSuggestions = ensureStringItems(careerSuggestions || []);
-  const safeRoadmap = safeString(roadmap || "");
-  const safeCognitiveStyle = typeof cognitiveStyle === 'string' ? cognitiveStyle : 
-                           (cognitiveStyle && typeof cognitiveStyle === 'object') ? 
-                           safeString(cognitiveStyle.primary || cognitiveStyle.description) : '';
-  
-  // Convert relationshipPatterns to the correct format and ensure values are strings
+  // Convert relationshipPatterns to the correct format
   const processedRelationships = isRelationshipObject(relationshipPatterns)
-    ? {
-        strengths: ensureStringItems(relationshipPatterns.strengths || []),
-        challenges: ensureStringItems(relationshipPatterns.challenges || []),
-        compatibleTypes: ensureStringItems(relationshipPatterns.compatibleTypes || [])
-      }
-    : { 
-        strengths: ensureStringItems(Array.isArray(relationshipPatterns) ? relationshipPatterns : []),
-        challenges: [], 
-        compatibleTypes: [] 
-      };
+    ? relationshipPatterns
+    : { strengths: relationshipPatterns, challenges: [], compatibleTypes: [] };
     
   const tabContentClass = isMobile 
     ? "space-y-3 mt-2 px-0 pb-16 w-full overflow-x-hidden max-w-full-mobile" 
@@ -111,18 +61,18 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       <TabsContent value="overview" className={tabContentClass}>
         <SectionLoader>
           <OverviewSection 
-            overview={safeString(overview)} 
-            cognitiveStyle={safeCognitiveStyle} 
+            overview={overview} 
+            cognitiveStyle={cognitiveStyle} 
           />
         </SectionLoader>
         
         <SectionLoader>
-          <PersonalityTraitsSection traits={processedTraits} />
+          <PersonalityTraitsSection traits={traits} />
         </SectionLoader>
         
         <SectionLoader>
           <IntelligenceSection 
-            intelligence={processedIntelligence}
+            intelligence={intelligence}
             intelligenceScore={intelligenceScore}
             emotionalIntelligenceScore={emotionalIntelligenceScore}
           />
@@ -130,8 +80,8 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         
         <SectionLoader>
           <MotivationSection 
-            motivators={safeMotivators}
-            inhibitors={safeInhibitors}
+            motivators={motivators}
+            inhibitors={inhibitors}
           />
         </SectionLoader>
         
@@ -141,40 +91,40 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         
         <SectionLoader>
           <GrowthAreasSection 
-            weaknesses={safeWeaknesses}
-            growthAreas={safeGrowthAreas}
+            weaknesses={weaknesses}
+            growthAreas={growthAreas}
           />
         </SectionLoader>
         
         <SectionLoader>
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
-            learningPathways={safeLearningPathways}
+            learningPathways={learningPathways}
           />
         </SectionLoader>
         
         <SectionLoader>
           <CareerValuesSection 
-            careerSuggestions={safeCareerSuggestions}
+            careerSuggestions={careerSuggestions}
             valueSystem={valueSystem}
           />
         </SectionLoader>
         
         <SectionLoader>
-          <RoadmapSection roadmap={safeRoadmap} />
+          <RoadmapSection roadmap={roadmap} />
         </SectionLoader>
       </TabsContent>
       
       <TabsContent value="personality" className={tabContentClass}>
         <SectionLoader>
-          <PersonalityTraitsSection traits={processedTraits} />
+          <PersonalityTraitsSection traits={traits} />
         </SectionLoader>
       </TabsContent>
       
       <TabsContent value="intelligence" className={tabContentClass}>
         <SectionLoader>
           <IntelligenceSection 
-            intelligence={processedIntelligence}
+            intelligence={intelligence}
             intelligenceScore={intelligenceScore}
             emotionalIntelligenceScore={emotionalIntelligenceScore}
           />
@@ -184,8 +134,8 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       <TabsContent value="motivation" className={tabContentClass}>
         <SectionLoader>
           <MotivationSection 
-            motivators={safeMotivators}
-            inhibitors={safeInhibitors}
+            motivators={motivators}
+            inhibitors={inhibitors}
           />
         </SectionLoader>
       </TabsContent>
@@ -199,8 +149,8 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       <TabsContent value="growth" className={tabContentClass}>
         <SectionLoader>
           <GrowthAreasSection 
-            weaknesses={safeWeaknesses}
-            growthAreas={safeGrowthAreas}
+            weaknesses={weaknesses}
+            growthAreas={growthAreas}
           />
         </SectionLoader>
       </TabsContent>
@@ -209,7 +159,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
         <SectionLoader>
           <RelationshipLearningSection 
             relationshipPatterns={processedRelationships}
-            learningPathways={safeLearningPathways}
+            learningPathways={learningPathways}
           />
         </SectionLoader>
       </TabsContent>
@@ -217,7 +167,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       <TabsContent value="career" className={tabContentClass}>
         <SectionLoader>
           <CareerValuesSection 
-            careerSuggestions={safeCareerSuggestions}
+            careerSuggestions={careerSuggestions}
             valueSystem={valueSystem}
           />
         </SectionLoader>
@@ -225,7 +175,7 @@ const ReportTabContent: React.FC<ReportTabContentProps> = ({ analysis }) => {
       
       <TabsContent value="roadmap" className={tabContentClass}>
         <SectionLoader>
-          <RoadmapSection roadmap={safeRoadmap} />
+          <RoadmapSection roadmap={roadmap} />
         </SectionLoader>
       </TabsContent>
     </>

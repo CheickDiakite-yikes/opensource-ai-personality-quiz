@@ -1,61 +1,153 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, ArrowUpCircle, AlertTriangle } from "lucide-react";
-import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
+import { motion } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface GrowthAreasSectionProps {
-  weaknesses: StringOrObject[];
-  growthAreas: StringOrObject[];
+  weaknesses: string[];
+  growthAreas: string[];
 }
 
-const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ weaknesses = [], growthAreas = [] }) => {
-  // Convert any object items to strings
-  const safeWeaknesses = ensureStringItems(weaknesses);
-  const safeGrowthAreas = ensureStringItems(growthAreas);
-
+const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({ 
+  weaknesses,
+  growthAreas 
+}) => {
+  const isMobile = useIsMobile();
+  const [weaknessesOpen, setWeaknessesOpen] = React.useState(!isMobile);
+  const [growthOpen, setGrowthOpen] = React.useState(!isMobile);
+  
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary" />
-          <span>Growth Opportunities</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              Current Challenges
-            </h3>
-            <ul className="space-y-2 marker:text-amber-500 list-disc pl-5">
-              {safeWeaknesses.slice(0, 5).map((item, index) => (
-                <li key={index}>{item}</li>
+    <motion.div variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1]
+        }
+      }
+    }} className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'md:grid-cols-2 gap-6'}`}>
+      <Card className="glass-panel overflow-hidden">
+        <CardHeader className={`bg-gradient-to-r from-rose-500/10 to-red-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
+          <CardTitle className={isMobile ? 'text-base' : ''}>Weaknesses</CardTitle>
+          <CardDescription>Areas that may need attention</CardDescription>
+        </CardHeader>
+        
+        {isMobile ? (
+          <Collapsible open={weaknessesOpen} onOpenChange={setWeaknessesOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {weaknessesOpen ? "Collapse" : "Expand"} ({weaknesses.length})
+                </span>
+                {weaknessesOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <ul className="space-y-1.5">
+                  {weaknesses.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-4 w-4 text-[0.65rem] text-primary mr-1.5 mt-0.5 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-3 md:pt-6">
+            <ul className="space-y-2">
+              {weaknesses.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm md:text-base">{item}</span>
+                </li>
               ))}
             </ul>
-            {(!safeWeaknesses || safeWeaknesses.length === 0) && (
-              <p className="text-muted-foreground italic">No significant challenges identified</p>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <ArrowUpCircle className="h-4 w-4 text-green-500" />
-              Areas for Development
-            </h3>
-            <ul className="space-y-2 marker:text-green-500 list-disc pl-5">
-              {safeGrowthAreas.slice(0, 5).map((item, index) => (
-                <li key={index}>{item}</li>
+          </CardContent>
+        )}
+      </Card>
+      
+      <Card className="glass-panel overflow-hidden">
+        <CardHeader className={`bg-gradient-to-r from-blue-500/10 to-indigo-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
+          <CardTitle className={isMobile ? 'text-base' : ''}>Growth Areas</CardTitle>
+          <CardDescription>Opportunities for development</CardDescription>
+        </CardHeader>
+        
+        {isMobile ? (
+          <Collapsible open={growthOpen} onOpenChange={setGrowthOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full flex items-center justify-between py-1 px-3 border-t"
+                size="sm"
+              >
+                <span className="text-xs">
+                  {growthOpen ? "Collapse" : "Expand"} ({growthAreas.length})
+                </span>
+                {growthOpen ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-2 pb-2 px-3">
+                <ul className="space-y-1.5">
+                  {growthAreas.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-4 w-4 text-[0.65rem] text-primary mr-1.5 mt-0.5 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <CardContent className="pt-3 md:pt-6">
+            <ul className="space-y-2">
+              {growthAreas.map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm md:text-base">{item}</span>
+                </li>
               ))}
             </ul>
-            {(!safeGrowthAreas || safeGrowthAreas.length === 0) && (
-              <p className="text-muted-foreground italic">No specific growth areas identified</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        )}
+      </Card>
+    </motion.div>
   );
 };
 

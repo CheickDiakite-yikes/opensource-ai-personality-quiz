@@ -1,87 +1,109 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Heart, BookOpen } from "lucide-react";
-import { safeString, ensureStringItems, StringOrObject } from "@/utils/formatUtils";
-import { RelationshipPatterns } from "@/utils/types";
+import { motion } from "framer-motion";
+import RelationshipPatterns from "../RelationshipPatterns";
+import LearningPathways from "../LearningPathways";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Card } from "@/components/ui/card";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-interface RelationshipLearningSectionProps {
-  relationshipPatterns: RelationshipPatterns;
-  learningPathways: StringOrObject[];
+interface RelationshipLearningProps {
+  relationshipPatterns: {
+    strengths: string[];
+    challenges: string[];
+    compatibleTypes: string[];
+  };
+  learningPathways: string[];
 }
 
-const RelationshipLearningSection: React.FC<RelationshipLearningSectionProps> = ({ 
-  relationshipPatterns, 
-  learningPathways = []
+const RelationshipLearningSection: React.FC<RelationshipLearningProps> = ({ 
+  relationshipPatterns,
+  learningPathways 
 }) => {
-  // Ensure we have arrays to work with and convert objects to strings
-  const strengths = ensureStringItems(relationshipPatterns?.strengths || []);
-  const challenges = ensureStringItems(relationshipPatterns?.challenges || []);
-  const safePathways = ensureStringItems(learningPathways);
+  const isMobile = useIsMobile();
+  const [patternsOpen, setPatternsOpen] = React.useState(!isMobile);
+  const [pathwaysOpen, setPathwaysOpen] = React.useState(!isMobile);
   
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" />
-          <span>Relationship & Learning Styles</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium">Relationship Patterns</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Strengths</h4>
-                <ul className="space-y-1 marker:text-green-500 list-disc pl-5">
-                  {strengths.slice(0, 3).map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-                {(!strengths || strengths.length === 0) && (
-                  <p className="text-muted-foreground italic text-sm">No relationship strengths identified</p>
-                )}
-              </div>
-              <div>
-                <h4 className="text-sm font-medium mb-2">Challenges</h4>
-                <ul className="space-y-1 marker:text-amber-500 list-disc pl-5">
-                  {challenges.slice(0, 3).map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-                {(!challenges || challenges.length === 0) && (
-                  <p className="text-muted-foreground italic text-sm">No relationship challenges identified</p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary" />
-              Learning Pathways
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {safePathways.slice(0, 4).map((pathway, index) => (
-                <div 
-                  key={index} 
-                  className="bg-muted/50 p-3 rounded-md text-sm"
+    <motion.div variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1]
+        }
+      }
+    }} className="flex flex-col w-full gap-2 md:gap-6 max-w-[100vw]">
+      {isMobile ? (
+        <>
+          <Card className="overflow-hidden max-w-full">
+            <Collapsible open={patternsOpen} onOpenChange={setPatternsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between p-2 border-b"
+                  size="sm"
                 >
-                  {pathway}
+                  <span className="font-medium text-sm">Relationship Patterns</span>
+                  {patternsOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-2 overflow-x-hidden">
+                  <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
                 </div>
-              ))}
-            </div>
-            {(!safePathways || safePathways.length === 0) && (
-              <p className="text-muted-foreground italic">No learning pathways identified</p>
-            )}
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+          
+          <Card className="overflow-hidden max-w-full">
+            <Collapsible open={pathwaysOpen} onOpenChange={setPathwaysOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between p-2 border-b"
+                  size="sm"
+                >
+                  <span className="font-medium text-sm">Learning Pathways</span>
+                  {pathwaysOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-2 overflow-x-hidden">
+                  <LearningPathways pathways={learningPathways} />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        </>
+      ) : (
+        // Desktop view - side by side
+        <div className="flex flex-row w-full gap-6">
+          <div className="w-1/2">
+            <RelationshipPatterns relationshipPatterns={relationshipPatterns} />
+          </div>
+          <div className="w-1/2">
+            <LearningPathways pathways={learningPathways} />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </motion.div>
   );
 };
 

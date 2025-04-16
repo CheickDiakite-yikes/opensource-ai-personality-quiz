@@ -5,7 +5,6 @@ import { PersonalityTrait } from "@/utils/types";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewport } from "@/hooks/use-mobile";
-import { formatTraitScore } from "@/utils/formatUtils";
 
 interface TopTraitsTableProps {
   traits: PersonalityTrait[];
@@ -17,6 +16,23 @@ const TopTraitsTable: React.FC<TopTraitsTableProps> = ({ traits }) => {
   
   // Use a more specific check for very small screens
   const isVerySmallScreen = width < 380;
+  
+  // Helper function to display trait score consistently as X/10
+  const formatTraitScore = (score: number): string => {
+    // If score is already between 0 and 10, use it directly
+    if (score > 0 && score <= 10) {
+      return String(Math.round(score));
+    }
+    // If score is between 0 and 1, scale to 0-10
+    else if (score >= 0 && score <= 1) {
+      return String(Math.round(score * 10));
+    }
+    // If score is greater than 10 (e.g., 0-100 scale), convert to 0-10
+    else if (score > 10) {
+      return String(Math.round((score / 100) * 10));
+    }
+    return String(Math.round(score));
+  };
   
   if (isMobile) {
     // Single column layout for mobile
