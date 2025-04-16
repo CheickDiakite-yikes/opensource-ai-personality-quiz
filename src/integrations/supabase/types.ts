@@ -177,6 +177,10 @@ export type Database = {
         Args: { analysis_id: string }
         Returns: Json
       }
+      get_comprehensive_analysis_by_id: {
+        Args: { analysis_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
