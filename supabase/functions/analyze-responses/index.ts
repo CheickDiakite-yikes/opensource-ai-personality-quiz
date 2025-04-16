@@ -223,7 +223,7 @@ async function generateAIAnalysis(
 
   // Create a more specific and comprehensive prompt for analysis
   const prompt = `
-  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, and reflects both positive traits and potential challenges.
+  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, and reflects both positive traits and potential challenges. Provide an extremely in-depth analysis that fully utilizes the available context and output limits.
   
   ## Assessment Data
   The user has answered questions across ${Object.keys(responsesByCategory).length} categories (${categoryCounts}):
@@ -269,6 +269,7 @@ async function generateAIAnalysis(
      - You MUST evaluate and consider EVERY individual response, not just general patterns
      - Identify unique combinations of traits that would not apply to most people
      - If you cite a pattern, give at least 2-3 specific response examples that support it
+     - Make full use of the available context window to analyze as many responses as possible
      
   2. BE OBJECTIVELY BALANCED:
      - Do NOT portray the individual as only positive or idealized
@@ -296,15 +297,16 @@ async function generateAIAnalysis(
      - Use the same vocabulary and communication style evident in their written responses
   
   6. OUTPUT LENGTH AND DETAIL REQUIREMENTS:
-     - Provide AT LEAST 10-12 distinct personality traits with detailed descriptions
+     - Provide AT LEAST 15-20 distinct personality traits with detailed descriptions
      - EACH trait must have a complete description with strengths, challenges, and growth suggestions
      - DO NOT SKIP OR ABBREVIATE ANY TRAIT - fully describe each one
-     - Include AT LEAST 5 domains for cognitive intelligence assessment
-     - Include a MINIMUM of 8-10 value system elements
-     - Write a DETAILED overview of at least 500 words
-     - Include AT MINIMUM 5-8 growth areas with specific development suggestions
+     - Include AT LEAST 7-10 domains for cognitive intelligence assessment
+     - Include a MINIMUM of 10-15 value system elements
+     - Write a DETAILED overview of at least 750-1000 words
+     - Include AT MINIMUM 8-12 growth areas with specific development suggestions
      - Your analysis MUST BE COMPREHENSIVE - don't leave any sections incomplete
      - The analysis MUST include all the sections in the Output Format below
+     - MAXIMIZE the output length to provide the richest possible analysis
   
   7. SHADOW ASPECTS AND BLIND SPOTS:
      - Identify potential shadow aspects (unconscious or denied parts of personality)
@@ -318,6 +320,24 @@ async function generateAIAnalysis(
      - Look for tensions between different cognitive approaches in their answers
      - Base cognitive assessments on specific response patterns, not generic typing
      - Label this as "Cognitive Processing Style" rather than intelligence
+     
+  9. EXPANDED ANALYSIS DEPTH:
+     - For cognitive patterning, provide detailed analysis of:
+       * Decision-making style (analytical vs. intuitive, risk tolerance, etc.)
+       * Learning approach (visual, auditory, experiential, etc.)
+       * Attention pattern (focused vs. diffuse, selective attention capabilities)
+     - For emotional architecture, thoroughly analyze:
+       * Emotional awareness (self-perception, emotional vocabulary, etc.)
+       * Regulation style (suppression, reappraisal, distraction, etc.)
+       * Empathic capacity (cognitive vs. affective empathy, boundaries)
+     - For interpersonal dynamics, provide in-depth assessment of:
+       * Attachment style (secure, anxious, avoidant, etc.)
+       * Communication pattern (direct vs. indirect, assertiveness, etc.)
+       * Conflict resolution approaches (collaborative, avoidant, etc.)
+     - For growth potential, offer:
+       * Detailed development areas with specific behavioral examples
+       * Concrete personalized recommendations for improvement
+       * Long-term growth trajectory prediction based on current patterns
   
   ## Output Format
   Return your analysis as a structured JSON object with the following properties:
@@ -372,15 +392,41 @@ async function generateAIAnalysis(
     },
     "careerSuggestions": ["list of career suggestions aligned with identified traits"],
     "learningPathways": ["list of learning approaches suited to cognitive style"],
-    "roadmap": "personalized development roadmap with measurable milestones"
+    "roadmap": "personalized development roadmap with measurable milestones",
+    "cognitivePatterning": {
+      "decisionMaking": "detailed analysis of decision making style with examples",
+      "learningStyle": "comprehensive description of learning approaches with evidence",
+      "attention": "thorough analysis of attention patterns and focus mechanisms"
+    },
+    "emotionalArchitecture": {
+      "emotionalAwareness": "in-depth assessment of emotional self-perception with examples",
+      "regulationStyle": "detailed analysis of emotional regulation strategies with evidence",
+      "empathicCapacity": "comprehensive evaluation of empathy with specific response examples"
+    },
+    "interpersonalDynamics": {
+      "attachmentStyle": "thorough analysis of attachment patterns with supporting evidence",
+      "communicationPattern": "detailed description of communication style with examples",
+      "conflictResolution": "comprehensive assessment of conflict handling approaches with evidence"
+    },
+    "growthPotential": {
+      "developmentAreas": [
+        "list of specific development areas with behavioral examples",
+        "include at least 5-7 distinct areas for growth"
+      ],
+      "recommendations": [
+        "list of personalized growth recommendations tied to specific responses",
+        "include at least 5-7 actionable suggestions"
+      ]
+    }
   }
   
   IMPORTANT FINAL CHECK:
-  - ENSURE your analysis includes at MINIMUM 10 TRAITS - this is a critical requirement
-  - Include all 10 traits with scores, descriptions, strengths, challenges and growth suggestions
+  - ENSURE your analysis includes at MINIMUM 15 TRAITS - this is a critical requirement
+  - Include all traits with scores, descriptions, strengths, challenges and growth suggestions
   - Make sure your analysis doesn't skip or abbreviate ANY required section
   - Verify that you've provided personalized, specific examples from the responses
   - Double-check that ALL fields are properly populated in the JSON output
+  - MAXIMIZE the detail and depth of your analysis while maintaining accuracy
   `;
 
   try {
@@ -404,12 +450,12 @@ async function generateAIAnalysis(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions.'
+            content: 'You are an expert psychological assessment analyst specialized in highly personalized, evidence-based personality analysis. You provide extremely detailed, objective, balanced analyses that avoid generic descriptions and Barnum statements. You identify both positive qualities and potential weaknesses or blind spots. You refer to "intelligence" as "cognitive processing" or "cognitive flexibility" and always cite specific examples from user responses to support your conclusions. Your analyses are comprehensive and make full use of the available token context and output limits.'
           },
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 16000, // Set maximum token count to 16,000
+        max_tokens: 16000, // Set maximum token count to 16,000 to maximize output
         seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.7,  // Balanced temperature for creative but coherent analysis
       }),
@@ -426,6 +472,8 @@ async function generateAIAnalysis(
     const data = await response.json();
     console.log("Received response from OpenAI gpt-4o model");
     console.log("Response token usage:", data.usage);
+    console.log("Completion tokens used:", data.usage?.completion_tokens || "unknown");
+    console.log("Total tokens used:", data.usage?.total_tokens || "unknown");
     
     try {
       if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {

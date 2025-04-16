@@ -77,8 +77,12 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       // Clear saved progress since quiz is completed
       clearSavedProgress();
       
+      // Show a more detailed toast message about the analysis process
+      toast.success("Your Deep Insight assessment is complete!", {
+        description: "Preparing your comprehensive personality analysis..."
+      });
+      
       // In a real implementation, we would send these responses to an API
-      toast.success("Your Deep Insight assessment is complete!");
       navigate("/deep-insight/results", { 
         state: { responses: finalResponses } 
       });
