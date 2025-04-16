@@ -20,10 +20,11 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
   };
   
   responsesArray.forEach(([_, answer]) => {
-    if (answer.includes('-a')) answerCounts.a++;
-    if (answer.includes('-b')) answerCounts.b++;
-    if (answer.includes('-c')) answerCounts.c++;
-    if (answer.includes('-d')) answerCounts.d++;
+    const lastChar = answer.charAt(answer.length - 1);
+    if (lastChar === 'a') answerCounts.a++;
+    if (lastChar === 'b') answerCounts.b++;
+    if (lastChar === 'c') answerCounts.c++;
+    if (lastChar === 'd') answerCounts.d++;
   });
   
   console.log("Response distribution:", answerCounts);

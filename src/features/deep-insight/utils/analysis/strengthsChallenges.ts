@@ -4,7 +4,7 @@ import { StrengthsChallengesResult } from "./types";
 /**
  * Generates strengths and challenges based on response patterns
  */
-export const generateStrengthsAndChallenges = (
+export const generateStrengthsChallenges = (
   primaryChoice: string, 
   secondaryChoice: string
 ): StrengthsChallengesResult => {

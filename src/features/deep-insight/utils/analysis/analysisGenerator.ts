@@ -1,8 +1,9 @@
+
 import { DeepInsightResponses } from "../../types";
 import { analyzeResponsePatterns } from "./patternAnalyzer";
-import { determinePersonalityTraits } from "./personalityTraits";
+import { determinePersonalityTraits, determineSecondaryTrait } from "./personalityTraits";
 import { generateStrengthsChallenges } from "./strengthsChallenges";
-import { AnalysisData } from "./types";
+import { AnalysisData, PersonalityTraitsDetermination, ResponsePatternAnalysis, StrengthsChallengesResult } from "./types";
 
 // Main function to generate full analysis from responses
 export function generateAnalysisFromResponses(responses: DeepInsightResponses): AnalysisData {
@@ -10,22 +11,39 @@ export function generateAnalysisFromResponses(responses: DeepInsightResponses): 
   const responsePatterns = analyzeResponsePatterns(responses);
   
   // Get personality traits determination
-  const traitsResult = determinePersonalityTraits(responses);
+  const traitsResult = determinePersonalityTraits(responsePatterns.primaryChoice);
   
   // Get strengths and challenges
-  const strengthsChallenges = generateStrengthsChallenges(responses);
+  const strengthsChallenges = generateStrengthsChallenges(responsePatterns.primaryChoice, responsePatterns.secondaryChoice);
   
   // Create the complete analysis object
   const analysis: AnalysisData = {
-    // Build comprehensive personality analysis
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    overview: generateSummary(traitsResult),
     traits: generateTraits(responses, traitsResult),
-    
-    // Core identity elements
-    primaryArchetype: traitsResult.primaryTrait,
-    summary: generateSummary(traitsResult),
-    
-    // Response patterns
-    responsePatterns: responsePatterns,
+    intelligence: {
+      type: getIntelligenceType(traitsResult),
+      score: traitsResult.analyticalScore,
+      description: "Your unique cognitive profile combining analytical, emotional, and practical intelligence.",
+      domains: []
+    },
+    intelligenceScore: traitsResult.analyticalScore,
+    emotionalIntelligenceScore: traitsResult.emotionalScore,
+    cognitiveStyle: traitsResult.learningStyle,
+    valueSystem: [],
+    motivators: generateMotivators(responses),
+    inhibitors: generateInhibitors(responses),
+    weaknesses: strengthsChallenges.challenges,
+    growthAreas: strengthsChallenges.growthAreas,
+    relationshipPatterns: {
+      strengths: [],
+      challenges: [],
+      compatibleTypes: generateCompatibleTypes(traitsResult)
+    },
+    careerSuggestions: generateCareerSuggestions(traitsResult, responsePatterns),
+    learningPathways: generateLearningPathways(traitsResult),
+    roadmap: "Your personal development journey starts with awareness of your cognitive patterns and emotional architecture.",
     
     // Core traits
     coreTraits: {
@@ -62,17 +80,8 @@ export function generateAnalysisFromResponses(responses: DeepInsightResponses): 
       recommendations: strengthsChallenges.recommendations
     },
     
-    // Additional insights
-    intelligenceType: getIntelligenceType(traitsResult),
-    dominantTraits: generateDominantTraits(traitsResult),
-    motivators: generateMotivators(responses),
-    inhibitors: generateInhibitors(responses),
-    careerSuggestions: generateCareerSuggestions(traitsResult, responsePatterns),
-    relationshipPatterns: {
-      attachmentStyle: generateAttachmentStyle(responses),
-      compatibleTypes: generateCompatibleTypes(traitsResult)
-    },
-    learningPathways: generateLearningPathways(traitsResult)
+    // Response patterns
+    responsePatterns: responsePatterns
   };
   
   return analysis;
@@ -375,8 +384,9 @@ function generateMotivators(responses: DeepInsightResponses): string[] {
   // Count response frequencies
   const counts: Record<string, number> = { a: 0, b: 0, c: 0, d: 0 };
   Object.values(responses).forEach(response => {
-    if (response in counts) {
-      counts[response]++;
+    const key = response.charAt(response.length - 1);
+    if (key in counts) {
+      counts[key]++;
     }
   });
   
@@ -410,8 +420,9 @@ function generateInhibitors(responses: DeepInsightResponses): string[] {
   // Count response frequencies
   const counts: Record<string, number> = { a: 0, b: 0, c: 0, d: 0 };
   Object.values(responses).forEach(response => {
-    if (response in counts) {
-      counts[response]++;
+    const key = response.charAt(response.length - 1);
+    if (key in counts) {
+      counts[key]++;
     }
   });
   
@@ -439,35 +450,35 @@ function generateCareerSuggestions(traits: PersonalityTraitsDetermination, patte
   
   // Career maps based on primary trait
   const careerMap: Record<string, string[]> = {
-    "Analytical": [
+    "Analytical Strategist": [
       "Data Scientist", "Systems Analyst", "Research Scientist", 
       "Financial Analyst", "Software Engineer", "Management Consultant",
       "Economist", "Biomedical Engineer", "Legal Analyst"
     ],
-    "Emotional": [
+    "Empathic Connector": [
       "Psychologist", "Human Resources Specialist", "Counselor", 
       "Social Worker", "Marketing Strategist", "Healthcare Provider",
       "Teacher", "Organizational Development Consultant", "Mediator"
     ],
-    "Adaptive": [
+    "Adaptive Innovator": [
       "Project Manager", "Entrepreneur", "Business Development", 
       "Consultant", "Product Manager", "Emergency Response",
       "Sales Executive", "Operations Manager", "Diplomat"
     ],
-    "Creative": [
+    "Visionary Explorer": [
       "UX Designer", "Content Strategist", "Art Director", 
       "Product Designer", "Creative Director", "Architect",
       "Marketing Creative", "Innovation Consultant", "Game Designer"
-    ],
-    "Practical": [
-      "Engineering Manager", "Financial Planner", "Operations Director", 
-      "Quality Assurance Specialist", "Healthcare Administrator", "Logistics Manager",
-      "Construction Manager", "Manufacturing Supervisor", "Compliance Officer"
     ]
   };
   
   // Start with careers from primary trait
-  let careers = [...(careerMap[primaryTrait] || [])];
+  let careers = [...(careerMap[primaryTrait] || [
+    "Strategic Consultant", "Research Director", "Policy Analyst",
+    "Leadership Coach", "Public Relations Specialist", "Customer Experience Manager",
+    "Change Management Consultant", "Crisis Manager", "International Business Developer",
+    "Innovation Strategist", "Creative Consultant", "Design Thinking Facilitator"
+  ])];
   
   // Add careers based on response patterns
   if (primaryChoice === "a" && analyticalScore > 6) {
@@ -490,30 +501,25 @@ function generateCompatibleTypes(traits: PersonalityTraitsDetermination): string
   
   // Map of compatible types
   const compatibilityMap: Record<string, string[]> = {
-    "Analytical": [
+    "Analytical Strategist": [
       "Creative types who bring fresh perspectives",
       "Practical types who help implement ideas",
       "Other analytical types who enjoy deep discussion"
     ],
-    "Emotional": [
+    "Empathic Connector": [
       "Analytical types who provide structure and clarity",
       "Other emotional types who understand emotional needs",
       "Adaptive types who navigate change with sensitivity"
     ],
-    "Adaptive": [
+    "Adaptive Innovator": [
       "Stable, practical types who provide grounding",
       "Creative types who inspire new approaches",
       "Analytical types who help evaluate options systematically"
     ],
-    "Creative": [
+    "Visionary Explorer": [
       "Practical types who help bring ideas to life",
       "Analytical types who help refine concepts",
       "Other creative types who inspire and collaborate"
-    ],
-    "Practical": [
-      "Creative types who bring fresh perspectives",
-      "Emotional types who add depth to relationships",
-      "Other practical types who share similar values"
     ]
   };
   
@@ -530,47 +536,45 @@ function generateLearningPathways(traits: PersonalityTraitsDetermination): strin
   
   // Base pathways on primary trait
   const basePathways: Record<string, string[]> = {
-    "Analytical": [
+    "Analytical Strategist": [
       "Structured courses with clear learning objectives",
       "Research-based independent study",
       "Systematic skill development programs"
     ],
-    "Emotional": [
+    "Empathic Connector": [
       "Interactive workshops with group discussion",
       "Mentorship and coaching relationships",
       "Learning experiences with emotional engagement"
     ],
-    "Adaptive": [
+    "Adaptive Innovator": [
       "Flexible learning formats that can adapt to changing needs",
       "Project-based learning with real-world applications",
       "Diverse learning experiences across multiple domains"
     ],
-    "Creative": [
+    "Visionary Explorer": [
       "Exploratory learning with room for experimentation",
       "Interdisciplinary programs that connect diverse fields",
       "Self-directed projects with creative components"
-    ],
-    "Practical": [
-      "Applied learning with clear practical outcomes",
-      "Skill-based training with immediate application",
-      "Structured programs with measurable results"
     ]
   };
   
   // Add pathways based on learning style
   let additionalPathways: string[] = [];
-  if (learningStyle.includes("visual")) {
-    additionalPathways.push("Visual learning formats with diagrams, charts and videos");
-  } else if (learningStyle.includes("hands-on")) {
-    additionalPathways.push("Experiential learning through direct practice and application");
-  } else if (learningStyle.includes("auditory")) {
-    additionalPathways.push("Audio-based learning through lectures, discussions and podcasts");
-  } else {
-    additionalPathways.push("Mixed-media learning that engages multiple senses");
+  if (learningStyle && typeof learningStyle === 'string') {
+    if (learningStyle.includes("visual")) {
+      additionalPathways.push("Visual learning formats with diagrams, charts and videos");
+    } else if (learningStyle.includes("hands-on")) {
+      additionalPathways.push("Experiential learning through direct practice and application");
+    } else if (learningStyle.includes("auditory")) {
+      additionalPathways.push("Audio-based learning through lectures, discussions and podcasts");
+    } else {
+      additionalPathways.push("Mixed-media learning that engages multiple senses");
+    }
   }
   
   // Combine and return unique pathways
-  return [...(basePathways[primaryTrait] || []), ...additionalPathways];
+  const pathways = [...(basePathways[primaryTrait] || []), ...additionalPathways];
+  return [...new Set(pathways)];
 }
 
 // Generate traits based on responses and personality determination
@@ -602,8 +606,9 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
   // Count response frequencies
   const counts: Record<string, number> = { a: 0, b: 0, c: 0, d: 0 };
   Object.values(responses).forEach(response => {
-    if (response in counts) {
-      counts[response]++;
+    const key = response.charAt(response.length - 1);
+    if (key in counts) {
+      counts[key]++;
     }
   });
   
@@ -653,7 +658,7 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
   
   // Add traits specific to primary personality type
   const typeSpecificTraits: Record<string, any[]> = {
-    "Analytical": [
+    "Analytical Strategist": [
       {
         trait: "Detail Orientation",
         score: 7 + Math.random() * 3,
@@ -665,7 +670,7 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
         description: "Ability to evaluate information objectively"
       }
     ],
-    "Emotional": [
+    "Empathic Connector": [
       {
         trait: "Social Awareness",
         score: 7 + Math.random() * 3,
@@ -677,7 +682,7 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
         description: "Ability to communicate feelings effectively"
       }
     ],
-    "Adaptive": [
+    "Adaptive Innovator": [
       {
         trait: "Resilience",
         score: 7 + Math.random() * 3,
@@ -689,7 +694,7 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
         description: "Ability to function well in diverse situations"
       }
     ],
-    "Creative": [
+    "Visionary Explorer": [
       {
         trait: "Originality",
         score: 7 + Math.random() * 3,
@@ -699,18 +704,6 @@ function generateTraits(responses: DeepInsightResponses, traits: PersonalityTrai
         trait: "Conceptual Thinking",
         score: 7 + Math.random() * 3,
         description: "Ability to work with abstract concepts and patterns"
-      }
-    ],
-    "Practical": [
-      {
-        trait: "Reliability",
-        score: 7 + Math.random() * 3,
-        description: "Consistency in following through on commitments"
-      },
-      {
-        trait: "Efficiency",
-        score: 7 + Math.random() * 3,
-        description: "Optimization of resources and processes"
       }
     ]
   };

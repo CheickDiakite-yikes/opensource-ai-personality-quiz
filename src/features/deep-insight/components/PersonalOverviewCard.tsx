@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Sparkles, Brain, Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../utils/analysis/analysisGenerator";
+import { AnalysisData } from "../utils/analysis/types";
 
 interface PersonalOverviewCardProps {
   analysis: AnalysisData;
