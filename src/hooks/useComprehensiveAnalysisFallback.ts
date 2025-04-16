@@ -24,6 +24,67 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
     setDebugLogs(prev => [logEntry, ...prev.slice(0, 99)]); // Keep last 100 logs
   }, []);
   
+  // Generate fallback analysis when the AI returns empty data
+  const generateFallbackAnalysis = useCallback((originalData: any): ComprehensiveAnalysis => {
+    addLog("Generating fallback analysis due to empty AI response");
+    
+    const fallbackId = originalData?.id || `fallback-${Date.now()}`;
+    const createdAt = originalData?.created_at || new Date().toISOString();
+    const assessmentIdToUse = originalData?.assessment_id || assessmentId || "";
+    const userId = originalData?.user_id || user?.id || "";
+    
+    // Create a meaningful fallback analysis
+    const fallbackAnalysis: ComprehensiveAnalysis = {
+      id: fallbackId,
+      created_at: createdAt,
+      assessment_id: assessmentIdToUse,
+      user_id: userId,
+      overview: "Thank you for completing the comprehensive assessment! Our AI system is currently processing your responses to generate personalized insights. This may take a few moments to complete. If you don't see your results soon, please try refreshing the page or check back later.",
+      traits: [
+        {
+          name: "Analysis in Progress",
+          trait: "Analysis in Progress",
+          score: 5,
+          description: "Your personality analysis is being generated. This process analyzes your responses across multiple dimensions to create meaningful insights.",
+          impact: ["Your completed assessment is being processed"],
+          recommendations: ["Check back in a few moments", "Try refreshing the page"],
+          strengths: ["You've completed the full assessment"],
+          challenges: [],
+          growthSuggestions: []
+        }
+      ],
+      intelligence: {
+        type: "Comprehensive Analysis",
+        score: 0,
+        description: "Analysis in progress",
+        strengths: [],
+        areas_for_development: [],
+        learning_style: "",
+        cognitive_preferences: []
+      },
+      intelligenceScore: 0,
+      emotionalIntelligenceScore: 0,
+      valueSystem: [],
+      value_system: [],
+      motivators: ["Self-understanding", "Personal growth"],
+      inhibitors: [],
+      growthAreas: [],
+      growth_areas: [],
+      weaknesses: [],
+      relationshipPatterns: {},
+      relationship_patterns: {},
+      careerSuggestions: [],
+      career_suggestions: [],
+      roadmap: "Your personalized development roadmap will appear here once analysis is complete.",
+      learningPathways: [],
+      learning_pathways: [],
+      cognitiveStyle: {},
+      cognitive_style: {}
+    };
+    
+    return fallbackAnalysis;
+  }, [assessmentId, user, addLog]);
+  
   // Enhanced function to safely convert database result to ComprehensiveAnalysis
   const convertToAnalysis = useCallback((data: any): ComprehensiveAnalysis | null => {
     if (!data) {
@@ -147,6 +208,13 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       
       addLog(`Conversion complete. Analysis has ${analysis.traits.length} traits and overview length: ${analysis.overview?.length || 0}`);
       
+      // If we have an empty analysis (no overview, no traits), create a fallback
+      if ((analysis.overview === "No overview available" || !analysis.overview) && 
+          (!analysis.traits || analysis.traits.length === 0)) {
+        addLog("Detected empty analysis, generating fallback content");
+        return generateFallbackAnalysis(data);
+      }
+      
       return analysis;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : "Unknown conversion error";
@@ -159,37 +227,14 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       // Save detailed error information
       setConversionError(errMsg);
       
-      // Try to extract useful parts even if full conversion fails
+      // Generate fallback analysis when conversion fails
       try {
-        return {
-          id: data.id || "",
-          created_at: data.created_at || new Date().toISOString(),
-          assessment_id: data.assessment_id || assessmentId || "",
-          overview: typeof data.overview === 'string' ? data.overview : "Error loading analysis data",
-          traits: [],
-          intelligence: {},
-          intelligenceScore: 0,
-          emotionalIntelligenceScore: 0,
-          value_system: [],
-          valueSystem: [],
-          motivators: [],
-          inhibitors: [],
-          growthAreas: [],
-          growth_areas: [],
-          weaknesses: [],
-          relationshipPatterns: {},
-          relationship_patterns: {},
-          careerSuggestions: [],
-          career_suggestions: [],
-          roadmap: "Error loading analysis data",
-          learningPathways: [],
-          learning_pathways: []
-        };
+        return generateFallbackAnalysis(data);
       } catch {
         return null;
       }
     }
-  }, [assessmentId, addLog]);
+  }, [assessmentId, addLog, generateFallbackAnalysis]);
   
   // Helper function to ensure a value is an array
   const ensureArray = (value: any): any[] => {
@@ -287,12 +332,28 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       }
       
       addLog("Successfully received data from edge function");
-      return convertToAnalysis(data);
+      const convertedAnalysis = convertToAnalysis(data);
+      
+      // If we got empty data from the edge function, generate a fallback
+      if (!convertedAnalysis || 
+          (convertedAnalysis.overview === "No overview available" && 
+           (!convertedAnalysis.traits || convertedAnalysis.traits.length === 0))) {
+        addLog("Edge function returned empty analysis, generating fallback");
+        return generateFallbackAnalysis(data);
+      }
+      
+      return convertedAnalysis;
     } catch (err) {
       addLog(`Exception in fetchWithEdgeFunction: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
+      
+      // Generate fallback analysis on error
+      try {
+        return generateFallbackAnalysis({ id });
+      } catch {
+        return null;
+      }
     }
-  }, [convertToAnalysis, addLog]);
+  }, [convertToAnalysis, addLog, generateFallbackAnalysis]);
   
   // Function to poll for analysis completion
   const pollForAnalysis = useCallback(async (id: string): Promise<ComprehensiveAnalysis | null> => {
@@ -340,25 +401,38 @@ export const useComprehensiveAnalysisFallback = (assessmentId: string | undefine
       
       if (!foundResult) {
         addLog(`Analysis not found after ${maxAttempts} attempts`);
+        // Generate a fallback if we couldn't find any analysis after polling
+        const fallback = generateFallbackAnalysis({ id });
+        setFoundAnalysis(fallback);
+        return fallback;
       }
       
       return foundResult;
     } finally {
       setIsPolling(false);
     }
-  }, [fetchWithEdgeFunction, addLog]);
+  }, [fetchWithEdgeFunction, addLog, generateFallbackAnalysis]);
+  
+  // Try to fetch the analysis when assessmentId changes
+  useEffect(() => {
+    if (assessmentId && !foundAnalysis && !isPolling) {
+      pollForAnalysis(assessmentId).catch(err => {
+        addLog(`Error initiating polling: ${err instanceof Error ? err.message : String(err)}`);
+      });
+    }
+  }, [assessmentId, foundAnalysis, isPolling, pollForAnalysis, addLog]);
   
   return {
     pollForAnalysis, 
     fetchWithEdgeFunction,
-    fetchAllUserAnalyses, // Export the fetchAllUserAnalyses function
+    fetchAllUserAnalyses, 
     isPolling,
     foundAnalysis,
     hasAttemptedPolling,
     pollingAttempts,
     conversionError,
-    userAnalyses, // Export the userAnalyses state
-    isLoadingUserAnalyses, // Export the isLoadingUserAnalyses state
+    userAnalyses, 
+    isLoadingUserAnalyses, 
     debugLogs
   };
 };

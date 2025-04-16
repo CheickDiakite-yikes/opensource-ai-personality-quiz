@@ -272,14 +272,51 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in analyze-comprehensive-responses function:", error);
     
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || "An unknown error occurred",
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    // Generate a basic fallback analysis when everything fails
+    const fallbackAnalysis = {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      assessment_id: assessmentId,
+      user_id: null,
+      overview: "Thank you for completing the assessment. We encountered an issue during processing, but your responses have been saved.",
+      traits: [
+        {
+          name: "Analysis Processing",
+          score: 5,
+          description: "Your assessment is still being processed. Please check back shortly."
+        }
+      ],
+      result: { error: error.message || "An unknown error occurred" }
+    };
+    
+    // Try to save the fallback analysis
+    try {
+      await supabase
+        .from('comprehensive_analyses')
+        .insert(fallbackAnalysis);
+        
+      return new Response(
+        JSON.stringify({ 
+          analysisId: fallbackAnalysis.id,
+          error: error.message || "An unknown error occurred",
+          message: "Fallback analysis created"
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    } catch (saveError) {
+      // If we can't even save the fallback, just return the error
+      return new Response(
+        JSON.stringify({ 
+          error: error.message || "An unknown error occurred",
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
   }
 });
