@@ -6,7 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses, AnalysisData } from "../utils/analysisGenerator";
 
-export { AnalysisData };
+// Fix the re-export using "export type" for TypeScript's isolatedModules
+export type { AnalysisData };
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
