@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -6,13 +5,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
 import { PersonalityAnalysis } from "@/utils/types";
 
+// Define AnalysisData type explicitly
+export interface AnalysisData extends PersonalityAnalysis {
+  coreTraits: {
+    primary: string;
+    secondary: string;
+    strengths: string[];
+    challenges: string[];
+  };
+}
+
 // Mock analysis generator function (in a real app, this would call an AI service)
-const generateAnalysisFromResponses = (responses: DeepInsightResponses): PersonalityAnalysis => {
+const generateAnalysisFromResponses = (responses: DeepInsightResponses): AnalysisData => {
   console.log("Processing responses:", responses);
   
   // In a real implementation, this would call an AI service to analyze the responses
   // For now, we're returning a mock analysis
-  return {
+  const baseAnalysis = {
     id: `analysis-${Date.now()}`,
     createdAt: new Date().toISOString(),
     overview: "Based on your responses, you appear to be thoughtful, introspective, and value both structure and creativity. You demonstrate strong analytical abilities balanced with emotional awareness.",
@@ -75,8 +84,24 @@ const generateAnalysisFromResponses = (responses: DeepInsightResponses): Persona
     },
     careerSuggestions: ["Strategic advisor", "Research specialist", "Program developer", "Systems analyst", "Consultant"],
     learningPathways: ["Structured courses with practical applications", "Collaborative learning environments", "Self-directed deep dives into topics of interest"],
-    roadmap: "Focus on developing comfort with uncertainty while leveraging your analytical strengths. Practice more spontaneity in low-stakes situations and celebrate small risks taken. Consider mindfulness practices to balance your analytical tendencies with intuitive insights."
-  };
+    roadmap: "Focus on developing comfort with uncertainty while leveraging your analytical strengths. Practice more spontaneity in low-stakes situations and celebrate small risks taken. Consider mindfulness practices to balance your analytical tendencies with intuitive insights.",
+    coreTraits: {
+      primary: "Analytical Reflector",
+      secondary: "Empathetic Innovator",
+      strengths: [
+        "Strategic thinking",
+        "Emotional awareness",
+        "Adaptable problem-solving"
+      ],
+      challenges: [
+        "Potential over-analysis",
+        "Balancing emotional and logical approaches",
+        "Risk aversion"
+      ]
+    }
+  } as AnalysisData;
+  
+  return baseAnalysis;
 };
 
 export const useDeepInsightResults = () => {
@@ -84,7 +109,7 @@ export const useDeepInsightResults = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   
   // Effect to handle generating analysis from responses
   useEffect(() => {
