@@ -39,6 +39,25 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
   console.log("Response distribution:", answerCounts);
   
   const totalResponses = responsesArray.length;
+  
+  // Handle edge case where there are no responses
+  if (totalResponses === 0) {
+    console.warn("No valid responses found, using default distribution");
+    return {
+      percentages: {
+        a: 20,
+        b: 20,
+        c: 20,
+        d: 20,
+        e: 10,
+        f: 10
+      },
+      primaryChoice: "a",
+      secondaryChoice: "b",
+      responseSignature: "20-20-20-20-10-10"
+    };
+  }
+  
   const percentages = {
     a: Math.round((answerCounts.a / totalResponses) * 100) || 0,
     b: Math.round((answerCounts.b / totalResponses) * 100) || 0,

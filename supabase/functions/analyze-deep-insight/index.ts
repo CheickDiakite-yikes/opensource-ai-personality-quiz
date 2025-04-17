@@ -17,11 +17,21 @@ serve(async (req) => {
     const { responses } = await req.json()
     
     console.log('Processing Deep Insight responses:', Object.keys(responses).length)
+    console.log('Sample response keys:', Object.keys(responses).slice(0, 5))
+
+    // Measure execution time for debugging
+    const startTime = Date.now()
+    
+    // Ensure OPENAI_API_KEY is available
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openAiApiKey) {
+      throw new Error('OPENAI_API_KEY is not set in environment variables')
+    }
 
     const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -151,23 +161,30 @@ The analysis must be uniquely tailored to the individual based on their specific
     const aiResult = await openAiResponse.json()
     let contentText = aiResult.choices[0].message.content
     
-    console.log('Received OpenAI response, processing...')
+    console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds')
+    console.log('Response length:', contentText.length, 'characters')
     
     // Clean up the response if it has markdown formatting
     if (contentText.includes('```json')) {
       const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
       if (jsonMatch && jsonMatch[1]) {
         contentText = jsonMatch[1].trim()
+        console.log('Extracted JSON from markdown code block')
       } else {
         contentText = contentText.replace(/```json|```/g, '').trim()
+        console.log('Removed markdown code block markers')
       }
     }
     
     try {
+      console.log('Attempting to parse JSON response...')
       let analysis = JSON.parse(contentText)
+      console.log('Successfully parsed JSON response')
 
-      // Ensure responsePatterns format is correct
+      // Validate response pattern format
+      console.log('Validating responsePatterns format...')
       if (!analysis.responsePatterns || !analysis.responsePatterns.percentages) {
+        console.warn('Response patterns missing or invalid, generating fallback')
         analysis.responsePatterns = {
           percentages: { 
             a: Math.round(Math.random() * 30 + 10),
@@ -181,9 +198,12 @@ The analysis must be uniquely tailored to the individual based on their specific
           secondaryChoice: 'b',
           responseSignature: '25-25-25-15-5-5'
         }
+      } else {
+        console.log('Valid responsePatterns found:', analysis.responsePatterns.responseSignature)
       }
 
       // Ensure emotionalArchitecture has all required fields
+      console.log('Validating emotionalArchitecture...')
       analysis.emotionalArchitecture = {
         ...analysis.emotionalArchitecture,
         emotionalPatterns: analysis.emotionalArchitecture?.emotionalPatterns || "Your emotional patterns show a balanced approach to processing and expressing emotions.",
@@ -205,6 +225,7 @@ The analysis must be uniquely tailored to the individual based on their specific
       }
 
       // Ensure interpersonalDynamics has all required fields
+      console.log('Validating interpersonalDynamics...')
       analysis.interpersonalDynamics = {
         ...analysis.interpersonalDynamics,
         socialNeedsBalance: analysis.interpersonalDynamics?.socialNeedsBalance || "You maintain a healthy balance between social connection and personal space.",
@@ -213,6 +234,7 @@ The analysis must be uniquely tailored to the individual based on their specific
       }
 
       // Ensure growthPotential has all required fields
+      console.log('Validating growthPotential...')
       analysis.growthPotential = {
         ...analysis.growthPotential,
         longTermGoals: analysis.growthPotential?.longTermGoals || [
@@ -224,6 +246,7 @@ The analysis must be uniquely tailored to the individual based on their specific
       }
 
       console.log('Successfully generated enhanced analysis')
+      console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds')
       
       return new Response(
         JSON.stringify(analysis),
@@ -231,6 +254,7 @@ The analysis must be uniquely tailored to the individual based on their specific
       )
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError)
+      console.error('First 100 chars of response:', contentText.substring(0, 100))
       throw new Error('Failed to parse analysis response')
     }
   } catch (error) {
