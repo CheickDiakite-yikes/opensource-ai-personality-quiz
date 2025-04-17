@@ -11,6 +11,9 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AnalysisData } from "@/features/deep-insight/utils/analysis/types";
+import PersonalityTraitsChart from "@/features/deep-insight/components/visualization/PersonalityTraitsChart";
+import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
+import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
 
 const DeepInsightResults: React.FC = () => {
   const { id } = useParams();
@@ -167,6 +170,36 @@ const DeepInsightResults: React.FC = () => {
           analysis={displayAnalysis} 
           itemVariants={itemVariants} 
         />
+
+        {/* Visual summary charts - new addition */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          variants={itemVariants}
+          custom={3}
+        >
+          {displayAnalysis.traits && displayAnalysis.traits.length > 0 && (
+            <PersonalityTraitsChart 
+              traits={displayAnalysis.traits}
+              title="Your Personality Traits"
+              description="Visualization of your key personality traits"
+            />
+          )}
+          
+          <CognitiveStrengthsChart 
+            analysis={displayAnalysis}
+          />
+        </motion.div>
+        
+        {displayAnalysis.responsePatterns && (
+          <motion.div
+            variants={itemVariants}
+            custom={4}
+          >
+            <ResponsePatternChart 
+              patternData={displayAnalysis.responsePatterns} 
+            />
+          </motion.div>
+        )}
 
         <ResultsActions 
           onSave={handleSaveAnalysis} 

@@ -96,7 +96,7 @@ export const useQuizSubmission = (
       // First ensure responses have been saved successfully
       await saveResponses(finalResponses);
       
-      // Navigate to results page
+      // Navigate directly to results page, not history
       navigate("/deep-insight/results");
       return true; // Return success
     } catch (e) {

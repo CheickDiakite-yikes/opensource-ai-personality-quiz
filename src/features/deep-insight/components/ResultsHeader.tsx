@@ -26,8 +26,6 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({ analysis, itemVari
       <motion.div 
         className="inline-flex items-center justify-center p-2 bg-primary/10 rounded-full text-primary mb-4"
         variants={itemVariants}
-        initial="hidden"
-        animate="visible"
         custom={0}
       >
         <Sparkles className="h-6 w-6" />
@@ -35,8 +33,6 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({ analysis, itemVari
       <motion.h1 
         className="text-3xl md:text-4xl font-bold mb-2"
         variants={itemVariants}
-        initial="hidden"
-        animate="visible"
         custom={1}
       >
         Your Deep Insight Analysis
@@ -44,8 +40,6 @@ export const ResultsHeader: React.FC<ResultsHeaderProps> = ({ analysis, itemVari
       <motion.p 
         className="text-muted-foreground max-w-2xl mx-auto"
         variants={itemVariants}
-        initial="hidden"
-        animate="visible"
         custom={2}
       >
         Based on your responses, we've created a comprehensive analysis of your personality,
