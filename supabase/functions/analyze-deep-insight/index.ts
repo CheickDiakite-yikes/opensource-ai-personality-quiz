@@ -14,20 +14,31 @@ serve(async (req) => {
   }
 
   try {
-    const { responses } = await req.json()
+    // Parse the request body and extract required data
+    const requestData = await req.json()
+    const { responses, timestamp } = requestData
     
-    console.log('Processing Deep Insight responses:', Object.keys(responses).length)
+    console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`)
+    console.log('Request timestamp:', timestamp ? new Date(timestamp).toISOString() : 'Not provided')
+    console.log('Response count:', Object.keys(responses).length)
     console.log('Sample response keys:', Object.keys(responses).slice(0, 5))
 
     // Measure execution time for debugging
     const startTime = Date.now()
     
-    // Ensure OPENAI_API_KEY is available
+    // Ensure OPENAI_API_KEY is available and valid
     const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openAiApiKey) {
+      console.error('OPENAI_API_KEY is not set in environment variables')
       throw new Error('OPENAI_API_KEY is not set in environment variables')
     }
+    
+    if (openAiApiKey.length < 20) {
+      console.error('OPENAI_API_KEY appears to be invalid (too short)')
+      throw new Error('OPENAI_API_KEY appears to be invalid')
+    }
 
+    console.log('Making OpenAI API request...')
     const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -152,10 +163,16 @@ The analysis must be uniquely tailored to the individual based on their specific
       })
     })
 
+    const processingTime = (Date.now() - startTime) / 1000
+    console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`)
+
     if (!openAiResponse.ok) {
+      console.error('OpenAI API response status:', openAiResponse.status)
+      console.error('OpenAI API response status text:', openAiResponse.statusText)
+      
       const error = await openAiResponse.json()
       console.error('OpenAI API error:', error)
-      throw new Error(error.error?.message || 'Failed to analyze responses')
+      throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
     }
 
     const aiResult = await openAiResponse.json()
@@ -245,6 +262,15 @@ The analysis must be uniquely tailored to the individual based on their specific
         personalInsights: analysis.growthPotential?.personalInsights || "Your growth journey shows strong potential for personal and professional development."
       }
 
+      // Add id and timestamp if not present
+      if (!analysis.id) {
+        analysis.id = `deep-insight-${Date.now()}`;
+      }
+      
+      if (!analysis.createdAt) {
+        analysis.createdAt = new Date().toISOString();
+      }
+
       console.log('Successfully generated enhanced analysis')
       console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds')
       
@@ -261,7 +287,10 @@ The analysis must be uniquely tailored to the individual based on their specific
     console.error('Function execution error:', error)
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

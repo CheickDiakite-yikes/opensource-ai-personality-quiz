@@ -38,19 +38,22 @@ export const useDeepInsightResults = () => {
           console.log("Attempting to call edge function for analysis");
           toast.loading("Generating your deep insight analysis with AI...", { 
             id: "analyze-deep-insight", 
-            duration: 120000 // 2 minute toast for longer processing
+            duration: 180000 // 3 minute toast for longer processing
           });
           
-          // Create a promise that will timeout after 90 seconds (extended from 60)
+          // Create a promise that will timeout after 150 seconds (extended significantly)
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Edge function call timed out")), 90000);
+            setTimeout(() => reject(new Error("Edge function call timed out")), 150000);
           });
 
           // The actual edge function call - with additional checking
           const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
-              body: { responses: responseData }
+              body: { 
+                responses: responseData,
+                timestamp: Date.now() // Add timestamp to help with debugging
+              }
             }
           );
 
@@ -62,7 +65,7 @@ export const useDeepInsightResults = () => {
 
           if (result.error) {
             console.error('Error calling analyze-deep-insight:', result.error);
-            throw new Error('Failed to generate analysis via edge function.');
+            throw new Error(`Failed to generate analysis: ${result.error.message || 'Unknown error'}`);
           }
 
           if (!result.data) {
