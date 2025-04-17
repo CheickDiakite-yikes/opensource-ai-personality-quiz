@@ -4,7 +4,7 @@ import { AnalysisData } from "./analysis/types";
 import { PersonalityAnalysis } from "@/utils/types";
 import { analyzeResponsePatterns } from "./analysis/patternAnalyzer";
 import { determinePersonalityTraits } from "./analysis/personalityTraits";
-import { generateStrengthsAndChallenges } from "./analysis/strengthsChallenges";
+import { generateStrengthsChallenges } from "./analysis/strengthsChallenges";
 import { v4 as uuidv4 } from "uuid";
 
 // Main export function that the hook will call
@@ -37,7 +37,7 @@ export const generateAnalysisFromResponses = (responses: DeepInsightResponses): 
     challenges, 
     growthAreas, 
     recommendations 
-  } = generateStrengthsAndChallenges(primaryChoice, secondaryChoice);
+  } = generateStrengthsChallenges(primaryChoice, secondaryChoice);
   
   // Create metadata
   const uniqueId = `analysis-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

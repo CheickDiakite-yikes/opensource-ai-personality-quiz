@@ -13,14 +13,24 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const navigate = useNavigate();
   
   // Use the storage hook to handle saving/restoring progress
-  const { clearSavedProgress } = useDeepInsightStorage(
-    responses,
-    currentQuestionIndex,
-    setResponses,
-    setCurrentQuestionIndex,
-    totalQuestions,
-    setIsRestoredSession
-  );
+  const { getResponses, saveResponses, clearSavedProgress } = useDeepInsightStorage();
+  
+  // Load saved responses if they exist
+  useEffect(() => {
+    const savedResponses = getResponses();
+    if (Object.keys(savedResponses).length > 0) {
+      setResponses(savedResponses);
+      // Find the highest question index answered
+      const questionIds = Object.keys(savedResponses);
+      if (questionIds.length > 0) {
+        // Set current question to the next unanswered one or the last one if all are answered
+        const lastAnsweredIndex = questionIds.length - 1;
+        const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
+        setCurrentQuestionIndex(nextIndex);
+        setIsRestoredSession(true);
+      }
+    }
+  }, [totalQuestions]);
   
   // Reset error when question changes
   useEffect(() => {
@@ -61,6 +71,9 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       
       setResponses(updatedResponses);
       console.log(`Saved response for question ${questionId}:`, responseValue);
+      
+      // Save to storage
+      saveResponses(updatedResponses);
       
       // Move to next question or submit if done
       if (currentQuestionIndex < totalQuestions - 1) {
