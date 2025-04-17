@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { AnalysisData } from "../utils/analysis/types";
+import { supabase } from "@/integrations/supabase/client";
+import { saveAnalysisToHistory } from "@/hooks/analysis/useLocalStorage";
 
 // Fix the re-export using "export type" for TypeScript's isolatedModules
 export type { AnalysisData };
@@ -58,19 +60,19 @@ export const useDeepInsightResults = () => {
     try {
       if (!analysis) return;
       
-      // In a real app, we would save to a database
-      toast.success("Your analysis has been saved!");
+      // Save to local storage regardless of user login status
+      const savedAnalysis = saveAnalysisToHistory(analysis);
       
-      // If connected to Supabase, we would do something like:
-      // await supabase
-      //   .from('analyses')
-      //   .insert({
-      //     user_id: user?.id,
-      //     result: analysis,
-      //     // other fields...
-      //   });
+      if (!user) {
+        // If not logged in, just save to local storage
+        toast.success("Your analysis has been saved locally!");
+        console.log("Analysis saved to local storage");
+        return;
+      }
       
-      console.log("Analysis saved for user:", user?.id);
+      // For logged in users, we already save to Supabase in ResultsActions component
+      // This function is called by ResultsActions after saving to Supabase
+      console.log("Analysis saved for user:", user.id);
       
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";

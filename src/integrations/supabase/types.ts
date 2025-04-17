@@ -55,18 +55,24 @@ export type Database = {
         Row: {
           assessment_id: string
           career_suggestions: Json | null
+          cognitive_patterning: Json | null
           cognitive_style: Json | null
+          core_traits: Json | null
           created_at: string
+          emotional_architecture: Json | null
           emotional_intelligence_score: number | null
           growth_areas: Json | null
+          growth_potential: Json | null
           id: string
           inhibitors: Json | null
           intelligence: Json | null
           intelligence_score: number | null
+          interpersonal_dynamics: Json | null
           learning_pathways: Json | null
           motivators: Json | null
           overview: string | null
           relationship_patterns: Json | null
+          response_patterns: Json | null
           result: Json
           roadmap: string | null
           shadow_aspects: Json | null
@@ -78,18 +84,24 @@ export type Database = {
         Insert: {
           assessment_id: string
           career_suggestions?: Json | null
+          cognitive_patterning?: Json | null
           cognitive_style?: Json | null
+          core_traits?: Json | null
           created_at?: string
+          emotional_architecture?: Json | null
           emotional_intelligence_score?: number | null
           growth_areas?: Json | null
+          growth_potential?: Json | null
           id: string
           inhibitors?: Json | null
           intelligence?: Json | null
           intelligence_score?: number | null
+          interpersonal_dynamics?: Json | null
           learning_pathways?: Json | null
           motivators?: Json | null
           overview?: string | null
           relationship_patterns?: Json | null
+          response_patterns?: Json | null
           result: Json
           roadmap?: string | null
           shadow_aspects?: Json | null
@@ -101,18 +113,24 @@ export type Database = {
         Update: {
           assessment_id?: string
           career_suggestions?: Json | null
+          cognitive_patterning?: Json | null
           cognitive_style?: Json | null
+          core_traits?: Json | null
           created_at?: string
+          emotional_architecture?: Json | null
           emotional_intelligence_score?: number | null
           growth_areas?: Json | null
+          growth_potential?: Json | null
           id?: string
           inhibitors?: Json | null
           intelligence?: Json | null
           intelligence_score?: number | null
+          interpersonal_dynamics?: Json | null
           learning_pathways?: Json | null
           motivators?: Json | null
           overview?: string | null
           relationship_patterns?: Json | null
+          response_patterns?: Json | null
           result?: Json
           roadmap?: string | null
           shadow_aspects?: Json | null

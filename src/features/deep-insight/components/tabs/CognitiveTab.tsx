@@ -9,6 +9,13 @@ interface CognitiveTabProps {
 }
 
 export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
+  // Ensure cognitivePatterning exists or provide default values
+  const cognitivePatterning = analysis.cognitivePatterning || {
+    decisionMaking: "Your decision-making style information is not available.",
+    learningStyle: "Your learning style information is not available.",
+    attention: "Your attention pattern information is not available."
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -21,15 +28,15 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
       <CardContent className="space-y-6">
         <div>
           <h3 className="font-semibold mb-3 text-lg">Decision Making Style</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.decisionMaking}</p>
+          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.decisionMaking}</p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Learning Approach</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.learningStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.learningStyle}</p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Attention Pattern</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.attention}</p>
+          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.attention}</p>
         </div>
       </CardContent>
     </Card>

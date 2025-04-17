@@ -2,7 +2,7 @@
 import { PersonalityAnalysis } from "@/utils/types";
 import { DeepInsightResponses } from "../../types";
 
-// Define AnalysisData type explicitly
+// Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
   coreTraits: {
     primary: string;

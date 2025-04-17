@@ -109,7 +109,7 @@ const DeepInsightResults: React.FC = () => {
         <StrengthsChallengesCards analysis={analysis} itemVariants={itemVariants} />
         
         {/* Actions */}
-        <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} />
+        <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} analysis={analysis} />
       </div>
     </motion.div>
   );
