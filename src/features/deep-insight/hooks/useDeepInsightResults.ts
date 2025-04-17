@@ -33,29 +33,40 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        // Try to call the edge function with increased timeout and better error handling
+        // Try to call the edge function with better error handling
         try {
           console.log("Attempting to call edge function for analysis");
-          const { data: analysisData, error: functionError } = await supabase.functions.invoke(
+          
+          // Create a promise that will timeout after 60 seconds
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Edge function call timed out")), 60000);
+          });
+
+          // The actual edge function call
+          const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
-              body: { responses: responseData },
-              // Set a reasonable timeout
-              abortSignal: AbortSignal.timeout(60000) // 60 seconds timeout
+              body: { responses: responseData }
             }
           );
 
-          if (functionError) {
-            console.error('Error calling analyze-deep-insight:', functionError);
+          // Use Promise.race to implement the timeout
+          const result = await Promise.race([
+            functionPromise,
+            timeoutPromise
+          ]) as { data: PersonalityAnalysis | null, error: any };
+
+          if (result.error) {
+            console.error('Error calling analyze-deep-insight:', result.error);
             throw new Error('Failed to generate analysis via edge function.');
           }
 
-          if (!analysisData) {
+          if (!result.data) {
             throw new Error('No analysis data returned from edge function');
           }
           
-          console.log("Successfully received analysis from edge function:", analysisData);
-          setAnalysis(analysisData);
+          console.log("Successfully received analysis from edge function:", result.data);
+          setAnalysis(result.data);
           setLoading(false);
           return;
         } catch (edgeFunctionError) {
