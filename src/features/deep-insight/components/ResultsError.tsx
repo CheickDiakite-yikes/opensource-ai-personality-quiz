@@ -21,6 +21,8 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
   
   const isIncompleteError = error.includes("Incomplete responses");
   
+  const isRetryingError = error.includes("retrying") || error.includes("retry");
+  
   return (
     <motion.div 
       className="container max-w-4xl py-16"
@@ -30,7 +32,11 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
     >
       <Alert variant="destructive" className="mb-6">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{isIncompleteError ? "Incomplete Assessment" : "Error Processing Your Responses"}</AlertTitle>
+        <AlertTitle>
+          {isIncompleteError ? "Incomplete Assessment" : 
+           isRetryingError ? "Multiple Retry Attempts Detected" : 
+           "Error Processing Your Responses"}
+        </AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
       
@@ -49,6 +55,21 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
                 </span>
               )}
             </p>
+          ) : isRetryingError ? (
+            <div className="space-y-4">
+              <p>
+                Our system has detected multiple retry attempts to generate your analysis. This could be due to:
+              </p>
+              <ul className="list-disc list-inside space-y-1 pl-2">
+                <li>A temporary overload on our analysis system</li>
+                <li>Complex response patterns requiring additional processing</li>
+                <li>Connectivity issues between our services</li>
+              </ul>
+              <p className="mt-2">
+                Please try one more time using the retry button below, or return to the assessment to review your answers.
+                If the issue persists, please wait a few minutes before trying again.
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
               <p>

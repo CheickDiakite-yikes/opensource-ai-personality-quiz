@@ -20,7 +20,7 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
     insights: 0
   });
   
-  // Show retry button after 15 seconds
+  // Show retry button after 15 seconds, but don't automatically retry
   useEffect(() => {
     const timeout = setTimeout(() => {
       setShowRetry(true);

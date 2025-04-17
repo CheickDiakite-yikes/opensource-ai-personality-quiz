@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
 import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
 import { DeepInsightResponses } from "../types";
@@ -19,9 +19,11 @@ export const useDeepInsightResults = () => {
   const analysisId = searchParams.get('id');
   const navigate = useNavigate();
   const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
-  const retryDelay = 2000; // ms
+  const maxRetries = 1; // CRITICAL FIX: Reduced from 3 to 1 to prevent perpetual loops
+  const retryDelay = 3000; // Increased delay between retries
   const [loadedFromCache, setLoadedFromCache] = useState(false);
+  const isRetrying = useRef(false);
+  const hasAutoRetried = useRef(false);
 
   // Cache analysis in session storage to prevent loss on page refresh
   const cacheAnalysis = (data: AnalysisData) => {
@@ -60,6 +62,12 @@ export const useDeepInsightResults = () => {
 
   useEffect(() => {
     const fetchOrGenerateAnalysis = async () => {
+      // CRITICAL FIX: Don't proceed if we're already retrying
+      if (isRetrying.current) {
+        console.log("Already in retry process, skipping redundant fetch");
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
 
@@ -149,23 +157,25 @@ export const useDeepInsightResults = () => {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
         
-        // If we haven't reached max retries, attempt to retry
-        if (retryCount < maxRetries) {
+        // CRITICAL FIX: Only auto-retry once, and only if we haven't tried before
+        if (retryCount < maxRetries && !hasAutoRetried.current) {
           const nextRetryCount = retryCount + 1;
-          console.log(`Retrying analysis generation (${nextRetryCount}/${maxRetries}) in ${retryDelay}ms`);
+          console.log(`Auto-retrying analysis generation (${nextRetryCount}/${maxRetries}) in ${retryDelay}ms`);
           
           // Show toast for retry
           toast.loading(`Retrying analysis generation (${nextRetryCount}/${maxRetries})...`);
           
-          // Set retry count and delay next attempt
+          // Set retry count and mark that we've auto-retried
           setRetryCount(nextRetryCount);
+          hasAutoRetried.current = true;
           
           // Wait and then retry
           setTimeout(() => {
+            if (isRetrying.current) return; // Safety check
             fetchOrGenerateAnalysis();
           }, retryDelay);
           return;
-        } else {
+        } else if (retryCount >= maxRetries) {
           // If we've reached max retries, show a helpful error message
           toast.error("Failed to generate analysis after multiple attempts", {
             description: "Please try again using the retry button below"
@@ -236,13 +246,25 @@ export const useDeepInsightResults = () => {
     }
   };
 
-  // Add a manual retry function
+  // Add a manual retry function with safeguards to prevent multiple simultaneous retries
   const retryAnalysis = async () => {
+    // CRITICAL FIX: Prevent multiple simultaneous retry attempts
+    if (isRetrying.current) {
+      console.warn("Already retrying analysis, ignoring duplicate request");
+      toast.error("Retry already in progress", {
+        description: "Please wait for the current retry attempt to complete"
+      });
+      return;
+    }
+    
     setRetryCount(0); // Reset retry count
     setError(null);
     setIsLoading(true);
+    isRetrying.current = true; // Mark that we're retrying to prevent duplicate retries
     
-    toast.loading("Retrying analysis generation...");
+    toast.loading("Retrying analysis generation...", {
+      duration: 10000
+    });
     
     try {
       const responses = await getResponses();
@@ -261,12 +283,13 @@ export const useDeepInsightResults = () => {
       }
     } catch (err) {
       console.error("Error in manual retry:", err);
-      setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+      setError(err instanceof Error ? err : new Error("An unknown error occurred during retry"));
       toast.error("Failed to generate analysis", {
         description: "Please try again or restart the assessment"
       });
     } finally {
       setIsLoading(false);
+      isRetrying.current = false; // Reset retry flag
     }
   };
 

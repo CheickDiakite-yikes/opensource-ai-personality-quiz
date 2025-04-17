@@ -58,18 +58,23 @@ const DeepInsightResults: React.FC = () => {
   useEffect(() => {
     if (loadedFromCache && analysis) {
       toast.info("Using cached analysis results", {
-        description: "Your previous analysis results have been loaded from cache"
+        description: "Your previous analysis results have been loaded from cache",
+        duration: 5000
       });
     }
   }, [loadedFromCache, analysis]);
   
-  // Handle retry by reloading the page or using the retryAnalysis function
+  // Handle retry by using the retryAnalysis function
   const handleRetry = () => {
     if (retryAnalysis) {
+      toast.loading("Retrying analysis generation one more time...");
       retryAnalysis();
     } else {
       toast.loading("Reloading analysis...");
-      window.location.reload();
+      // Use location.reload() rather than window.location.reload() to reset state completely
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     }
   };
   
