@@ -1,12 +1,11 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, memo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { DeepInsightQuestion } from "../types";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface QuestionCardProps {
   question: DeepInsightQuestion;
@@ -19,7 +18,8 @@ interface QuestionCardProps {
   isLoading?: boolean;
 }
 
-export const QuestionCard: React.FC<QuestionCardProps> = ({
+// Using memo to prevent unnecessary re-renders
+export const QuestionCard: React.FC<QuestionCardProps> = memo(({
   question,
   currentResponse,
   onPrevious,
@@ -29,21 +29,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   error,
   isLoading = false,
 }) => {
-  const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue, watch } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
   });
 
-  // For debugging
-  const watchedValue = watch(question.id);
-  console.log(`Current form value for ${question.id}:`, watchedValue);
-  console.log(`Current response prop for ${question.id}:`, currentResponse);
-
   // Update form value when question or currentResponse changes
   useEffect(() => {
     if (currentResponse) {
-      console.log(`Setting form value for ${question.id} to:`, currentResponse);
       setValue(question.id, currentResponse);
     }
   }, [question.id, currentResponse, setValue]);
@@ -53,7 +47,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const formattedData = {
       [question.id]: data[question.id]
     };
-    console.log(`Processing submission for question ${question.id} with value:`, formattedData[question.id]);
     onSubmit(formattedData);
   };
 
@@ -61,17 +54,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     return (
       <Card className="w-full">
         <CardHeader>
-          <Skeleton className="h-8 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
+          <div className="h-8 w-3/4 mb-2 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <div key={i} className="h-16 w-full bg-muted animate-pulse rounded" />
           ))}
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-24" />
+          <div className="h-10 w-24 bg-muted animate-pulse rounded" />
+          <div className="h-10 w-24 bg-muted animate-pulse rounded" />
         </CardFooter>
       </Card>
     );
@@ -142,4 +135,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       </CardFooter>
     </Card>
   );
-};
+});
+
+// Display name for better debugging
+QuestionCard.displayName = "QuestionCard";
