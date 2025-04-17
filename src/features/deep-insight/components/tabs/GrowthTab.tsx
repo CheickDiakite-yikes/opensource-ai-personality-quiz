@@ -9,7 +9,7 @@ interface GrowthTabProps {
 }
 
 export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
-  // Ensure growthPotential exists and has valid arrays
+  // Ensure growthPotential exists
   const growthPotential = analysis.growthPotential || {
     developmentAreas: [
       "Self-Awareness: Deepening understanding of emotional triggers",
