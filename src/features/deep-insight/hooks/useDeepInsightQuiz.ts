@@ -3,7 +3,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { 
+  saveAssessmentToStorage, 
+  loadAnalysisHistory 
+} from "@/hooks/analysis/useLocalStorage";
 
 const STORAGE_KEY = "deep_insight_progress";
 
@@ -12,7 +15,36 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
-  const { getItem, setItem, removeItem } = useLocalStorage();
+  
+  // Create localStorage helper functions
+  const getItem = (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (err) {
+      console.error("Error reading from localStorage:", err);
+      return null;
+    }
+  };
+  
+  const setItem = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (err) {
+      console.error("Error writing to localStorage:", err);
+      return false;
+    }
+  };
+  
+  const removeItem = (key: string) => {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (err) {
+      console.error("Error removing from localStorage:", err);
+      return false;
+    }
+  };
 
   // Load saved progress on mount
   useEffect(() => {
@@ -34,7 +66,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
         removeItem(STORAGE_KEY);
       }
     }
-  }, [getItem, removeItem, totalQuestions]);
+  }, [totalQuestions]);
 
   // Save progress whenever responses or currentQuestionIndex changes
   useEffect(() => {
@@ -48,7 +80,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       setItem(STORAGE_KEY, JSON.stringify(progressData));
       console.log("Deep Insight quiz progress saved:", progressData);
     }
-  }, [responses, currentQuestionIndex, setItem]);
+  }, [responses, currentQuestionIndex]);
   
   // Handle submitting a question response
   const handleSubmitQuestion = (data: Record<string, string>) => {
