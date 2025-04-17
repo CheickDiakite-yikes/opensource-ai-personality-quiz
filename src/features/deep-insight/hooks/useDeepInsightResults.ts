@@ -6,7 +6,7 @@ import { DeepInsightResponses } from "../types";
 import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { convertToPersonalityAnalysis } from "@/hooks/aiAnalysis/utils";
 
@@ -18,6 +18,7 @@ export const useDeepInsightResults = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('id');
+  const navigate = useNavigate();
 
   // Function to save the current analysis to Supabase
   const saveAnalysis = async () => {
@@ -67,6 +68,12 @@ export const useDeepInsightResults = () => {
         // If no ID provided or the specified analysis wasn't found, generate a new one
         const responses = getResponses();
         if (!responses || Object.keys(responses).length === 0) {
+          console.log("No responses found in local storage");
+          toast.error("No assessment responses found", {
+            description: "Please complete the assessment first before viewing results"
+          });
+          // Redirect to the quiz page
+          navigate("/deep-insight/quiz");
           throw new Error("No responses found. Please complete the assessment first.");
         }
 
@@ -81,7 +88,7 @@ export const useDeepInsightResults = () => {
     };
 
     fetchOrGenerateAnalysis();
-  }, [analysisId, getResponses]);
+  }, [analysisId, getResponses, navigate]);
 
   const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData> => {
     try {

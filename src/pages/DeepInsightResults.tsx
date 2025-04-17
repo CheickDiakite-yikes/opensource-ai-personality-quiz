@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useDeepInsightResults } from "@/features/deep-insight/hooks/useDeepInsightResults";
 import { ResultsLoading } from "@/features/deep-insight/components/ResultsLoading";
@@ -14,10 +14,12 @@ import ResponsePatternChart from "@/features/deep-insight/components/visualizati
 import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ChartBar, PieChart, Activity } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
   const { analysis, isLoading, error, saveAnalysis } = useDeepInsightResults();
+  const navigate = useNavigate();
   
   // Animation variants
   const containerVariants = {
@@ -42,12 +44,20 @@ const DeepInsightResults: React.FC = () => {
     })
   };
   
+  // Handle retry by reloading the page
+  const handleRetry = () => {
+    window.location.reload();
+  };
+  
   if (isLoading) {
     return <ResultsLoading />;
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error?.message || "No analysis data found"} />;
+    return <ResultsError 
+      error={error?.message || "No analysis data found"} 
+      onRetry={handleRetry} 
+    />;
   }
   
   return (

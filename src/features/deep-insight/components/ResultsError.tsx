@@ -39,6 +39,14 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
           </Button>
         )}
         
+        <Button 
+          onClick={() => navigate("/deep-insight/quiz")} 
+          variant="default" 
+          className="flex items-center gap-2"
+        >
+          Take the Assessment
+        </Button>
+        
         <Button onClick={() => navigate("/deep-insight")} variant="outline" className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Return to Deep Insight
         </Button>
