@@ -12,6 +12,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q51-b", text: "Truth is relative to perspective and context", value: 2 },
       { id: "q51-c", text: "Truth emerges through consensus and dialogue", value: 3 },
       { id: "q51-d", text: "Practical utility matters more than abstract truth", value: 4 },
+      { id: "q51-e", text: "Truth is whatever supports my personal agenda", value: 5 },
+      { id: "q51-f", text: "I rarely question what I'm told by authorities", value: 6 },
     ],
   },
   {
@@ -23,8 +25,11 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q52-b", text: "Compassion and care for others", value: 2 },
       { id: "q52-c", text: "Justice and fairness", value: 3 },
       { id: "q52-d", text: "Tradition and respect for established wisdom", value: 4 },
+      { id: "q52-e", text: "Power and control over others", value: 5 },
+      { id: "q52-f", text: "Comfort and avoiding discomfort", value: 6 },
     ],
   },
+  // ... continue with remaining questions
   {
     id: "q53",
     question: "When considering ethical dilemmas, I primarily focus on:",
@@ -34,6 +39,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q53-b", text: "The specific context and individuals involved", value: 2 },
       { id: "q53-c", text: "The outcomes and consequences of different choices", value: 3 },
       { id: "q53-d", text: "Maintaining harmonious relationships and community", value: 4 },
+      { id: "q53-e", text: "Whatever benefits me personally", value: 5 },
+      { id: "q53-f", text: "Avoiding making difficult ethical choices", value: 6 },
     ],
   },
   {
@@ -45,6 +52,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q54-b", text: "Community welfare and collective good", value: 2 },
       { id: "q54-c", text: "Order, security, and stability", value: 3 },
       { id: "q54-d", text: "Equality and fair distribution of resources", value: 4 },
+      { id: "q54-e", text: "Rewarding the strongest and most capable", value: 5 },
+      { id: "q54-f", text: "Following established customs without question", value: 6 },
     ],
   },
   {
@@ -56,6 +65,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q55-b", text: "Legitimate authority deserves respect and cooperation", value: 2 },
       { id: "q55-c", text: "Authority should be earned through competence", value: 3 },
       { id: "q55-d", text: "Authority works best when it serves those it governs", value: 4 },
+      { id: "q55-e", text: "Authority is primarily about power and control", value: 5 },
+      { id: "q55-f", text: "Authority should never be questioned", value: 6 },
     ],
   },
   {
@@ -67,6 +78,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q56-b", text: "Kindness and compassion", value: 2 },
       { id: "q56-c", text: "Courage and determination", value: 3 },
       { id: "q56-d", text: "Wisdom and good judgment", value: 4 },
+      { id: "q56-e", text: "Charm and social influence", value: 5 },
+      { id: "q56-f", text: "Obedience and compliance", value: 6 },
     ],
   },
   {
@@ -78,6 +91,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q57-b", text: "Their value depends on how they're used for good", value: 2 },
       { id: "q57-c", text: "Simple living often leads to greater contentment", value: 3 },
       { id: "q57-d", text: "Fair distribution is more important than accumulation", value: 4 },
+      { id: "q57-e", text: "Acquiring wealth is a primary life goal", value: 5 },
+      { id: "q57-f", text: "Financial matters make me anxious and avoidant", value: 6 },
     ],
   },
   {
@@ -89,6 +104,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q58-b", text: "A mix of positive and negative potentials", value: 2 },
       { id: "q58-c", text: "Primarily self-interested but capable of altruism", value: 3 },
       { id: "q58-d", text: "Shaped more by culture and society than inherent traits", value: 4 },
+      { id: "q58-e", text: "Inherently selfish and competitive", value: 5 },
+      { id: "q58-f", text: "Fundamentally flawed and problematic", value: 6 },
     ],
   },
   {
@@ -100,6 +117,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q59-b", text: "Having lived authentically according to my values", value: 2 },
       { id: "q59-c", text: "Having created something lasting and meaningful", value: 3 },
       { id: "q59-d", text: "Having continuously grown and evolved as a person", value: 4 },
+      { id: "q59-e", text: "Being remembered as important or famous", value: 5 },
+      { id: "q59-f", text: "I rarely think about my legacy or impact", value: 6 },
     ],
   },
   {
@@ -111,6 +130,8 @@ export const valuesQuestions: DeepInsightQuestion[] = [
       { id: "q60-b", text: "Our choices are constrained but still meaningful", value: 2 },
       { id: "q60-c", text: "External and internal factors strongly shape our choices", value: 3 },
       { id: "q60-d", text: "This theoretical question matters less than practical living", value: 4 },
+      { id: "q60-e", text: "Free will is an illusion we use to judge others", value: 5 },
+      { id: "q60-f", text: "I prefer not to think about such complex philosophical questions", value: 6 },
     ],
   },
 ];

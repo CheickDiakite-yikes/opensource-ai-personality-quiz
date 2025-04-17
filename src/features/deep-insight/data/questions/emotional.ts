@@ -12,6 +12,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q11-b", text: "I feel them intensely but sometimes struggle to identify them", value: 2 },
       { id: "q11-c", text: "I notice physical sensations before recognizing the emotion", value: 3 },
       { id: "q11-d", text: "I tend to rationalize or downplay my emotional responses", value: 4 },
+      { id: "q11-e", text: "I often get overwhelmed and react impulsively", value: 5 },
+      { id: "q11-f", text: "I try to suppress or ignore them completely", value: 6 },
     ],
   },
   {
@@ -23,6 +25,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q12-b", text: "I focus on listening and validating their feelings", value: 2 },
       { id: "q12-c", text: "I relate their experience to similar situations I've faced", value: 3 },
       { id: "q12-d", text: "I ask questions to understand the situation more deeply", value: 4 },
+      { id: "q12-e", text: "I get uncomfortable and try to change the subject", value: 5 },
+      { id: "q12-f", text: "I take on their problems as my own and get stressed", value: 6 },
     ],
   },
   {
@@ -34,6 +38,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q13-b", text: "Talk through my feelings with someone I trust", value: 2 },
       { id: "q13-c", text: "Focus on solving the problems causing stress", value: 3 },
       { id: "q13-d", text: "Engage in physical activity or practical tasks", value: 4 },
+      { id: "q13-e", text: "Distract myself with entertainment or social media", value: 5 },
+      { id: "q13-f", text: "Shut down or avoid responsibilities entirely", value: 6 },
     ],
   },
   {
@@ -45,6 +51,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q14-b", text: "Somewhat accurately, though I'm sometimes surprised", value: 2 },
       { id: "q14-c", text: "It depends on how well I know the person", value: 3 },
       { id: "q14-d", text: "I often find others' emotional responses unpredictable", value: 4 },
+      { id: "q14-e", text: "I rarely consider how others might feel about my actions", value: 5 },
+      { id: "q14-f", text: "I assume others feel the same way I would in their position", value: 6 },
     ],
   },
   {
@@ -56,6 +64,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q15-b", text: "Feel hurt initially but reflect on it later", value: 2 },
       { id: "q15-c", text: "Defend my actions or explain my reasoning", value: 3 },
       { id: "q15-d", text: "Question the critic's motives or understanding", value: 4 },
+      { id: "q15-e", text: "Take it personally and ruminate on it for days", value: 5 },
+      { id: "q15-f", text: "Become hostile or dismissive toward the critic", value: 6 },
     ],
   },
   {
@@ -67,6 +77,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q16-b", text: "Express my feelings openly while respecting others", value: 2 },
       { id: "q16-c", text: "Try to smooth things over and restore harmony", value: 3 },
       { id: "q16-d", text: "Need time to process before engaging constructively", value: 4 },
+      { id: "q16-e", text: "Escalate the situation with heated responses", value: 5 },
+      { id: "q16-f", text: "Withdraw completely and hold grudges afterward", value: 6 },
     ],
   },
   {
@@ -78,6 +90,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q17-b", text: "Sometimes, particularly for strong or persistent emotions", value: 2 },
       { id: "q17-c", text: "Occasionally, when someone prompts me to think about it", value: 3 },
       { id: "q17-d", text: "Rarely - I generally accept my feelings without analysis", value: 4 },
+      { id: "q17-e", text: "Almost never - I don't see the point in analyzing feelings", value: 5 },
+      { id: "q17-f", text: "I overthink my feelings to the point of anxiety", value: 6 },
     ],
   },
   {
@@ -89,6 +103,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q18-b", text: "Listen and validate their feelings", value: 2 },
       { id: "q18-c", text: "Offer practical help or solutions", value: 3 },
       { id: "q18-d", text: "Give them space to process their emotions", value: 4 },
+      { id: "q18-e", text: "Feel awkward and unsure how to respond appropriately", value: 5 },
+      { id: "q18-f", text: "Minimize their problems or tell them to move on", value: 6 },
     ],
   },
   {
@@ -100,6 +116,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q19-b", text: "I express emotions freely but recover quickly", value: 2 },
       { id: "q19-c", text: "Strong emotions sometimes overwhelm me", value: 3 },
       { id: "q19-d", text: "I tend to suppress or control emotional displays", value: 4 },
+      { id: "q19-e", text: "My emotions often control me rather than the reverse", value: 5 },
+      { id: "q19-f", text: "I numb my emotions with distractions or substances", value: 6 },
     ],
   },
   {
@@ -111,6 +129,8 @@ export const emotionalQuestions: DeepInsightQuestion[] = [
       { id: "q20-b", text: "Very important, balanced with other aspects", value: 2 },
       { id: "q20-c", text: "Somewhat important, but I value independence too", value: 3 },
       { id: "q20-d", text: "I prefer connections based on shared activities or interests", value: 4 },
+      { id: "q20-e", text: "I find emotional intimacy uncomfortable or risky", value: 5 },
+      { id: "q20-f", text: "I avoid emotional dependence at all costs", value: 6 },
     ],
   },
 ];

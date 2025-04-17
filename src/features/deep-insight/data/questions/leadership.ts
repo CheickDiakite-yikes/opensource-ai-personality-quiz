@@ -12,6 +12,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q81-b", text: "Empowering individuals and delegating authority", value: 2 },
       { id: "q81-c", text: "Providing clear direction and structure", value: 3 },
       { id: "q81-d", text: "Leading by example and personal excellence", value: 4 },
+      { id: "q81-e", text: "Maintaining strict control and authority", value: 5 },
+      { id: "q81-f", text: "Avoiding leadership roles whenever possible", value: 6 },
     ],
   },
   {
@@ -23,8 +25,11 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q82-b", text: "Efficiency and decisive action", value: 2 },
       { id: "q82-c", text: "Alignment with core values and mission", value: 3 },
       { id: "q82-d", text: "Analyzing data and potential outcomes", value: 4 },
+      { id: "q82-e", text: "Whatever serves my personal interests", value: 5 },
+      { id: "q82-f", text: "Avoiding responsibility for tough decisions", value: 6 },
     ],
   },
+  // ... continue with remaining questions
   {
     id: "q83",
     question: "How do you typically motivate others?",
@@ -34,6 +39,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q83-b", text: "Recognizing achievements and providing feedback", value: 2 },
       { id: "q83-c", text: "Setting challenging but achievable goals", value: 3 },
       { id: "q83-d", text: "Creating opportunities for growth and development", value: 4 },
+      { id: "q83-e", text: "Using criticism or fear of consequences", value: 5 },
+      { id: "q83-f", text: "I struggle to motivate others effectively", value: 6 },
     ],
   },
   {
@@ -45,6 +52,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q84-b", text: "I focus on finding common ground and consensus", value: 2 },
       { id: "q84-c", text: "I emphasize our shared goals and priorities", value: 3 },
       { id: "q84-d", text: "I make a clear decision after hearing perspectives", value: 4 },
+      { id: "q84-e", text: "I suppress dissent to maintain control", value: 5 },
+      { id: "q84-f", text: "I avoid addressing conflict directly", value: 6 },
     ],
   },
   {
@@ -56,6 +65,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q85-b", text: "Strategic vision and decisiveness", value: 2 },
       { id: "q85-c", text: "Integrity and strong ethical foundation", value: 3 },
       { id: "q85-d", text: "Adaptability and continuous learning", value: 4 },
+      { id: "q85-e", text: "Ability to manipulate and control others", value: 5 },
+      { id: "q85-f", text: "Position power and formal authority", value: 6 },
     ],
   },
   {
@@ -67,6 +78,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q86-b", text: "Providing regular constructive feedback", value: 2 },
       { id: "q86-c", text: "Creating challenging growth opportunities", value: 3 },
       { id: "q86-d", text: "Building their confidence and self-efficacy", value: 4 },
+      { id: "q86-e", text: "Pointing out their weaknesses and mistakes", value: 5 },
+      { id: "q86-f", text: "I rarely invest in developing others", value: 6 },
     ],
   },
   {
@@ -78,6 +91,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q87-b", text: "Address issues directly but constructively", value: 2 },
       { id: "q87-c", text: "Create systems to prevent similar problems", value: 3 },
       { id: "q87-d", text: "Model accountability by acknowledging my own role", value: 4 },
+      { id: "q87-e", text: "Find someone to blame for what went wrong", value: 5 },
+      { id: "q87-f", text: "Cover up mistakes to avoid looking bad", value: 6 },
     ],
   },
   {
@@ -89,6 +104,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q88-b", text: "Involve stakeholders in planning the process", value: 2 },
       { id: "q88-c", text: "Provide clear rationale and expected outcomes", value: 3 },
       { id: "q88-d", text: "Address concerns and support adaptation", value: 4 },
+      { id: "q88-e", text: "Force changes through regardless of resistance", value: 5 },
+      { id: "q88-f", text: "Avoid making changes that might upset people", value: 6 },
     ],
   },
   {
@@ -100,6 +117,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q89-b", text: "Exercise it thoughtfully with awareness of impact", value: 2 },
       { id: "q89-c", text: "Use it primarily to remove obstacles for others", value: 3 },
       { id: "q89-d", text: "Focus on earning trust and credibility", value: 4 },
+      { id: "q89-e", text: "Consolidate and protect my power base", value: 5 },
+      { id: "q89-f", text: "Feel uncomfortable with having authority", value: 6 },
     ],
   },
   {
@@ -111,6 +130,8 @@ export const leadershipQuestions: DeepInsightQuestion[] = [
       { id: "q90-b", text: "Strategic thinking and vision", value: 2 },
       { id: "q90-c", text: "Execution and achieving results", value: 3 },
       { id: "q90-d", text: "Developing others and building teams", value: 4 },
+      { id: "q90-e", text: "Getting what I want from situations", value: 5 },
+      { id: "q90-f", text: "I don't see myself as having leadership strengths", value: 6 },
     ],
   },
 ];

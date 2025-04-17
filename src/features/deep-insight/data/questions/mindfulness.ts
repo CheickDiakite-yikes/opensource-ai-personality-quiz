@@ -12,6 +12,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q91-b", text: "Fairly accurately, though I'm still discovering aspects", value: 2 },
       { id: "q91-c", text: "I'm more aware of some areas than others", value: 3 },
       { id: "q91-d", text: "I sometimes surprise myself with unknown capacities", value: 4 },
+      { id: "q91-e", text: "I overestimate my abilities in most areas", value: 5 },
+      { id: "q91-f", text: "I avoid thinking about my limitations entirely", value: 6 },
     ],
   },
   {
@@ -23,8 +25,11 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q92-b", text: "Often, especially when facing challenges", value: 2 },
       { id: "q92-c", text: "Sometimes, when prompted by circumstances", value: 3 },
       { id: "q92-d", text: "Occasionally, but I'm more action-oriented", value: 4 },
+      { id: "q92-e", text: "Rarely - I find self-reflection uncomfortable", value: 5 },
+      { id: "q92-f", text: "I tend to overthink to the point of rumination", value: 6 },
     ],
   },
+  // ... continue with remaining questions
   {
     id: "q93",
     question: "When you receive feedback that contradicts your self-perception:",
@@ -34,6 +39,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q93-b", text: "I consider it thoughtfully but trust my self-knowledge", value: 2 },
       { id: "q93-c", text: "I may feel defensive initially but reflect later", value: 3 },
       { id: "q93-d", text: "I evaluate it against other feedback I've received", value: 4 },
+      { id: "q93-e", text: "I immediately reject it as incorrect", value: 5 },
+      { id: "q93-f", text: "I automatically assume the feedback is right", value: 6 },
     ],
   },
   {
@@ -45,6 +52,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q94-b", text: "Generally aware, though sometimes surprised", value: 2 },
       { id: "q94-c", text: "More aware in some contexts than others", value: 3 },
       { id: "q94-d", text: "I focus more on intentions than impacts", value: 4 },
+      { id: "q94-e", text: "I rarely consider how my actions affect others", value: 5 },
+      { id: "q94-f", text: "I expect others to adapt to my behavior", value: 6 },
     ],
   },
   {
@@ -56,6 +65,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q95-b", text: "Fairly well, though some emotions still surprise me", value: 2 },
       { id: "q95-c", text: "I understand some patterns better than others", value: 3 },
       { id: "q95-d", text: "I'm still working on identifying these patterns", value: 4 },
+      { id: "q95-e", text: "I feel my emotions are unpredictable and chaotic", value: 5 },
+      { id: "q95-f", text: "I ignore emotional patterns because they're unimportant", value: 6 },
     ],
   },
   {
@@ -67,6 +78,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q96-b", text: "Mostly aware, though sometimes in retrospect", value: 2 },
       { id: "q96-c", text: "I have a general sense but don't always articulate them", value: 3 },
       { id: "q96-d", text: "I act more on practical considerations than abstract values", value: 4 },
+      { id: "q96-e", text: "I rarely examine the values behind my decisions", value: 5 },
+      { id: "q96-f", text: "I claim values but my actions often contradict them", value: 6 },
     ],
   },
   {
@@ -78,6 +91,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q97-b", text: "I notice quickly when my mind wanders and refocus", value: 2 },
       { id: "q97-c", text: "I'm more present for some activities than others", value: 3 },
       { id: "q97-d", text: "My mind often explores tangents and connections", value: 4 },
+      { id: "q97-e", text: "I'm frequently lost in thought or daydreaming", value: 5 },
+      { id: "q97-f", text: "I'm almost never mentally present in the moment", value: 6 },
     ],
   },
   {
@@ -89,6 +104,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q98-b", text: "Fairly well, though sometimes after it's significant", value: 2 },
       { id: "q98-c", text: "I recognize clear signs but might miss subtler ones", value: 3 },
       { id: "q98-d", text: "Others sometimes notice before I do", value: 4 },
+      { id: "q98-e", text: "Only when I reach a breaking point", value: 5 },
+      { id: "q98-f", text: "I ignore stress signals until health problems arise", value: 6 },
     ],
   },
   {
@@ -100,6 +117,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q99-b", text: "Generally aware but still discovering blind spots", value: 2 },
       { id: "q99-c", text: "Aware of major biases but probably miss subtler ones", value: 3 },
       { id: "q99-d", text: "I try to be objective and not influenced by bias", value: 4 },
+      { id: "q99-e", text: "I believe my views are objective and unbiased", value: 5 },
+      { id: "q99-f", text: "I rarely question my own assumptions", value: 6 },
     ],
   },
   {
@@ -111,6 +130,8 @@ export const mindfulnessQuestions: DeepInsightQuestion[] = [
       { id: "q100-b", text: "Generally aligned though sometimes influenced by external factors", value: 2 },
       { id: "q100-c", text: "Still discovering what authenticity means for me", value: 3 },
       { id: "q100-d", text: "I focus more on practical considerations than authenticity", value: 4 },
+      { id: "q100-e", text: "My choices are primarily driven by others' expectations", value: 5 },
+      { id: "q100-f", text: "I feel disconnected from any sense of authentic self", value: 6 },
     ],
   }
 ];

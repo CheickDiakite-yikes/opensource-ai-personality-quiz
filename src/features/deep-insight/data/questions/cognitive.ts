@@ -12,6 +12,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q21-b", text: "Consider the big picture and overall patterns", value: 2 },
       { id: "q21-c", text: "Brainstorm multiple creative approaches", value: 3 },
       { id: "q21-d", text: "Draw on similar problems I've solved before", value: 4 },
+      { id: "q21-e", text: "Rush to solutions without fully understanding the problem", value: 5 },
+      { id: "q21-f", text: "Avoid complexity or give up when things get difficult", value: 6 },
     ],
   },
   {
@@ -23,6 +25,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q22-b", text: "Personal experiences and observations", value: 2 },
       { id: "q22-c", text: "Input from experts and trusted sources", value: 3 },
       { id: "q22-d", text: "My intuition and what feels right", value: 4 },
+      { id: "q22-e", text: "What confirms my existing beliefs", value: 5 },
+      { id: "q22-f", text: "Whatever the majority of people around me believe", value: 6 },
     ],
   },
   {
@@ -34,6 +38,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q23-b", text: "Diving in with practical applications and learning as needed", value: 2 },
       { id: "q23-c", text: "Finding connections to things I already understand", value: 3 },
       { id: "q23-d", text: "Exploring different perspectives and approaches", value: 4 },
+      { id: "q23-e", text: "Skimming the surface and moving on quickly", value: 5 },
+      { id: "q23-f", text: "Avoiding subjects that don't come easily to me", value: 6 },
     ],
   },
   {
@@ -45,6 +51,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q24-b", text: "Imagine various possibilities and scenarios", value: 2 },
       { id: "q24-c", text: "Focus on immediate next steps rather than distant outcomes", value: 3 },
       { id: "q24-d", text: "Adapt to circumstances as they occur", value: 4 },
+      { id: "q24-e", text: "Worry excessively about worst-case scenarios", value: 5 },
+      { id: "q24-f", text: "Avoid thinking about the future entirely", value: 6 },
     ],
   },
   {
@@ -56,6 +64,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q25-b", text: "Use analogies and real-world examples", value: 2 },
       { id: "q25-c", text: "Use visual aids or demonstrations", value: 3 },
       { id: "q25-d", text: "Adapt my explanation based on the listener's responses", value: 4 },
+      { id: "q25-e", text: "Get frustrated when others don't understand quickly", value: 5 },
+      { id: "q25-f", text: "Oversimplify to the point of inaccuracy", value: 6 },
     ],
   },
   {
@@ -67,6 +77,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q26-b", text: "I consider how it might change or refine my understanding", value: 2 },
       { id: "q26-c", text: "I compare it to my existing knowledge and experience", value: 3 },
       { id: "q26-d", text: "I feel skeptical until multiple sources confirm it", value: 4 },
+      { id: "q26-e", text: "I quickly dismiss it as incorrect without investigation", value: 5 },
+      { id: "q26-f", text: "I get defensive or angry at the contradiction", value: 6 },
     ],
   },
   {
@@ -78,6 +90,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q27-b", text: "I'm engaging with diverse perspectives and ideas", value: 2 },
       { id: "q27-c", text: "I'm collaborating and discussing with others", value: 3 },
       { id: "q27-d", text: "I'm under some pressure or time constraint", value: 4 },
+      { id: "q27-e", text: "I rush through decisions without proper reflection", value: 5 },
+      { id: "q27-f", text: "I let others do the heavy thinking for me", value: 6 },
     ],
   },
   {
@@ -89,6 +103,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q28-b", text: "The emotions and personal significance of the experience", value: 2 },
       { id: "q28-c", text: "Visual images and the physical setting", value: 3 },
       { id: "q28-d", text: "The general impression rather than specific details", value: 4 },
+      { id: "q28-e", text: "Only the negative aspects of what occurred", value: 5 },
+      { id: "q28-f", text: "Distorted versions that make me look better", value: 6 },
     ],
   },
   {
@@ -100,6 +116,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q29-b", text: "Have practical applications to real-world problems", value: 2 },
       { id: "q29-c", text: "Connect to human experiences and values", value: 3 },
       { id: "q29-d", text: "Allow for creative or innovative approaches", value: 4 },
+      { id: "q29-e", text: "Require minimal effort or deep thinking", value: 5 },
+      { id: "q29-f", text: "Validate my existing opinions and beliefs", value: 6 },
     ],
   },
   {
@@ -111,6 +129,8 @@ export const cognitiveQuestions: DeepInsightQuestion[] = [
       { id: "q30-b", text: "I'm comfortable exploring multiple potential interpretations", value: 2 },
       { id: "q30-c", text: "I look for patterns or similarities to familiar situations", value: 3 },
       { id: "q30-d", text: "I focus on what's clear while tolerating some ambiguity", value: 4 },
+      { id: "q30-e", text: "I become anxious and seek immediate closure", value: 5 },
+      { id: "q30-f", text: "I jump to conclusions to eliminate discomfort", value: 6 },
     ],
   },
 ];
