@@ -123,22 +123,29 @@ export const useDeepInsightResults = () => {
       if (user) {
         try {
           console.log("Saving analysis to database...");
+          
+          // Convert full analysis to JSON-compatible object
+          const jsonAnalysis = JSON.parse(JSON.stringify(result));
+          
+          // Prepare analysis data for insertion
+          const analysisData = {
+            user_id: user.id,
+            complete_analysis: jsonAnalysis,
+            raw_responses: responses,
+            overview: result.overview,
+            core_traits: result.coreTraits,
+            cognitive_patterning: result.cognitivePatterning,
+            emotional_architecture: result.emotionalArchitecture,
+            interpersonal_dynamics: result.interpersonalDynamics,
+            intelligence_score: result.intelligenceScore,
+            emotional_intelligence_score: result.emotionalIntelligenceScore,
+            response_patterns: result.responsePatterns,
+            growth_potential: result.growthPotential
+          };
+          
           const { data, error } = await supabase
             .from("deep_insight_analyses")
-            .insert({
-              user_id: user.id,
-              complete_analysis: result,
-              raw_responses: responses,
-              overview: result.overview,
-              core_traits: result.coreTraits,
-              cognitive_patterning: result.cognitivePatterning,
-              emotional_architecture: result.emotionalArchitecture,
-              interpersonal_dynamics: result.interpersonalDynamics,
-              intelligence_score: result.intelligenceScore,
-              emotional_intelligence_score: result.emotionalIntelligenceScore,
-              response_patterns: result.responsePatterns,
-              growth_potential: result.growthPotential
-            })
+            .insert(analysisData)
             .select("id")
             .single();
           
