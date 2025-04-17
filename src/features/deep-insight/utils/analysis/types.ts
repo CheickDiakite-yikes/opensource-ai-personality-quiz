@@ -1,10 +1,9 @@
-
 import { PersonalityAnalysis } from "@/utils/types";
 import { DeepInsightResponses } from "../../types";
 import { Json } from "@/integrations/supabase/types";
 // Re-export the PersonalityTrait type for use in Deep Insight components
 import { PersonalityTrait } from "@/utils/types";
-export { PersonalityTrait };
+export type { PersonalityTrait };
 
 // Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
