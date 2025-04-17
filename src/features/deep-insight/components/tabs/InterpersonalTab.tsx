@@ -2,10 +2,10 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Users, Sparkles } from "lucide-react";
-import { AnalysisData } from "../../utils/analysis/types";
+import { PersonalityAnalysis } from "@/utils/types";
 
 interface InterpersonalTabProps {
-  analysis: AnalysisData;
+  analysis: PersonalityAnalysis;
 }
 
 export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) => {
@@ -21,15 +21,24 @@ export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) 
       <CardContent className="space-y-6">
         <div>
           <h3 className="font-semibold mb-3 text-lg">Attachment Style</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.attachmentStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">
+            {analysis.interpersonalDynamics?.attachmentStyle || 
+             "Your attachment style shows a balanced approach to relationships, valuing both connection and independence."}
+          </p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Communication Pattern</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.communicationPattern}</p>
+          <p className="text-muted-foreground leading-relaxed">
+            {analysis.interpersonalDynamics?.communicationPattern || 
+             "You communicate thoughtfully and prefer depth over small talk. You listen well and generally express your thoughts clearly."}
+          </p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Conflict Resolution</h3>
-          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.conflictResolution}</p>
+          <p className="text-muted-foreground leading-relaxed">
+            {analysis.interpersonalDynamics?.conflictResolution || 
+             "Your approach to conflict emphasizes finding common ground while addressing issues directly but tactfully."}
+          </p>
         </div>
         <div className="mt-6">
           <h3 className="font-semibold mb-3 text-lg flex items-center">
