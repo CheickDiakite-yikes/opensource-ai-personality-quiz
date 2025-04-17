@@ -1,99 +1,48 @@
-
-import { useState, useEffect, useRef } from "react";
-import { useDeepInsightStorage } from "./useDeepInsightStorage";
-import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
-import { DeepInsightResponses } from "../types";
-import { AnalysisData, toJsonObject } from "../utils/analysis/types";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
+import { useDeepInsightStorage } from "./useDeepInsightStorage";
+import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
+import { AnalysisData, toJsonObject } from "../utils/analysis/types";
+import { useAnalysisState } from "./analysis/useAnalysisState";
+import { useAnalysisCache } from "./analysis/useAnalysisCache";
+import { useAnalysisFetch } from "./analysis/useAnalysisFetch";
+import { ensureAnalysisStructure } from "../utils/analysis/ensureAnalysisStructure";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeepInsightResponses } from "../types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useDeepInsightResults = () => {
   const { getResponses, clearSavedProgress } = useDeepInsightStorage();
-  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('id');
   const navigate = useNavigate();
-  const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 1;
   const retryDelay = 3000;
-  const [loadedFromCache, setLoadedFromCache] = useState(false);
   const isRetrying = useRef(false);
   const hasAutoRetried = useRef(false);
+
+  const {
+    analysis,
+    setAnalysis,
+    isLoading,
+    setIsLoading,
+    error,
+    setError,
+    loadedFromCache,
+    setLoadedFromCache,
+    retryCount,
+    setRetryCount
+  } = useAnalysisState();
+
+  const { cacheAnalysis, loadCachedAnalysis } = useAnalysisCache();
+  const { fetchAnalysisById, ensureValidUUID, isLegacyId } = useAnalysisFetch();
   
-  // Force new analysis generation (don't use cache) if coming directly from quiz
   const forceNewAnalysis = searchParams.get('fresh') === 'true';
-
-  // Cache analysis in session storage to prevent loss on page refresh
-  const cacheAnalysis = (data: AnalysisData) => {
-    try {
-      sessionStorage.setItem('deep_insight_analysis_cache', JSON.stringify(toJsonObject(data)));
-    } catch (err) {
-      console.error("Error caching analysis:", err);
-    }
-  };
-
-  const loadCachedAnalysis = (): AnalysisData | null => {
-    try {
-      const cached = sessionStorage.getItem('deep_insight_analysis_cache');
-      if (cached) {
-        const parsedData = JSON.parse(cached);
-        console.log("Found cached analysis");
-        setLoadedFromCache(true);
-        return parsedData as AnalysisData;
-      }
-    } catch (err) {
-      console.error("Error loading cached analysis:", err);
-    }
-    return null;
-  };
-
-  // Function to save the current analysis to Supabase
-  const saveAnalysis = async () => {
-    if (!analysis || !user) {
-      toast.error("No analysis data to save or user not logged in");
-      return;
-    }
-    
-    // Save analysis implementation will be handled in ResultsActions component
-    toast.success("Analysis saved successfully");
-  };
-
-  // Helper function to validate or generate a valid UUID
-  const ensureValidUUID = (id: string | undefined): string => {
-    try {
-      // Check if the ID is undefined or null
-      if (!id) {
-        return uuidv4();
-      }
-      
-      // Try to validate the UUID format
-      const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (regex.test(id)) {
-        return id;
-      }
-      
-      // If not a valid UUID, generate a new one
-      return uuidv4();
-    } catch (error) {
-      // If any error occurs, generate a new UUID
-      return uuidv4();
-    }
-  };
-
-  // Helper function to check if an ID is in legacy format
-  const isLegacyId = (id: string): boolean => {
-    return id.startsWith('analysis-') || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-  };
 
   useEffect(() => {
     const fetchOrGenerateAnalysis = async () => {
-      // Don't proceed if we're already retrying
       if (isRetrying.current) {
         console.log("Already in retry process, skipping redundant fetch");
         return;
@@ -103,15 +52,12 @@ export const useDeepInsightResults = () => {
       setError(null);
 
       try {
-        // First check if we have an analysis ID in the URL
         if (analysisId) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
           
-          // Check if this is a legacy ID format
           if (isLegacyId(analysisId)) {
             console.log(`Legacy analysis ID format detected: ${analysisId}`);
             
-            // For legacy IDs, call the edge function directly
             try {
               const { data, error } = await supabase.functions.invoke('get-public-analysis', {
                 body: { id: analysisId },
@@ -125,7 +71,6 @@ export const useDeepInsightResults = () => {
               if (data) {
                 console.log(`Successfully loaded legacy analysis`);
                 const analysisData = data as AnalysisData;
-                // Ensure the structure is complete
                 ensureAnalysisStructure(analysisData);
                 setAnalysis(analysisData);
                 cacheAnalysis(analysisData);
@@ -136,7 +81,6 @@ export const useDeepInsightResults = () => {
               console.error("Failed to fetch legacy analysis:", legacyErr);
             }
           } else {
-            // For UUID format IDs, try to fetch from the database
             const { data, error } = await supabase
               .from("deep_insight_analyses")
               .select("*")
@@ -150,9 +94,7 @@ export const useDeepInsightResults = () => {
 
             if (data) {
               console.log(`Successfully loaded analysis: ${data.id}`);
-              // Extract the complete analysis from the data
               const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
-              // Ensure the structure is complete
               ensureAnalysisStructure(convertedAnalysis);
               setAnalysis(convertedAnalysis);
               cacheAnalysis(convertedAnalysis);
@@ -167,14 +109,13 @@ export const useDeepInsightResults = () => {
           }
         }
 
-        // Check if we should use cached analysis (only if not forcing new analysis)
         if (!forceNewAnalysis) {
           const cachedAnalysis = loadCachedAnalysis();
           if (cachedAnalysis) {
             console.log("Using cached analysis");
-            // Ensure the structure is complete
             ensureAnalysisStructure(cachedAnalysis);
             setAnalysis(cachedAnalysis);
+            setLoadedFromCache(true);
             setIsLoading(false);
             return;
           }
@@ -182,20 +123,17 @@ export const useDeepInsightResults = () => {
           console.log("Forcing new analysis generation, bypassing cache");
         }
 
-        // If no ID provided or the specified analysis wasn't found, generate a new one
         console.log("Getting responses from storage");
         const responses = await getResponses();
         console.log("Retrieved responses from storage:", responses);
         console.log("Response count:", Object.keys(responses).length);
         
-        // Verify we have all expected responses
-        const expectedQuestionCount = 100; // Total number of questions
+        const expectedQuestionCount = 100;
         if (!responses || Object.keys(responses).length === 0) {
           console.log("No responses found");
           toast.error("No assessment responses found", {
             description: "Please complete the assessment first before viewing results"
           });
-          // Redirect to the quiz page
           navigate("/deep-insight/quiz");
           throw new Error("No responses found. Please complete the assessment first.");
         }
@@ -217,7 +155,6 @@ export const useDeepInsightResults = () => {
           throw new Error("Failed to generate analysis");
         }
         
-        // Store raw responses in the analysis
         result.rawResponses = responses;
         
         setAnalysis(result);
@@ -226,26 +163,21 @@ export const useDeepInsightResults = () => {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
         
-        // Only auto-retry once, and only if we haven't tried before
         if (retryCount < maxRetries && !hasAutoRetried.current) {
           const nextRetryCount = retryCount + 1;
           console.log(`Auto-retrying analysis generation (${nextRetryCount}/${maxRetries}) in ${retryDelay}ms`);
           
-          // Show toast for retry
           toast.loading(`Retrying analysis generation (${nextRetryCount}/${maxRetries})...`);
           
-          // Set retry count and mark that we've auto-retried
           setRetryCount(nextRetryCount);
           hasAutoRetried.current = true;
           
-          // Wait and then retry
           setTimeout(() => {
-            if (isRetrying.current) return; // Safety check
+            if (isRetrying.current) return;
             fetchOrGenerateAnalysis();
           }, retryDelay);
           return;
         } else if (retryCount >= maxRetries) {
-          // If we've reached max retries, show a helpful error message
           toast.error("Failed to generate analysis after multiple attempts", {
             description: "Please try again using the retry button below"
           });
@@ -258,107 +190,39 @@ export const useDeepInsightResults = () => {
     fetchOrGenerateAnalysis();
   }, [analysisId, getResponses, navigate, retryCount, forceNewAnalysis]);
 
-  // Ensure all required properties are present in the analysis
-  const ensureAnalysisStructure = (analysisData: AnalysisData): void => {
-    // Make sure responsePatterns exists
-    if (!analysisData.responsePatterns) {
-      analysisData.responsePatterns = {
-        percentages: { a: 20, b: 20, c: 20, d: 20, e: 10, f: 10 },
-        primaryChoice: 'a',
-        secondaryChoice: 'b',
-        responseSignature: 'AB'
-      };
+  const saveAnalysis = async () => {
+    if (!analysis || !user) {
+      toast.error("No analysis data to save or user not logged in");
+      return;
     }
     
-    // Make sure interpersonalDynamics exists
-    if (!analysisData.interpersonalDynamics) {
-      analysisData.interpersonalDynamics = {
-        attachmentStyle: "Your attachment style shows a balanced approach to relationships.",
-        communicationPattern: "You communicate thoughtfully and prefer meaningful conversations.",
-        conflictResolution: "You approach conflicts by seeking to understand different perspectives."
-      };
-    }
-    
-    // Make sure relationshipPatterns has the correct structure
-    if (!analysisData.relationshipPatterns || Array.isArray(analysisData.relationshipPatterns)) {
-      analysisData.relationshipPatterns = {
-        strengths: Array.isArray(analysisData.relationshipPatterns) 
-          ? analysisData.relationshipPatterns 
-          : ["Good listening skills", "Thoughtfulness"],
-        challenges: [],
-        compatibleTypes: []
-      };
-    }
-    
-    // Ensure traits are properly structured
-    if (!analysisData.traits || !Array.isArray(analysisData.traits) || analysisData.traits.length === 0) {
-      analysisData.traits = [
-        {
-          trait: "Analytical Thinking",
-          score: 7.5,
-          description: "Your analytical abilities help you understand complex situations."
-        },
-        {
-          trait: "Emotional Intelligence",
-          score: 7.0,
-          description: "Your emotional awareness influences how you connect with others."
-        },
-        {
-          trait: "Adaptability",
-          score: 6.5,
-          description: "Your flexibility in handling change is a key part of your approach."
-        }
-      ];
-    }
-    
-    // Ensure cognitivePatterning is present
-    if (!analysisData.cognitivePatterning) {
-      analysisData.cognitivePatterning = {
-        decisionMaking: "You tend to weigh options carefully before making decisions.",
-        learningStyle: "You learn best through a combination of concepts and practical applications.",
-        attention: "Your attention is most focused when dealing with meaningful content."
-      };
-    }
-  };
-
-  const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData | null> => {
     try {
-      console.log(`Generating analysis from ${Object.keys(responses).length} responses`);
-      const result = await generateAnalysisFromResponses(responses);
-      console.log("Analysis generated successfully");
-      
-      // If user is logged in, save the analysis to the database
       if (user) {
         try {
           console.log("Saving analysis to database...");
           
-          // Ensure we have a valid UUID
-          const validId = ensureValidUUID(result.id);
+          const validId = ensureValidUUID(analysis.id);
           
-          // Update the result with the valid UUID if changed
-          if (validId !== result.id) {
-            result.id = validId;
+          if (validId !== analysis.id) {
+            analysis.id = validId;
           }
           
-          // Convert full analysis to JSON-compatible object
-          const jsonAnalysis = toJsonObject(result);
+          const jsonAnalysis = toJsonObject(analysis);
           
-          // We need to ensure all complex objects are converted to JSON-compatible format
-          // This properly handles the ResponsePatternAnalysis types
           const analysisData = {
-            id: validId, // Use the validated ID
+            id: validId,
             user_id: user.id,
             complete_analysis: jsonAnalysis,
-            raw_responses: JSON.parse(JSON.stringify(responses)),
-            overview: result.overview,
-            core_traits: JSON.parse(JSON.stringify(result.coreTraits)),
-            cognitive_patterning: JSON.parse(JSON.stringify(result.cognitivePatterning)),
-            emotional_architecture: JSON.parse(JSON.stringify(result.emotionalArchitecture)),
-            interpersonal_dynamics: JSON.parse(JSON.stringify(result.interpersonalDynamics)),
-            intelligence_score: result.intelligenceScore,
-            emotional_intelligence_score: result.emotionalIntelligenceScore,
-            response_patterns: JSON.parse(JSON.stringify(result.responsePatterns)),
-            growth_potential: JSON.parse(JSON.stringify(result.growthPotential)),
+            raw_responses: JSON.parse(JSON.stringify(analysis.rawResponses)),
+            overview: analysis.overview,
+            core_traits: JSON.parse(JSON.stringify(analysis.coreTraits)),
+            cognitive_patterning: JSON.parse(JSON.stringify(analysis.cognitivePatterning)),
+            emotional_architecture: JSON.parse(JSON.stringify(analysis.emotionalArchitecture)),
+            interpersonal_dynamics: JSON.parse(JSON.stringify(analysis.interpersonalDynamics)),
+            intelligence_score: analysis.intelligenceScore,
+            emotional_intelligence_score: analysis.emotionalIntelligenceScore,
+            response_patterns: JSON.parse(JSON.stringify(analysis.responsePatterns)),
+            growth_potential: JSON.parse(JSON.stringify(analysis.growthPotential)),
             created_at: new Date().toISOString(),
           };
           
@@ -375,20 +239,19 @@ export const useDeepInsightResults = () => {
           }
         } catch (err) {
           console.error("Exception while saving analysis:", err);
-          // Don't throw here, we still want to return the analysis
         }
       }
       
-      return result;
+      toast.success("Analysis saved successfully");
     } catch (error) {
-      console.error("Error analyzing responses:", error);
-      throw error;
+      console.error("Error saving analysis:", error);
+      toast.error("Failed to save analysis", { 
+        description: error instanceof Error ? error.message : "An unknown error occurred" 
+      });
     }
   };
 
-  // Add a manual retry function with safeguards to prevent multiple simultaneous retries
   const retryAnalysis = async () => {
-    // Prevent multiple simultaneous retry attempts
     if (isRetrying.current) {
       console.warn("Already retrying analysis, ignoring duplicate request");
       toast.error("Retry already in progress", {
@@ -397,10 +260,10 @@ export const useDeepInsightResults = () => {
       return;
     }
     
-    setRetryCount(0); // Reset retry count
+    setRetryCount(0);
     setError(null);
     setIsLoading(true);
-    isRetrying.current = true; // Mark that we're retrying to prevent duplicate retries
+    isRetrying.current = true;
     
     toast.loading("Retrying analysis generation...", {
       duration: 10000
@@ -429,60 +292,65 @@ export const useDeepInsightResults = () => {
       });
     } finally {
       setIsLoading(false);
-      isRetrying.current = false; // Reset retry flag
+      isRetrying.current = false;
     }
   };
 
-  // Function to fetch analysis directly by ID
-  const fetchAnalysisById = async (id: string): Promise<AnalysisData | null> => {
+  const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData | null> => {
     try {
-      console.log(`Directly fetching analysis with ID: ${id}`);
+      console.log(`Generating analysis from ${Object.keys(responses).length} responses`);
+      const result = await generateAnalysisFromResponses(responses);
       
-      // Check if this is a legacy ID format
-      if (isLegacyId(id)) {
-        console.log(`Legacy analysis ID format detected for direct fetch: ${id}`);
-        
+      if (!result) {
+        throw new Error("Failed to generate analysis result");
+      }
+
+      ensureAnalysisStructure(result);
+
+      if (user) {
         try {
-          // For legacy IDs, call the edge function
-          const { data, error } = await supabase.functions.invoke('get-public-analysis', {
-            body: { id },
-          });
+          const validId = ensureValidUUID(result.id);
+          if (validId !== result.id) {
+            result.id = validId;
+          }
+          
+          const jsonAnalysis = toJsonObject(result);
+          
+          const analysisData = {
+            id: validId,
+            user_id: user.id,
+            complete_analysis: jsonAnalysis,
+            raw_responses: responses,
+            overview: result.overview,
+            core_traits: JSON.parse(JSON.stringify(result.coreTraits)),
+            cognitive_patterning: JSON.parse(JSON.stringify(result.cognitivePatterning)),
+            emotional_architecture: JSON.parse(JSON.stringify(result.emotionalArchitecture)),
+            interpersonal_dynamics: JSON.parse(JSON.stringify(result.interpersonalDynamics)),
+            intelligence_score: result.intelligenceScore,
+            emotional_intelligence_score: result.emotionalIntelligenceScore,
+            response_patterns: JSON.parse(JSON.stringify(result.responsePatterns)),
+            growth_potential: JSON.parse(JSON.stringify(result.growthPotential)),
+            created_at: new Date().toISOString(),
+          };
+          
+          const { data, error } = await supabase
+            .from("deep_insight_analyses")
+            .insert(analysisData)
+            .select("id")
+            .single();
           
           if (error) {
-            console.error(`Error direct fetching legacy analysis: ${error.message || error}`);
-            return null;
-          }
-          
-          if (data) {
-            return data as unknown as AnalysisData;
+            console.error("Error saving analysis to database:", error);
           }
         } catch (err) {
-          console.error("Error fetching legacy analysis:", err);
-          return null;
-        }
-      } else {
-        // For UUID format IDs, query the database directly
-        const { data, error } = await supabase
-          .from("deep_insight_analyses")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Error fetching analysis by ID:", error);
-          return null;
-        }
-        
-        if (data) {
-          const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
-          return convertedAnalysis;
+          console.error("Exception while saving analysis:", err);
         }
       }
       
-      return null;
-    } catch (err) {
-      console.error("Error in fetchAnalysisById:", err);
-      return null;
+      return result;
+    } catch (error) {
+      console.error("Error analyzing responses:", error);
+      throw error;
     }
   };
 
