@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { DeepInsightResponses } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,14 +16,15 @@ export const useDeepInsightStorage = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const cachedResponsesRef = useRef<DeepInsightResponses | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Get saved responses with caching to prevent repeated fetches
-  const getResponses = async (): Promise<DeepInsightResponses> => {
+  const getResponses = useCallback(async (): Promise<DeepInsightResponses> => {
     try {
       // Return cached responses if available to prevent redundant fetching
       if (cachedResponsesRef.current) {
         console.log("Using cached responses to improve performance");
-        return cachedResponsesRef.current;
+        return { ...cachedResponsesRef.current }; // Return a new object to prevent mutation
       }
       
       setIsLoading(true);
@@ -51,8 +52,16 @@ export const useDeepInsightStorage = () => {
           
           console.log(`Retrieved ${Object.keys(formattedResponses).length} responses from database.`);
           
+          // Double check that we have the expected number of responses
+          const responseCount = Object.keys(formattedResponses).length;
+          if (responseCount > 0 && responseCount < 100) {
+            console.warn(`Retrieved incomplete responses: ${responseCount}/100`);
+          } else if (responseCount === 100) {
+            console.log("Retrieved complete set of responses");
+          }
+          
           // Cache the responses for future use
-          cachedResponsesRef.current = formattedResponses;
+          cachedResponsesRef.current = { ...formattedResponses };
           return formattedResponses;
         }
         
@@ -69,20 +78,27 @@ export const useDeepInsightStorage = () => {
         return {};
       }
       
-      const parsedData = JSON.parse(savedData);
-      console.log(`Retrieved ${Object.keys(parsedData).length} responses from localStorage.`);
-      cachedResponsesRef.current = parsedData;
-      return parsedData;
+      try {
+        const parsedData = JSON.parse(savedData);
+        console.log(`Retrieved ${Object.keys(parsedData).length} responses from localStorage.`);
+        cachedResponsesRef.current = { ...parsedData };
+        return parsedData;
+      } catch (parseError) {
+        console.error("Error parsing saved responses:", parseError);
+        localStorage.removeItem(STORAGE_KEY); // Clear corrupted data
+        cachedResponsesRef.current = {};
+        return {};
+      }
     } catch (error) {
       console.error("Error retrieving responses:", error);
       return {};
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   // Save responses to database or localStorage
-  const saveResponses = async (responses: DeepInsightResponses): Promise<void> => {
+  const saveResponses = useCallback(async (responses: DeepInsightResponses): Promise<void> => {
     try {
       const responseCount = Object.keys(responses).length;
       
@@ -91,8 +107,16 @@ export const useDeepInsightStorage = () => {
         return;
       }
       
+      // Throttle saves - don't save more frequently than every 2 seconds
+      const now = new Date();
+      if (lastSaved && now.getTime() - lastSaved.getTime() < 2000) {
+        console.log("Throttling save operation - too frequent");
+        return;
+      }
+      
       // Update the cache with the latest responses
-      cachedResponsesRef.current = responses;
+      cachedResponsesRef.current = { ...responses };
+      setLastSaved(now);
       
       // If user is authenticated, save to database
       if (user) {
@@ -129,10 +153,10 @@ export const useDeepInsightStorage = () => {
       toast.error("Failed to save your progress. Please try again.");
       throw new Error("Failed to save your progress. Please try again.");
     }
-  };
+  }, [user, lastSaved]);
 
   // Clear saved progress and cache
-  const clearSavedProgress = async (): Promise<void> => {
+  const clearSavedProgress = useCallback(async (): Promise<void> => {
     try {
       // Clear the cache
       cachedResponsesRef.current = null;
@@ -160,7 +184,7 @@ export const useDeepInsightStorage = () => {
       console.error("Error clearing saved progress:", error);
       toast.error("Failed to clear your progress. Please try again.");
     }
-  };
+  }, [user]);
 
   return {
     getResponses,

@@ -13,12 +13,22 @@ import PersonalityTraitsChart from "@/features/deep-insight/components/visualiza
 import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
 import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ChartBar, PieChart, Activity } from "lucide-react";
+import { ChartBar, PieChart, Activity, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
-  const { analysis, isLoading, error, saveAnalysis, retryAnalysis } = useDeepInsightResults();
+  const { 
+    analysis, 
+    isLoading, 
+    error, 
+    saveAnalysis, 
+    retryAnalysis,
+    loadedFromCache 
+  } = useDeepInsightResults();
   const navigate = useNavigate();
   
   // Animation variants
@@ -44,11 +54,21 @@ const DeepInsightResults: React.FC = () => {
     })
   };
   
+  // Show notification when using cached analysis
+  useEffect(() => {
+    if (loadedFromCache && analysis) {
+      toast.info("Using cached analysis results", {
+        description: "Your previous analysis results have been loaded from cache"
+      });
+    }
+  }, [loadedFromCache, analysis]);
+  
   // Handle retry by reloading the page or using the retryAnalysis function
   const handleRetry = () => {
     if (retryAnalysis) {
       retryAnalysis();
     } else {
+      toast.loading("Reloading analysis...");
       window.location.reload();
     }
   };
@@ -58,10 +78,44 @@ const DeepInsightResults: React.FC = () => {
   }
   
   if (error || !analysis) {
-    return <ResultsError 
-      error={error?.message || "No analysis data found"} 
-      onRetry={handleRetry} 
-    />;
+    return (
+      <ResultsError 
+        error={error?.message || "No analysis data found"} 
+        onRetry={handleRetry} 
+      />
+    );
+  }
+  
+  // Last resort error handling if analysis is malformed
+  const isAnalysisComplete = 
+    analysis && 
+    analysis.traits && 
+    analysis.traits.length > 0 && 
+    analysis.overview && 
+    analysis.coreTraits;
+    
+  if (!isAnalysisComplete) {
+    return (
+      <div className="container max-w-4xl py-8">
+        <AssessmentErrorHandler
+          title="Incomplete Analysis Data"
+          description="The analysis was generated but appears to be incomplete. This can sometimes happen due to processing errors."
+          showRetry={true}
+          onRetry={handleRetry}
+          errorDetails={`Analysis ID: ${analysis?.id || 'unknown'}, Missing data: ${!analysis?.traits ? 'traits' : ''} ${!analysis?.overview ? 'overview' : ''} ${!analysis?.coreTraits ? 'coreTraits' : ''}`}
+        />
+        
+        <div className="mt-8 flex justify-center">
+          <Button 
+            onClick={() => navigate("/deep-insight/quiz")}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retake Assessment
+          </Button>
+        </div>
+      </div>
+    );
   }
   
   return (

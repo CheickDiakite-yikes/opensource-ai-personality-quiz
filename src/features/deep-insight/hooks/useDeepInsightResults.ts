@@ -21,6 +21,31 @@ export const useDeepInsightResults = () => {
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const retryDelay = 2000; // ms
+  const [loadedFromCache, setLoadedFromCache] = useState(false);
+
+  // Cache analysis in session storage to prevent loss on page refresh
+  const cacheAnalysis = (data: AnalysisData) => {
+    try {
+      sessionStorage.setItem('deep_insight_analysis_cache', JSON.stringify(toJsonObject(data)));
+    } catch (err) {
+      console.error("Error caching analysis:", err);
+    }
+  };
+
+  const loadCachedAnalysis = (): AnalysisData | null => {
+    try {
+      const cached = sessionStorage.getItem('deep_insight_analysis_cache');
+      if (cached) {
+        const parsedData = JSON.parse(cached);
+        console.log("Found cached analysis");
+        setLoadedFromCache(true);
+        return parsedData as AnalysisData;
+      }
+    } catch (err) {
+      console.error("Error loading cached analysis:", err);
+    }
+    return null;
+  };
 
   // Function to save the current analysis to Supabase
   const saveAnalysis = async () => {
@@ -39,6 +64,17 @@ export const useDeepInsightResults = () => {
       setError(null);
 
       try {
+        // First check if we have a cached analysis from this session
+        if (!analysisId) {
+          const cachedAnalysis = loadCachedAnalysis();
+          if (cachedAnalysis) {
+            console.log("Using cached analysis");
+            setAnalysis(cachedAnalysis);
+            setIsLoading(false);
+            return;
+          }
+        }
+
         // If an ID is provided, try to fetch that specific analysis
         if (analysisId) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
@@ -49,6 +85,7 @@ export const useDeepInsightResults = () => {
             .maybeSingle();
 
           if (error) {
+            console.error(`Error fetching analysis: ${error.message}`);
             throw new Error(`Error fetching analysis: ${error.message}`);
           }
 
@@ -57,6 +94,7 @@ export const useDeepInsightResults = () => {
             // Extract the complete analysis from the data
             const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
             setAnalysis(convertedAnalysis);
+            cacheAnalysis(convertedAnalysis);
             setIsLoading(false);
             return;
           } else {
@@ -68,7 +106,6 @@ export const useDeepInsightResults = () => {
         }
 
         // If no ID provided or the specified analysis wasn't found, generate a new one
-        // Get responses from database or localStorage
         console.log("Getting responses from storage");
         const responses = await getResponses();
         console.log("Retrieved responses from storage:", responses);
@@ -107,6 +144,7 @@ export const useDeepInsightResults = () => {
         result.rawResponses = responses;
         
         setAnalysis(result);
+        cacheAnalysis(result);
       } catch (err) {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
@@ -127,6 +165,11 @@ export const useDeepInsightResults = () => {
             fetchOrGenerateAnalysis();
           }, retryDelay);
           return;
+        } else {
+          // If we've reached max retries, show a helpful error message
+          toast.error("Failed to generate analysis after multiple attempts", {
+            description: "Please try again using the retry button below"
+          });
         }
       } finally {
         setIsLoading(false);
@@ -208,6 +251,7 @@ export const useDeepInsightResults = () => {
         if (result) {
           result.rawResponses = responses;
           setAnalysis(result);
+          cacheAnalysis(result);
           toast.success("Analysis generated successfully!");
         } else {
           throw new Error("Failed to generate analysis");
@@ -226,5 +270,40 @@ export const useDeepInsightResults = () => {
     }
   };
 
-  return { analysis, isLoading, error, saveAnalysis, retryAnalysis };
+  // Function to fetch analysis directly by ID
+  const fetchAnalysisById = async (id: string): Promise<AnalysisData | null> => {
+    try {
+      console.log(`Directly fetching analysis with ID: ${id}`);
+      const { data, error } = await supabase
+        .from("deep_insight_analyses")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error("Error fetching analysis by ID:", error);
+        return null;
+      }
+      
+      if (data) {
+        const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
+        return convertedAnalysis;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error("Error in fetchAnalysisById:", err);
+      return null;
+    }
+  };
+
+  return { 
+    analysis, 
+    isLoading, 
+    error, 
+    saveAnalysis, 
+    retryAnalysis,
+    fetchAnalysisById,
+    loadedFromCache
+  };
 };

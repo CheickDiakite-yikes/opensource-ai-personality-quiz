@@ -4,6 +4,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface ResultsLoadingProps {
   onRetry?: () => void;
@@ -23,6 +24,11 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setShowRetry(true);
+      // Show a toast notification to inform the user
+      toast.info("This is taking longer than expected", {
+        description: "You can try again using the retry button below",
+        duration: 5000
+      });
     }, 15000);
     
     return () => clearTimeout(timeout);
@@ -38,6 +44,13 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
     // Start insights progress after 6 seconds
     const insightsTimer = setTimeout(() => {
       setProgress(prev => ({ ...prev, insights: 65 }));
+      
+      // After a bit more time, increase to 85%
+      const finalTimer = setTimeout(() => {
+        setProgress(prev => ({ ...prev, insights: 85 }));
+      }, 4000);
+      
+      return () => clearTimeout(finalTimer);
     }, 6000);
     
     return () => {
@@ -45,6 +58,13 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
       clearTimeout(insightsTimer);
     };
   }, []);
+
+  const handleRetry = () => {
+    if (onRetry) {
+      toast.loading("Retrying analysis generation...");
+      onRetry();
+    }
+  };
 
   return (
     <motion.div 
@@ -104,7 +124,7 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span>Generating comprehensive insights</span>
-              <span>{progress.insights === 0 ? 'Pending' : 'In progress'}</span>
+              <span>{progress.insights === 0 ? 'Pending' : progress.insights >= 85 ? 'Almost complete' : 'In progress'}</span>
             </div>
             <Progress value={progress.insights} />
           </div>
@@ -116,7 +136,7 @@ export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
           <p className="text-sm text-muted-foreground mb-2 text-center">
             This is taking longer than expected. Would you like to try again?
           </p>
-          <Button onClick={onRetry} variant="outline" className="flex items-center gap-2">
+          <Button onClick={handleRetry} variant="outline" className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" /> Retry Analysis Generation
           </Button>
         </div>
