@@ -3,7 +3,7 @@ import React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { AnalysisData } from "../utils/analysis/types";
-import { TabsNavigator } from "./tabs/TabsNavigator";
+import { TabsScrollableNav } from "./tabs/TabsScrollableNav";
 import { CognitiveTab } from "./tabs/CognitiveTab";
 import { EmotionalTab } from "./tabs/EmotionalTab";
 import { InterpersonalTab } from "./tabs/InterpersonalTab";
@@ -22,29 +22,34 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({ analysis, itemVariants
       initial="hidden"
       animate="visible"
       custom={4}
+      className="w-full"
     >
       <Tabs defaultValue="cognitive" className="w-full">
-        <TabsNavigator />
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-1 -mx-2 px-2">
+          <TabsScrollableNav />
+        </div>
         
-        <TabsContent value="cognitive">
-          <CognitiveTab analysis={analysis} />
-        </TabsContent>
-        
-        <TabsContent value="emotional">
-          <EmotionalTab analysis={analysis} />
-        </TabsContent>
-        
-        <TabsContent value="interpersonal">
-          <InterpersonalTab analysis={analysis} />
-        </TabsContent>
-        
-        <TabsContent value="career">
-          <CareerTab analysis={analysis} />
-        </TabsContent>
-        
-        <TabsContent value="growth">
-          <GrowthTab analysis={analysis} />
-        </TabsContent>
+        <div className="mt-4 space-y-4">
+          <TabsContent value="cognitive" className="m-0">
+            <CognitiveTab analysis={analysis} />
+          </TabsContent>
+          
+          <TabsContent value="emotional" className="m-0">
+            <EmotionalTab analysis={analysis} />
+          </TabsContent>
+          
+          <TabsContent value="interpersonal" className="m-0">
+            <InterpersonalTab analysis={analysis} />
+          </TabsContent>
+          
+          <TabsContent value="career" className="m-0">
+            <CareerTab analysis={analysis} />
+          </TabsContent>
+          
+          <TabsContent value="growth" className="m-0">
+            <GrowthTab analysis={analysis} />
+          </TabsContent>
+        </div>
       </Tabs>
     </motion.div>
   );
