@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
-  const { analysis, isLoading, error, saveAnalysis } = useDeepInsightResults();
+  const { analysis, isLoading, error, saveAnalysis, retryAnalysis } = useDeepInsightResults();
   const navigate = useNavigate();
   
   // Animation variants
@@ -44,13 +44,17 @@ const DeepInsightResults: React.FC = () => {
     })
   };
   
-  // Handle retry by reloading the page
+  // Handle retry by reloading the page or using the retryAnalysis function
   const handleRetry = () => {
-    window.location.reload();
+    if (retryAnalysis) {
+      retryAnalysis();
+    } else {
+      window.location.reload();
+    }
   };
   
   if (isLoading) {
-    return <ResultsLoading />;
+    return <ResultsLoading onRetry={handleRetry} />;
   }
   
   if (error || !analysis) {

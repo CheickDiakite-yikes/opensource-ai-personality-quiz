@@ -1,9 +1,51 @@
 
-import React from "react";
-import { Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
-export const ResultsLoading: React.FC = () => {
+interface ResultsLoadingProps {
+  onRetry?: () => void;
+}
+
+export const ResultsLoading: React.FC<ResultsLoadingProps> = ({ onRetry }) => {
+  const [showRetry, setShowRetry] = useState(false);
+  const [progress, setProgress] = useState({
+    traits: 100,
+    patterns: 100,
+    emotional: 100,
+    values: 0,
+    insights: 0
+  });
+  
+  // Show retry button after 15 seconds
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowRetry(true);
+    }, 15000);
+    
+    return () => clearTimeout(timeout);
+  }, []);
+  
+  // Animate progress bars
+  useEffect(() => {
+    // Start values progress after 3 seconds
+    const valuesTimer = setTimeout(() => {
+      setProgress(prev => ({ ...prev, values: 100 }));
+    }, 3000);
+    
+    // Start insights progress after 6 seconds
+    const insightsTimer = setTimeout(() => {
+      setProgress(prev => ({ ...prev, insights: 65 }));
+    }, 6000);
+    
+    return () => {
+      clearTimeout(valuesTimer);
+      clearTimeout(insightsTimer);
+    };
+  }, []);
+
   return (
     <motion.div 
       className="container max-w-4xl py-16 flex flex-col items-center justify-center gap-4"
@@ -32,9 +74,7 @@ export const ResultsLoading: React.FC = () => {
               <span>Analyzing personality traits</span>
               <span>Complete</span>
             </div>
-            <div className="bg-muted rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full" style={{ width: '100%' }}></div>
-            </div>
+            <Progress value={progress.traits} />
           </div>
           
           <div>
@@ -42,9 +82,7 @@ export const ResultsLoading: React.FC = () => {
               <span>Processing cognitive patterns</span>
               <span>Complete</span>
             </div>
-            <div className="bg-muted rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full" style={{ width: '100%' }}></div>
-            </div>
+            <Progress value={progress.patterns} />
           </div>
           
           <div>
@@ -52,37 +90,37 @@ export const ResultsLoading: React.FC = () => {
               <span>Evaluating emotional intelligence</span>
               <span>Complete</span>
             </div>
-            <div className="bg-muted rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full" style={{ width: '100%' }}></div>
-            </div>
+            <Progress value={progress.emotional} />
           </div>
           
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span>Identifying value systems</span>
-              <span>In progress</span>
+              <span>{progress.values === 100 ? 'Complete' : 'In progress'}</span>
             </div>
-            <div className="bg-muted rounded-full h-2">
-              <motion.div 
-                className="bg-primary h-2 rounded-full" 
-                initial={{ width: "0%" }}
-                animate={{ width: "65%" }}
-                transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-              ></motion.div>
-            </div>
+            <Progress value={progress.values} />
           </div>
           
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span>Generating comprehensive insights</span>
-              <span>Pending</span>
+              <span>{progress.insights === 0 ? 'Pending' : 'In progress'}</span>
             </div>
-            <div className="bg-muted rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full" style={{ width: '0%' }}></div>
-            </div>
+            <Progress value={progress.insights} />
           </div>
         </div>
       </div>
+      
+      {showRetry && onRetry && (
+        <div className="mt-6">
+          <p className="text-sm text-muted-foreground mb-2 text-center">
+            This is taking longer than expected. Would you like to try again?
+          </p>
+          <Button onClick={onRetry} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Retry Analysis Generation
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 };

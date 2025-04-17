@@ -25,10 +25,10 @@ export const useQuizSubmission = (
       const questionId = Object.keys(data)[0];
       const responseValue = data[questionId];
       
-      // Validate response
+      // Validate response - PREVENT proceeding without an answer
       if (!responseValue || responseValue.trim() === '') {
         setError("Please select an answer before continuing");
-        return;
+        return false; // Added return value to indicate validation failure
       }
       
       setError(null);
@@ -52,14 +52,16 @@ export const useQuizSubmission = (
       // Move to next question or submit if done
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
+        return true; // Return success
       } else {
         // Submit all responses
-        await handleCompleteQuiz(responses);
+        return await handleCompleteQuiz(responses);
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error processing question:", errorMessage);
       setError("An error occurred. Please try again.");
+      return false; // Return failure
     }
   }, [currentQuestionIndex, responses, saveResponses, totalQuestions, setResponses, setCurrentQuestionIndex, setError]);
   
@@ -83,7 +85,7 @@ export const useQuizSubmission = (
           }
         }
         
-        return;
+        return false; // Return failure
       }
       
       // Show a more detailed toast message about the analysis process
@@ -96,10 +98,12 @@ export const useQuizSubmission = (
       
       // Navigate to results page
       navigate("/deep-insight/results");
+      return true; // Return success
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error completing quiz:", errorMessage);
       setError("Failed to complete the assessment. Please try again.");
+      return false; // Return failure
     }
   }, [navigate, saveResponses, totalQuestions, setCurrentQuestionIndex, setError]);
 

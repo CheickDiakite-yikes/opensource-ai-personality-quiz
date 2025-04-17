@@ -18,6 +18,9 @@ export const useDeepInsightResults = () => {
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('id');
   const navigate = useNavigate();
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+  const retryDelay = 2000; // ms
 
   // Function to save the current analysis to Supabase
   const saveAnalysis = async () => {
@@ -66,6 +69,7 @@ export const useDeepInsightResults = () => {
 
         // If no ID provided or the specified analysis wasn't found, generate a new one
         // Get responses from database or localStorage
+        console.log("Getting responses from storage");
         const responses = await getResponses();
         console.log("Retrieved responses from storage:", responses);
         console.log("Response count:", Object.keys(responses).length);
@@ -95,25 +99,44 @@ export const useDeepInsightResults = () => {
         const result = await generateAnalysis(responses);
         console.log("Analysis generation complete");
         
+        if (!result) {
+          throw new Error("Failed to generate analysis");
+        }
+        
         // Store raw responses in the analysis
         result.rawResponses = responses;
         
         setAnalysis(result);
-        
-        // Only clear saved responses after successful analysis generation
-        // clearSavedProgress(); // Don't clear until explicit user action
       } catch (err) {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+        
+        // If we haven't reached max retries, attempt to retry
+        if (retryCount < maxRetries) {
+          const nextRetryCount = retryCount + 1;
+          console.log(`Retrying analysis generation (${nextRetryCount}/${maxRetries}) in ${retryDelay}ms`);
+          
+          // Show toast for retry
+          toast.loading(`Retrying analysis generation (${nextRetryCount}/${maxRetries})...`);
+          
+          // Set retry count and delay next attempt
+          setRetryCount(nextRetryCount);
+          
+          // Wait and then retry
+          setTimeout(() => {
+            fetchOrGenerateAnalysis();
+          }, retryDelay);
+          return;
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchOrGenerateAnalysis();
-  }, [analysisId, getResponses, navigate]);
+  }, [analysisId, getResponses, navigate, retryCount]);
 
-  const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData> => {
+  const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData | null> => {
     try {
       console.log(`Generating analysis from ${Object.keys(responses).length} responses`);
       const result = await generateAnalysisFromResponses(responses);
@@ -130,6 +153,7 @@ export const useDeepInsightResults = () => {
           // We need to ensure all complex objects are converted to JSON-compatible format
           // This properly handles the ResponsePatternAnalysis types
           const analysisData = {
+            id: result.id, // Ensure we include the ID
             user_id: user.id,
             complete_analysis: jsonAnalysis,
             raw_responses: JSON.parse(JSON.stringify(responses)),
@@ -141,7 +165,8 @@ export const useDeepInsightResults = () => {
             intelligence_score: result.intelligenceScore,
             emotional_intelligence_score: result.emotionalIntelligenceScore,
             response_patterns: JSON.parse(JSON.stringify(result.responsePatterns)),
-            growth_potential: JSON.parse(JSON.stringify(result.growthPotential))
+            growth_potential: JSON.parse(JSON.stringify(result.growthPotential)),
+            created_at: new Date().toISOString(),
           };
           
           const { data, error } = await supabase
@@ -157,6 +182,7 @@ export const useDeepInsightResults = () => {
           }
         } catch (err) {
           console.error("Exception while saving analysis:", err);
+          // Don't throw here, we still want to return the analysis
         }
       }
       
@@ -167,5 +193,38 @@ export const useDeepInsightResults = () => {
     }
   };
 
-  return { analysis, isLoading, error, saveAnalysis };
+  // Add a manual retry function
+  const retryAnalysis = async () => {
+    setRetryCount(0); // Reset retry count
+    setError(null);
+    setIsLoading(true);
+    
+    toast.loading("Retrying analysis generation...");
+    
+    try {
+      const responses = await getResponses();
+      if (responses && Object.keys(responses).length === 100) {
+        const result = await generateAnalysis(responses);
+        if (result) {
+          result.rawResponses = responses;
+          setAnalysis(result);
+          toast.success("Analysis generated successfully!");
+        } else {
+          throw new Error("Failed to generate analysis");
+        }
+      } else {
+        throw new Error("Incomplete responses");
+      }
+    } catch (err) {
+      console.error("Error in manual retry:", err);
+      setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+      toast.error("Failed to generate analysis", {
+        description: "Please try again or restart the assessment"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { analysis, isLoading, error, saveAnalysis, retryAnalysis };
 };

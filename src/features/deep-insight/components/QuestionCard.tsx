@@ -11,7 +11,7 @@ interface QuestionCardProps {
   question: DeepInsightQuestion;
   currentResponse: string;
   onPrevious: () => void;
-  onSubmit: (data: Record<string, string>) => void;
+  onSubmit: (data: Record<string, string>) => Promise<boolean>;
   isFirstQuestion: boolean;
   isLastQuestion: boolean;
   error: string | null;
@@ -42,12 +42,26 @@ export const QuestionCard: React.FC<QuestionCardProps> = memo(({
     }
   }, [question.id, currentResponse, setValue]);
 
-  const processSubmit = (data: Record<string, string>) => {
+  // Process submission with loading state handling
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  const processSubmit = async (data: Record<string, string>) => {
+    // Prevent multiple submissions
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     // Make sure we're submitting the correct question ID
     const formattedData = {
       [question.id]: data[question.id]
     };
-    onSubmit(formattedData);
+    
+    try {
+      // Wait for submission result and only proceed if successful
+      await onSubmit(formattedData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -126,8 +140,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = memo(({
         >
           Previous
         </Button>
-        <Button type="submit" form="quiz-form">
-          {isLastQuestion ? "Complete" : "Next"}
+        <Button 
+          type="submit" 
+          form="quiz-form" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center">
+              <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></span>
+              {isLastQuestion ? "Completing..." : "Next..."}
+            </span>
+          ) : (
+            isLastQuestion ? "Complete" : "Next"
+          )}
         </Button>
       </CardFooter>
     </Card>
