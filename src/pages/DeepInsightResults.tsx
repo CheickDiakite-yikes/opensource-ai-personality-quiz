@@ -19,12 +19,20 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { analysis: latestAnalysis, loading: latestLoading, error: latestError, saveAnalysis } = useDeepInsightResults();
+  const { 
+    analysis: latestAnalysis, 
+    loading: latestLoading, 
+    error: latestError, 
+    saveAnalysis,
+    saveSuccess 
+  } = useDeepInsightResults();
+  
   const { getAnalysisById, isLoading: analysisLoading } = useAIAnalysis();
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +68,24 @@ const DeepInsightResults: React.FC = () => {
         try {
           setLoading(true);
           console.log(`Loading Deep Insight analysis with ID: ${id}`);
+          
+          // First try to load from deep_insight_analyses table
+          const { data: deepInsightAnalysis, error: deepError } = await supabase
+            .from('deep_insight_analyses')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+          if (!deepError && deepInsightAnalysis) {
+            console.log(`Found analysis in deep_insight_analyses: ${id}`);
+            // Use the complete_analysis field which contains the full PersonalityAnalysis
+            setAnalysis(deepInsightAnalysis.complete_analysis);
+            setError(null);
+            setLoading(false);
+            return;
+          }
+          
+          // If not found in deep_insight_analyses, try the old method
           const specificAnalysis = await getAnalysisById(id);
           
           if (specificAnalysis) {
@@ -143,12 +169,13 @@ const DeepInsightResults: React.FC = () => {
           variants={itemVariants}
           initial="hidden"
           animate="visible"
-          custom={4}
+          custom={3}
+          className="px-4 py-6 bg-background/50 backdrop-blur-sm rounded-xl border border-border/50 shadow-md"
         >
           <h2 className="text-2xl font-bold mb-4">Visualized Insights</h2>
           
           <Tabs defaultValue="traits" className="w-full">
-            <TabsList className="w-full justify-start mb-4">
+            <TabsList className="w-full justify-start mb-4 overflow-x-auto flex-nowrap">
               <TabsTrigger value="traits" className="flex items-center gap-2">
                 <ChartBar className="h-4 w-4" />
                 <span>Personality Traits</span>
@@ -190,7 +217,7 @@ const DeepInsightResults: React.FC = () => {
         <StrengthsChallengesCards analysis={displayAnalysis} itemVariants={itemVariants} />
         
         {/* Actions - Only show save button for latest analysis, not historical ones */}
-        {!id && <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} />}
+        {!id && <ResultsActions onSave={saveAnalysis} saveSuccess={saveSuccess} itemVariants={itemVariants} />}
       </div>
     </motion.div>
   );

@@ -1,18 +1,21 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { PersonalityAnalysis } from "@/utils/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   
   // Effect to handle generating analysis from responses
   useEffect(() => {
@@ -36,7 +39,7 @@ export const useDeepInsightResults = () => {
           const generatedAnalysis = generateAnalysisFromResponses(responseData);
           setAnalysis(generatedAnalysis);
           setLoading(false);
-        }, 3000); // 3 second delay to simulate processing
+        }, 1500); // 1.5 second delay to simulate processing
         
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
@@ -50,24 +53,81 @@ export const useDeepInsightResults = () => {
     generateAnalysis();
   }, [location.state]);
   
-  // Function to save the analysis
+  // Function to save the analysis and responses to Supabase
   const saveAnalysis = async () => {
     try {
-      if (!analysis) return;
+      if (!analysis) {
+        toast.error("No analysis to save");
+        return;
+      }
       
-      // In a real app, we would save to a database
+      if (!user) {
+        toast.error("You must be logged in to save analysis");
+        return;
+      }
+      
+      setSaveSuccess(false);
+      toast.loading("Saving your analysis...");
+      
+      // Get responses from location state
+      const responseData = location.state?.responses;
+      
+      if (!responseData) {
+        toast.error("No response data found to save");
+        return;
+      }
+      
+      // First, save the responses to deep_insight_assessments
+      const assessmentId = `deep-insight-${Date.now()}`;
+      const { error: assessmentError } = await supabase
+        .from('deep_insight_assessments')
+        .insert({
+          id: assessmentId,
+          user_id: user.id,
+          responses: responseData,
+          completed_at: new Date().toISOString()
+        });
+        
+      if (assessmentError) {
+        console.error("Error saving assessment:", assessmentError);
+        toast.error("Failed to save your assessment");
+        return;
+      }
+      
+      // Then save the analysis to deep_insight_analyses
+      const { error: analysisError } = await supabase
+        .from('deep_insight_analyses')
+        .insert({
+          id: analysis.id,
+          user_id: user.id,
+          title: "Deep Insight Analysis",
+          overview: analysis.overview,
+          complete_analysis: analysis,
+          core_traits: analysis.coreTraits,
+          cognitive_patterning: analysis.cognitivePatterning,
+          emotional_architecture: analysis.emotionalArchitecture,
+          interpersonal_dynamics: analysis.interpersonalDynamics,
+          growth_potential: analysis.growthPotential,
+          intelligence_score: analysis.intelligenceScore,
+          emotional_intelligence_score: analysis.emotionalIntelligenceScore,
+          response_patterns: analysis.responsePatterns,
+          raw_responses: responseData
+        });
+        
+      if (analysisError) {
+        console.error("Error saving analysis:", analysisError);
+        toast.error("Failed to save your analysis");
+        return;
+      }
+      
+      // Success!
+      setSaveSuccess(true);
       toast.success("Your analysis has been saved!");
       
-      // If connected to Supabase, we would do something like:
-      // await supabase
-      //   .from('analyses')
-      //   .insert({
-      //     user_id: user?.id,
-      //     result: analysis,
-      //     // other fields...
-      //   });
-      
-      console.log("Analysis saved for user:", user?.id);
+      // Navigate to history page after a short delay
+      setTimeout(() => {
+        navigate('/deep-insight');
+      }, 2000);
       
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
@@ -80,6 +140,7 @@ export const useDeepInsightResults = () => {
     analysis,
     loading,
     error,
-    saveAnalysis
+    saveAnalysis,
+    saveSuccess
   };
 };

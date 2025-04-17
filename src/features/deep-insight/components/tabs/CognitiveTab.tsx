@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Brain } from "lucide-react";
+import { Brain, Lightning, BookOpen, Focus } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
 
 interface CognitiveTabProps {
@@ -16,7 +16,7 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
   };
 
   return (
-    <Card>
+    <Card className="bg-background/50 backdrop-blur-sm border-border/50 shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
@@ -25,16 +25,27 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
         <CardDescription>How you process information and make decisions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Decision Making Style</h3>
+        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightning className="h-5 w-5 text-amber-500" />
+            <h3 className="font-semibold text-lg">Decision Making Style</h3>
+          </div>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.decisionMaking}</p>
         </div>
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Learning Approach</h3>
+        
+        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen className="h-5 w-5 text-blue-500" />
+            <h3 className="font-semibold text-lg">Learning Approach</h3>
+          </div>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.learningStyle}</p>
         </div>
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Attention Pattern</h3>
+        
+        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
+          <div className="flex items-center gap-2 mb-3">
+            <Focus className="h-5 w-5 text-green-500" />
+            <h3 className="font-semibold text-lg">Attention Pattern</h3>
+          </div>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.attention}</p>
         </div>
       </CardContent>

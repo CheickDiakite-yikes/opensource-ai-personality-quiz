@@ -4,13 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
   const [isRestoredSession, setIsRestoredSession] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Use the storage hook to handle saving/restoring progress
   const { clearSavedProgress } = useDeepInsightStorage(
@@ -84,23 +88,50 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     }
   };
   
-  const handleCompleteQuiz = (finalResponses: DeepInsightResponses) => {
+  const handleCompleteQuiz = async (finalResponses: DeepInsightResponses) => {
     try {
+      setIsSubmitting(true);
       console.log("All responses collected:", finalResponses);
       
       // Clear saved progress since quiz is completed
       clearSavedProgress();
+      
+      // If user is logged in, save responses to Supabase
+      if (user) {
+        try {
+          const assessmentId = `deep-insight-${Date.now()}`;
+          const { error } = await supabase
+            .from('deep_insight_assessments')
+            .insert({
+              id: assessmentId,
+              user_id: user.id,
+              responses: finalResponses,
+              completed_at: new Date().toISOString()
+            });
+            
+          if (error) {
+            console.error("Error saving responses to Supabase:", error);
+            // Continue with analysis even if saving fails
+          } else {
+            console.log("Responses saved to Supabase with ID:", assessmentId);
+          }
+        } catch (err) {
+          console.error("Exception saving responses:", err);
+          // Continue with analysis even if saving fails
+        }
+      }
       
       // Show a more detailed toast message about the analysis process
       toast.success("Your Deep Insight assessment is complete!", {
         description: "Preparing your comprehensive personality analysis..."
       });
       
-      // In a real implementation, we would send these responses to an API
+      // Navigate to results page with responses
       navigate("/deep-insight/results", { 
         state: { responses: finalResponses } 
       });
     } catch (e) {
+      setIsSubmitting(false);
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error completing quiz:", errorMessage);
       setError("Failed to complete the assessment. Please try again.");
@@ -112,6 +143,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     currentQuestionIndex,
     responses,
     error,
+    isSubmitting,
     handleSubmitQuestion,
     handlePrevious,
     clearSavedProgress
