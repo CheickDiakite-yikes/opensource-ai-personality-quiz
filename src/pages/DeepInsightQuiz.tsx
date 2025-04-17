@@ -1,44 +1,18 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { QuestionCard } from "@/features/deep-insight/components/QuestionCard";
 import { QuizProgress } from "@/features/deep-insight/components/QuizProgress";
 import { useDeepInsightQuiz } from "@/features/deep-insight/hooks/useDeepInsightQuiz";
 import { deepInsightQuestions } from "@/features/deep-insight/data/questions";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-// Loading skeleton component for better UX during brief loading states
-const QuizLoadingSkeleton = () => (
-  <div className="space-y-8">
-    <div className="text-center">
-      <Skeleton className="h-12 w-64 mx-auto mb-2" />
-      <Skeleton className="h-4 w-full max-w-lg mx-auto mb-1" />
-      <Skeleton className="h-4 w-3/4 mx-auto" />
-    </div>
-    
-    <Skeleton className="h-2.5 w-full rounded-full" />
-    
-    <div className="space-y-4">
-      <Skeleton key="question" className="h-16 w-full" />
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Skeleton key={i} className="h-16 w-full" />
-      ))}
-      <div className="flex justify-between pt-4">
-        <Skeleton className="h-10 w-24" />
-        <Skeleton className="h-10 w-24" />
-      </div>
-    </div>
-  </div>
-);
-
-// Main component
 const DeepInsightQuiz: React.FC = () => {
   const { user } = useAuth();
   const totalQuestions = deepInsightQuestions.length;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const {
     currentQuestionIndex,
@@ -63,11 +37,23 @@ const DeepInsightQuiz: React.FC = () => {
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
-  // Simplified loading approach - only show brief loading state
-  if (isLoading) {
+  // Hide initial loading state after first render
+  React.useEffect(() => {
+    if (isInitialLoad) {
+      const timer = setTimeout(() => setIsInitialLoad(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad]);
+
+  // Show a minimal loading indicator only during initial load
+  if (isInitialLoad && isLoading) {
     return (
-      <div className="container max-w-4xl py-8 px-4 md:px-6">
-        <QuizLoadingSkeleton />
+      <div className="container max-w-4xl py-8 px-4 md:px-6 flex items-center justify-center min-h-[50vh]">
+        <div className="animate-pulse flex space-x-2">
+          <div className="h-3 w-3 bg-primary rounded-full"></div>
+          <div className="h-3 w-3 bg-primary rounded-full"></div>
+          <div className="h-3 w-3 bg-primary rounded-full"></div>
+        </div>
       </div>
     );
   }
@@ -124,7 +110,6 @@ const DeepInsightQuiz: React.FC = () => {
             />
             
             <QuestionCard 
-              key={`question-${currentQuestion.id}`}
               question={currentQuestion}
               currentResponse={responses[currentQuestion.id] || ""}
               onPrevious={handlePrevious}

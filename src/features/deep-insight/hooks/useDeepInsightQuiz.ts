@@ -10,7 +10,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Start with false to avoid unnecessary loading state
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   // Use the storage hook to handle saving/restoring progress
@@ -38,15 +38,9 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   
   // Load saved responses if they exist
   useEffect(() => {
-    let isMounted = true;
-    
     const loadSavedResponses = async () => {
       try {
-        setIsLoading(true);
         const savedResponses = await getResponses();
-        
-        // Only update state if the component is still mounted
-        if (!isMounted) return;
         
         if (Object.keys(savedResponses).length > 0) {
           setResponses(savedResponses);
@@ -69,26 +63,16 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
         }
       } catch (err) {
         console.error("Error loading saved responses:", err);
-        if (isMounted) {
-          setError("Failed to load your progress. Please try refreshing the page.");
-        }
+        setError("Failed to load your progress. Please try refreshing the page.");
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
     
-    // Use a small timeout to prevent immediate loading state flicker
-    const timer = setTimeout(() => {
-      loadSavedResponses();
-    }, 100);
+    // Load responses immediately without delay
+    loadSavedResponses();
     
-    // Cleanup function
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
+    // Cleanup function not needed since we're not setting up any subscriptions
   }, [totalQuestions, getResponses, findLastAnsweredQuestionIndex]);
   
   // Reset error when question changes

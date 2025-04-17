@@ -1,5 +1,5 @@
 
-import React, { memo } from "react";
+import React from "react";
 import { DeepInsightCategories } from "../types";
 import { Progress } from "@/components/ui/progress";
 
@@ -9,7 +9,7 @@ interface QuizProgressProps {
   currentCategory?: string;
 }
 
-export const QuizProgress: React.FC<QuizProgressProps> = memo(({ 
+export const QuizProgress: React.FC<QuizProgressProps> = ({ 
   currentQuestionIndex, 
   totalQuestions,
   currentCategory 
@@ -32,7 +32,6 @@ export const QuizProgress: React.FC<QuizProgressProps> = memo(({
       <Progress 
         value={progress} 
         className="h-2.5" 
-        indicatorClassName="transition-all duration-300 ease-out"
       />
       
       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -47,7 +46,4 @@ export const QuizProgress: React.FC<QuizProgressProps> = memo(({
       </div>
     </div>
   );
-});
-
-// Display name for better debugging
-QuizProgress.displayName = "QuizProgress";
+};
