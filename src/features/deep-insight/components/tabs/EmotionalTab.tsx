@@ -8,6 +8,21 @@ interface EmotionalTabProps {
   analysis: PersonalityAnalysis;
 }
 
+// Type guard function to check if the object has the additional properties
+const hasEmotionalFeatures = (obj: any): obj is {
+  emotionalPatterns: string;
+  emotionalStrengths: string[];
+  emotionalChallenges: string[];
+  recommendations: string[];
+} => {
+  return (
+    'emotionalPatterns' in obj &&
+    'emotionalStrengths' in obj &&
+    'emotionalChallenges' in obj &&
+    'recommendations' in obj
+  );
+};
+
 export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
   const emotionalArchitecture = analysis.emotionalArchitecture || {
     emotionalAwareness: "You have a good understanding of your emotional states and can often identify the sources of your feelings.",
@@ -18,6 +33,26 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
     emotionalChallenges: ["Managing intense emotions", "Balancing emotional needs", "Setting emotional boundaries"],
     recommendations: ["Practice mindfulness regularly", "Develop emotional vocabulary", "Establish emotional boundaries"]
   };
+
+  // Extract the basic properties that always exist
+  const { emotionalAwareness, regulationStyle, empathicCapacity } = emotionalArchitecture;
+  
+  // Use our type guard to safely access the other properties
+  const emotionalPatterns = hasEmotionalFeatures(emotionalArchitecture) 
+    ? emotionalArchitecture.emotionalPatterns 
+    : "Your emotional patterns show a balanced approach to processing and expressing emotions.";
+  
+  const emotionalStrengths = hasEmotionalFeatures(emotionalArchitecture) 
+    ? emotionalArchitecture.emotionalStrengths 
+    : ["Strong emotional awareness", "Effective self-regulation", "Good empathic understanding"];
+  
+  const emotionalChallenges = hasEmotionalFeatures(emotionalArchitecture) 
+    ? emotionalArchitecture.emotionalChallenges 
+    : ["Managing intense emotions", "Balancing emotional needs", "Setting emotional boundaries"];
+  
+  const recommendations = hasEmotionalFeatures(emotionalArchitecture) 
+    ? emotionalArchitecture.recommendations 
+    : ["Practice mindfulness regularly", "Develop emotional vocabulary", "Establish emotional boundaries"];
 
   return (
     <Card>
@@ -31,22 +66,22 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
       <CardContent className="space-y-6">
         <div>
           <h3 className="font-semibold mb-3 text-lg">Emotional Awareness</h3>
-          <p className="text-muted-foreground leading-relaxed">{emotionalArchitecture.emotionalAwareness}</p>
+          <p className="text-muted-foreground leading-relaxed">{emotionalAwareness}</p>
         </div>
         
         <div>
           <h3 className="font-semibold mb-3 text-lg">Regulation Style</h3>
-          <p className="text-muted-foreground leading-relaxed">{emotionalArchitecture.regulationStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">{regulationStyle}</p>
         </div>
         
         <div>
           <h3 className="font-semibold mb-3 text-lg">Empathic Capacity</h3>
-          <p className="text-muted-foreground leading-relaxed">{emotionalArchitecture.empathicCapacity}</p>
+          <p className="text-muted-foreground leading-relaxed">{empathicCapacity}</p>
         </div>
         
         <div>
           <h3 className="font-semibold mb-3 text-lg">Emotional Patterns</h3>
-          <p className="text-muted-foreground leading-relaxed">{emotionalArchitecture.emotionalPatterns}</p>
+          <p className="text-muted-foreground leading-relaxed">{emotionalPatterns}</p>
         </div>
         
         <div>
@@ -55,8 +90,8 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
             Emotional Strengths
           </h3>
           <ul className="space-y-1 text-muted-foreground">
-            {Array.isArray(emotionalArchitecture.emotionalStrengths) ? 
-              emotionalArchitecture.emotionalStrengths.map((strength, index) => (
+            {Array.isArray(emotionalStrengths) ? 
+              emotionalStrengths.map((strength, index) => (
                 <li key={index} className="flex items-start">
                   <span className="mr-2">•</span>
                   <span>{strength}</span>
@@ -73,8 +108,8 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
             Emotional Challenges
           </h3>
           <ul className="space-y-1 text-muted-foreground">
-            {Array.isArray(emotionalArchitecture.emotionalChallenges) ? 
-              emotionalArchitecture.emotionalChallenges.map((challenge, index) => (
+            {Array.isArray(emotionalChallenges) ? 
+              emotionalChallenges.map((challenge, index) => (
                 <li key={index} className="flex items-start">
                   <span className="mr-2">•</span>
                   <span>{challenge}</span>
@@ -91,8 +126,8 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
             Recommendations
           </h3>
           <ul className="space-y-1 text-muted-foreground">
-            {Array.isArray(emotionalArchitecture.recommendations) ? 
-              emotionalArchitecture.recommendations.map((recommendation, index) => (
+            {Array.isArray(recommendations) ? 
+              recommendations.map((recommendation, index) => (
                 <li key={index} className="flex items-start">
                   <span className="mr-2">•</span>
                   <span>{recommendation}</span>
