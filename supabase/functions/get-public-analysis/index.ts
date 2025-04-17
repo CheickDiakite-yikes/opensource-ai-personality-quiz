@@ -56,6 +56,17 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[get-public-analysis] Getting public analysis with ID: ${id}`);
+    
+    // Fetch all analyses as a fallback to make debugging easier
+    const { data: allAnalyses, error: allError } = await supabase
+      .from('analyses')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(10);
+      
+    if (!allError && allAnalyses) {
+      console.log(`[get-public-analysis] Recently created analysis IDs: ${allAnalyses.map(a => a.id).join(', ')}`);
+    }
 
     // Try direct table access first with improved error handling
     try {
@@ -70,6 +81,23 @@ Deno.serve(async (req) => {
         // Continue to next approach instead of returning error immediately
       } else if (analysisData) {
         console.log(`[get-public-analysis] Found analysis by direct ID lookup: ${analysisData.id}`);
+        
+        // Add response patterns from the result JSON if present
+        if (analysisData.result && typeof analysisData.result === 'object') {
+          if (analysisData.result.responsePatterns) {
+            analysisData.responsePatterns = analysisData.result.responsePatterns;
+            console.log(`[get-public-analysis] Added response patterns from result JSON`);
+          }
+          
+          // Also add any missing core structures from result
+          ['coreTraits', 'cognitivePatterning', 'emotionalArchitecture', 'interpersonalDynamics', 'growthPotential']
+            .forEach(key => {
+              if (analysisData.result[key] && !analysisData[key]) {
+                analysisData[key] = analysisData.result[key];
+              }
+            });
+        }
+        
         return new Response(
           JSON.stringify(analysisData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -94,6 +122,14 @@ Deno.serve(async (req) => {
         // Continue to next approach
       } else if (assessmentData) {
         console.log(`[get-public-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
+        
+        // Add response patterns from the result JSON if present
+        if (assessmentData.result && typeof assessmentData.result === 'object') {
+          if (assessmentData.result.responsePatterns) {
+            assessmentData.responsePatterns = assessmentData.result.responsePatterns;
+          }
+        }
+        
         return new Response(
           JSON.stringify(assessmentData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -118,6 +154,14 @@ Deno.serve(async (req) => {
         console.error("[get-public-analysis] Error in flexible search:", flexError);
       } else if (flexData && flexData.length > 0) {
         console.log(`[get-public-analysis] Found analysis via flexible search: ${flexData[0].id}`);
+        
+        // Add response patterns from the result JSON if present
+        if (flexData[0].result && typeof flexData[0].result === 'object') {
+          if (flexData[0].result.responsePatterns) {
+            flexData[0].responsePatterns = flexData[0].result.responsePatterns;
+          }
+        }
+        
         return new Response(
           JSON.stringify(flexData[0]),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -141,6 +185,14 @@ Deno.serve(async (req) => {
         console.error("[get-public-analysis] Error fetching recent analysis:", recentError);
       } else if (recentData && recentData.length > 0) {
         console.log(`[get-public-analysis] Found most recent analysis as fallback: ${recentData[0].id}`);
+        
+        // Add response patterns from the result JSON if present
+        if (recentData[0].result && typeof recentData[0].result === 'object') {
+          if (recentData[0].result.responsePatterns) {
+            recentData[0].responsePatterns = recentData[0].result.responsePatterns;
+          }
+        }
+        
         return new Response(
           JSON.stringify({ 
             ...recentData[0],
@@ -167,7 +219,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to get analysis',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: Deno.env.get('NODE_ENV') === 'development' ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -3,13 +3,16 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Brain } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
+import { AnalysisData } from "../../utils/analysis/types";
 
 interface CognitiveTabProps {
   analysis: PersonalityAnalysis;
 }
 
 export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
-  const cognitivePatterning = analysis.cognitivePatterning || {
+  // Get the cognitive patterning from either format
+  const typedAnalysis = analysis as AnalysisData;
+  const cognitivePatterning = typedAnalysis.cognitivePatterning || {
     decisionMaking: "You tend to balance analytical thinking with intuitive insights when making decisions.",
     learningStyle: "You absorb information best through a mix of practical examples and theoretical concepts.",
     attention: "Your focus is adaptable, allowing you to switch between deep concentration and broader awareness."

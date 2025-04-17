@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ChartBar, PieChart, Activity, ArrowLeft } from "lucide-react";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { PersonalityAnalysis } from "@/utils/types";
+import { AnalysisData } from "@/features/deep-insight/utils/analysis/types";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -25,7 +26,7 @@ const DeepInsightResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { analysis: latestAnalysis, loading: latestLoading, error: latestError, saveAnalysis } = useDeepInsightResults();
-  const { getAnalysisById, isLoading: analysisLoading } = useAIAnalysis();
+  const { getAnalysisById, isLoading: analysisLoading, forceFetchAllAnalyses } = useAIAnalysis();
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,10 +61,15 @@ const DeepInsightResults: React.FC = () => {
         try {
           setLoading(true);
           console.log(`Loading Deep Insight analysis with ID: ${id}`);
+          
+          // Force refresh all analyses first to ensure we have the latest data
+          await forceFetchAllAnalyses();
+          
           const specificAnalysis = await getAnalysisById(id);
           
           if (specificAnalysis) {
             console.log(`Successfully loaded analysis: ${specificAnalysis.id}`);
+            console.log("Analysis data:", specificAnalysis);
             setAnalysis(specificAnalysis);
             setError(null);
           } else {
@@ -91,7 +97,7 @@ const DeepInsightResults: React.FC = () => {
     };
 
     loadAnalysis();
-  }, [id, getAnalysisById, latestAnalysis]);
+  }, [id, getAnalysisById, latestAnalysis, forceFetchAllAnalyses]);
   
   // Use either the specific analysis (if ID provided) or the latest analysis
   const displayLoading = loading || (latestLoading && !id);
@@ -105,6 +111,9 @@ const DeepInsightResults: React.FC = () => {
   if (displayError || !displayAnalysis) {
     return <ResultsError error={displayError || "No analysis data found"} />;
   }
+
+  // Convert to AnalysisData type for compatibility with visualization components
+  const analysisData = displayAnalysis as AnalysisData;
 
   return (
     <motion.div 
@@ -168,8 +177,8 @@ const DeepInsightResults: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="patterns" className="mt-0">
-              {displayAnalysis.responsePatterns ? (
-                <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
+              {analysisData.responsePatterns ? (
+                <ResponsePatternChart patternData={analysisData.responsePatterns} />
               ) : (
                 <div className="text-center p-6 bg-muted/20 rounded-md">
                   <p>Response pattern data is not available for this analysis.</p>

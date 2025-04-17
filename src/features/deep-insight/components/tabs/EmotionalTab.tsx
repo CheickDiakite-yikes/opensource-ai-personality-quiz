@@ -3,13 +3,16 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
+import { AnalysisData } from "../../utils/analysis/types";
 
 interface EmotionalTabProps {
   analysis: PersonalityAnalysis;
 }
 
 export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
-  const emotionalArchitecture = analysis.emotionalArchitecture || {
+  // Get emotional architecture from either format
+  const typedAnalysis = analysis as AnalysisData;
+  const emotionalArchitecture = typedAnalysis.emotionalArchitecture || {
     emotionalAwareness: "You have a good understanding of your emotional states and can often identify the sources of your feelings.",
     regulationStyle: "You manage emotions through a balanced approach, using both cognitive strategies and healthy expression.",
     empathicCapacity: "You connect well with others' emotions and can offer meaningful support while maintaining healthy boundaries."

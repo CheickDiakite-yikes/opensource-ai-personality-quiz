@@ -30,7 +30,14 @@ export const loadAnalysisHistory = (): PersonalityAnalysis[] => {
     const savedData = localStorage.getItem('analysis-history');
     if (savedData) {
       const parsedData = JSON.parse(savedData);
-      return Array.isArray(parsedData) ? parsedData : [];
+      console.log("Loaded analysis history from localStorage:", parsedData);
+      
+      // Ensure each analysis has the minimum required properties
+      const validAnalyses = Array.isArray(parsedData) ? parsedData.filter(item => 
+        item && item.id && item.createdAt
+      ) : [];
+      
+      return validAnalyses;
     }
   } catch (error) {
     console.error("Error loading analysis history:", error);
@@ -47,10 +54,13 @@ export const saveAnalysisToHistory = (
     // Ensure the analysis has all required fields and correct types
     const formattedAnalysis: PersonalityAnalysis = {
       ...analysis,
+      id: analysis.id || `local-${Date.now()}`,
       createdAt: typeof analysis.createdAt === 'string' 
         ? analysis.createdAt 
         : new Date().toISOString() // Convert Date to string if needed
     };
+    
+    console.log("Saving analysis to history:", formattedAnalysis.id);
     
     // Add to history (either update existing or add new)
     const updatedHistory = [
@@ -60,6 +70,7 @@ export const saveAnalysisToHistory = (
     
     // Save to localStorage
     localStorage.setItem('analysis-history', JSON.stringify(updatedHistory));
+    console.log(`Saved ${updatedHistory.length} analyses to localStorage`);
     
     return formattedAnalysis;
   } catch (error) {
@@ -72,7 +83,19 @@ export const saveAnalysisToHistory = (
 export const getAnalysisById = (analysisId: string): PersonalityAnalysis | null => {
   try {
     const history = loadAnalysisHistory();
-    return history.find(item => item.id === analysisId) || null;
+    
+    // First, try exact ID match
+    let analysis = history.find(item => item.id === analysisId);
+    
+    // If not found, try looking for a partial match (some IDs might be truncated)
+    if (!analysis) {
+      analysis = history.find(item => 
+        item.id.includes(analysisId) || 
+        (analysisId.length > 8 && item.id.includes(analysisId.slice(-8)))
+      );
+    }
+    
+    return analysis || null;
   } catch (error) {
     console.error("Error getting analysis by ID:", error);
     return null;
