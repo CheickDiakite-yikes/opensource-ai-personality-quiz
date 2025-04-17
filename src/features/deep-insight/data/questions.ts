@@ -1,4 +1,3 @@
-
 import { DeepInsightQuestion } from "../types";
 
 // This file now contains 100 comprehensive questions across multiple categories
@@ -14,6 +13,8 @@ export const deepInsightQuestions: DeepInsightQuestion[] = [
       { id: "q1-b", text: "Go with what feels right intuitively", value: 2 },
       { id: "q1-c", text: "Consider how others would handle it", value: 3 },
       { id: "q1-d", text: "Delay the decision until absolutely necessary", value: 4 },
+      { id: "q1-e", text: "Assume the worst outcome and prepare for it", value: 5 },
+      { id: "q1-f", text: "Second-guess myself even after deciding", value: 6 },
     ],
   },
   {
@@ -25,6 +26,8 @@ export const deepInsightQuestions: DeepInsightQuestion[] = [
       { id: "q2-b", text: "Engaging with a small group of close friends", value: 2 },
       { id: "q2-c", text: "Observing others and selectively participating", value: 3 },
       { id: "q2-d", text: "Feeling drained and looking forward to alone time", value: 4 },
+      { id: "q2-e", text: "Judging others' behaviors and conversations", value: 5 },
+      { id: "q2-f", text: "Anxious about how I'm being perceived", value: 6 },
     ],
   },
   {
@@ -36,6 +39,8 @@ export const deepInsightQuestions: DeepInsightQuestion[] = [
       { id: "q3-b", text: "Following my passions wherever they lead me", value: 2 },
       { id: "q3-c", text: "Learning from mentors and role models", value: 3 },
       { id: "q3-d", text: "Reflecting deeply on past experiences", value: 4 },
+      { id: "q3-e", text: "Comparing myself to others to gauge progress", value: 5 },
+      { id: "q3-f", text: "Setting impossibly high standards for myself", value: 6 },
     ],
   },
   {
@@ -47,6 +52,8 @@ export const deepInsightQuestions: DeepInsightQuestion[] = [
       { id: "q4-b", text: "Feel deeply disappointed but try to move forward", value: 2 },
       { id: "q4-c", text: "Seek support and perspective from others", value: 3 },
       { id: "q4-d", text: "Question my abilities and worry about future attempts", value: 4 },
+      { id: "q4-e", text: "Blame external factors or other people", value: 5 },
+      { id: "q4-f", text: "Dwell on the failure and replay it mentally", value: 6 },
     ],
   },
   {
@@ -58,6 +65,8 @@ export const deepInsightQuestions: DeepInsightQuestion[] = [
       { id: "q5-b", text: "Creative and flexible with room for innovation", value: 2 },
       { id: "q5-c", text: "Collaborative with strong team relationships", value: 3 },
       { id: "q5-d", text: "Independent with minimal oversight", value: 4 },
+      { id: "q5-e", text: "Competitive, where individual achievement is recognized", value: 5 },
+      { id: "q5-f", text: "Low-pressure with minimal risk of failure or criticism", value: 6 },
     ],
   },
   {
