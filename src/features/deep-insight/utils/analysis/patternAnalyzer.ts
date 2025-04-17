@@ -22,18 +22,8 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     f: 0
   };
   
-  // Count each response type by the letter at the end of the response string
   responsesArray.forEach(([_, answer]) => {
-    // Handle null, undefined or invalid answers
-    if (!answer || typeof answer !== 'string') {
-      console.warn("Invalid answer detected:", answer);
-      return;
-    }
-    
-    // Extract the last character of the answer string which indicates the choice
-    const lastChar = answer.charAt(answer.length - 1).toLowerCase();
-    
-    // Increment the appropriate counter if the character is a valid choice
+    const lastChar = answer.charAt(answer.length - 1);
     if (lastChar === 'a') answerCounts.a++;
     if (lastChar === 'b') answerCounts.b++;
     if (lastChar === 'c') answerCounts.c++;
@@ -45,71 +35,14 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
   console.log("Response distribution:", answerCounts);
   
   const totalResponses = responsesArray.length;
-  
-  // Handle edge case where there are no responses
-  if (totalResponses === 0) {
-    console.warn("No valid responses found, using default distribution");
-    return {
-      percentages: {
-        a: 20,
-        b: 20,
-        c: 20,
-        d: 20,
-        e: 10,
-        f: 10
-      },
-      primaryChoice: "a",
-      secondaryChoice: "b",
-      responseSignature: "20-20-20-20-10-10"
-    };
-  }
-  
-  // Calculate valid response count (sum of all answer counts)
-  const validResponseCount = answerCounts.a + answerCounts.b + answerCounts.c + 
-                            answerCounts.d + answerCounts.e + answerCounts.f;
-                            
-  // If no valid responses were found (e.g., malformed data), use default
-  if (validResponseCount === 0) {
-    console.warn("No valid answer choices found, using default distribution");
-    return {
-      percentages: {
-        a: 20,
-        b: 20,
-        c: 20,
-        d: 20,
-        e: 10,
-        f: 10
-      },
-      primaryChoice: "a",
-      secondaryChoice: "b",
-      responseSignature: "20-20-20-20-10-10"
-    };
-  }
-  
   const percentages = {
-    a: Math.round((answerCounts.a / validResponseCount) * 100) || 0,
-    b: Math.round((answerCounts.b / validResponseCount) * 100) || 0,
-    c: Math.round((answerCounts.c / validResponseCount) * 100) || 0,
-    d: Math.round((answerCounts.d / validResponseCount) * 100) || 0,
-    e: Math.round((answerCounts.e / validResponseCount) * 100) || 0,
-    f: Math.round((answerCounts.f / validResponseCount) * 100) || 0
+    a: Math.round((answerCounts.a / totalResponses) * 100),
+    b: Math.round((answerCounts.b / totalResponses) * 100),
+    c: Math.round((answerCounts.c / totalResponses) * 100),
+    d: Math.round((answerCounts.d / totalResponses) * 100),
+    e: Math.round((answerCounts.e / totalResponses) * 100),
+    f: Math.round((answerCounts.f / totalResponses) * 100)
   };
-  
-  // Ensure percentages sum to 100%
-  const totalPercentage = percentages.a + percentages.b + percentages.c + 
-                          percentages.d + percentages.e + percentages.f;
-                          
-  if (totalPercentage !== 100 && validResponseCount > 0) {
-    // Find the largest percentage and adjust it to make total 100%
-    const diff = 100 - totalPercentage;
-    const entries = Object.entries(percentages) as [keyof typeof percentages, number][];
-    const maxEntry = entries.reduce((max, entry) => 
-      entry[1] > max[1] ? entry : max, entries[0]
-    );
-    
-    percentages[maxEntry[0]] += diff;
-    console.log(`Adjusted percentages to sum to 100% (added ${diff} to ${maxEntry[0]})`);
-  }
   
   // Generate a unique response signature for this user
   const responseSignature = `${percentages.a}-${percentages.b}-${percentages.c}-${percentages.d}-${percentages.e}-${percentages.f}`;
