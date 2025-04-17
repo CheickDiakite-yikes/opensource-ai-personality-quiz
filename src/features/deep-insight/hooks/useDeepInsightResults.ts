@@ -8,7 +8,6 @@ import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
-import { analyzeResponsePatterns } from "../utils/analysis/patternAnalyzer";
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
@@ -67,13 +66,6 @@ export const useDeepInsightResults = () => {
           }
           
           console.log("Successfully received analysis from edge function:", result.data);
-          
-          // Ensure response patterns are properly analyzed
-          if (!result.data.responsePatterns || !result.data.responsePatterns.percentages) {
-            console.log("Response patterns missing or incomplete, generating them now");
-            result.data.responsePatterns = analyzeResponsePatterns(responseData);
-          }
-          
           setAnalysis(result.data);
           setLoading(false);
           return;
@@ -83,12 +75,6 @@ export const useDeepInsightResults = () => {
           
           // Fall back to client-side analysis generation
           const generatedAnalysis = generateAnalysisFromResponses(responseData);
-          
-          // Ensure response patterns are properly analyzed
-          if (!generatedAnalysis.responsePatterns || !generatedAnalysis.responsePatterns.percentages) {
-            console.log("Response patterns missing or incomplete in client-side analysis, generating them now");
-            generatedAnalysis.responsePatterns = analyzeResponsePatterns(responseData);
-          }
           
           // Add timestamps and IDs
           generatedAnalysis.id = `deep-insight-${Date.now()}`;
@@ -150,12 +136,6 @@ export const useDeepInsightResults = () => {
         console.error("Error saving assessment:", assessmentError);
         toast.error("Failed to save your assessment");
         return;
-      }
-      
-      // Ensure response patterns exist before saving
-      if (!analysis.responsePatterns || !analysis.responsePatterns.percentages) {
-        console.log("Adding response patterns before saving");
-        analysis.responsePatterns = analyzeResponsePatterns(responseData);
       }
       
       // Then save the analysis to deep_insight_analyses
