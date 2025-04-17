@@ -70,6 +70,8 @@ export const useDeepInsightResults = () => {
         console.log("Retrieved responses from storage:", responses);
         console.log("Response count:", Object.keys(responses).length);
         
+        // Verify we have all expected responses
+        const expectedQuestionCount = 100; // Total number of questions
         if (!responses || Object.keys(responses).length === 0) {
           console.log("No responses found");
           toast.error("No assessment responses found", {
@@ -78,6 +80,15 @@ export const useDeepInsightResults = () => {
           // Redirect to the quiz page
           navigate("/deep-insight/quiz");
           throw new Error("No responses found. Please complete the assessment first.");
+        }
+        
+        if (Object.keys(responses).length < expectedQuestionCount) {
+          console.warn(`Incomplete responses: ${Object.keys(responses).length}/${expectedQuestionCount}`);
+          toast.error("Incomplete assessment", {
+            description: `You've only completed ${Object.keys(responses).length} out of ${expectedQuestionCount} questions. Please complete all questions for a comprehensive analysis.`
+          });
+          navigate("/deep-insight/quiz");
+          throw new Error(`Incomplete responses: ${Object.keys(responses).length}/${expectedQuestionCount}. Please complete all questions.`);
         }
 
         console.log("Generating analysis from responses...");
@@ -107,6 +118,40 @@ export const useDeepInsightResults = () => {
       console.log(`Generating analysis from ${Object.keys(responses).length} responses`);
       const result = await generateAnalysisFromResponses(responses);
       console.log("Analysis generated successfully");
+      
+      // If user is logged in, save the analysis to the database
+      if (user) {
+        try {
+          console.log("Saving analysis to database...");
+          const { data, error } = await supabase
+            .from("deep_insight_analyses")
+            .insert({
+              user_id: user.id,
+              complete_analysis: result,
+              raw_responses: responses,
+              overview: result.overview,
+              core_traits: result.coreTraits,
+              cognitive_patterning: result.cognitivePatterning,
+              emotional_architecture: result.emotionalArchitecture,
+              interpersonal_dynamics: result.interpersonalDynamics,
+              intelligence_score: result.intelligenceScore,
+              emotional_intelligence_score: result.emotionalIntelligenceScore,
+              response_patterns: result.responsePatterns,
+              growth_potential: result.growthPotential
+            })
+            .select("id")
+            .single();
+          
+          if (error) {
+            console.error("Error saving analysis to database:", error);
+          } else {
+            console.log("Analysis saved to database with ID:", data.id);
+          }
+        } catch (err) {
+          console.error("Exception while saving analysis:", err);
+        }
+      }
+      
       return result;
     } catch (error) {
       console.error("Error analyzing responses:", error);

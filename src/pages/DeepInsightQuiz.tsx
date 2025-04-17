@@ -9,6 +9,7 @@ import { useDeepInsightQuiz } from "@/features/deep-insight/hooks/useDeepInsight
 import { deepInsightQuestions } from "@/features/deep-insight/data/questions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 // Main component
 const DeepInsightQuiz: React.FC = () => {
@@ -60,6 +61,7 @@ const DeepInsightQuiz: React.FC = () => {
           ) : hasPartialProgress && (
             <div className="mt-4 text-sm text-muted-foreground">
               <p>You've completed {completedQuestions} of {totalQuestions} questions ({progressPercentage}%).</p>
+              <p className="text-xs mt-1">All {totalQuestions} questions must be answered for a complete analysis.</p>
               <Button 
                 variant="outline" 
                 size="sm" 

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
+import { deepInsightQuestions } from "../data/questions";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -29,12 +30,23 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
           const questionIds = Object.keys(savedResponses);
           if (questionIds.length > 0) {
             // Set current question to the next unanswered one or the last one if all are answered
-            const lastAnsweredIndex = questionIds.length - 1;
+            const lastAnsweredIndex = findLastAnsweredQuestionIndex(savedResponses);
             const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
             setCurrentQuestionIndex(nextIndex);
             setIsRestoredSession(true);
             
             console.log(`Restored session with ${questionIds.length} answers, continuing at question ${nextIndex}`);
+            
+            // Show toast notification about progress restoration
+            if (questionIds.length < totalQuestions) {
+              toast.info(`Restored your progress (${questionIds.length}/${totalQuestions} questions answered)`, {
+                description: "Continue where you left off"
+              });
+            } else {
+              toast.success(`All ${totalQuestions} questions answered!`, {
+                description: "You can review or change your answers"
+              });
+            }
           }
         }
       } catch (err) {
@@ -61,6 +73,26 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       setIsRestoredSession(false);
     }
   }, [isRestoredSession]);
+  
+  // Function to find the index of the last answered question
+  const findLastAnsweredQuestionIndex = (savedResponses: DeepInsightResponses): number => {
+    // Create a map of all questions by ID for faster lookup
+    const questionMap = new Map(
+      deepInsightQuestions.map((q, index) => [q.id, index])
+    );
+    
+    // Find the highest index of answered questions
+    let highestIndex = -1;
+    
+    for (const questionId of Object.keys(savedResponses)) {
+      const questionIndex = questionMap.get(questionId);
+      if (questionIndex !== undefined && questionIndex > highestIndex) {
+        highestIndex = questionIndex;
+      }
+    }
+    
+    return highestIndex;
+  };
   
   const handleSubmitQuestion = async (data: Record<string, string>) => {
     try {
@@ -118,6 +150,27 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       console.log("All responses collected:", finalResponses);
       console.log("Response count:", Object.keys(finalResponses).length);
       
+      // Verify we have all the responses
+      if (Object.keys(finalResponses).length < totalQuestions) {
+        const missingCount = totalQuestions - Object.keys(finalResponses).length;
+        console.warn(`Missing ${missingCount} responses out of ${totalQuestions}`);
+        
+        toast.error(`Missing ${missingCount} responses`, {
+          description: "Please complete all questions for an accurate analysis"
+        });
+        
+        // Find the first unanswered question
+        for (let i = 0; i < deepInsightQuestions.length; i++) {
+          const question = deepInsightQuestions[i];
+          if (!finalResponses[question.id]) {
+            setCurrentQuestionIndex(i);
+            break;
+          }
+        }
+        
+        return;
+      }
+      
       // First verify responses have been saved successfully
       await saveResponses(finalResponses);
       
@@ -127,6 +180,10 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       
       if (Object.keys(savedResponses).length === 0) {
         throw new Error("Failed to save responses. Please try again.");
+      }
+      
+      if (Object.keys(savedResponses).length < totalQuestions) {
+        throw new Error(`Only saved ${Object.keys(savedResponses).length} out of ${totalQuestions} responses. Please try again.`);
       }
       
       // Show a more detailed toast message about the analysis process
