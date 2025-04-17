@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
 import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
 import { DeepInsightResponses } from "../types";
-import { AnalysisData } from "../utils/analysis/types";
+import { AnalysisData, toJsonObject } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -125,22 +125,23 @@ export const useDeepInsightResults = () => {
           console.log("Saving analysis to database...");
           
           // Convert full analysis to JSON-compatible object
-          const jsonAnalysis = JSON.parse(JSON.stringify(result));
+          const jsonAnalysis = toJsonObject(result);
           
-          // Prepare analysis data for insertion
+          // We need to ensure all complex objects are converted to JSON-compatible format
+          // This properly handles the ResponsePatternAnalysis types
           const analysisData = {
             user_id: user.id,
             complete_analysis: jsonAnalysis,
-            raw_responses: responses,
+            raw_responses: JSON.parse(JSON.stringify(responses)),
             overview: result.overview,
-            core_traits: result.coreTraits,
-            cognitive_patterning: result.cognitivePatterning,
-            emotional_architecture: result.emotionalArchitecture,
-            interpersonal_dynamics: result.interpersonalDynamics,
+            core_traits: JSON.parse(JSON.stringify(result.coreTraits)),
+            cognitive_patterning: JSON.parse(JSON.stringify(result.cognitivePatterning)),
+            emotional_architecture: JSON.parse(JSON.stringify(result.emotionalArchitecture)),
+            interpersonal_dynamics: JSON.parse(JSON.stringify(result.interpersonalDynamics)),
             intelligence_score: result.intelligenceScore,
             emotional_intelligence_score: result.emotionalIntelligenceScore,
-            response_patterns: result.responsePatterns,
-            growth_potential: result.growthPotential
+            response_patterns: JSON.parse(JSON.stringify(result.responsePatterns)),
+            growth_potential: JSON.parse(JSON.stringify(result.growthPotential))
           };
           
           const { data, error } = await supabase
