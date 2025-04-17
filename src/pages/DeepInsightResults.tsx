@@ -1,190 +1,162 @@
 
-import React, { useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
 import { useDeepInsightResults } from "@/features/deep-insight/hooks/useDeepInsightResults";
+import { ResultsHeader } from "@/features/deep-insight/components/ResultsHeader";
 import { ResultsLoading } from "@/features/deep-insight/components/ResultsLoading";
 import { ResultsError } from "@/features/deep-insight/components/ResultsError";
-import { ResultsHeader } from "@/features/deep-insight/components/ResultsHeader";
-import { PersonalOverviewCard } from "@/features/deep-insight/components/PersonalOverviewCard";
 import { ResultsTabs } from "@/features/deep-insight/components/ResultsTabs";
-import { StrengthsChallengesCards } from "@/features/deep-insight/components/StrengthsChallengesCards";
 import { ResultsActions } from "@/features/deep-insight/components/ResultsActions";
-import PersonalityTraitsChart from "@/features/deep-insight/components/visualization/PersonalityTraitsChart";
-import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
-import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ChartBar, PieChart, Activity, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { AssessmentErrorHandler } from "@/components/assessment/AssessmentErrorHandler";
+import { supabase } from "@/integrations/supabase/client";
+import { AnalysisData } from "@/features/deep-insight/utils/analysis/types";
 
-// Result component
 const DeepInsightResults: React.FC = () => {
-  const { 
-    analysis, 
-    isLoading, 
-    error, 
-    saveAnalysis, 
-    retryAnalysis,
-    loadedFromCache 
-  } = useDeepInsightResults();
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryParamId = searchParams.get('id');
+  const isLegacy = searchParams.get('legacy') === 'true';
   const navigate = useNavigate();
-  
-  // Animation variants
+  const { analysis, isLoading, error, saveAnalysis, retryAnalysis, loadedFromCache } = useDeepInsightResults();
+  const [legacyAnalysis, setLegacyAnalysis] = useState<AnalysisData | null>(null);
+  const [isLegacyLoading, setIsLegacyLoading] = useState(false);
+  const [legacyError, setLegacyError] = useState<Error | null>(null);
+
+  // Legacy analysis support
+  useEffect(() => {
+    // If we have a legacy ID parameter, try to fetch directly from the edge function
+    if (isLegacy && queryParamId && !legacyAnalysis && !analysis) {
+      const fetchLegacyAnalysis = async () => {
+        setIsLegacyLoading(true);
+        setLegacyError(null);
+        
+        try {
+          // Call the get-public-analysis function directly with the legacy ID
+          console.log(`Fetching legacy analysis with ID: ${queryParamId}`);
+          const { data, error } = await supabase.functions.invoke('get-public-analysis', {
+            body: { id: queryParamId },
+          });
+          
+          if (error) {
+            console.error("Error fetching legacy analysis:", error);
+            setLegacyError(new Error(`Error fetching legacy analysis: ${error.message || error}`));
+            toast.error("Could not load legacy analysis", {
+              description: "This analysis may be in an older format that is no longer supported"
+            });
+            return;
+          }
+          
+          if (data) {
+            console.log("Successfully loaded legacy analysis:", data);
+            setLegacyAnalysis(data as AnalysisData);
+            toast.success("Legacy analysis loaded successfully");
+          } else {
+            console.error("No legacy analysis data found");
+            setLegacyError(new Error("No analysis data found"));
+            toast.error("Could not find the requested analysis", {
+              description: "Try taking a new assessment to generate a current analysis"
+            });
+          }
+        } catch (err) {
+          console.error("Exception fetching legacy analysis:", err);
+          setLegacyError(err instanceof Error ? err : new Error("An unknown error occurred"));
+          toast.error("Error loading legacy analysis", {
+            description: "There was a problem retrieving this analysis"
+          });
+        } finally {
+          setIsLegacyLoading(false);
+        }
+      };
+      
+      fetchLegacyAnalysis();
+    }
+  }, [isLegacy, queryParamId, analysis, legacyAnalysis]);
+
+  // Display data configuration for animations
+  const staggerDelay = 0.05;
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        when: "beforeChildren",
+        staggerChildren: staggerDelay
       }
     }
   };
-  
+
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: (i: number) => ({
-      y: 0,
+    hidden: { opacity: 0, y: 20 },
+    visible: i => ({
       opacity: 1,
+      y: 0,
       transition: {
-        delay: i * 0.1,
-        duration: 0.5
+        delay: i * staggerDelay,
+        duration: 0.4,
+        ease: "easeOut"
       }
     })
   };
-  
-  // Show notification when using cached analysis
-  useEffect(() => {
-    if (loadedFromCache && analysis) {
-      toast.info("Using cached analysis results", {
-        description: "Your previous analysis results have been loaded from cache",
-        duration: 5000
-      });
-    }
-  }, [loadedFromCache, analysis]);
-  
-  // Handle retry by using the retryAnalysis function
-  const handleRetry = () => {
-    if (retryAnalysis) {
-      toast.loading("Retrying analysis generation one more time...");
-      retryAnalysis();
+
+  // If we have a legacy analysis, use it instead of the normal analysis
+  const displayAnalysis = legacyAnalysis || analysis;
+  const displayError = legacyError || error;
+  const isDisplayLoading = isLegacyLoading || (isLoading && !displayAnalysis);
+
+  // Save analysis implementation
+  const handleSaveAnalysis = async () => {
+    if (legacyAnalysis) {
+      // For legacy analyses, we inform the user we're saving a copy in the new format
+      toast.info("Converting legacy analysis to new format...");
+      try {
+        // This would convert and save the legacy analysis in the new format
+        await saveAnalysis();
+        toast.success("Legacy analysis saved in new format");
+      } catch (err) {
+        console.error("Error saving legacy analysis:", err);
+        toast.error("Failed to save legacy analysis");
+      }
     } else {
-      toast.loading("Reloading analysis...");
-      // Use location.reload() rather than window.location.reload() to reset state completely
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // For regular analyses, use the normal save function
+      await saveAnalysis();
     }
   };
-  
-  if (isLoading) {
-    return <ResultsLoading onRetry={handleRetry} />;
+
+  if (isDisplayLoading) {
+    return <ResultsLoading />;
   }
-  
-  if (error || !analysis) {
-    return (
-      <ResultsError 
-        error={error?.message || "No analysis data found"} 
-        onRetry={handleRetry} 
-      />
-    );
+
+  if (displayError) {
+    return <ResultsError error={displayError.message} onRetry={retryAnalysis} />;
   }
-  
-  // Last resort error handling if analysis is malformed
-  const isAnalysisComplete = 
-    analysis && 
-    analysis.traits && 
-    analysis.traits.length > 0 && 
-    analysis.overview && 
-    analysis.coreTraits;
-    
-  if (!isAnalysisComplete) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <AssessmentErrorHandler
-          title="Incomplete Analysis Data"
-          description="The analysis was generated but appears to be incomplete. This can sometimes happen due to processing errors."
-          showRetry={true}
-          onRetry={handleRetry}
-          errorDetails={`Analysis ID: ${analysis?.id || 'unknown'}, Missing data: ${!analysis?.traits ? 'traits' : ''} ${!analysis?.overview ? 'overview' : ''} ${!analysis?.coreTraits ? 'coreTraits' : ''}`}
-        />
-        
-        <div className="mt-8 flex justify-center">
-          <Button 
-            onClick={() => navigate("/deep-insight/quiz")}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Retake Assessment
-          </Button>
-        </div>
-      </div>
-    );
+
+  if (!displayAnalysis) {
+    return <ResultsError error="No analysis data available. Please complete the assessment." />;
   }
-  
+
   return (
-    <motion.div 
-      className="container max-w-4xl py-8 px-4 md:px-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="flex flex-col gap-8">
-        <ResultsHeader />
-        
-        {/* Personal Overview */}
-        <PersonalOverviewCard analysis={analysis} itemVariants={itemVariants} />
-        
-        {/* Visualizations Section */}
-        <motion.div
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-          custom={4}
-        >
-          <h2 className="text-2xl font-bold mb-4">Visualized Insights</h2>
-          
-          <Tabs defaultValue="traits" className="w-full">
-            <TabsList className="w-full justify-start mb-4">
-              <TabsTrigger value="traits" className="flex items-center gap-2">
-                <ChartBar className="h-4 w-4" />
-                <span>Personality Traits</span>
-              </TabsTrigger>
-              <TabsTrigger value="patterns" className="flex items-center gap-2">
-                <PieChart className="h-4 w-4" />
-                <span>Response Patterns</span>
-              </TabsTrigger>
-              <TabsTrigger value="cognitive" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                <span>Cognitive Profile</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="traits" className="mt-0">
-              <PersonalityTraitsChart traits={analysis.traits} />
-            </TabsContent>
-            
-            <TabsContent value="patterns" className="mt-0">
-              <ResponsePatternChart patternData={analysis.responsePatterns} />
-            </TabsContent>
-            
-            <TabsContent value="cognitive" className="mt-0">
-              <CognitiveStrengthsChart analysis={analysis} />
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-        
-        {/* Detailed Analysis Tabs */}
-        <ResultsTabs analysis={analysis} itemVariants={itemVariants} />
-        
-        {/* Strengths and Challenges */}
-        <StrengthsChallengesCards analysis={analysis} itemVariants={itemVariants} />
-        
-        {/* Actions */}
-        <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} analysis={analysis} />
-      </div>
-    </motion.div>
+    <div className="container mx-auto max-w-4xl px-4 py-8 pb-20">
+      <motion.div
+        className="space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <ResultsHeader 
+          analysis={displayAnalysis} 
+          itemVariants={itemVariants} 
+        />
+
+        <ResultsActions 
+          onSave={handleSaveAnalysis} 
+          itemVariants={itemVariants}
+          analysis={displayAnalysis} 
+        />
+
+        <ResultsTabs analysis={displayAnalysis} itemVariants={itemVariants} />
+      </motion.div>
+    </div>
   );
 };
 

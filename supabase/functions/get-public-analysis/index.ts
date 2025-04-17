@@ -57,84 +57,95 @@ Deno.serve(async (req) => {
 
     console.log(`[get-public-analysis] Getting public analysis with ID: ${id}`);
 
-    // Try direct table access first with improved error handling - check our new table first
-    try {
-      const { data: deepInsightData, error: deepInsightError } = await supabase
-        .from('deep_insight_analyses')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      
-      if (deepInsightError) {
-        console.error("[get-public-analysis] Error fetching from deep_insight_analyses:", deepInsightError);
-        // Continue to next approach
-      } else if (deepInsightData) {
-        console.log(`[get-public-analysis] Found analysis in deep_insight_analyses table: ${deepInsightData.id}`);
-        return new Response(
-          JSON.stringify(deepInsightData.complete_analysis),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (e) {
-      console.error("[get-public-analysis] Exception in deep_insight_analyses lookup:", e);
-      // Continue to next approach
-    }
+    // IMPROVED LEGACY ID HANDLING: Check if this is a legacy ID (non-UUID format)
+    const isLegacyId = id.startsWith('analysis-') || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     
-    // If not found in deep_insight_analyses, try the old analyses table
-    try {
-      const { data: analysisData, error: analysisError } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      
-      if (analysisError) {
-        console.error("[get-public-analysis] Error fetching analysis by ID:", analysisError);
-        // Continue to next approach
-      } else if (analysisData) {
-        console.log(`[get-public-analysis] Found analysis in analyses table: ${analysisData.id}`);
-        return new Response(
-          JSON.stringify(analysisData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (e) {
-      console.error("[get-public-analysis] Exception in analyses lookup:", e);
-      // Continue to next approach
-    }
-    
-    // If not found by id, try looking by assessment_id
-    try {
-      console.log("[get-public-analysis] Analysis not found by ID, trying assessment_id");
-      const { data: assessmentData, error: assessmentError } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('assessment_id', id)
-        .maybeSingle();
+    if (isLegacyId) {
+      console.log(`[get-public-analysis] Legacy ID format detected: ${id}`);
+      // For legacy IDs, try to look them up directly in the old analyses table
+      try {
+        const { data: analysisData, error: analysisError } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
         
-      if (assessmentError) {
-        console.error("[get-public-analysis] Error fetching by assessment_id:", assessmentError);
-        // Continue to next approach
-      } else if (assessmentData) {
-        console.log(`[get-public-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
-        return new Response(
-          JSON.stringify(assessmentData),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (analysisError) {
+          console.error("[get-public-analysis] Error fetching legacy analysis by ID:", analysisError);
+        } else if (analysisData) {
+          console.log(`[get-public-analysis] Found legacy analysis in analyses table: ${analysisData.id}`);
+          return new Response(
+            JSON.stringify(analysisData),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // If not found directly, try the assessment_id field
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('assessment_id', id)
+          .maybeSingle();
+          
+        if (assessmentError) {
+          console.error("[get-public-analysis] Error fetching by assessment_id:", assessmentError);
+        } else if (assessmentData) {
+          console.log(`[get-public-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
+          return new Response(
+            JSON.stringify(assessmentData),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (e) {
+        console.error("[get-public-analysis] Exception in legacy ID lookup:", e);
       }
-    } catch (e) {
-      console.error("[get-public-analysis] Exception in assessment_id lookup:", e);
-      // Continue to next approach
+    } else {
+      // Try direct table access for UUID format IDs
+      try {
+        const { data: deepInsightData, error: deepInsightError } = await supabase
+          .from('deep_insight_analyses')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (deepInsightError) {
+          console.error("[get-public-analysis] Error fetching from deep_insight_analyses:", deepInsightError);
+        } else if (deepInsightData) {
+          console.log(`[get-public-analysis] Found analysis in deep_insight_analyses table: ${deepInsightData.id}`);
+          return new Response(
+            JSON.stringify(deepInsightData.complete_analysis),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (e) {
+        console.error("[get-public-analysis] Exception in deep_insight_analyses lookup:", e);
+      }
     }
-      
+    
     // If still not found, try a more flexible search
     try {
-      console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
+      console.log("[get-public-analysis] Analysis not found by direct ID, trying flexible search");
+      
+      // For legacy IDs, try to extract timestamp or identifier parts
+      let searchTerm = id;
+      if (isLegacyId && id.includes('-')) {
+        // Extract the numeric part if it's a legacy ID like "analysis-1234567890"
+        const parts = id.split('-');
+        if (parts.length >= 2) {
+          searchTerm = parts[1]; // Use the timestamp part for search
+        }
+      } else {
+        // For UUID format, use the last 8 characters
+        searchTerm = id.slice(-8);
+      }
+      
+      console.log(`[get-public-analysis] Using search term: ${searchTerm}`);
+      
       // Try both tables with flexible search
       const { data: flexDeepInsightData, error: flexDeepInsightError } = await supabase
         .from('deep_insight_analyses')
         .select('*')
-        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .filter('id', 'ilike', `%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(1);
         
@@ -152,7 +163,7 @@ Deno.serve(async (req) => {
       const { data: flexData, error: flexError } = await supabase
         .from('analyses')
         .select('*')
-        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .filter('id', 'ilike', `%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(1);
         
@@ -167,10 +178,9 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       console.error("[get-public-analysis] Exception in flexible search:", e);
-      // Continue to next approach
     }
 
-    // Try one last approach - get the most recent analysis from either table
+    // Try one last approach - get the most recent analysis
     try {
       console.log("[get-public-analysis] No matching analysis found, getting most recent analysis");
       // Try deep_insight_analyses first

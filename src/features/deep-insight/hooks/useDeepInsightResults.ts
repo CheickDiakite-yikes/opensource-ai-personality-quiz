@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
 import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
@@ -82,6 +83,11 @@ export const useDeepInsightResults = () => {
     }
   };
 
+  // Helper function to check if an ID is in legacy format
+  const isLegacyId = (id: string): boolean => {
+    return id.startsWith('analysis-') || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  };
+
   useEffect(() => {
     const fetchOrGenerateAnalysis = async () => {
       // CRITICAL FIX: Don't proceed if we're already retrying
@@ -108,30 +114,61 @@ export const useDeepInsightResults = () => {
         // If an ID is provided, try to fetch that specific analysis
         if (analysisId) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
-          const { data, error } = await supabase
-            .from("deep_insight_analyses")
-            .select("*")
-            .eq("id", analysisId)
-            .maybeSingle();
-
-          if (error) {
-            console.error(`Error fetching analysis: ${error.message}`);
-            throw new Error(`Error fetching analysis: ${error.message}`);
-          }
-
-          if (data) {
-            console.log(`Successfully loaded analysis: ${data.id}`);
-            // Extract the complete analysis from the data
-            const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
-            setAnalysis(convertedAnalysis);
-            cacheAnalysis(convertedAnalysis);
-            setIsLoading(false);
-            return;
+          
+          // Check if this is a legacy ID format
+          if (isLegacyId(analysisId)) {
+            console.log(`Legacy analysis ID format detected: ${analysisId}`);
+            
+            // For legacy IDs, call the edge function directly
+            try {
+              const { data, error } = await supabase.functions.invoke('get-public-analysis', {
+                body: { id: analysisId },
+              });
+              
+              if (error) {
+                console.error(`Error fetching legacy analysis: ${error.message || error}`);
+                throw new Error(`Error fetching legacy analysis: ${error.message || error}`);
+              }
+              
+              if (data) {
+                console.log(`Successfully loaded legacy analysis`);
+                const analysisData = data as AnalysisData;
+                setAnalysis(analysisData);
+                cacheAnalysis(analysisData);
+                setIsLoading(false);
+                return;
+              }
+            } catch (legacyErr) {
+              console.error("Failed to fetch legacy analysis:", legacyErr);
+              // Continue to next approach (we'll try to generate a new analysis)
+            }
           } else {
-            console.log(`No analysis found with ID: ${analysisId}`);
-            toast.error("Analysis not found", {
-              description: "The requested analysis could not be found"
-            });
+            // For UUID format IDs, try to fetch from the database
+            const { data, error } = await supabase
+              .from("deep_insight_analyses")
+              .select("*")
+              .eq("id", analysisId)
+              .maybeSingle();
+
+            if (error) {
+              console.error(`Error fetching analysis: ${error.message}`);
+              throw new Error(`Error fetching analysis: ${error.message}`);
+            }
+
+            if (data) {
+              console.log(`Successfully loaded analysis: ${data.id}`);
+              // Extract the complete analysis from the data
+              const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
+              setAnalysis(convertedAnalysis);
+              cacheAnalysis(convertedAnalysis);
+              setIsLoading(false);
+              return;
+            } else {
+              console.log(`No analysis found with ID: ${analysisId}`);
+              toast.error("Analysis not found", {
+                description: "The requested analysis could not be found"
+              });
+            }
           }
         }
 
@@ -327,20 +364,46 @@ export const useDeepInsightResults = () => {
   const fetchAnalysisById = async (id: string): Promise<AnalysisData | null> => {
     try {
       console.log(`Directly fetching analysis with ID: ${id}`);
-      const { data, error } = await supabase
-        .from("deep_insight_analyses")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-        
-      if (error) {
-        console.error("Error fetching analysis by ID:", error);
-        return null;
-      }
       
-      if (data) {
-        const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
-        return convertedAnalysis;
+      // Check if this is a legacy ID format
+      if (isLegacyId(id)) {
+        console.log(`Legacy analysis ID format detected for direct fetch: ${id}`);
+        
+        try {
+          // For legacy IDs, call the edge function
+          const { data, error } = await supabase.functions.invoke('get-public-analysis', {
+            body: { id },
+          });
+          
+          if (error) {
+            console.error(`Error direct fetching legacy analysis: ${error.message || error}`);
+            return null;
+          }
+          
+          if (data) {
+            return data as unknown as AnalysisData;
+          }
+        } catch (err) {
+          console.error("Error fetching legacy analysis:", err);
+          return null;
+        }
+      } else {
+        // For UUID format IDs, query the database directly
+        const { data, error } = await supabase
+          .from("deep_insight_analyses")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching analysis by ID:", error);
+          return null;
+        }
+        
+        if (data) {
+          const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
+          return convertedAnalysis;
+        }
       }
       
       return null;
