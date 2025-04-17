@@ -13,6 +13,9 @@ interface PersonalOverviewCardProps {
 export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ analysis, itemVariants }) => {
   const [expanded, setExpanded] = React.useState(false);
 
+  // Round intelligence scores to 2 decimal places
+  const roundScore = (score: number) => Number(score.toFixed(2));
+
   return (
     <motion.div
       variants={itemVariants}
@@ -57,8 +60,8 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
                 Intelligence Score
               </h3>
               <div className="flex justify-between">
-                <span>Cognitive: {analysis.intelligenceScore}</span>
-                <span>Emotional: {analysis.emotionalIntelligenceScore}</span>
+                <span>Cognitive: {roundScore(analysis.intelligenceScore)}</span>
+                <span>Emotional: {roundScore(analysis.emotionalIntelligenceScore)}</span>
               </div>
             </div>
           </div>
