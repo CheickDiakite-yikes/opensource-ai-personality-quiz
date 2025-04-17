@@ -48,8 +48,9 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           overview: analysis.overview,
           traits: jsonAnalysis.traits as Json,
           intelligence: jsonAnalysis.intelligence as Json,
-          intelligence_score: analysis.intelligenceScore || 0,
-          emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
+          // Round scores to integers to match the database schema
+          intelligence_score: Math.round(Number(analysis.intelligenceScore) || 0),
+          emotional_intelligence_score: Math.round(Number(analysis.emotionalIntelligenceScore) || 0),
           cognitive_style: jsonAnalysis.cognitiveStyle as Json,
           value_system: jsonAnalysis.valueSystem as Json,
           motivators: jsonAnalysis.motivators as Json,
