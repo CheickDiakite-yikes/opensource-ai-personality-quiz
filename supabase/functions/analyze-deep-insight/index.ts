@@ -34,7 +34,10 @@ serve(async (req) => {
             content: `You are a highly skilled psychological analyst specializing in personality assessment. 
             Analyze the provided assessment responses to generate a comprehensive personality profile.
             Your analysis should be detailed, balanced, and focus on core traits, cognitive patterns, 
-            emotional architecture, and growth potential. Format the response as a valid JSON object without markdown formatting or code blocks.`
+            emotional architecture, and growth potential. Format the response as a valid JSON object without markdown formatting or code blocks.
+            
+            IMPORTANT: Always include numerical scores for intelligenceScore and emotionalIntelligenceScore as numbers between 0-100.
+            Always include all required fields: coreTraits (with primary and secondary properties), traits, intelligence, overview.`
           },
           {
             role: "user",
@@ -68,19 +71,29 @@ serve(async (req) => {
     console.log('Cleaned content text:', contentText.substring(0, 100) + '...')
     
     try {
-      const analysis = JSON.parse(contentText)
+      let analysis = JSON.parse(contentText)
       
-      // Add metadata
-      const enrichedAnalysis = {
+      // Ensure all required fields are present with default values
+      analysis = {
         ...analysis,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
+        intelligenceScore: analysis.intelligenceScore || 75, // Default if missing
+        emotionalIntelligenceScore: analysis.emotionalIntelligenceScore || 75, // Default if missing
+        coreTraits: analysis.coreTraits || {
+          primary: "Balanced Individual",
+          secondary: "Adaptive Thinker",
+          strengths: ["Adaptability", "Balance"],
+          challenges: ["May lack specialization"]
+        },
+        traits: analysis.traits || [],
+        overview: analysis.overview || "Analysis overview not available."
       }
 
-      console.log('Generated analysis:', Object.keys(enrichedAnalysis))
+      console.log('Generated analysis:', Object.keys(analysis))
 
       return new Response(
-        JSON.stringify(enrichedAnalysis),
+        JSON.stringify(analysis),
         { 
           headers: { 
             ...corsHeaders,

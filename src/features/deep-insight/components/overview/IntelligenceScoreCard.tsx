@@ -3,16 +3,19 @@ import React from "react";
 import { Brain } from "lucide-react";
 
 interface IntelligenceScoreCardProps {
-  cognitiveScore: number;
-  emotionalScore: number;
+  cognitiveScore?: number;
+  emotionalScore?: number;
 }
 
 export const IntelligenceScoreCard: React.FC<IntelligenceScoreCardProps> = ({ 
   cognitiveScore, 
   emotionalScore 
 }) => {
-  // Round intelligence scores to 2 decimal places
-  const roundScore = (score: number) => Number(score.toFixed(2));
+  // Round intelligence scores to 2 decimal places, with proper null checking
+  const roundScore = (score?: number) => {
+    if (score === undefined || score === null) return 'N/A';
+    return Number(score.toFixed(2));
+  };
 
   return (
     <div className="bg-secondary/20 p-4 rounded-md">
