@@ -11,9 +11,9 @@ interface StrengthsChallengesCardsProps {
 }
 
 export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> = ({ analysis, itemVariants }) => {
-  const strengths = analysis.coreTraits?.strengths || [];
-  const challenges = analysis.coreTraits?.challenges || [];
-  const recommendations = analysis.growthPotential?.recommendations || [];
+  const strengths = analysis.coreTraits?.strengths || analysis.traits?.map(trait => trait.strengths[0]) || [];
+  const challenges = analysis.coreTraits?.challenges || analysis.weaknesses || [];
+  const recommendations = analysis.growthPotential?.recommendations || analysis.growthAreas || [];
 
   return (
     <motion.div

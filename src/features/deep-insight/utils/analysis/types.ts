@@ -2,34 +2,34 @@
 import { PersonalityAnalysis } from "@/utils/types";
 import { DeepInsightResponses } from "../../types";
 
-// Define AnalysisData type explicitly
+// Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
-  coreTraits: {
+  coreTraits?: {
     primary: string;
     secondary: string;
     strengths: string[];
     challenges: string[];
   };
-  cognitivePatterning: {
+  cognitivePatterning?: {
     decisionMaking: string;
     learningStyle: string;
     attention: string;
   };
-  emotionalArchitecture: {
+  emotionalArchitecture?: {
     emotionalAwareness: string;
     regulationStyle: string;
     empathicCapacity: string;
   };
-  interpersonalDynamics: {
+  interpersonalDynamics?: {
     attachmentStyle: string;
     communicationPattern: string;
     conflictResolution: string;
   };
-  growthPotential: {
+  growthPotential?: {
     developmentAreas: string[];
     recommendations: string[];
   };
-  responsePatterns: ResponsePatternAnalysis;
+  responsePatterns?: ResponsePatternAnalysis;
 }
 
 // Pattern analysis response interface
