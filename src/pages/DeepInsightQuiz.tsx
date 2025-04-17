@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { QuizProgress } from "@/features/deep-insight/components/QuizProgress";
 import { useDeepInsightQuiz } from "@/features/deep-insight/hooks/useDeepInsightQuiz";
 import { deepInsightQuestions } from "@/features/deep-insight/data/questions";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Main component
 const DeepInsightQuiz: React.FC = () => {
@@ -18,6 +19,7 @@ const DeepInsightQuiz: React.FC = () => {
     currentQuestionIndex,
     responses,
     error,
+    isLoading,
     handleSubmitQuestion,
     handlePrevious,
     clearSavedProgress
@@ -32,14 +34,6 @@ const DeepInsightQuiz: React.FC = () => {
   const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
   const hasPartialProgress = completedQuestions > 0;
 
-  // Debug current question and response
-  useEffect(() => {
-    if (currentQuestion) {
-      console.log(`Current question (${currentQuestionIndex}):`, currentQuestion.id);
-      console.log(`Current response for ${currentQuestion.id}:`, responses[currentQuestion.id]);
-    }
-  }, [currentQuestion, currentQuestionIndex, responses]);
-  
   return (
     <motion.div 
       className="container max-w-4xl py-8 px-4 md:px-6"
@@ -58,7 +52,12 @@ const DeepInsightQuiz: React.FC = () => {
             Answer thoughtfully to receive a detailed analysis of your inner workings.
           </p>
           
-          {hasPartialProgress && (
+          {isLoading ? (
+            <div className="mt-4">
+              <Skeleton className="h-4 w-32 mx-auto" />
+              <Skeleton className="h-8 w-24 mx-auto mt-2" />
+            </div>
+          ) : hasPartialProgress && (
             <div className="mt-4 text-sm text-muted-foreground">
               <p>You've completed {completedQuestions} of {totalQuestions} questions ({progressPercentage}%).</p>
               <Button 
@@ -88,6 +87,7 @@ const DeepInsightQuiz: React.FC = () => {
             isFirstQuestion={isFirstQuestion}
             isLastQuestion={isLastQuestion}
             error={error}
+            isLoading={isLoading}
           />
         )}
       </div>

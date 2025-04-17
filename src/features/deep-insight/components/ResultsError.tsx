@@ -14,7 +14,9 @@ interface ResultsErrorProps {
 export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) => {
   const navigate = useNavigate();
   
-  const isNoResponsesError = error.includes("No responses found") || error.toLowerCase().includes("assessment");
+  const isNoResponsesError = error.includes("No responses found") || 
+                            error.toLowerCase().includes("assessment") || 
+                            error.toLowerCase().includes("complete");
   
   return (
     <motion.div 

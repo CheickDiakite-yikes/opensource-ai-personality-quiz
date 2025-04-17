@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { convertToPersonalityAnalysis } from "@/hooks/aiAnalysis/utils";
 
 export const useDeepInsightResults = () => {
   const { getResponses, clearSavedProgress } = useDeepInsightStorage();
@@ -66,12 +65,13 @@ export const useDeepInsightResults = () => {
         }
 
         // If no ID provided or the specified analysis wasn't found, generate a new one
-        const responses = getResponses();
+        // Get responses from database or localStorage
+        const responses = await getResponses();
         console.log("Retrieved responses from storage:", responses);
         console.log("Response count:", Object.keys(responses).length);
         
         if (!responses || Object.keys(responses).length === 0) {
-          console.log("No responses found in local storage");
+          console.log("No responses found");
           toast.error("No assessment responses found", {
             description: "Please complete the assessment first before viewing results"
           });
@@ -83,6 +83,10 @@ export const useDeepInsightResults = () => {
         console.log("Generating analysis from responses...");
         const result = await generateAnalysis(responses);
         console.log("Analysis generation complete");
+        
+        // Store raw responses in the analysis
+        result.rawResponses = responses;
+        
         setAnalysis(result);
         
         // Only clear saved responses after successful analysis generation

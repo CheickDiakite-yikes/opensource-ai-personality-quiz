@@ -10,27 +10,43 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
   const [isRestoredSession, setIsRestoredSession] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   // Use the storage hook to handle saving/restoring progress
-  const { getResponses, saveResponses, clearSavedProgress } = useDeepInsightStorage();
+  const { getResponses, saveResponses, clearSavedProgress, isLoading: storageLoading } = useDeepInsightStorage();
   
   // Load saved responses if they exist
   useEffect(() => {
-    const savedResponses = getResponses();
-    if (Object.keys(savedResponses).length > 0) {
-      setResponses(savedResponses);
-      // Find the highest question index answered
-      const questionIds = Object.keys(savedResponses);
-      if (questionIds.length > 0) {
-        // Set current question to the next unanswered one or the last one if all are answered
-        const lastAnsweredIndex = questionIds.length - 1;
-        const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
-        setCurrentQuestionIndex(nextIndex);
-        setIsRestoredSession(true);
+    const loadSavedResponses = async () => {
+      try {
+        setIsLoading(true);
+        const savedResponses = await getResponses();
+        
+        if (Object.keys(savedResponses).length > 0) {
+          setResponses(savedResponses);
+          // Find the highest question index answered
+          const questionIds = Object.keys(savedResponses);
+          if (questionIds.length > 0) {
+            // Set current question to the next unanswered one or the last one if all are answered
+            const lastAnsweredIndex = questionIds.length - 1;
+            const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
+            setCurrentQuestionIndex(nextIndex);
+            setIsRestoredSession(true);
+            
+            console.log(`Restored session with ${questionIds.length} answers, continuing at question ${nextIndex}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading saved responses:", err);
+        toast.error("Failed to load your previous progress");
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [totalQuestions]);
+    };
+    
+    loadSavedResponses();
+  }, [totalQuestions, getResponses]);
   
   // Reset error when question changes
   useEffect(() => {
@@ -46,7 +62,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     }
   }, [isRestoredSession]);
   
-  const handleSubmitQuestion = (data: Record<string, string>) => {
+  const handleSubmitQuestion = async (data: Record<string, string>) => {
     try {
       const questionId = Object.keys(data)[0];
       const responseValue = data[questionId];
@@ -72,15 +88,15 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       setResponses(updatedResponses);
       console.log(`Saved response for question ${questionId}:`, responseValue);
       
-      // Save to storage
-      saveResponses(updatedResponses);
+      // Save to storage asynchronously
+      await saveResponses(updatedResponses);
       
       // Move to next question or submit if done
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         // Submit all responses
-        handleCompleteQuiz(updatedResponses);
+        await handleCompleteQuiz(updatedResponses);
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
@@ -97,16 +113,16 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     }
   };
   
-  const handleCompleteQuiz = (finalResponses: DeepInsightResponses) => {
+  const handleCompleteQuiz = async (finalResponses: DeepInsightResponses) => {
     try {
       console.log("All responses collected:", finalResponses);
       console.log("Response count:", Object.keys(finalResponses).length);
       
-      // Ensure responses are saved to storage before navigating
-      saveResponses(finalResponses);
+      // First verify responses have been saved successfully
+      await saveResponses(finalResponses);
       
-      // Verify responses were saved
-      const savedResponses = getResponses();
+      // Verify responses were saved by getting them again
+      const savedResponses = await getResponses();
       console.log("Verified saved responses count:", Object.keys(savedResponses).length);
       
       if (Object.keys(savedResponses).length === 0) {
@@ -131,12 +147,25 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     }
   };
   
+  const handleClearProgress = async () => {
+    try {
+      await clearSavedProgress();
+      setResponses({});
+      setCurrentQuestionIndex(0);
+      toast.success("Progress cleared successfully");
+    } catch (error) {
+      console.error("Error clearing progress:", error);
+      toast.error("Failed to clear progress");
+    }
+  };
+  
   return {
     currentQuestionIndex,
     responses,
     error,
+    isLoading: isLoading || storageLoading,
     handleSubmitQuestion,
     handlePrevious,
-    clearSavedProgress
+    clearSavedProgress: handleClearProgress
   };
 };

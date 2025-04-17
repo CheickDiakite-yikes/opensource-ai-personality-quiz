@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { DeepInsightQuestion } from "../types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface QuestionCardProps {
   question: DeepInsightQuestion;
@@ -15,6 +16,7 @@ interface QuestionCardProps {
   isFirstQuestion: boolean;
   isLastQuestion: boolean;
   error: string | null;
+  isLoading?: boolean;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -25,6 +27,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isFirstQuestion,
   isLastQuestion,
   error,
+  isLoading = false,
 }) => {
   const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
     defaultValues: {
@@ -53,6 +56,26 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     console.log(`Processing submission for question ${question.id} with value:`, formattedData[question.id]);
     onSubmit(formattedData);
   };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <Skeleton className="h-8 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24" />
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
