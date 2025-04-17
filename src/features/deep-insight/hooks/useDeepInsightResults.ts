@@ -33,44 +33,73 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        // Try to call the edge function with better error handling
+        console.log("Attempting to call edge function for analysis");
+        toast.loading("Generating your deep insight analysis with AI...", { 
+          id: "analyze-deep-insight", 
+          duration: 180000 // 3 minute toast for longer processing
+        });
+        
+        // Create a promise that rejects after timeout
+        const timeoutPromise = new Promise<never>((_resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error("Edge function call timed out after 3 minutes"));
+          }, 180000); // 3 minutes timeout
+        });
+        
         try {
-          console.log("Attempting to call edge function for analysis");
-          
-          // Create a promise that will timeout after 60 seconds
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Edge function call timed out")), 60000);
+          console.log("Payload prepared:", { 
+            responses: responseData,
+            timestamp: Date.now()
           });
-
-          // The actual edge function call
+          
+          // Race the function call against the timeout
           const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
-              body: { responses: responseData }
+              body: { 
+                responses: responseData,
+                timestamp: Date.now() // Add timestamp to help with debugging
+              }
             }
           );
-
-          // Use Promise.race to implement the timeout
-          const result = await Promise.race([
-            functionPromise,
-            timeoutPromise
-          ]) as { data: PersonalityAnalysis | null, error: any };
-
+          
+          // Wait for either the function call to complete or the timeout to occur
+          const result = await Promise.race([functionPromise, timeoutPromise]);
+          
+          // Handle the function response
           if (result.error) {
-            console.error('Error calling analyze-deep-insight:', result.error);
-            throw new Error('Failed to generate analysis via edge function.');
+            console.error('Edge function returned error:', result.error);
+            throw new Error(`Failed to generate analysis: ${result.error.message || 'Unknown error'}`);
           }
 
           if (!result.data) {
+            console.error('No data returned from edge function');
             throw new Error('No analysis data returned from edge function');
           }
           
           console.log("Successfully received analysis from edge function:", result.data);
+          toast.success("Analysis complete!", { id: "analyze-deep-insight" });
           setAnalysis(result.data);
           setLoading(false);
-          return;
+          
         } catch (edgeFunctionError) {
-          console.error("Edge function error:", edgeFunctionError);
+          // Check if this was a timeout error or other error
+          const errorMessage = edgeFunctionError instanceof Error ? edgeFunctionError.message : String(edgeFunctionError);
+          
+          if (errorMessage.includes("timed out")) {
+            console.error("Edge function call timed out after 3 minutes");
+            toast.error("AI analysis service timed out", { 
+              id: "analyze-deep-insight",
+              description: "Falling back to local analysis generation" 
+            });
+          } else {
+            console.error("Edge function error:", edgeFunctionError);
+            toast.error("AI analysis service unavailable", { 
+              id: "analyze-deep-insight",
+              description: "Falling back to local analysis generation" 
+            });
+          }
+          
           console.log("Falling back to client-side analysis generation");
           
           // Fall back to client-side analysis generation
