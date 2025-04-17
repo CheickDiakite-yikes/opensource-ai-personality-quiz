@@ -31,6 +31,7 @@ export interface AnalysisData extends PersonalityAnalysis {
     recommendations: string[];
   };
   responsePatterns: ResponsePatternAnalysis;
+  rawResponses?: DeepInsightResponses;
 }
 
 // Helper function to convert AnalysisData to Json-compatible format

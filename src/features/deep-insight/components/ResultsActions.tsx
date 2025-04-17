@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Sparkles, Share2, History } from "lucide-react";
@@ -7,7 +8,6 @@ import { toast } from "sonner";
 import { AnalysisData, toJsonObject } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import { Json } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 
 interface ResultsActionsProps {
@@ -35,7 +35,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
 
     try {
       if (user) {
-        // Store the analysis in Supabase
+        // Store the analysis in Supabase using the new deep_insight_analyses table
         const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
         
         // Convert full analysis to JSON-compatible object
@@ -45,36 +45,26 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         const analysisData = {
           id: analysisId,
           user_id: user.id,
-          assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
+          title: `Deep Insight Analysis - ${new Date().toLocaleDateString()}`,
           overview: analysis.overview,
-          traits: jsonAnalysis.traits as Json,
-          intelligence: jsonAnalysis.intelligence as Json,
-          // Round scores to integers to match the database schema
           intelligence_score: Math.round(Number(analysis.intelligenceScore) || 0),
           emotional_intelligence_score: Math.round(Number(analysis.emotionalIntelligenceScore) || 0),
-          cognitive_style: jsonAnalysis.cognitiveStyle as Json,
-          value_system: jsonAnalysis.valueSystem as Json,
-          motivators: jsonAnalysis.motivators as Json,
-          inhibitors: jsonAnalysis.inhibitors as Json,
-          weaknesses: jsonAnalysis.weaknesses as Json,
-          growth_areas: jsonAnalysis.growthAreas as Json,
-          relationship_patterns: jsonAnalysis.relationshipPatterns as Json,
-          career_suggestions: jsonAnalysis.careerSuggestions as Json,
-          learning_pathways: jsonAnalysis.learningPathways as Json,
-          roadmap: analysis.roadmap || "",
-          result: jsonAnalysis as Json,
-          // New Deep Insight specific fields
-          response_patterns: jsonAnalysis.responsePatterns as Json,
-          core_traits: jsonAnalysis.coreTraits as Json,
-          cognitive_patterning: jsonAnalysis.cognitivePatterning as Json,
-          emotional_architecture: jsonAnalysis.emotionalArchitecture as Json,
-          interpersonal_dynamics: jsonAnalysis.interpersonalDynamics as Json,
-          growth_potential: jsonAnalysis.growthPotential as Json
+          // Specialized Deep Insight fields
+          response_patterns: jsonAnalysis.responsePatterns,
+          core_traits: jsonAnalysis.coreTraits,
+          cognitive_patterning: jsonAnalysis.cognitivePatterning,
+          emotional_architecture: jsonAnalysis.emotionalArchitecture,
+          interpersonal_dynamics: jsonAnalysis.interpersonalDynamics,
+          growth_potential: jsonAnalysis.growthPotential,
+          // Store raw responses for future reference
+          raw_responses: analysis.rawResponses || null,
+          // Store complete analysis for easy retrieval
+          complete_analysis: jsonAnalysis
         };
 
-        // Check if the analysis already exists
+        // Check if the analysis already exists in our new table
         const { data: existingData } = await supabase
-          .from('analyses')
+          .from('deep_insight_analyses')
           .select('id')
           .eq('id', analysisId)
           .maybeSingle();
@@ -82,7 +72,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         if (existingData) {
           // Update existing analysis
           const { error } = await supabase
-            .from('analyses')
+            .from('deep_insight_analyses')
             .update(analysisData)
             .eq('id', analysisId);
 
@@ -94,7 +84,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         } else {
           // Insert new analysis
           const { error } = await supabase
-            .from('analyses')
+            .from('deep_insight_analyses')
             .insert(analysisData);
 
           if (error) {

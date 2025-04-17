@@ -138,7 +138,9 @@ export const generateAnalysisFromResponses = (responses: DeepInsightResponses): 
       primaryChoice,
       secondaryChoice,
       responseSignature
-    }
+    },
+    // Store the raw responses for future reference
+    rawResponses: responses
   };
 };
 

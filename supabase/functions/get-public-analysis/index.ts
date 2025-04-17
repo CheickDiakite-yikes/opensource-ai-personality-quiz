@@ -57,7 +57,30 @@ Deno.serve(async (req) => {
 
     console.log(`[get-public-analysis] Getting public analysis with ID: ${id}`);
 
-    // Try direct table access first with improved error handling
+    // Try direct table access first with improved error handling - check our new table first
+    try {
+      const { data: deepInsightData, error: deepInsightError } = await supabase
+        .from('deep_insight_analyses')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (deepInsightError) {
+        console.error("[get-public-analysis] Error fetching from deep_insight_analyses:", deepInsightError);
+        // Continue to next approach
+      } else if (deepInsightData) {
+        console.log(`[get-public-analysis] Found analysis in deep_insight_analyses table: ${deepInsightData.id}`);
+        return new Response(
+          JSON.stringify(deepInsightData.complete_analysis),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error("[get-public-analysis] Exception in deep_insight_analyses lookup:", e);
+      // Continue to next approach
+    }
+    
+    // If not found in deep_insight_analyses, try the old analyses table
     try {
       const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
@@ -67,16 +90,16 @@ Deno.serve(async (req) => {
       
       if (analysisError) {
         console.error("[get-public-analysis] Error fetching analysis by ID:", analysisError);
-        // Continue to next approach instead of returning error immediately
+        // Continue to next approach
       } else if (analysisData) {
-        console.log(`[get-public-analysis] Found analysis by direct ID lookup: ${analysisData.id}`);
+        console.log(`[get-public-analysis] Found analysis in analyses table: ${analysisData.id}`);
         return new Response(
           JSON.stringify(analysisData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } catch (e) {
-      console.error("[get-public-analysis] Exception in direct ID lookup:", e);
+      console.error("[get-public-analysis] Exception in analyses lookup:", e);
       // Continue to next approach
     }
     
@@ -107,6 +130,25 @@ Deno.serve(async (req) => {
     // If still not found, try a more flexible search
     try {
       console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
+      // Try both tables with flexible search
+      const { data: flexDeepInsightData, error: flexDeepInsightError } = await supabase
+        .from('deep_insight_analyses')
+        .select('*')
+        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (flexDeepInsightError) {
+        console.error("[get-public-analysis] Error in flexible search on deep_insight_analyses:", flexDeepInsightError);
+      } else if (flexDeepInsightData && flexDeepInsightData.length > 0) {
+        console.log(`[get-public-analysis] Found analysis via flexible search in deep_insight_analyses: ${flexDeepInsightData[0].id}`);
+        return new Response(
+          JSON.stringify(flexDeepInsightData[0].complete_analysis),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Try flexible search on old table
       const { data: flexData, error: flexError } = await supabase
         .from('analyses')
         .select('*')
@@ -115,9 +157,9 @@ Deno.serve(async (req) => {
         .limit(1);
         
       if (flexError) {
-        console.error("[get-public-analysis] Error in flexible search:", flexError);
+        console.error("[get-public-analysis] Error in flexible search on analyses:", flexError);
       } else if (flexData && flexData.length > 0) {
-        console.log(`[get-public-analysis] Found analysis via flexible search: ${flexData[0].id}`);
+        console.log(`[get-public-analysis] Found analysis via flexible search in analyses: ${flexData[0].id}`);
         return new Response(
           JSON.stringify(flexData[0]),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -128,9 +170,30 @@ Deno.serve(async (req) => {
       // Continue to next approach
     }
 
-    // Try one last approach - get the most recent analysis, if any
+    // Try one last approach - get the most recent analysis from either table
     try {
       console.log("[get-public-analysis] No matching analysis found, getting most recent analysis");
+      // Try deep_insight_analyses first
+      const { data: recentDeepInsightData, error: recentDeepInsightError } = await supabase
+        .from('deep_insight_analyses')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (recentDeepInsightError) {
+        console.error("[get-public-analysis] Error fetching recent deep insight analysis:", recentDeepInsightError);
+      } else if (recentDeepInsightData && recentDeepInsightData.length > 0) {
+        console.log(`[get-public-analysis] Found most recent analysis from deep_insight_analyses as fallback: ${recentDeepInsightData[0].id}`);
+        return new Response(
+          JSON.stringify({ 
+            ...recentDeepInsightData[0].complete_analysis,
+            message: "Requested analysis not found, returning most recent analysis instead" 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Try old analyses table if deep_insight_analyses had no results
       const { data: recentData, error: recentError } = await supabase
         .from('analyses')
         .select('*')
@@ -138,9 +201,9 @@ Deno.serve(async (req) => {
         .limit(1);
         
       if (recentError) {
-        console.error("[get-public-analysis] Error fetching recent analysis:", recentError);
+        console.error("[get-public-analysis] Error fetching recent analysis from analyses:", recentError);
       } else if (recentData && recentData.length > 0) {
-        console.log(`[get-public-analysis] Found most recent analysis as fallback: ${recentData[0].id}`);
+        console.log(`[get-public-analysis] Found most recent analysis from analyses as fallback: ${recentData[0].id}`);
         return new Response(
           JSON.stringify({ 
             ...recentData[0],

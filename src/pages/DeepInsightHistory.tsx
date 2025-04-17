@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { AnalysisData } from "@/features/deep-insight/utils/analysis/types";
 import { AnalysisHistoryCard } from "@/features/deep-insight/components/AnalysisHistoryCard";
-import { convertToPersonalityAnalysis } from "@/hooks/aiAnalysis/utils";
 
 const DeepInsightHistory: React.FC = () => {
   const { user } = useAuth();
@@ -26,8 +25,9 @@ const DeepInsightHistory: React.FC = () => {
 
     try {
       setIsLoading(true);
+      // Query from our new deep_insight_analyses table
       const { data, error } = await supabase
-        .from("analyses")
+        .from("deep_insight_analyses")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -37,10 +37,9 @@ const DeepInsightHistory: React.FC = () => {
       }
 
       if (data) {
-        // Convert to AnalysisData format
+        // Convert to AnalysisData format - analyses are stored in complete_analysis column
         const formattedAnalyses = data.map(item => {
-          const analysis = convertToPersonalityAnalysis(item);
-          return analysis as unknown as AnalysisData;
+          return item.complete_analysis as unknown as AnalysisData;
         }).filter(Boolean);
         
         setAnalyses(formattedAnalyses);

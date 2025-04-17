@@ -40,7 +40,7 @@ export const useDeepInsightResults = () => {
         if (analysisId) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
           const { data, error } = await supabase
-            .from("analyses")
+            .from("deep_insight_analyses")
             .select("*")
             .eq("id", analysisId)
             .maybeSingle();
@@ -51,8 +51,9 @@ export const useDeepInsightResults = () => {
 
           if (data) {
             console.log(`Successfully loaded analysis: ${data.id}`);
-            const convertedAnalysis = convertToPersonalityAnalysis(data);
-            setAnalysis(convertedAnalysis as unknown as AnalysisData);
+            // Extract the complete analysis from the data
+            const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
+            setAnalysis(convertedAnalysis);
             setIsLoading(false);
             return;
           } else {
