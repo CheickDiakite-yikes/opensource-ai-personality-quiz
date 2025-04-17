@@ -22,8 +22,12 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     f: 0
   };
   
+  // Count each response type by the letter at the end of the response string
   responsesArray.forEach(([_, answer]) => {
-    const lastChar = answer.charAt(answer.length - 1);
+    // Extract the last character of the answer string which indicates the choice
+    const lastChar = answer.charAt(answer.length - 1).toLowerCase();
+    
+    // Increment the appropriate counter if the character is a valid choice
     if (lastChar === 'a') answerCounts.a++;
     if (lastChar === 'b') answerCounts.b++;
     if (lastChar === 'c') answerCounts.c++;
@@ -36,12 +40,12 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
   
   const totalResponses = responsesArray.length;
   const percentages = {
-    a: Math.round((answerCounts.a / totalResponses) * 100),
-    b: Math.round((answerCounts.b / totalResponses) * 100),
-    c: Math.round((answerCounts.c / totalResponses) * 100),
-    d: Math.round((answerCounts.d / totalResponses) * 100),
-    e: Math.round((answerCounts.e / totalResponses) * 100),
-    f: Math.round((answerCounts.f / totalResponses) * 100)
+    a: Math.round((answerCounts.a / totalResponses) * 100) || 0,
+    b: Math.round((answerCounts.b / totalResponses) * 100) || 0,
+    c: Math.round((answerCounts.c / totalResponses) * 100) || 0,
+    d: Math.round((answerCounts.d / totalResponses) * 100) || 0,
+    e: Math.round((answerCounts.e / totalResponses) * 100) || 0,
+    f: Math.round((answerCounts.f / totalResponses) * 100) || 0
   };
   
   // Generate a unique response signature for this user
