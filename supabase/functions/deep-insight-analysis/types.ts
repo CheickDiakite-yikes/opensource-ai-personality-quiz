@@ -19,18 +19,30 @@ export interface ResponsePatternAnalysis {
   responseSignature: string;
 }
 
+export interface CoreTraits {
+  primary: string;
+  secondary: string;
+  strengths: string[];
+  challenges: string[];
+}
+
+export interface GrowthPotential {
+  developmentAreas: string[];
+  recommendations: string[];
+}
+
 export interface AnalysisData {
   id: string;
   createdAt: string;
-  overview: string;
-  traits: {
+  overview?: string;
+  traits?: {
     trait: string;
     score: number;
     description: string;
     strengths: string[];
     challenges: string[];
   }[];
-  intelligence: {
+  intelligence?: {
     type: string;
     score: number;
     description: string;
@@ -40,50 +52,42 @@ export interface AnalysisData {
       description: string;
     }[];
   };
-  intelligenceScore: number;
-  emotionalIntelligenceScore: number;
-  cognitiveStyle: {
+  intelligenceScore?: number;
+  emotionalIntelligenceScore?: number;
+  cognitiveStyle?: {
     primary: string;
     secondary: string;
     description: string;
   };
-  valueSystem: string[];
-  motivators: string[];
-  inhibitors: string[];
-  weaknesses: string[];
-  growthAreas: string[];
-  relationshipPatterns: {
+  valueSystem?: string[];
+  motivators?: string[];
+  inhibitors?: string[];
+  weaknesses?: string[];
+  growthAreas?: string[];
+  relationshipPatterns?: {
     strengths: string[];
     challenges: string[];
     compatibleTypes: string[];
   };
-  careerSuggestions: string[];
-  learningPathways: string[];
-  roadmap: string;
-  coreTraits: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  };
-  cognitivePatterning: {
+  careerSuggestions?: string[];
+  learningPathways?: string[];
+  roadmap?: string;
+  coreTraits?: CoreTraits;
+  cognitivePatterning?: {
     decisionMaking: string;
     learningStyle: string;
     attention: string;
   };
-  emotionalArchitecture: {
+  emotionalArchitecture?: {
     emotionalAwareness: string;
     regulationStyle: string;
     empathicCapacity: string;
   };
-  interpersonalDynamics: {
+  interpersonalDynamics?: {
     attachmentStyle: string;
     communicationPattern: string;
     conflictResolution: string;
   };
-  growthPotential: {
-    developmentAreas: string[];
-    recommendations: string[];
-  };
+  growthPotential?: GrowthPotential;
   responsePatterns: ResponsePatternAnalysis;
 }

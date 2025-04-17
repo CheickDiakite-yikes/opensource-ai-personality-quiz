@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { ChevronRight, ShieldCheck, ShieldAlert, GraduationCap, ArrowUpRight } from "lucide-react";
 import { AnalysisData } from "../utils/analysis/types";
-import { Sparkles, Rocket, XCircle, Briefcase } from "lucide-react";
 
 interface StrengthsChallengesCardsProps {
   analysis: AnalysisData;
@@ -11,108 +11,129 @@ interface StrengthsChallengesCardsProps {
 }
 
 export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> = ({ analysis, itemVariants }) => {
+  // Add safe fallbacks for potentially missing data
+  const coreTraits = analysis.coreTraits || { strengths: [], challenges: [] };
+  const growthPotential = analysis.growthPotential || { developmentAreas: [], recommendations: [] };
+  
+  // Check if there are any strengths or challenges
+  const hasStrengths = coreTraits.strengths && coreTraits.strengths.length > 0;
+  const hasChallenges = coreTraits.challenges && coreTraits.challenges.length > 0;
+  const hasGrowthAreas = growthPotential.developmentAreas && growthPotential.developmentAreas.length > 0;
+  const hasRecommendations = growthPotential.recommendations && growthPotential.recommendations.length > 0;
+
   return (
     <motion.div
       variants={itemVariants}
       initial="hidden"
       animate="visible"
-      custom={5}
+      custom={6}
       className="space-y-6"
     >
-      {/* Core Strengths and Challenges */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <h2 className="text-2xl font-bold">Strengths & Development Areas</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Strengths Card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <ShieldCheck className="h-5 w-5 mr-2 text-green-500" />
               Core Strengths
             </CardTitle>
+            <CardDescription>Your key personality strengths from the assessment</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              {analysis.coreTraits.strengths.map((strength: string, i: number) => (
-                <li key={i}>{strength}</li>
-              ))}
-            </ul>
+            {hasStrengths ? (
+              <ul className="space-y-2">
+                {coreTraits.strengths.map((strength, index) => (
+                  <li key={index} className="flex items-center">
+                    <ChevronRight className="h-4 w-4 mr-2 flex-shrink-0 text-primary" />
+                    <span>{strength}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No strengths data available</p>
+            )}
           </CardContent>
         </Card>
         
+        {/* Challenges Card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-primary" />
-              Growth Challenges
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <ShieldAlert className="h-5 w-5 mr-2 text-amber-500" />
+              Potential Challenges
             </CardTitle>
+            <CardDescription>Areas where you might face some difficulty</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              {analysis.coreTraits.challenges.map((challenge: string, i: number) => (
-                <li key={i}>{challenge}</li>
-              ))}
-            </ul>
+            {hasChallenges ? (
+              <ul className="space-y-2">
+                {coreTraits.challenges.map((challenge, index) => (
+                  <li key={index} className="flex items-center">
+                    <ChevronRight className="h-4 w-4 mr-2 flex-shrink-0 text-primary" />
+                    <span>{challenge}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No challenges data available</p>
+            )}
           </CardContent>
         </Card>
       </div>
       
-      {/* Motivators and Inhibitors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Growth Areas */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Rocket className="h-5 w-5 text-primary" />
-              Key Motivators
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <GraduationCap className="h-5 w-5 mr-2 text-blue-500" />
+              Growth Areas
             </CardTitle>
+            <CardDescription>Key areas for personal development</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              {analysis.motivators.slice(0, 5).map((motivator: string, i: number) => (
-                <li key={i}>{motivator}</li>
-              ))}
-            </ul>
+            {hasGrowthAreas ? (
+              <ul className="space-y-2">
+                {growthPotential.developmentAreas.map((area, index) => (
+                  <li key={index} className="flex items-center">
+                    <ChevronRight className="h-4 w-4 mr-2 flex-shrink-0 text-primary" />
+                    <span>{area}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No growth areas data available</p>
+            )}
           </CardContent>
         </Card>
         
+        {/* Recommendations */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-primary" />
-              Potential Inhibitors
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <ArrowUpRight className="h-5 w-5 mr-2 text-purple-500" />
+              Recommendations
             </CardTitle>
+            <CardDescription>Suggested actions for improvement</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              {analysis.inhibitors.slice(0, 5).map((inhibitor: string, i: number) => (
-                <li key={i}>{inhibitor}</li>
-              ))}
-            </ul>
+            {hasRecommendations ? (
+              <ul className="space-y-2">
+                {growthPotential.recommendations.map((recommendation, index) => (
+                  <li key={index} className="flex items-center">
+                    <ChevronRight className="h-4 w-4 mr-2 flex-shrink-0 text-primary" />
+                    <span>{recommendation}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No recommendations data available</p>
+            )}
           </CardContent>
         </Card>
       </div>
-      
-      {/* Career Suggestions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
-            Career Path Suggestions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-            {analysis.careerSuggestions.map((career: string, i: number) => (
-              <div 
-                key={i}
-                className="bg-secondary/10 p-3 rounded-md flex items-center"
-              >
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-xs text-primary">
-                  {i + 1}
-                </div>
-                <span className="text-sm">{career}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </motion.div>
   );
 };

@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { DeepInsightResponses } from "./types.ts";
+import { DeepInsightResponses, AnalysisData } from "./types.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -99,11 +99,29 @@ serve(async (req) => {
       throw new Error('Could not parse AI analysis results');
     }
     
+    // Extract core traits from the response or generate defaults
+    const coreTraits = {
+      primary: analysisContent.core_personality_traits?.primary || "Analytical",
+      secondary: analysisContent.core_personality_traits?.secondary || "Adaptive",
+      strengths: analysisContent.interpersonal_dynamics_and_relationship_patterns?.strengths || [],
+      challenges: analysisContent.interpersonal_dynamics_and_relationship_patterns?.challenges || []
+    };
+
+    // Extract growth potential
+    const growthPotential = {
+      developmentAreas: Object.values(analysisContent.growth_areas_and_potential || {}).map(area => 
+        typeof area === 'string' ? area : ''
+      ).filter(Boolean),
+      recommendations: []
+    };
+
     // Add metadata and format final response
-    const analysis = {
+    const analysis: AnalysisData = {
       ...analysisContent,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
+      coreTraits,
+      growthPotential,
       responsePatterns: analyzeResponsePatterns(responses)
     };
 

@@ -13,6 +13,17 @@ interface PersonalOverviewCardProps {
 export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ analysis, itemVariants }) => {
   const [expanded, setExpanded] = React.useState(false);
 
+  // Add null checks to handle potential missing data
+  const coreTraits = analysis.coreTraits || {
+    primary: "Not Available",
+    secondary: "Not Available",
+    strengths: [],
+    challenges: []
+  };
+
+  const intelligenceScore = analysis.intelligenceScore || 0;
+  const emotionalIntelligenceScore = analysis.emotionalIntelligenceScore || 0;
+
   return (
     <motion.div
       variants={itemVariants}
@@ -26,7 +37,7 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
           <CardDescription>A summary of your core personality traits</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p>{analysis.overview}</p>
+          <p>{analysis.overview || "Your personality overview will appear here."}</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-secondary/20 p-4 rounded-md">
@@ -36,7 +47,7 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
                 </div>
                 Primary Type
               </h3>
-              <p>{analysis.coreTraits.primary}</p>
+              <p>{coreTraits.primary}</p>
             </div>
             
             <div className="bg-secondary/20 p-4 rounded-md">
@@ -46,7 +57,7 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
                 </div>
                 Secondary Type
               </h3>
-              <p>{analysis.coreTraits.secondary}</p>
+              <p>{coreTraits.secondary}</p>
             </div>
             
             <div className="bg-secondary/20 p-4 rounded-md">
@@ -57,8 +68,8 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
                 Intelligence Score
               </h3>
               <div className="flex justify-between">
-                <span>Cognitive: {analysis.intelligenceScore}</span>
-                <span>Emotional: {analysis.emotionalIntelligenceScore}</span>
+                <span>Cognitive: {intelligenceScore}</span>
+                <span>Emotional: {emotionalIntelligenceScore}</span>
               </div>
             </div>
           </div>
@@ -76,7 +87,7 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             
-            {expanded && (
+            {expanded && analysis.traits && analysis.traits.length > 0 ? (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 animate-in fade-in">
                 {analysis.traits.slice(0, 9).map((trait, index) => (
                   <div key={index} className="bg-secondary/10 p-2 rounded-md">
@@ -90,7 +101,11 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
                   </div>
                 ))}
               </div>
-            )}
+            ) : expanded ? (
+              <div className="mt-3 p-4 text-center text-muted-foreground">
+                No personality trait data available
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>

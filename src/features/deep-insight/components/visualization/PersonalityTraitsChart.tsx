@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   BarChart,
   Bar,
@@ -8,123 +9,87 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
 } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltipContent,
-  ChartTooltip
-} from "@/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PersonalityTrait } from "@/utils/types";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { PersonalityTrait } from "../../utils/analysis/types";
 
 interface PersonalityTraitsChartProps {
-  traits: PersonalityTrait[];
-  title?: string;
-  description?: string;
-  maxItems?: number;
+  traits?: PersonalityTrait[];
 }
 
-const PersonalityTraitsChart: React.FC<PersonalityTraitsChartProps> = ({
-  traits,
-  title = "Personality Trait Distribution",
-  description = "Breakdown of your most prominent traits",
-  maxItems = 8
-}) => {
-  const isMobile = useIsMobile();
+const PersonalityTraitsChart: React.FC<PersonalityTraitsChartProps> = ({ traits = [] }) => {
+  // Added a default empty array to prevent slice errors
+  const topTraits = traits?.slice(0, 7) || [];
   
-  // Normalize traits data for the chart - ensure all scores are on a 0-10 scale
-  const normalizedTraits = traits
-    .slice(0, maxItems)
-    .map(trait => {
-      // Handle different score formats and normalize to 0-10 scale
-      const normalizedScore = trait.score >= 0 && trait.score <= 1
-        ? Math.round(trait.score * 10 * 10) / 10
-        : trait.score > 10
-          ? Math.round((trait.score / 100) * 10 * 10) / 10
-          : Math.round(trait.score * 10) / 10;
-          
-      return {
+  // Filter out any traits that don't have scores
+  const validTraits = topTraits.filter(trait => trait && typeof trait.score === 'number');
+  
+  // If there are no valid traits, provide sample data
+  const chartData = validTraits.length > 0 
+    ? validTraits.map(trait => ({
         name: trait.trait,
-        score: normalizedScore,
-        description: trait.description
-      };
-    })
-    .sort((a, b) => b.score - a.score); // Sort by score descending
-  
-  // Generate colors with decreasing opacity based on score rank
-  const getBarColor = (index: number) => {
-    // Use primary color (purple/indigo) with decreasing opacity
-    return `rgba(124, 58, 237, ${1 - (index * 0.09)})`;
-  };
+        score: trait.score,
+        fill: `hsl(${25 + (trait.score % 10) * 15}, ${75 + (trait.score % 5) * 5}%, 53%)`,
+      }))
+    : [
+        { name: "No trait data", score: 0, fill: "hsl(25, 95%, 53%)" }
+      ];
 
-  // Dynamic height calculation based on number of traits
-  const chartHeight = Math.max(300, normalizedTraits.length * 60);
-  
   return (
-    <Card>
-      <CardHeader className={isMobile ? "px-3 py-2" : ""}>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className={isMobile ? "p-2" : ""}>
-        <ScrollArea className="w-full" style={{ height: isMobile ? 300 : 400 }}>
-          <div style={{ height: chartHeight, minWidth: "100%", paddingRight: 20 }}>
-            <ChartContainer
-              config={{
-                trait: { label: "Personality Trait" },
-                score: { label: "Score", color: "#7C3AED" }
+    <Card className="w-full">
+      <CardContent className="p-4 md:p-6">
+        <div className="h-[300px] md:h-[400px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 70,
               }}
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={normalizedTraits}
-                  layout="vertical"
-                  margin={isMobile ? 
-                    { top: 5, right: 30, left: 80, bottom: 5 } : 
-                    { top: 5, right: 30, left: 120, bottom: 5 }
-                  }
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis 
-                    type="number" 
-                    domain={[0, 10]} 
-                    tickCount={6} 
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
-                    width={isMobile ? 80 : 120}
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={isMobile ? 10 : 12}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent 
-                        formatter={(value, name, props) => (
-                          <div>
-                            <p className="font-medium">{props.payload.name}</p>
-                            <p className="text-muted-foreground text-xs mt-1">{props.payload.description}</p>
-                            <p className="font-medium mt-2">{value}/10</p>
-                          </div>
-                        )}
-                      />
-                    }
-                  />
-                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                    {normalizedTraits.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </ScrollArea>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name" 
+                angle={-45}
+                textAnchor="end"
+                height={70}
+                tick={{fontSize: 12}}
+              />
+              <YAxis 
+                domain={[0, 100]}
+                label={{ 
+                  value: 'Score', 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { textAnchor: 'middle' } 
+                }}
+              />
+              <Tooltip 
+                formatter={(value) => [`${value}/100`, 'Score']}
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  borderRadius: 'var(--radius)',
+                }}
+              />
+              <Bar 
+                dataKey="score" 
+                fill="hsl(25, 95%, 53%)"
+                radius={[4, 4, 0, 0]}
+                barSize={40}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="text-center mt-4">
+          <p className="text-sm text-muted-foreground">
+            {validTraits.length > 0 
+              ? "Your strongest personality traits based on assessment responses"
+              : "Complete the assessment to view your personality traits"}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
