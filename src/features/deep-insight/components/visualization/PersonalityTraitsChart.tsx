@@ -35,37 +35,43 @@ const PersonalityTraitsChart: React.FC<PersonalityTraitsChartProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
-  // Prepare data for the chart
+  // Normalize traits data for the chart - ensure all scores are on a 0-10 scale
   const normalizedTraits = traits
     .slice(0, maxItems)
-    .map(trait => ({
-      name: trait.trait,
-      score: trait.score >= 0 && trait.score <= 1
+    .map(trait => {
+      // Handle different score formats and normalize to 0-10 scale
+      const normalizedScore = trait.score >= 0 && trait.score <= 1
         ? Math.round(trait.score * 10 * 10) / 10
         : trait.score > 10
           ? Math.round((trait.score / 100) * 10 * 10) / 10
-          : Math.round(trait.score * 10) / 10,
-      description: trait.description
-    }))
-    .sort((a, b) => b.score - a.score);
-
+          : Math.round(trait.score * 10) / 10;
+          
+      return {
+        name: trait.trait,
+        score: normalizedScore,
+        description: trait.description
+      };
+    })
+    .sort((a, b) => b.score - a.score); // Sort by score descending
+  
   // Generate colors with decreasing opacity based on score rank
   const getBarColor = (index: number) => {
+    // Use primary color (purple/indigo) with decreasing opacity
     return `rgba(124, 58, 237, ${1 - (index * 0.09)})`;
   };
 
   // Dynamic height calculation based on number of traits
-  const chartHeight = Math.max(280, normalizedTraits.length * (isMobile ? 50 : 60));
-
+  const chartHeight = Math.max(300, normalizedTraits.length * 60);
+  
   return (
     <Card>
-      <CardHeader className={isMobile ? "px-3 py-2" : "p-4 md:p-6"}>
-        <CardTitle className={isMobile ? "text-base" : "text-lg"}>{title}</CardTitle>
-        <CardDescription className={isMobile ? "text-xs" : "text-sm"}>{description}</CardDescription>
+      <CardHeader className={isMobile ? "px-3 py-2" : ""}>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className={isMobile ? "p-2" : "p-4"}>
+      <CardContent className={isMobile ? "p-2" : ""}>
         <ScrollArea className="w-full" style={{ height: isMobile ? 300 : 400 }}>
-          <div style={{ height: chartHeight, minWidth: "100%", paddingRight: isMobile ? 10 : 20 }}>
+          <div style={{ height: chartHeight, minWidth: "100%", paddingRight: 20 }}>
             <ChartContainer
               config={{
                 trait: { label: "Personality Trait" },
@@ -86,7 +92,7 @@ const PersonalityTraitsChart: React.FC<PersonalityTraitsChartProps> = ({
                     type="number" 
                     domain={[0, 10]} 
                     tickCount={6} 
-                    fontSize={isMobile ? 10 : 12}
+                    fontSize={12}
                   />
                   <YAxis 
                     type="category" 
@@ -100,9 +106,9 @@ const PersonalityTraitsChart: React.FC<PersonalityTraitsChartProps> = ({
                     content={
                       <ChartTooltipContent 
                         formatter={(value, name, props) => (
-                          <div className={isMobile ? "text-xs" : "text-sm"}>
+                          <div>
                             <p className="font-medium">{props.payload.name}</p>
-                            <p className="text-muted-foreground mt-1">{props.payload.description}</p>
+                            <p className="text-muted-foreground text-xs mt-1">{props.payload.description}</p>
                             <p className="font-medium mt-2">{value}/10</p>
                           </div>
                         )}

@@ -1,76 +1,110 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRightCircle, History } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Brain, ChevronRight, FileText } from "lucide-react";
+import DeepInsightHistory from "@/features/deep-insight/components/history/DeepInsightHistory";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
 const DeepInsight: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
+  
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8 space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold">Deep Insight Assessment</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Discover profound insights into your cognitive patterns, emotional architecture, and interpersonal dynamics with our advanced assessment.
-        </p>
-      </div>
+    <div className="container max-w-4xl py-8 px-4">
+      <motion.div
+        className="space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={itemVariants}>
+          <h1 className="text-3xl font-bold tracking-tight">Deep Insight</h1>
+          <p className="text-muted-foreground mt-2">
+            Explore your cognitive patterns and behavioral tendencies with our advanced assessment
+          </p>
+        </motion.div>
+        
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden border-primary/20">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-8">
+              <div className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                <CardTitle>Take the Deep Insight Assessment</CardTitle>
+              </div>
+              <CardDescription>
+                Discover your cognitive patterns, response tendencies, and behavioral insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="rounded-full bg-primary/20 p-1 mt-0.5">
+                    <ChevronRight className="h-3 w-3 text-primary" />
+                  </div>
+                  <span>30 questions to analyze your cognitive and emotional patterns</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="rounded-full bg-primary/20 p-1 mt-0.5">
+                    <ChevronRight className="h-3 w-3 text-primary" />
+                  </div>
+                  <span>Generate detailed insights about your thinking style and behavioral tendencies</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="rounded-full bg-primary/20 p-1 mt-0.5">
+                    <ChevronRight className="h-3 w-3 text-primary" />
+                  </div>
+                  <span>Visualize your response patterns and cognitive strengths</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="flex justify-end border-t bg-muted/50 pt-6">
+              <Button onClick={() => navigate("/deep-insight/quiz")}>
+                Start Assessment <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border-2 border-primary/20">
-          <CardHeader>
-            <Sparkles className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Take the Assessment</CardTitle>
-            <CardDescription>
-              Answer a series of thought-provoking questions to reveal your unique psychological patterns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              This comprehensive assessment takes approximately 10-15 minutes to complete and will provide you with detailed insights into your personality traits, cognitive style, and emotional intelligence.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => navigate("/deep-insight/quiz")} className="w-full">
-              Begin Assessment <ArrowRightCircle className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <History className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>View Your History</CardTitle>
-            <CardDescription>
-              Access your previous assessment results and track your development over time
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Review all your saved analyses to see patterns in your responses and track how your personality insights evolve over time. Compare results from different periods to understand your growth journey.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              onClick={() => navigate("/deep-insight/history")} 
-              variant="outline" 
-              className="w-full"
-            >
-              View History <History className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <div className="bg-muted/30 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-3">About Deep Insight</h2>
-        <p className="text-muted-foreground">
-          The Deep Insight assessment goes beyond surface-level personality traits to analyze the underlying patterns that shape your thinking, emotional responses, and relationships. Using advanced psychometric principles, this assessment provides nuanced insights that can help you understand yourself more deeply and make more informed decisions about personal growth, career choices, and relationships.
-        </p>
-      </div>
+        <motion.div variants={itemVariants}>
+          <DeepInsightHistory />
+        </motion.div>
+        
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle>About Deep Insight</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Deep Insight is our advanced cognitive assessment that analyzes how you 
+                process information, make decisions, and respond to various situations. 
+                The assessment uses sophisticated pattern recognition to identify your 
+                unique cognitive profile, helping you better understand your thought processes
+                and behavioral tendencies.
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

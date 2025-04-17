@@ -9,20 +9,6 @@ interface InterpersonalTabProps {
 }
 
 export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) => {
-  // Add null check for interpersonalDynamics
-  const interpersonalDynamics = analysis.interpersonalDynamics || {
-    attachmentStyle: "Your attachment style shows a balanced approach to relationships.",
-    communicationPattern: "You communicate thoughtfully and prefer meaningful conversations.",
-    conflictResolution: "You approach conflicts by seeking to understand different perspectives."
-  };
-
-  // Add null check for relationshipPatterns
-  const relationshipPatterns = analysis.relationshipPatterns && 
-                            typeof analysis.relationshipPatterns === 'object' &&
-                            'compatibleTypes' in analysis.relationshipPatterns ? 
-                            analysis.relationshipPatterns : 
-                            { compatibleTypes: [] };
-
   return (
     <Card>
       <CardHeader>
@@ -35,15 +21,15 @@ export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) 
       <CardContent className="space-y-6">
         <div>
           <h3 className="font-semibold mb-3 text-lg">Attachment Style</h3>
-          <p className="text-muted-foreground leading-relaxed">{interpersonalDynamics.attachmentStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.attachmentStyle}</p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Communication Pattern</h3>
-          <p className="text-muted-foreground leading-relaxed">{interpersonalDynamics.communicationPattern}</p>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.communicationPattern}</p>
         </div>
         <div>
           <h3 className="font-semibold mb-3 text-lg">Conflict Resolution</h3>
-          <p className="text-muted-foreground leading-relaxed">{interpersonalDynamics.conflictResolution}</p>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.conflictResolution}</p>
         </div>
         <div className="mt-6">
           <h3 className="font-semibold mb-3 text-lg flex items-center">
@@ -53,13 +39,12 @@ export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) 
           <div className="bg-secondary/10 p-4 rounded-md">
             <h4 className="text-sm font-medium mb-2">Most Compatible Types</h4>
             <ul className="list-disc list-inside space-y-2 text-sm">
-              {relationshipPatterns.compatibleTypes && relationshipPatterns.compatibleTypes.length > 0 ? (
-                relationshipPatterns.compatibleTypes.map((type, index) => (
-                  <li key={index} className="text-muted-foreground">{type}</li>
-                ))
-              ) : (
-                <li className="text-muted-foreground">Compatible types information not available</li>
-              )}
+              {analysis.relationshipPatterns && 
+               typeof analysis.relationshipPatterns === 'object' && 
+               'compatibleTypes' in analysis.relationshipPatterns && 
+               analysis.relationshipPatterns.compatibleTypes?.map((type, index) => (
+                <li key={index} className="text-muted-foreground">{type}</li>
+              ))}
             </ul>
           </div>
         </div>

@@ -1,11 +1,10 @@
 
 import React from "react";
-import { AlertCircle, ArrowLeft, RefreshCw, ClipboardList } from "lucide-react";
+import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ResultsErrorProps {
   error: string;
@@ -14,14 +13,6 @@ interface ResultsErrorProps {
 
 export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) => {
   const navigate = useNavigate();
-  
-  const isNoResponsesError = error.includes("No responses found") || 
-                            error.toLowerCase().includes("assessment") || 
-                            error.toLowerCase().includes("complete");
-  
-  const isIncompleteError = error.includes("Incomplete responses");
-  
-  const isRetryingError = error.includes("retrying") || error.includes("retry");
   
   return (
     <motion.div 
@@ -32,76 +23,21 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
     >
       <Alert variant="destructive" className="mb-6">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>
-          {isIncompleteError ? "Incomplete Assessment" : 
-           isRetryingError ? "Multiple Retry Attempts Detected" : 
-           "Error Processing Your Responses"}
-        </AlertTitle>
+        <AlertTitle>Error Processing Your Responses</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
       
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>What happened?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isNoResponsesError || isIncompleteError ? (
-            <p>
-              You need to complete all 100 questions in the Deep Insight assessment before viewing results. 
-              This ensures your analysis is comprehensive and accurate.
-              {isIncompleteError && (
-                <span className="block mt-2 font-medium">
-                  Please complete the remaining questions to receive your personalized analysis.
-                </span>
-              )}
-            </p>
-          ) : isRetryingError ? (
-            <div className="space-y-4">
-              <p>
-                Our system has detected multiple retry attempts to generate your analysis. This could be due to:
-              </p>
-              <ul className="list-disc list-inside space-y-1 pl-2">
-                <li>A temporary overload on our analysis system</li>
-                <li>Complex response patterns requiring additional processing</li>
-                <li>Connectivity issues between our services</li>
-              </ul>
-              <p className="mt-2">
-                Please try one more time using the retry button below, or return to the assessment to review your answers.
-                If the issue persists, please wait a few minutes before trying again.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p>
-                We encountered an issue while generating your analysis. This could be due to:
-              </p>
-              <ul className="list-disc list-inside space-y-1 pl-2">
-                <li>A temporary issue with our analysis system</li>
-                <li>An unexpected error processing your responses</li>
-                <li>A problem with the data format</li>
-              </ul>
-              <p className="mt-2">
-                You can try again using the retry button below, or return to the assessment to review your answers.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <p className="text-muted-foreground mb-8">
+        We apologize for the inconvenience. This could be due to a temporary issue with our analysis
+        system or a problem with the response data. You can try again or return to the assessment.
+      </p>
       
       <div className="flex flex-wrap gap-4 justify-center">
-        {onRetry && !isNoResponsesError && !isIncompleteError && (
+        {onRetry && (
           <Button onClick={onRetry} variant="default" className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" /> Try Again
           </Button>
         )}
-        
-        <Button 
-          onClick={() => navigate("/deep-insight/quiz")} 
-          variant="default" 
-          className="flex items-center gap-2"
-        >
-          <ClipboardList className="h-4 w-4" /> Continue Assessment
-        </Button>
         
         <Button onClick={() => navigate("/deep-insight")} variant="outline" className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Return to Deep Insight

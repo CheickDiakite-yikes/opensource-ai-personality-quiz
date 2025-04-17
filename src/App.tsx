@@ -20,7 +20,6 @@ const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 const DeepInsight = lazy(() => import("@/pages/DeepInsight"));
 const DeepInsightQuiz = lazy(() => import("@/pages/DeepInsightQuiz"));
 const DeepInsightResults = lazy(() => import("@/pages/DeepInsightResults"));
-const DeepInsightHistory = lazy(() => import("@/pages/DeepInsightHistory"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -116,7 +115,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* Deep Insight Routes */}
+          {/* New Deep Insight Routes */}
           <Route path="deep-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
@@ -138,10 +137,11 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          <Route path="deep-insight/history" element={
+          {/* Add new route for viewing past results with ID parameter */}
+          <Route path="deep-insight/results/:id" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
-                <DeepInsightHistory />
+                <DeepInsightResults />
               </Suspense>
             </PrivateRoute>
           } />

@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   PieChart,
@@ -16,43 +17,42 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsePatternAnalysis } from "../../utils/analysis/types";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResponsePatternChartProps {
   patternData: ResponsePatternAnalysis;
+  title?: string;
+  description?: string;
 }
 
-const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData }) => {
-  const isMobile = useIsMobile();
+const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({
+  patternData,
+  title = "Response Pattern Distribution",
+  description = "Analysis of your response patterns across different questions"
+}) => {
+  // Transform percentages into a format suitable for the pie chart
+  const chartData = Object.entries(patternData.percentages).map(([key, value]) => ({
+    name: getResponseLabel(key),
+    value,
+    color: getResponseColor(key)
+  })).filter(item => item.value > 0); // Only include non-zero values
   
-  // Transform percentages into chart data
-  const chartData = Object.entries(patternData.percentages)
-    .map(([key, value]) => ({
-      name: getResponseLabel(key),
-      value,
-      color: getResponseColor(key)
-    }))
-    .filter(item => item.value > 0);
-
   return (
     <Card>
-      <CardHeader className={isMobile ? "px-3 py-2" : "p-4 md:p-6"}>
-        <CardTitle className={isMobile ? "text-base" : "text-lg"}>Response Pattern Analysis</CardTitle>
-        <CardDescription className={isMobile ? "text-xs" : "text-sm"}>
-          Distribution of your response patterns
-        </CardDescription>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className={isMobile ? "p-2" : "p-4"}>
-        <div className={`flex flex-col ${isMobile ? "gap-4" : "md:flex-row items-center gap-6"}`}>
-          <div className={`w-full ${isMobile ? "h-[200px]" : "md:w-1/2 h-[250px]"}`}>
+      <CardContent>
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="w-full md:w-1/2 h-[250px]">
             <ChartContainer
               config={{
-                a: { label: "Analytical", color: "#8b5cf6" },
-                b: { label: "Emotional", color: "#ec4899" },
-                c: { label: "Practical", color: "#14b8a6" },
-                d: { label: "Creative", color: "#f59e0b" },
-                e: { label: "Cautious", color: "#6b7280" },
-                f: { label: "Reflective", color: "#3b82f6" }
+                a: { label: "Analytical", color: "#8b5cf6" },     // violet-500
+                b: { label: "Emotional", color: "#ec4899" },      // pink-500
+                c: { label: "Practical", color: "#14b8a6" },      // teal-500
+                d: { label: "Creative", color: "#f59e0b" },       // amber-500
+                e: { label: "Cautious", color: "#6b7280" },       // gray-500
+                f: { label: "Reflective", color: "#3b82f6" }      // blue-500
               }}
             >
               <ResponsiveContainer width="100%" height="100%">
@@ -63,9 +63,11 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={isMobile ? 70 : 80}
-                    innerRadius={isMobile ? 35 : 40}
+                    outerRadius={80}
+                    innerRadius={40}
                     paddingAngle={4}
+                    label={(entry) => `${entry.name}: ${entry.value}%`}
+                    labelLine={false}
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -74,20 +76,13 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
                   <ChartTooltip
                     content={
                       <ChartTooltipContent 
-                        formatter={(value) => (
-                          <div className={isMobile ? "text-xs" : "text-sm"}>
-                            <p className="font-medium">{value}%</p>
-                          </div>
-                        )}
+                        formatter={(value) => `${value}%`}
                       />
                     }
                   />
                   <ChartLegend
                     content={
-                      <ChartLegendContent 
-                        verticalAlign="bottom" 
-                        hideIcon={isMobile}
-                      />
+                      <ChartLegendContent verticalAlign="bottom" />
                     }
                   />
                 </PieChart>
@@ -95,25 +90,21 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
             </ChartContainer>
           </div>
           
-          <div className={`w-full ${isMobile ? "" : "md:w-1/2"} space-y-4`}>
+          <div className="w-full md:w-1/2 space-y-4">
             <div>
-              <h3 className={`font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Primary Response Style</h3>
-              <p className={`${isMobile ? "text-sm" : "text-lg"} font-semibold`}>
-                {getResponseLabel(patternData.primaryChoice)}
-              </p>
-              <p className={`${isMobile ? "text-xs" : "text-sm"} text-muted-foreground`}>
-                {getResponseDescription(patternData.primaryChoice)}
-              </p>
+              <h3 className="font-medium text-sm">Primary Response Style</h3>
+              <p className="text-lg font-semibold">{getResponseLabel(patternData.primaryChoice)}</p>
+              <p className="text-sm text-muted-foreground">{getResponseDescription(patternData.primaryChoice)}</p>
             </div>
             
             <div>
-              <h3 className={`font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Secondary Response Style</h3>
-              <p className={`${isMobile ? "text-sm" : "text-lg"} font-semibold`}>
-                {getResponseLabel(patternData.secondaryChoice)}
-              </p>
-              <p className={`${isMobile ? "text-xs" : "text-sm"} text-muted-foreground`}>
-                {getResponseDescription(patternData.secondaryChoice)}
-              </p>
+              <h3 className="font-medium text-sm">Secondary Response Style</h3>
+              <p className="text-lg font-semibold">{getResponseLabel(patternData.secondaryChoice)}</p>
+              <p className="text-sm text-muted-foreground">{getResponseDescription(patternData.secondaryChoice)}</p>
+            </div>
+            
+            <div className="text-xs text-muted-foreground border-t pt-2 mt-4">
+              <p>Response Signature: {patternData.responseSignature}</p>
             </div>
           </div>
         </div>

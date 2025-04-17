@@ -1,130 +1,192 @@
 
-import React, { useEffect } from "react";
-import { useDeepInsightResults } from "@/features/deep-insight/hooks/useDeepInsightResults";
-import { ResultsLoadingState } from "@/features/deep-insight/components/results/ResultsLoadingState";
-import { ResultsErrorState } from "@/features/deep-insight/components/results/ResultsErrorState";
-import { ResultsHeader } from "@/features/deep-insight/components/ResultsHeader";
-import { ResultsTabs } from "@/features/deep-insight/components/ResultsTabs";
-import { ResultsActions } from "@/features/deep-insight/components/ResultsActions";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
-import { useLegacyAnalysis } from "@/features/deep-insight/hooks/results/useLegacyAnalysis";
+import { useParams, useNavigate } from "react-router-dom";
+import { useDeepInsightResults } from "@/features/deep-insight/hooks/useDeepInsightResults";
+import { ResultsLoading } from "@/features/deep-insight/components/ResultsLoading";
+import { ResultsError } from "@/features/deep-insight/components/ResultsError";
+import { ResultsHeader } from "@/features/deep-insight/components/ResultsHeader";
+import { PersonalOverviewCard } from "@/features/deep-insight/components/PersonalOverviewCard";
+import { ResultsTabs } from "@/features/deep-insight/components/ResultsTabs";
+import { StrengthsChallengesCards } from "@/features/deep-insight/components/StrengthsChallengesCards";
+import { ResultsActions } from "@/features/deep-insight/components/ResultsActions";
 import PersonalityTraitsChart from "@/features/deep-insight/components/visualization/PersonalityTraitsChart";
-import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
 import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
+import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ChartBar, PieChart, Activity, ArrowLeft } from "lucide-react";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+import { PersonalityAnalysis } from "@/utils/types";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
+// Result component
 const DeepInsightResults: React.FC = () => {
-  const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const queryParamId = searchParams.get('id');
-  const isLegacy = searchParams.get('legacy') === 'true';
-  const isFresh = searchParams.get('fresh') === 'true';
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { analysis: latestAnalysis, loading: latestLoading, error: latestError, saveAnalysis } = useDeepInsightResults();
+  const { getAnalysisById, isLoading: analysisLoading } = useAIAnalysis();
+  const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const { analysis, isLoading, error, saveAnalysis, retryAnalysis, loadedFromCache } = useDeepInsightResults();
-  const { legacyAnalysis, isLegacyLoading, legacyError } = useLegacyAnalysis(isLegacy, queryParamId);
-
-  useEffect(() => {
-    if (isFresh && loadedFromCache) {
-      toast.info("Using newly generated analysis", {
-        description: "Your analysis has been freshly generated based on your responses"
-      });
-    } else if (loadedFromCache) {
-      toast.info("Using cached analysis", {
-        description: "This is a previously generated analysis. For a fresh analysis, use the 'Refresh Analysis' option."
-      });
-    }
-  }, [isFresh, loadedFromCache]);
-
-  const handleRefreshAnalysis = () => {
-    toast.info("Generating fresh analysis...");
-    navigate("/deep-insight/results?fresh=true");
-  };
-
-  const displayAnalysis = legacyAnalysis || analysis;
-  const displayError = legacyError || error;
-  const isDisplayLoading = isLegacyLoading || (isLoading && !displayAnalysis);
-
-  if (isDisplayLoading) {
-    return <ResultsLoadingState />;
-  }
-
-  if (displayError) {
-    return <ResultsErrorState error={displayError.message} onRetry={retryAnalysis} />;
-  }
-
-  if (!displayAnalysis) {
-    return <ResultsErrorState error="No analysis data available. Please complete the assessment." onRetry={retryAnalysis} />;
-  }
-
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.05
+        staggerChildren: 0.1
       }
     }
   };
-
+  
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { y: 20, opacity: 0 },
     visible: (i: number) => ({
-      opacity: 1,
       y: 0,
+      opacity: 1,
       transition: {
-        delay: i * 0.05,
-        duration: 0.4,
-        ease: "easeOut"
+        delay: i * 0.1,
+        duration: 0.5
       }
     })
   };
 
-  return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 pb-20">
-      <motion.div
-        className="space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <ResultsHeader analysis={displayAnalysis} itemVariants={itemVariants} />
+  // If we have an ID, fetch that specific analysis
+  useEffect(() => {
+    const loadAnalysis = async () => {
+      if (id) {
+        try {
+          setLoading(true);
+          console.log(`Loading Deep Insight analysis with ID: ${id}`);
+          const specificAnalysis = await getAnalysisById(id);
+          
+          if (specificAnalysis) {
+            console.log(`Successfully loaded analysis: ${specificAnalysis.id}`);
+            setAnalysis(specificAnalysis);
+            setError(null);
+          } else {
+            console.error(`Analysis with ID ${id} not found`);
+            setError(`Analysis with ID ${id} not found`);
+            toast.error("Could not find the requested analysis", {
+              description: "Please try a different analysis or take a new assessment"
+            });
+          }
+        } catch (err) {
+          console.error("Error loading analysis by ID:", err);
+          setError(err instanceof Error ? err.message : "Failed to load analysis");
+          toast.error("Error loading analysis", {
+            description: "Please try again later"
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else if (latestAnalysis) {
+        // If no ID is provided, use the latest analysis
+        setAnalysis(latestAnalysis);
+        setLoading(false);
+        setError(null);
+      }
+    };
 
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+    loadAnalysis();
+  }, [id, getAnalysisById, latestAnalysis]);
+  
+  // Use either the specific analysis (if ID provided) or the latest analysis
+  const displayLoading = loading || (latestLoading && !id);
+  const displayError = error || (!id && latestError);
+  const displayAnalysis = analysis || (!id && latestAnalysis);
+  
+  if (displayLoading) {
+    return <ResultsLoading />;
+  }
+  
+  if (displayError || !displayAnalysis) {
+    return <ResultsError error={displayError || "No analysis data found"} />;
+  }
+
+  return (
+    <motion.div 
+      className="container max-w-4xl py-8 px-4 md:px-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="flex flex-col gap-8">
+        {/* Back button when viewing a specific analysis */}
+        {id && (
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => navigate('/deep-insight')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Deep Insight
+            </Button>
+            
+            <div className="ml-auto text-sm text-muted-foreground">
+              {new Date(displayAnalysis.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+        )}
+        
+        <ResultsHeader />
+        
+        {/* Personal Overview */}
+        <PersonalOverviewCard analysis={displayAnalysis} itemVariants={itemVariants} />
+        
+        {/* Visualizations Section */}
+        <motion.div
           variants={itemVariants}
-          custom={3}
+          initial="hidden"
+          animate="visible"
+          custom={4}
         >
-          {displayAnalysis.traits && displayAnalysis.traits.length > 0 && (
-            <PersonalityTraitsChart 
-              traits={displayAnalysis.traits}
-              title="Your Personality Traits"
-              description="Visualization of your key personality traits"
-            />
-          )}
-          <CognitiveStrengthsChart analysis={displayAnalysis} />
+          <h2 className="text-2xl font-bold mb-4">Visualized Insights</h2>
+          
+          <Tabs defaultValue="traits" className="w-full">
+            <TabsList className="w-full justify-start mb-4">
+              <TabsTrigger value="traits" className="flex items-center gap-2">
+                <ChartBar className="h-4 w-4" />
+                <span>Personality Traits</span>
+              </TabsTrigger>
+              <TabsTrigger value="patterns" className="flex items-center gap-2">
+                <PieChart className="h-4 w-4" />
+                <span>Response Patterns</span>
+              </TabsTrigger>
+              <TabsTrigger value="cognitive" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                <span>Cognitive Profile</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="traits" className="mt-0">
+              <PersonalityTraitsChart traits={displayAnalysis.traits} />
+            </TabsContent>
+            
+            <TabsContent value="patterns" className="mt-0">
+              <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
+            </TabsContent>
+            
+            <TabsContent value="cognitive" className="mt-0">
+              <CognitiveStrengthsChart analysis={displayAnalysis} />
+            </TabsContent>
+          </Tabs>
         </motion.div>
         
-        {displayAnalysis.responsePatterns && (
-          <motion.div variants={itemVariants} custom={4}>
-            <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
-          </motion.div>
-        )}
-
-        <ResultsActions 
-          onSave={saveAnalysis} 
-          itemVariants={itemVariants}
-          analysis={displayAnalysis}
-          onRefresh={handleRefreshAnalysis}
-          loadedFromCache={loadedFromCache}
-        />
-
+        {/* Detailed Analysis Tabs */}
         <ResultsTabs analysis={displayAnalysis} itemVariants={itemVariants} />
-      </motion.div>
-    </div>
+        
+        {/* Strengths and Challenges */}
+        <StrengthsChallengesCards analysis={displayAnalysis} itemVariants={itemVariants} />
+        
+        {/* Actions - Only show save button for latest analysis, not historical ones */}
+        {!id && <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} />}
+      </div>
+    </motion.div>
   );
 };
 

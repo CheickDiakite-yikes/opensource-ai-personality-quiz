@@ -1,117 +1,82 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Download, Sparkles, Share2, History } from "lucide-react";
 import { motion } from "framer-motion";
-import { RefreshCw, Save, Share2 } from "lucide-react";
-import { AnalysisData } from "../utils/analysis/types";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 interface ResultsActionsProps {
   onSave: () => void;
-  onRefresh?: () => void;
   itemVariants: any;
-  analysis: AnalysisData;
-  loadedFromCache?: boolean;
 }
 
-export const ResultsActions = ({ 
-  onSave, 
-  itemVariants, 
-  analysis,
-  onRefresh,
-  loadedFromCache
-}: ResultsActionsProps) => {
-  const isMobile = useIsMobile();
-  
+export const ResultsActions: React.FC<ResultsActionsProps> = ({ onSave, itemVariants }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const handleShare = () => {
-    try {
-      // Create a shareable URL with the analysis ID
-      const shareableUrl = `${window.location.origin}/deep-insight/results?id=${analysis.id}`;
-      navigator.clipboard.writeText(shareableUrl);
-      toast.success("Link copied to clipboard", {
-        description: "You can now share this link with others"
-      });
-    } catch (err) {
-      console.error("Error sharing analysis:", err);
-      toast.error("Failed to create shareable link");
-    }
+    // In a real implementation, this would open a sharing dialog
+    // For now, we'll just show a toast
+    toast.info("Sharing functionality will be available soon!");
+  };
+
+  const handleDownload = () => {
+    // In a real implementation, this would generate and download a PDF
+    // For now, we'll just show a toast
+    toast.info("Download functionality will be available soon!");
+  };
+
+  const handleViewHistory = () => {
+    navigate('/deep-insight');
   };
 
   return (
-    <motion.div 
-      className={`
-        flex flex-col sm:flex-row 
-        items-center 
-        justify-center 
-        gap-4 
-        w-full 
-        max-w-4xl 
-        mx-auto 
-        p-6 
-        rounded-xl
-        backdrop-blur-sm
-        bg-white/5
-        border border-white/10
-        ${isMobile ? 'space-y-3' : ''}
-      `}
+    <motion.div
       variants={itemVariants}
-      custom={5}
+      initial="hidden"
+      animate="visible"
+      custom={6}
+      className="flex flex-wrap justify-center gap-4"
     >
       <Button 
-        variant="elegant"
-        size="lg"
-        className={`
-          w-full sm:w-auto 
-          flex items-center gap-3
-          justify-center
-          min-w-[200px]
-          transition-all
-          duration-300
-          hover:scale-105
-        `} 
-        onClick={onSave}
+        className="flex items-center gap-2" 
+        onClick={() => {
+          onSave();
+          console.log("Analysis saved for user:", user?.id);
+        }}
       >
-        <Save className="h-5 w-5" />
-        Save Analysis
+        <Sparkles className="h-4 w-4" />
+        Save This Analysis
       </Button>
 
       <Button 
-        variant="elegant"
-        size="lg" 
-        className={`
-          w-full sm:w-auto 
-          flex items-center gap-3
-          justify-center
-          min-w-[200px]
-          transition-all
-          duration-300
-          hover:scale-105
-        `} 
+        variant="outline" 
+        className="flex items-center gap-2"
         onClick={handleShare}
       >
-        <Share2 className="h-5 w-5" />
+        <Share2 className="h-4 w-4" />
         Share Results
       </Button>
 
-      {onRefresh && (
-        <Button 
-          variant={loadedFromCache ? "warm" : "elegant"}
-          size="lg"
-          className={`
-            w-full sm:w-auto 
-            flex items-center gap-3
-            justify-center
-            min-w-[200px]
-            transition-all
-            duration-300
-            hover:scale-105
-          `} 
-          onClick={onRefresh}
-        >
-          <RefreshCw className="h-5 w-5" />
-          {loadedFromCache ? "Generate Fresh Analysis" : "Refresh Analysis"}
-        </Button>
-      )}
+      <Button 
+        variant="secondary" 
+        className="flex items-center gap-2"
+        onClick={handleDownload}
+      >
+        <Download className="h-4 w-4" />
+        Download PDF
+      </Button>
+
+      <Button
+        variant="outline"
+        className="flex items-center gap-2"
+        onClick={handleViewHistory}
+      >
+        <History className="h-4 w-4" />
+        View History
+      </Button>
     </motion.div>
   );
 };
