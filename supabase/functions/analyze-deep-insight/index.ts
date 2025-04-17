@@ -59,10 +59,6 @@ serve(async (req) => {
 
     console.log('Making OpenAI API request with model gpt-4o...')
     
-    // Set a longer timeout for the OpenAI request - 4 minutes (240 seconds)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 240000);
-    
     try {
       const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -186,11 +182,7 @@ The analysis must be uniquely tailored to the individual based on their specific
           temperature: 0.7,
           max_tokens: 14000
         }),
-        signal: controller.signal
       });
-
-      // Clear the timeout since we got a response
-      clearTimeout(timeoutId);
 
       const processingTime = (Date.now() - startTime) / 1000
       console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`)
@@ -348,9 +340,6 @@ The analysis must be uniquely tailored to the individual based on their specific
         throw new Error('Failed to parse analysis response')
       }
     } catch (fetchError) {
-      // Clear the timeout if there was an error
-      clearTimeout(timeoutId);
-      
       console.error('Error fetching from OpenAI:', fetchError)
       
       if (fetchError.name === 'AbortError') {
