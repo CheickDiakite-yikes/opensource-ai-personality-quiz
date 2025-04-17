@@ -33,14 +33,22 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        // Create an abortable fetch request
-        const abortController = new AbortController();
-        const timeoutId = setTimeout(() => abortController.abort(), 180000); // 3 minutes timeout
-        
         console.log("Attempting to call edge function for analysis");
         toast.loading("Generating your deep insight analysis with AI...", { 
           id: "analyze-deep-insight", 
           duration: 180000 // 3 minute toast for longer processing
+        });
+        
+        // Set a timeout for the API call
+        let timeoutId: NodeJS.Timeout | null = null;
+        let timedOut = false;
+        
+        // Create a promise that rejects after timeout
+        const timeoutPromise = new Promise<never>((_resolve, reject) => {
+          timeoutId = setTimeout(() => {
+            timedOut = true;
+            reject(new Error("Edge function call timed out after 3 minutes"));
+          }, 180000); // 3 minutes timeout
         });
         
         try {
@@ -49,45 +57,48 @@ export const useDeepInsightResults = () => {
             timestamp: Date.now()
           });
           
-          // Make the edge function call with the abort controller
-          const { data, error } = await supabase.functions.invoke(
+          // Race the function call against the timeout
+          const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
               body: { 
                 responses: responseData,
                 timestamp: Date.now() // Add timestamp to help with debugging
               },
-              signal: abortController.signal,
               headers: {
                 'Content-Type': 'application/json'
               }
             }
           );
           
+          // Wait for either the function call to complete or the timeout to occur
+          const result = await Promise.race([functionPromise, timeoutPromise]);
+          
           // Clear the timeout since we got a response
-          clearTimeout(timeoutId);
-
-          if (error) {
-            console.error('Edge function returned error:', error);
-            throw new Error(`Failed to generate analysis: ${error.message || 'Unknown error'}`);
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          // Handle the function response
+          if (result.error) {
+            console.error('Edge function returned error:', result.error);
+            throw new Error(`Failed to generate analysis: ${result.error.message || 'Unknown error'}`);
           }
 
-          if (!data) {
+          if (!result.data) {
             console.error('No data returned from edge function');
             throw new Error('No analysis data returned from edge function');
           }
           
-          console.log("Successfully received analysis from edge function:", data);
+          console.log("Successfully received analysis from edge function:", result.data);
           toast.success("Analysis complete!", { id: "analyze-deep-insight" });
-          setAnalysis(data);
+          setAnalysis(result.data);
           setLoading(false);
           
         } catch (edgeFunctionError) {
           // Clear the timeout if there was an error
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           
-          // Check if this was an abort error
-          if (edgeFunctionError.name === 'AbortError') {
+          // Check if this was a timeout error
+          if (timedOut) {
             console.error("Edge function call timed out after 3 minutes");
             toast.error("AI analysis service timed out", { 
               id: "analyze-deep-insight",
