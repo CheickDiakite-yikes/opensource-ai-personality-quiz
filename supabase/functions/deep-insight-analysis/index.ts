@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DeepInsightResponses } from "./types.ts";
@@ -65,14 +66,17 @@ serve(async (req) => {
             - Learning style and preferences
             
             Format the response as a structured JSON object matching these fields. Use numerical scores (0-100) where appropriate.
-            Be insightful, nuanced, and professional in your analysis.`
+            Be insightful, nuanced, and professional in your analysis.
+            
+            IMPORTANT: Return ONLY the JSON object with no markdown formatting, code blocks or additional text.`
           },
           {
             role: 'user',
             content: `Please analyze these assessment responses and provide a detailed personality analysis:\n${formattedResponses}`
           }
         ],
-        temperature: 0.7
+        temperature: 0.7,
+        response_format: { type: "json_object" }
       }),
     });
 
@@ -82,8 +86,18 @@ serve(async (req) => {
       throw new Error('Invalid response from OpenAI');
     }
 
-    // Parse the AI response
-    const analysisContent = JSON.parse(aiResult.choices[0].message.content);
+    // Parse the AI response - handle potential JSON issues
+    let analysisContent;
+    try {
+      const content = aiResult.choices[0].message.content;
+      // Clean up any potential markdown code blocks or unwanted formatting
+      const cleanedContent = content.replace(/```json|```/g, '').trim();
+      analysisContent = JSON.parse(cleanedContent);
+    } catch (jsonError) {
+      console.error("Failed to parse OpenAI response:", jsonError);
+      console.log("Raw response:", aiResult.choices[0].message.content);
+      throw new Error('Could not parse AI analysis results');
+    }
     
     // Add metadata and format final response
     const analysis = {
