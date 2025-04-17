@@ -18,6 +18,12 @@ export const useDeepInsightStorage = () => {
   const cachedResponsesRef = useRef<DeepInsightResponses | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
+  // Clear cached responses
+  const clearResponseCache = useCallback(() => {
+    console.log("Clearing response cache");
+    cachedResponsesRef.current = null;
+  }, []);
+  
   // Get saved responses with caching to prevent repeated fetches
   const getResponses = useCallback(async (): Promise<DeepInsightResponses> => {
     try {
@@ -190,6 +196,7 @@ export const useDeepInsightStorage = () => {
     getResponses,
     saveResponses,
     clearSavedProgress,
+    clearResponseCache,
     isLoading
   };
 };

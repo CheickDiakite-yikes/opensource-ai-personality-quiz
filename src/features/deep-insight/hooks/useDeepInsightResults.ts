@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,7 +13,7 @@ import { DeepInsightResponses } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useDeepInsightResults = () => {
-  const { getResponses, clearSavedProgress } = useDeepInsightStorage();
+  const { getResponses, clearSavedProgress, clearResponseCache } = useDeepInsightStorage();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('id');
@@ -37,7 +36,7 @@ export const useDeepInsightResults = () => {
     setRetryCount
   } = useAnalysisState();
 
-  const { cacheAnalysis, loadCachedAnalysis } = useAnalysisCache();
+  const { cacheAnalysis, loadCachedAnalysis, clearAnalysisCache } = useAnalysisCache();
   const { fetchAnalysisById, ensureValidUUID, isLegacyId } = useAnalysisFetch();
   
   // Always check for the fresh parameter to force new analysis generation
@@ -54,6 +53,13 @@ export const useDeepInsightResults = () => {
       setError(null);
 
       try {
+        // If forcing new analysis, clear all caches first
+        if (forceNewAnalysis) {
+          console.log("Forcing fresh analysis - clearing all caches");
+          clearAnalysisCache();
+          clearResponseCache();
+        }
+        
         // Only attempt to load by ID if we have an ID parameter and aren't forcing fresh
         if (analysisId && !forceNewAnalysis) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
@@ -164,6 +170,7 @@ export const useDeepInsightResults = () => {
         
         setAnalysis(result);
         cacheAnalysis(result);
+        setLoadedFromCache(false); // Mark as fresh analysis, not from cache
       } catch (err) {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
@@ -193,7 +200,7 @@ export const useDeepInsightResults = () => {
     };
 
     fetchOrGenerateAnalysis();
-  }, [analysisId, getResponses, navigate, retryCount, forceNewAnalysis]);
+  }, [analysisId, getResponses, navigate, retryCount, forceNewAnalysis, clearAnalysisCache, clearResponseCache]);
 
   const saveAnalysis = async () => {
     if (!analysis || !user) {
@@ -265,6 +272,10 @@ export const useDeepInsightResults = () => {
       return;
     }
     
+    // Clear caches when manually retrying
+    clearAnalysisCache();
+    clearResponseCache();
+    
     setRetryCount(0);
     setError(null);
     setIsLoading(true);
@@ -282,6 +293,7 @@ export const useDeepInsightResults = () => {
           result.rawResponses = responses;
           setAnalysis(result);
           cacheAnalysis(result);
+          setLoadedFromCache(false); // It's a fresh analysis
           toast.success("Analysis generated successfully!");
         } else {
           throw new Error("Failed to generate analysis");

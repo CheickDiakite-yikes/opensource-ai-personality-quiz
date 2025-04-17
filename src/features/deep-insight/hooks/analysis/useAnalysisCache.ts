@@ -24,6 +24,15 @@ export const useAnalysisCache = () => {
     }
     return null;
   };
+  
+  const clearAnalysisCache = () => {
+    try {
+      sessionStorage.removeItem('deep_insight_analysis_cache');
+      console.log("Analysis cache cleared");
+    } catch (err) {
+      console.error("Error clearing analysis cache:", err);
+    }
+  };
 
-  return { cacheAnalysis, loadCachedAnalysis };
+  return { cacheAnalysis, loadCachedAnalysis, clearAnalysisCache };
 };
