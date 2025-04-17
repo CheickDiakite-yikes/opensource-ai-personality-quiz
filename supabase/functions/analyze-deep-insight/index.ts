@@ -14,9 +14,37 @@ serve(async (req) => {
   }
 
   try {
-    // Parse the request body and extract required data
-    const requestData = await req.json()
-    const { responses, timestamp } = requestData
+    console.log("Received request to analyze-deep-insight function")
+    let requestData
+    
+    try {
+      // More robust JSON parsing with validation
+      const text = await req.text()
+      console.log("Request body text:", text.substring(0, 200) + "...")
+      
+      if (!text || text.trim() === '') {
+        throw new Error("Empty request body")
+      }
+      
+      try {
+        requestData = JSON.parse(text)
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError.message)
+        console.error("First 100 chars of body:", text.substring(0, 100))
+        throw new Error(`Invalid JSON in request body: ${parseError.message}`)
+      }
+    } catch (bodyError) {
+      console.error("Error reading request body:", bodyError)
+      throw new Error(`Failed to read request body: ${bodyError.message}`)
+    }
+    
+    // Validate request data structure after successful parsing
+    const { responses, timestamp } = requestData || {}
+    
+    if (!responses) {
+      console.error("Missing responses in request data:", requestData)
+      throw new Error("Required field 'responses' is missing from request")
+    }
     
     console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`)
     console.log('Request timestamp:', timestamp ? new Date(timestamp).toISOString() : 'Not provided')
@@ -180,12 +208,26 @@ The analysis must be uniquely tailored to the individual based on their specific
         console.error('OpenAI API response status:', openAiResponse.status)
         console.error('OpenAI API response status text:', openAiResponse.statusText)
         
-        const error = await openAiResponse.json()
-        console.error('OpenAI API error:', error)
-        throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
+        try {
+          const error = await openAiResponse.json()
+          console.error('OpenAI API error:', error)
+          throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
+        } catch (jsonError) {
+          console.error('Failed to parse OpenAI error response:', jsonError)
+          throw new Error(`Failed to analyze responses (Status: ${openAiResponse.status}, ${openAiResponse.statusText})`)
+        }
       }
 
-      const aiResult = await openAiResponse.json()
+      let aiResult
+      try {
+        aiResult = await openAiResponse.json()
+      } catch (jsonError) {
+        console.error('Failed to parse OpenAI response as JSON:', jsonError)
+        const rawText = await openAiResponse.text()
+        console.error('Raw response text (first 500 chars):', rawText.substring(0, 500))
+        throw new Error('Failed to parse OpenAI response')
+      }
+
       let contentText = aiResult.choices[0].message.content
       
       console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds')
