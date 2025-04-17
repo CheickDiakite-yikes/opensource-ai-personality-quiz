@@ -3,156 +3,109 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
-
-const STORAGE_KEY = "deep_insight_progress";
-
-// Use correct import path for the local storage utilities
-import { 
-  saveAssessmentToStorage, 
-  loadAnalysisHistory 
-} from "@/hooks/analysis/useLocalStorage";
+import { useDeepInsightStorage } from "./useDeepInsightStorage";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
-  const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
+  const [isRestoredSession, setIsRestoredSession] = useState(false);
+  const navigate = useNavigate();
   
-  // Create localStorage helper functions
-  const getItem = (key: string) => {
-    try {
-      return localStorage.getItem(key);
-    } catch (err) {
-      console.error("Error reading from localStorage:", err);
-      return null;
-    }
-  };
+  // Use the storage hook to handle saving/restoring progress
+  const { clearSavedProgress } = useDeepInsightStorage(
+    responses,
+    currentQuestionIndex,
+    setResponses,
+    setCurrentQuestionIndex,
+    totalQuestions,
+    setIsRestoredSession
+  );
   
-  const setItem = (key: string, value: string) => {
-    try {
-      localStorage.setItem(key, value);
-      return true;
-    } catch (err) {
-      console.error("Error writing to localStorage:", err);
-      return false;
-    }
-  };
-  
-  const removeItem = (key: string) => {
-    try {
-      localStorage.removeItem(key);
-      return true;
-    } catch (err) {
-      console.error("Error removing from localStorage:", err);
-      return false;
-    }
-  };
-
-  // Load saved progress on mount
+  // Reset error when question changes
   useEffect(() => {
-    const savedProgress = getItem(STORAGE_KEY);
-    console.log("Found saved progress:", savedProgress);
-    
-    if (savedProgress) {
-      try {
-        const { responses, currentQuestionIndex, lastUpdated } = JSON.parse(savedProgress);
-        
-        // Validate saved data
-        if (typeof currentQuestionIndex === "number" && responses && typeof responses === "object") {
-          setResponses(responses);
-          setCurrentQuestionIndex(Math.min(currentQuestionIndex, totalQuestions - 1));
-          console.log("Deep Insight quiz progress restored:", JSON.parse(savedProgress));
-        }
-      } catch (err) {
-        console.error("Error parsing saved progress:", err);
-        removeItem(STORAGE_KEY);
-      }
-    }
-  }, [totalQuestions]);
-
-  // Save progress whenever responses or currentQuestionIndex changes
-  useEffect(() => {
-    if (Object.keys(responses).length > 0) {
-      const progressData = {
-        responses,
-        currentQuestionIndex,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      setItem(STORAGE_KEY, JSON.stringify(progressData));
-      console.log("Deep Insight quiz progress saved:", progressData);
-    }
-  }, [responses, currentQuestionIndex]);
-  
-  // Handle submitting a question response
-  const handleSubmitQuestion = (data: Record<string, string>) => {
-    // Validate input
-    const questionId = Object.keys(data)[0];
-    const response = data[questionId];
-    
-    if (!response) {
-      setError("Please select an answer before continuing");
-      return;
-    }
-    
-    // Clear any previous error
     setError(null);
-    
-    // Add the new response
-    setResponses(prev => ({
-      ...prev,
-      [questionId]: response
-    }));
-    
-    // Handle last question submission
-    if (currentQuestionIndex === totalQuestions - 1) {
-      // This is the last question, navigate to results with responses
-      const finalResponses = {
+  }, [currentQuestionIndex]);
+  
+  // Reset error when coming from a restored session to prevent false validation errors
+  useEffect(() => {
+    if (isRestoredSession) {
+      setError(null);
+      console.log("Restored session detected, clearing validation errors");
+      setIsRestoredSession(false);
+    }
+  }, [isRestoredSession]);
+  
+  const handleSubmitQuestion = (data: Record<string, string>) => {
+    try {
+      const questionId = Object.keys(data)[0];
+      const responseValue = data[questionId];
+      
+      // Debug log to check what's being submitted
+      console.log(`Submitting question ${questionId} with response:`, responseValue);
+      
+      // Validate response
+      if (!responseValue || responseValue.trim() === '') {
+        setError("Please select an answer before continuing");
+        toast.error("Please select an answer");
+        return;
+      }
+      
+      setError(null);
+      
+      // Save response
+      const updatedResponses = {
         ...responses,
-        [questionId]: response
+        [questionId]: responseValue
       };
       
-      console.log("Final question submitted, navigating to results with responses:", finalResponses);
+      setResponses(updatedResponses);
+      console.log(`Saved response for question ${questionId}:`, responseValue);
       
-      // Add a toast to indicate transition
-      toast.success("Assessment complete! Generating your analysis...", {
-        id: "assessment-complete",
-        duration: 4000
-      });
-      
-      // Set a processing toast that will be updated by the results page
-      toast.loading("Preparing your deep insight analysis...", { 
-        id: "analyze-deep-insight", 
-        duration: 180000 // 3 minute toast for longer processing
-      });
-      
-      // Navigate to the results page with all responses
-      navigate("/deep-insight/results", { 
-        state: { 
-          responses: finalResponses
-        } 
-      });
-      
-      return;
+      // Move to next question or submit if done
+      if (currentQuestionIndex < totalQuestions - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        // Submit all responses
+        handleCompleteQuiz(updatedResponses);
+      }
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+      console.error("Error processing question:", errorMessage);
+      setError("An error occurred. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
-    
-    // Move to next question
-    setCurrentQuestionIndex(prev => prev + 1);
   };
   
-  // Handle going to previous question
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setError(null);
     }
   };
   
-  // Clear saved progress
-  const clearSavedProgress = () => {
-    removeItem(STORAGE_KEY);
-    setResponses({});
-    setCurrentQuestionIndex(0);
-    toast.success("Progress cleared. Starting fresh.");
+  const handleCompleteQuiz = (finalResponses: DeepInsightResponses) => {
+    try {
+      console.log("All responses collected:", finalResponses);
+      
+      // Clear saved progress since quiz is completed
+      clearSavedProgress();
+      
+      // Show a more detailed toast message about the analysis process
+      toast.success("Your Deep Insight assessment is complete!", {
+        description: "Preparing your comprehensive personality analysis..."
+      });
+      
+      // In a real implementation, we would send these responses to an API
+      navigate("/deep-insight/results", { 
+        state: { responses: finalResponses } 
+      });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+      console.error("Error completing quiz:", errorMessage);
+      setError("Failed to complete the assessment. Please try again.");
+      toast.error("Failed to submit your responses. Please try again.");
+    }
   };
   
   return {

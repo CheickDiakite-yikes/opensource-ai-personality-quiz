@@ -2,56 +2,13 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Compass } from "lucide-react";
-import { PersonalityAnalysis } from "@/utils/types";
+import { AnalysisData } from "../../utils/analysis/types";
 
 interface GrowthTabProps {
-  analysis: PersonalityAnalysis;
+  analysis: AnalysisData;
 }
 
 export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
-  // Ensure growthPotential exists
-  const growthPotential = analysis.growthPotential || {
-    developmentAreas: [
-      "Self-Awareness: Deepening understanding of emotional triggers",
-      "Communication: Expressing needs more directly",
-      "Balance: Finding equilibrium between work and rest"
-    ],
-    recommendations: [
-      "Practice mindfulness meditation for 10 minutes daily",
-      "Seek feedback from trusted colleagues on communication style",
-      "Establish clear boundaries between work and personal time"
-    ]
-  };
-
-  // Ensure developmentAreas is an array
-  const developmentAreas = Array.isArray(growthPotential.developmentAreas)
-    ? growthPotential.developmentAreas
-    : typeof growthPotential.developmentAreas === 'string'
-      ? [growthPotential.developmentAreas] // Convert single string to array
-      : [
-          "Self-Awareness: Deepening understanding of emotional triggers",
-          "Communication: Expressing needs more directly",
-          "Balance: Finding equilibrium between work and rest"
-        ];
-
-  // Ensure recommendations is an array
-  const recommendations = Array.isArray(growthPotential.recommendations)
-    ? growthPotential.recommendations
-    : typeof growthPotential.recommendations === 'string'
-      ? [growthPotential.recommendations] // Convert single string to array
-      : [
-          "Practice mindfulness meditation for 10 minutes daily",
-          "Seek feedback from trusted colleagues on communication style",
-          "Establish clear boundaries between work and personal time"
-        ];
-
-  // Process development areas to ensure they have the correct format (with colon separator)
-  const processedDevelopmentAreas = developmentAreas.map(area => {
-    if (typeof area !== 'string') return "Development Area: Details not available";
-    if (area.includes(':')) return area;
-    return `Area: ${area}`;
-  });
-
   return (
     <Card>
       <CardHeader>
@@ -65,14 +22,10 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
         <div className="mb-6">
           <h3 className="font-semibold mb-3 text-lg">Development Areas</h3>
           <ul className="list-disc list-inside space-y-2">
-            {processedDevelopmentAreas.map((area: string, i: number) => (
+            {analysis.growthPotential.developmentAreas.map((area: string, i: number) => (
               <li key={i} className="text-muted-foreground leading-relaxed pl-2">
-                {area.includes(':') ? (
-                  <>
-                    <span className="text-foreground font-medium">{area.split(':')[0]}:</span>
-                    {area.split(':').slice(1).join(':')}
-                  </>
-                ) : area}
+                <span className="text-foreground font-medium">{area.split(':')[0]}:</span>{' '}
+                {area.split(':').slice(1).join(':')}
               </li>
             ))}
           </ul>
@@ -80,7 +33,7 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
         <div>
           <h3 className="font-semibold mb-3 text-lg">Recommendations</h3>
           <ul className="list-disc list-inside space-y-2">
-            {recommendations.map((rec: string, i: number) => (
+            {analysis.growthPotential.recommendations.map((rec: string, i: number) => (
               <li key={i} className="text-muted-foreground leading-relaxed pl-2">
                 <span className="text-foreground font-medium">{i + 1}.</span> {rec}
               </li>

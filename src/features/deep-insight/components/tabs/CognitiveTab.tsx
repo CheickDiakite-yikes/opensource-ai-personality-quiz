@@ -1,22 +1,23 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Brain, Zap, BookOpen, Focus } from "lucide-react";
-import { PersonalityAnalysis } from "@/utils/types";
+import { Brain } from "lucide-react";
+import { AnalysisData } from "../../utils/analysis/types";
 
 interface CognitiveTabProps {
-  analysis: PersonalityAnalysis;
+  analysis: AnalysisData;
 }
 
 export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
+  // Ensure cognitivePatterning exists or provide default values
   const cognitivePatterning = analysis.cognitivePatterning || {
-    decisionMaking: "You tend to balance analytical thinking with intuitive insights when making decisions.",
-    learningStyle: "You absorb information best through a mix of practical examples and theoretical concepts.",
-    attention: "Your focus is adaptable, allowing you to switch between deep concentration and broader awareness."
+    decisionMaking: "Your decision-making style information is not available.",
+    learningStyle: "Your learning style information is not available.",
+    attention: "Your attention pattern information is not available."
   };
 
   return (
-    <Card className="bg-background/50 backdrop-blur-sm border-border/50 shadow-md">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
@@ -25,27 +26,16 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
         <CardDescription>How you process information and make decisions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="h-5 w-5 text-amber-500" />
-            <h3 className="font-semibold text-lg">Decision Making Style</h3>
-          </div>
+        <div>
+          <h3 className="font-semibold mb-3 text-lg">Decision Making Style</h3>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.decisionMaking}</p>
         </div>
-        
-        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="h-5 w-5 text-blue-500" />
-            <h3 className="font-semibold text-lg">Learning Approach</h3>
-          </div>
+        <div>
+          <h3 className="font-semibold mb-3 text-lg">Learning Approach</h3>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.learningStyle}</p>
         </div>
-        
-        <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
-          <div className="flex items-center gap-2 mb-3">
-            <Focus className="h-5 w-5 text-green-500" />
-            <h3 className="font-semibold text-lg">Attention Pattern</h3>
-          </div>
+        <div>
+          <h3 className="font-semibold mb-3 text-lg">Attention Pattern</h3>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.attention}</p>
         </div>
       </CardContent>

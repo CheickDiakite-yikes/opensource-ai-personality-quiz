@@ -29,12 +29,7 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
   description = "Visualization of your cognitive abilities across different domains"
 }) => {
   // Extract and prepare data for the radar chart
-  const radarData = React.useMemo(() => {
-    return prepareRadarData(analysis);
-  }, [analysis]);
-  
-  // Check if this is default/sample data
-  const isDefaultData = !analysis.cognitivePatterning && !analysis.emotionalArchitecture;
+  const radarData = prepareRadarData(analysis);
   
   return (
     <Card>
@@ -80,17 +75,11 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
                   dataKey="value" 
                   stroke="#7C3AED" 
                   fill="#8B5CF6" 
-                  fillOpacity={isDefaultData ? 0.3 : 0.6} // Dim default data
+                  fillOpacity={0.6} 
                 />
               </RadarChart>
             </ResponsiveContainer>
           </ChartContainer>
-          
-          {isDefaultData && (
-            <div className="text-center mt-4 text-sm text-muted-foreground">
-              <p>This is sample data. Complete an assessment to see your personal cognitive profile.</p>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -99,51 +88,37 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
 
 // Helper function to prepare data for the radar chart
 function prepareRadarData(analysis: AnalysisData) {
-  // Handle missing cognitive pattern data
-  const cognitivePatterning = analysis.cognitivePatterning || {
-    decisionMaking: "Balanced approach to making decisions",
-    learningStyle: "Adaptive learning style that combines various methods",
-    attention: "Moderate focus with ability to shift between tasks"
-  };
-  
-  // Handle missing emotional architecture data
-  const emotionalArchitecture = analysis.emotionalArchitecture || {
-    emotionalAwareness: "Moderate awareness of emotional states",
-    regulationStyle: "Developing emotional regulation strategies",
-    empathicCapacity: "Able to connect with others' emotions"
-  };
-
   // Extract relevant data points from the analysis
   const cognitiveData = [
     {
       subject: "Decision Making",
-      value: mapScoreToValue(cognitivePatterning.decisionMaking),
-      description: cognitivePatterning.decisionMaking,
+      value: mapScoreToValue(analysis.cognitivePatterning.decisionMaking),
+      description: analysis.cognitivePatterning.decisionMaking,
     },
     {
       subject: "Learning Ability",
-      value: mapScoreToValue(cognitivePatterning.learningStyle),
-      description: cognitivePatterning.learningStyle,
+      value: mapScoreToValue(analysis.cognitivePatterning.learningStyle),
+      description: analysis.cognitivePatterning.learningStyle,
     },
     {
       subject: "Focus",
-      value: mapScoreToValue(cognitivePatterning.attention),
-      description: cognitivePatterning.attention,
+      value: mapScoreToValue(analysis.cognitivePatterning.attention),
+      description: analysis.cognitivePatterning.attention,
     },
     {
       subject: "Emotional Awareness",
-      value: mapScoreToValue(emotionalArchitecture.emotionalAwareness),
-      description: emotionalArchitecture.emotionalAwareness,
+      value: mapScoreToValue(analysis.emotionalArchitecture.emotionalAwareness),
+      description: analysis.emotionalArchitecture.emotionalAwareness,
     },
     {
       subject: "Emotional Regulation",
-      value: mapScoreToValue(emotionalArchitecture.regulationStyle),
-      description: emotionalArchitecture.regulationStyle,
+      value: mapScoreToValue(analysis.emotionalArchitecture.regulationStyle),
+      description: analysis.emotionalArchitecture.regulationStyle,
     },
     {
       subject: "Empathy",
-      value: mapScoreToValue(emotionalArchitecture.empathicCapacity),
-      description: emotionalArchitecture.empathicCapacity,
+      value: mapScoreToValue(analysis.emotionalArchitecture.empathicCapacity),
+      description: analysis.emotionalArchitecture.empathicCapacity,
     },
   ];
 
@@ -151,9 +126,8 @@ function prepareRadarData(analysis: AnalysisData) {
 }
 
 // Helper function to map cognitive descriptions to numeric scores (1-10)
+// This is a placeholder - in a real app, these would be calculated based on analysis
 function mapScoreToValue(description: string): number {
-  if (!description) return 5; // Default fallback score
-  
   // Sample implementation: calculate score based on word count and positive terms
   const wordCount = description.split(' ').length;
   

@@ -1,39 +1,50 @@
 
 import { PersonalityAnalysis } from "@/utils/types";
-import { DeepInsightResponses, ResponsePatternAnalysis as DeepInsightResponsePatternAnalysis } from "../../types";
+import { DeepInsightResponses } from "../../types";
+import { Json } from "@/integrations/supabase/types";
 
 // Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
-  coreTraits?: {
+  coreTraits: {
     primary: string;
     secondary: string;
     strengths: string[];
     challenges: string[];
   };
-  cognitivePatterning?: {
+  cognitivePatterning: {
     decisionMaking: string;
     learningStyle: string;
     attention: string;
   };
-  emotionalArchitecture?: {
+  emotionalArchitecture: {
     emotionalAwareness: string;
     regulationStyle: string;
     empathicCapacity: string;
   };
-  interpersonalDynamics?: {
+  interpersonalDynamics: {
     attachmentStyle: string;
     communicationPattern: string;
     conflictResolution: string;
   };
-  growthPotential?: {
+  growthPotential: {
     developmentAreas: string[];
     recommendations: string[];
   };
-  responsePatterns?: DeepInsightResponsePatternAnalysis;
+  responsePatterns: ResponsePatternAnalysis;
 }
 
-// Export the ResponsePatternAnalysis type to match with the type in DeepInsight/types.ts
-export type ResponsePatternAnalysis = DeepInsightResponsePatternAnalysis;
+// Helper function to convert AnalysisData to Json-compatible format
+export const toJsonObject = (analysis: AnalysisData): Record<string, Json> => {
+  return JSON.parse(JSON.stringify(analysis));
+};
+
+// Pattern analysis response interface
+export interface ResponsePatternAnalysis {
+  percentages: Record<string, number>;
+  primaryChoice: string;
+  secondaryChoice: string;
+  responseSignature: string;
+}
 
 // Personality trait determination response
 export interface PersonalityTraitsDetermination {

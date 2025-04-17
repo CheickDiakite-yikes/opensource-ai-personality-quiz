@@ -22,7 +22,6 @@ export interface ResponsePercentages {
   d: number;
   e: number;
   f: number;
-  [key: string]: number; // Add index signature to make it compatible with Record<string, number>
 }
 
 export interface ResponsePatternAnalysis {

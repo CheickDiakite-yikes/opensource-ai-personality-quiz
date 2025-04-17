@@ -91,11 +91,6 @@ export interface RelationshipPatterns {
   compatibleTypes: string[];
 }
 
-// Use the ResponsePatternAnalysis from deep-insight/types.ts
-// Import the type directly to maintain compatibility
-import { ResponsePatternAnalysis as DeepInsightResponsePatternAnalysis } from '@/features/deep-insight/types';
-export type ResponsePatternAnalysis = DeepInsightResponsePatternAnalysis;
-
 // Personality Analysis
 export interface PersonalityAnalysis {
   id: string;
@@ -117,33 +112,6 @@ export interface PersonalityAnalysis {
   roadmap: string;
   userId?: string;
   assessmentId?: string;
-  // Add missing properties needed for deep insights
-  responsePatterns?: DeepInsightResponsePatternAnalysis;
-  coreTraits?: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  };
-  cognitivePatterning?: {
-    decisionMaking: string;
-    learningStyle: string;
-    attention: string;
-  };
-  emotionalArchitecture?: {
-    emotionalAwareness: string;
-    regulationStyle: string;
-    empathicCapacity: string;
-  };
-  interpersonalDynamics?: {
-    attachmentStyle: string;
-    communicationPattern: string;
-    conflictResolution: string;
-  };
-  growthPotential?: {
-    developmentAreas: string[];
-    recommendations: string[];
-  };
 }
 
 // Alias type for backwards compatibility
