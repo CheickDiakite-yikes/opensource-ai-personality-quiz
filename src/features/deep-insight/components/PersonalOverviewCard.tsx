@@ -31,11 +31,11 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CoreTraitCard 
               title="Primary Type"
-              value={analysis.coreTraits.primary}
+              value={analysis.coreTraits?.primary}
             />
             <CoreTraitCard 
               title="Secondary Type"
-              value={analysis.coreTraits.secondary}
+              value={analysis.coreTraits?.secondary}
             />
             <IntelligenceScoreCard 
               cognitiveScore={analysis.intelligenceScore}

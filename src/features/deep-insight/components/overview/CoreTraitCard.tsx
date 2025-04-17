@@ -4,7 +4,7 @@ import { Sparkles } from "lucide-react";
 
 interface CoreTraitCardProps {
   title: string;
-  value: string;
+  value: string | undefined;
 }
 
 export const CoreTraitCard: React.FC<CoreTraitCardProps> = ({ title, value }) => {
@@ -16,7 +16,7 @@ export const CoreTraitCard: React.FC<CoreTraitCardProps> = ({ title, value }) =>
         </div>
         {title}
       </h3>
-      <p>{value}</p>
+      <p>{value || "Not available"}</p>
     </div>
   );
 };
