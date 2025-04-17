@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft, RefreshCw, ClipboardList } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,8 @@ interface ResultsErrorProps {
 
 export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) => {
   const navigate = useNavigate();
+  
+  const isNoResponsesError = error.includes("No responses found") || error.toLowerCase().includes("assessment");
   
   return (
     <motion.div 
@@ -28,12 +30,15 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
       </Alert>
       
       <p className="text-muted-foreground mb-8">
-        We apologize for the inconvenience. This could be due to a temporary issue with our analysis
-        system or a problem with the response data. You can try again or return to the assessment.
+        {isNoResponsesError ? (
+          "You need to complete the Deep Insight assessment before viewing results. Please take the assessment to receive your personalized analysis."
+        ) : (
+          "We apologize for the inconvenience. This could be due to a temporary issue with our analysis system or a problem with the response data. You can try again or return to the assessment."
+        )}
       </p>
       
       <div className="flex flex-wrap gap-4 justify-center">
-        {onRetry && (
+        {onRetry && !isNoResponsesError && (
           <Button onClick={onRetry} variant="default" className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" /> Try Again
           </Button>
@@ -44,7 +49,7 @@ export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) =>
           variant="default" 
           className="flex items-center gap-2"
         >
-          Take the Assessment
+          <ClipboardList className="h-4 w-4" /> Take the Assessment
         </Button>
         
         <Button onClick={() => navigate("/deep-insight")} variant="outline" className="flex items-center gap-2">

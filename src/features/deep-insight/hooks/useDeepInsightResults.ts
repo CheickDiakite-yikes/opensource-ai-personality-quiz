@@ -67,6 +67,9 @@ export const useDeepInsightResults = () => {
 
         // If no ID provided or the specified analysis wasn't found, generate a new one
         const responses = getResponses();
+        console.log("Retrieved responses from storage:", responses);
+        console.log("Response count:", Object.keys(responses).length);
+        
         if (!responses || Object.keys(responses).length === 0) {
           console.log("No responses found in local storage");
           toast.error("No assessment responses found", {
@@ -77,8 +80,13 @@ export const useDeepInsightResults = () => {
           throw new Error("No responses found. Please complete the assessment first.");
         }
 
+        console.log("Generating analysis from responses...");
         const result = await generateAnalysis(responses);
+        console.log("Analysis generation complete");
         setAnalysis(result);
+        
+        // Only clear saved responses after successful analysis generation
+        // clearSavedProgress(); // Don't clear until explicit user action
       } catch (err) {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
@@ -92,7 +100,9 @@ export const useDeepInsightResults = () => {
 
   const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData> => {
     try {
+      console.log(`Generating analysis from ${Object.keys(responses).length} responses`);
       const result = await generateAnalysisFromResponses(responses);
+      console.log("Analysis generated successfully");
       return result;
     } catch (error) {
       console.error("Error analyzing responses:", error);

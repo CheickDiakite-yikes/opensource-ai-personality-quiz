@@ -100,19 +100,29 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const handleCompleteQuiz = (finalResponses: DeepInsightResponses) => {
     try {
       console.log("All responses collected:", finalResponses);
+      console.log("Response count:", Object.keys(finalResponses).length);
       
-      // Clear saved progress since quiz is completed
-      clearSavedProgress();
+      // Ensure responses are saved to storage before navigating
+      saveResponses(finalResponses);
+      
+      // Verify responses were saved
+      const savedResponses = getResponses();
+      console.log("Verified saved responses count:", Object.keys(savedResponses).length);
+      
+      if (Object.keys(savedResponses).length === 0) {
+        throw new Error("Failed to save responses. Please try again.");
+      }
       
       // Show a more detailed toast message about the analysis process
       toast.success("Your Deep Insight assessment is complete!", {
         description: "Preparing your comprehensive personality analysis..."
       });
       
-      // In a real implementation, we would send these responses to an API
-      navigate("/deep-insight/results", { 
-        state: { responses: finalResponses } 
-      });
+      // Important: Don't clear saved progress until analysis is complete
+      // clearSavedProgress();
+      
+      // Navigate to results page
+      navigate("/deep-insight/results");
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error completing quiz:", errorMessage);
