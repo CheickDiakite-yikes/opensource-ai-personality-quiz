@@ -1,10 +1,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Sparkles, Share2 } from "lucide-react";
+import { Download, Sparkles, Share2, History } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -13,6 +14,7 @@ interface ResultsActionsProps {
 
 export const ResultsActions: React.FC<ResultsActionsProps> = ({ onSave, itemVariants }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleShare = () => {
     // In a real implementation, this would open a sharing dialog
@@ -24,6 +26,10 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({ onSave, itemVari
     // In a real implementation, this would generate and download a PDF
     // For now, we'll just show a toast
     toast.info("Download functionality will be available soon!");
+  };
+
+  const handleViewHistory = () => {
+    navigate('/deep-insight');
   };
 
   return (
@@ -61,6 +67,15 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({ onSave, itemVari
       >
         <Download className="h-4 w-4" />
         Download PDF
+      </Button>
+
+      <Button
+        variant="outline"
+        className="flex items-center gap-2"
+        onClick={handleViewHistory}
+      >
+        <History className="h-4 w-4" />
+        View History
       </Button>
     </motion.div>
   );

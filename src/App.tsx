@@ -137,6 +137,14 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
+          {/* Add new route for viewing past results with ID parameter */}
+          <Route path="deep-insight/results/:id" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsightResults />
+              </Suspense>
+            </PrivateRoute>
+          } />
           
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>

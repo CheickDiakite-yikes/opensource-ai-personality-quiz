@@ -1,6 +1,7 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDeepInsightResults } from "@/features/deep-insight/hooks/useDeepInsightResults";
 import { ResultsLoading } from "@/features/deep-insight/components/ResultsLoading";
 import { ResultsError } from "@/features/deep-insight/components/ResultsError";
@@ -13,11 +14,21 @@ import PersonalityTraitsChart from "@/features/deep-insight/components/visualiza
 import ResponsePatternChart from "@/features/deep-insight/components/visualization/ResponsePatternChart";
 import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ChartBar, PieChart, Activity } from "lucide-react";
+import { ChartBar, PieChart, Activity, ArrowLeft } from "lucide-react";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+import { PersonalityAnalysis } from "@/utils/types";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
-  const { analysis, loading, error, saveAnalysis } = useDeepInsightResults();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { analysis: latestAnalysis, loading: latestLoading, error: latestError, saveAnalysis } = useDeepInsightResults();
+  const { getAnalysisById, isLoading: analysisLoading } = useAIAnalysis();
+  const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Animation variants
   const containerVariants = {
@@ -41,15 +52,60 @@ const DeepInsightResults: React.FC = () => {
       }
     })
   };
+
+  // If we have an ID, fetch that specific analysis
+  useEffect(() => {
+    const loadAnalysis = async () => {
+      if (id) {
+        try {
+          setLoading(true);
+          console.log(`Loading Deep Insight analysis with ID: ${id}`);
+          const specificAnalysis = await getAnalysisById(id);
+          
+          if (specificAnalysis) {
+            console.log(`Successfully loaded analysis: ${specificAnalysis.id}`);
+            setAnalysis(specificAnalysis);
+            setError(null);
+          } else {
+            console.error(`Analysis with ID ${id} not found`);
+            setError(`Analysis with ID ${id} not found`);
+            toast.error("Could not find the requested analysis", {
+              description: "Please try a different analysis or take a new assessment"
+            });
+          }
+        } catch (err) {
+          console.error("Error loading analysis by ID:", err);
+          setError(err instanceof Error ? err.message : "Failed to load analysis");
+          toast.error("Error loading analysis", {
+            description: "Please try again later"
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else if (latestAnalysis) {
+        // If no ID is provided, use the latest analysis
+        setAnalysis(latestAnalysis);
+        setLoading(false);
+        setError(null);
+      }
+    };
+
+    loadAnalysis();
+  }, [id, getAnalysisById, latestAnalysis]);
   
-  if (loading) {
+  // Use either the specific analysis (if ID provided) or the latest analysis
+  const displayLoading = loading || (latestLoading && !id);
+  const displayError = error || (!id && latestError);
+  const displayAnalysis = analysis || (!id && latestAnalysis);
+  
+  if (displayLoading) {
     return <ResultsLoading />;
   }
   
-  if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} />;
+  if (displayError || !displayAnalysis) {
+    return <ResultsError error={displayError || "No analysis data found"} />;
   }
-  
+
   return (
     <motion.div 
       className="container max-w-4xl py-8 px-4 md:px-6"
@@ -58,10 +114,29 @@ const DeepInsightResults: React.FC = () => {
       exit={{ opacity: 0 }}
     >
       <div className="flex flex-col gap-8">
+        {/* Back button when viewing a specific analysis */}
+        {id && (
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => navigate('/deep-insight')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Deep Insight
+            </Button>
+            
+            <div className="ml-auto text-sm text-muted-foreground">
+              {new Date(displayAnalysis.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+        )}
+        
         <ResultsHeader />
         
         {/* Personal Overview */}
-        <PersonalOverviewCard analysis={analysis} itemVariants={itemVariants} />
+        <PersonalOverviewCard analysis={displayAnalysis} itemVariants={itemVariants} />
         
         {/* Visualizations Section */}
         <motion.div
@@ -89,27 +164,27 @@ const DeepInsightResults: React.FC = () => {
             </TabsList>
             
             <TabsContent value="traits" className="mt-0">
-              <PersonalityTraitsChart traits={analysis.traits} />
+              <PersonalityTraitsChart traits={displayAnalysis.traits} />
             </TabsContent>
             
             <TabsContent value="patterns" className="mt-0">
-              <ResponsePatternChart patternData={analysis.responsePatterns} />
+              <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
             </TabsContent>
             
             <TabsContent value="cognitive" className="mt-0">
-              <CognitiveStrengthsChart analysis={analysis} />
+              <CognitiveStrengthsChart analysis={displayAnalysis} />
             </TabsContent>
           </Tabs>
         </motion.div>
         
         {/* Detailed Analysis Tabs */}
-        <ResultsTabs analysis={analysis} itemVariants={itemVariants} />
+        <ResultsTabs analysis={displayAnalysis} itemVariants={itemVariants} />
         
         {/* Strengths and Challenges */}
-        <StrengthsChallengesCards analysis={analysis} itemVariants={itemVariants} />
+        <StrengthsChallengesCards analysis={displayAnalysis} itemVariants={itemVariants} />
         
-        {/* Actions */}
-        <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} />
+        {/* Actions - Only show save button for latest analysis, not historical ones */}
+        {!id && <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} />}
       </div>
     </motion.div>
   );
