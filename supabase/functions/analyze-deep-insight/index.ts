@@ -22,19 +22,40 @@ serve(async (req) => {
       if (!text || text.trim() === '') {
         throw new Error('Request body is empty');
       }
+      
+      console.log("Request body received, first 200 chars:", text.substring(0, 200));
       requestData = JSON.parse(text);
       console.log('Successfully parsed request JSON');
     } catch (parseError) {
       console.error('Error parsing request JSON:', parseError);
       console.error('Request content type:', req.headers.get('content-type'));
-      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Invalid JSON in request body: ${parseError.message}`,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
     
     const { responses, timestamp } = requestData || {};
     
     if (!responses) {
       console.error('Missing responses in request data');
-      throw new Error('Missing responses in request data');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing responses in request data',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
     
     console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`);
@@ -49,12 +70,30 @@ serve(async (req) => {
     const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openAiApiKey) {
       console.error('OPENAI_API_KEY is not set in environment variables')
-      throw new Error('OPENAI_API_KEY is not set in environment variables')
+      return new Response(
+        JSON.stringify({ 
+          error: 'OPENAI_API_KEY is not set in environment variables',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
     
     if (openAiApiKey.length < 20) {
       console.error('OPENAI_API_KEY appears to be invalid (too short)')
-      throw new Error('OPENAI_API_KEY appears to be invalid')
+      return new Response(
+        JSON.stringify({ 
+          error: 'OPENAI_API_KEY appears to be invalid',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     console.log('Making OpenAI API request with model gpt-4o...')
@@ -337,16 +376,31 @@ The analysis must be uniquely tailored to the individual based on their specific
       } catch (parseError) {
         console.error('Error parsing OpenAI response:', parseError)
         console.error('First 200 chars of response:', contentText.substring(0, 200))
-        throw new Error('Failed to parse analysis response')
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to parse analysis response',
+            errorDetails: parseError.message,
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
     } catch (fetchError) {
       console.error('Error fetching from OpenAI:', fetchError)
       
-      if (fetchError.name === 'AbortError') {
-        throw new Error('OpenAI request timed out after 4 minutes')
-      }
-      
-      throw fetchError;
+      return new Response(
+        JSON.stringify({ 
+          error: `OpenAI API error: ${fetchError.message}`,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
   } catch (error) {
     console.error('Function execution error:', error)

@@ -3,147 +3,120 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
-import { useDeepInsightStorage } from "./useDeepInsightStorage";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+
+const STORAGE_KEY = "deep_insight_progress";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
+  const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
-  const [isRestoredSession, setIsRestoredSession] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  // Use the storage hook to handle saving/restoring progress
-  const { clearSavedProgress } = useDeepInsightStorage(
-    responses,
-    currentQuestionIndex,
-    setResponses,
-    setCurrentQuestionIndex,
-    totalQuestions,
-    setIsRestoredSession
-  );
-  
-  // Reset error when question changes
+  const { getItem, setItem, removeItem } = useLocalStorage();
+
+  // Load saved progress on mount
   useEffect(() => {
-    setError(null);
-  }, [currentQuestionIndex]);
-  
-  // Reset error when coming from a restored session to prevent false validation errors
-  useEffect(() => {
-    if (isRestoredSession) {
-      setError(null);
-      console.log("Restored session detected, clearing validation errors");
-      setIsRestoredSession(false);
-    }
-  }, [isRestoredSession]);
-  
-  const handleSubmitQuestion = (data: Record<string, string>) => {
-    try {
-      const questionId = Object.keys(data)[0];
-      const responseValue = data[questionId];
-      
-      // Debug log to check what's being submitted
-      console.log(`Submitting question ${questionId} with response:`, responseValue);
-      
-      // Validate response
-      if (!responseValue || responseValue.trim() === '') {
-        setError("Please select an answer before continuing");
-        toast.error("Please select an answer");
-        return;
+    const savedProgress = getItem(STORAGE_KEY);
+    console.log("Found saved progress:", savedProgress);
+    
+    if (savedProgress) {
+      try {
+        const { responses, currentQuestionIndex, lastUpdated } = JSON.parse(savedProgress);
+        
+        // Validate saved data
+        if (typeof currentQuestionIndex === "number" && responses && typeof responses === "object") {
+          setResponses(responses);
+          setCurrentQuestionIndex(Math.min(currentQuestionIndex, totalQuestions - 1));
+          console.log("Deep Insight quiz progress restored:", JSON.parse(savedProgress));
+        }
+      } catch (err) {
+        console.error("Error parsing saved progress:", err);
+        removeItem(STORAGE_KEY);
       }
-      
-      setError(null);
-      
-      // Save response
-      const updatedResponses = {
-        ...responses,
-        [questionId]: responseValue
+    }
+  }, [getItem, removeItem, totalQuestions]);
+
+  // Save progress whenever responses or currentQuestionIndex changes
+  useEffect(() => {
+    if (Object.keys(responses).length > 0) {
+      const progressData = {
+        responses,
+        currentQuestionIndex,
+        lastUpdated: new Date().toISOString()
       };
       
-      setResponses(updatedResponses);
-      console.log(`Saved response for question ${questionId}:`, responseValue);
-      
-      // Move to next question or submit if done
-      if (currentQuestionIndex < totalQuestions - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // Submit all responses
-        handleCompleteQuiz(updatedResponses);
-      }
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
-      console.error("Error processing question:", errorMessage);
-      setError("An error occurred. Please try again.");
-      toast.error("Something went wrong. Please try again.");
+      setItem(STORAGE_KEY, JSON.stringify(progressData));
+      console.log("Deep Insight quiz progress saved:", progressData);
     }
+  }, [responses, currentQuestionIndex, setItem]);
+  
+  // Handle submitting a question response
+  const handleSubmitQuestion = (data: Record<string, string>) => {
+    // Validate input
+    const questionId = Object.keys(data)[0];
+    const response = data[questionId];
+    
+    if (!response) {
+      setError("Please select an answer before continuing");
+      return;
+    }
+    
+    // Clear any previous error
+    setError(null);
+    
+    // Add the new response
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: response
+    }));
+    
+    // Handle last question submission
+    if (currentQuestionIndex === totalQuestions - 1) {
+      // This is the last question, navigate to results with responses
+      console.log("Final question submitted, navigating to results with responses:", {
+        ...responses,
+        [questionId]: response
+      });
+      
+      // Add a toast to indicate transition
+      toast.success("Assessment complete! Generating your analysis...");
+      
+      // Critical: Navigate to the results page with all responses
+      navigate("/deep-insight/results", { 
+        state: { 
+          responses: {
+            ...responses,
+            [questionId]: response
+          }
+        } 
+      });
+      
+      return;
+    }
+    
+    // Move to next question
+    setCurrentQuestionIndex(prev => prev + 1);
   };
   
+  // Handle going to previous question
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setError(null);
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
   
-  const handleCompleteQuiz = async (finalResponses: DeepInsightResponses) => {
-    try {
-      setIsSubmitting(true);
-      console.log("All responses collected:", finalResponses);
-      
-      // Clear saved progress since quiz is completed
-      clearSavedProgress();
-      
-      // If user is logged in, save responses to Supabase
-      if (user) {
-        try {
-          const assessmentId = `deep-insight-${Date.now()}`;
-          const { error } = await supabase
-            .from('deep_insight_assessments')
-            .insert({
-              id: assessmentId,
-              user_id: user.id,
-              responses: finalResponses,
-              completed_at: new Date().toISOString()
-            });
-            
-          if (error) {
-            console.error("Error saving responses to Supabase:", error);
-            // Continue with analysis even if saving fails
-          } else {
-            console.log("Responses saved to Supabase with ID:", assessmentId);
-          }
-        } catch (err) {
-          console.error("Exception saving responses:", err);
-          // Continue with analysis even if saving fails
-        }
-      }
-      
-      // Show a more detailed toast message about the analysis process
-      toast.success("Your Deep Insight assessment is complete!", {
-        description: "Preparing your comprehensive personality analysis..."
-      });
-      
-      // Navigate to results page with responses
-      navigate("/deep-insight/results", { 
-        state: { responses: finalResponses } 
-      });
-    } catch (e) {
-      setIsSubmitting(false);
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
-      console.error("Error completing quiz:", errorMessage);
-      setError("Failed to complete the assessment. Please try again.");
-      toast.error("Failed to submit your responses. Please try again.");
-    }
+  // Clear saved progress
+  const clearSavedProgress = () => {
+    removeItem(STORAGE_KEY);
+    setResponses({});
+    setCurrentQuestionIndex(0);
+    toast.success("Progress cleared. Starting fresh.");
   };
   
   return {
     currentQuestionIndex,
     responses,
     error,
-    isSubmitting,
     handleSubmitQuestion,
     handlePrevious,
     clearSavedProgress

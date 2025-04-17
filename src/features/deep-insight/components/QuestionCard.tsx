@@ -51,6 +51,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       [question.id]: data[question.id]
     };
     console.log(`Processing submission for question ${question.id} with value:`, formattedData[question.id]);
+    
+    // Add extra logging for last question to verify submission flow
+    if (isLastQuestion) {
+      console.log("This is the final question submission - should trigger analysis");
+    }
+    
     onSubmit(formattedData);
   };
 
@@ -113,7 +119,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         >
           Previous
         </Button>
-        <Button type="submit" form="quiz-form">
+        <Button 
+          type="submit" 
+          form="quiz-form"
+          className={isLastQuestion ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700" : ""}
+        >
           {isLastQuestion ? "Complete" : "Next"}
         </Button>
       </CardFooter>

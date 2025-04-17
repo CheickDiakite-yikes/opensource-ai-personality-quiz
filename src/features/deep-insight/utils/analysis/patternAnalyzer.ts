@@ -31,15 +31,16 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     }
     
     // Extract the last character of the answer string which indicates the choice
-    const lastChar = answer.charAt(answer.length - 1).toLowerCase();
+    const lastChar = answer.trim().charAt(answer.trim().length - 1).toLowerCase();
     
     // Increment the appropriate counter if the character is a valid choice
     if (lastChar === 'a') answerCounts.a++;
-    if (lastChar === 'b') answerCounts.b++;
-    if (lastChar === 'c') answerCounts.c++;
-    if (lastChar === 'd') answerCounts.d++;
-    if (lastChar === 'e') answerCounts.e++;
-    if (lastChar === 'f') answerCounts.f++;
+    else if (lastChar === 'b') answerCounts.b++;
+    else if (lastChar === 'c') answerCounts.c++;
+    else if (lastChar === 'd') answerCounts.d++;
+    else if (lastChar === 'e') answerCounts.e++;
+    else if (lastChar === 'f') answerCounts.f++;
+    else console.warn(`Unrecognized response format: ${answer}, last char: ${lastChar}`);
   });
   
   console.log("Response distribution:", answerCounts);

@@ -33,7 +33,8 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        console.log("Attempting to call edge function for analysis");
+        console.log("Attempting to call edge function for analysis with", 
+          Object.keys(responseData).length, "responses");
         toast.loading("Generating your deep insight analysis with AI...", { 
           id: "analyze-deep-insight", 
           duration: 180000 // 3 minute toast for longer processing
@@ -47,24 +48,26 @@ export const useDeepInsightResults = () => {
         });
         
         try {
-          console.log("Payload prepared:", { 
+          console.log("Preparing payload for edge function");
+          const payload = { 
             responses: responseData,
             timestamp: Date.now()
-          });
+          };
+          console.log("Payload prepared:", payload);
           
           // Race the function call against the timeout
+          console.log("Invoking analyze-deep-insight edge function");
           const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
-              body: { 
-                responses: responseData,
-                timestamp: Date.now() // Add timestamp to help with debugging
-              }
+              body: payload
             }
           );
           
           // Wait for either the function call to complete or the timeout to occur
           const result = await Promise.race([functionPromise, timeoutPromise]);
+          
+          console.log("Edge function response received:", result);
           
           // Handle the function response
           if (result.error) {
@@ -85,6 +88,7 @@ export const useDeepInsightResults = () => {
         } catch (edgeFunctionError) {
           // Check if this was a timeout error or other error
           const errorMessage = edgeFunctionError instanceof Error ? edgeFunctionError.message : String(edgeFunctionError);
+          console.error("Edge function error:", errorMessage);
           
           if (errorMessage.includes("timed out")) {
             console.error("Edge function call timed out after 3 minutes");
@@ -93,7 +97,7 @@ export const useDeepInsightResults = () => {
               description: "Falling back to local analysis generation" 
             });
           } else {
-            console.error("Edge function error:", edgeFunctionError);
+            console.error("Edge function error details:", edgeFunctionError);
             toast.error("AI analysis service unavailable", { 
               id: "analyze-deep-insight",
               description: "Falling back to local analysis generation" 
