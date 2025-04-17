@@ -24,7 +24,7 @@ export const useDeepInsightResults = () => {
     const generateAnalysis = async () => {
       try {
         // Retrieve responses from location state
-        const responseData = location.state?.responses;
+        const responseData = location.state?.responses as DeepInsightResponses;
         
         if (!responseData) {
           setError("No assessment data found. Please complete the assessment first.");
@@ -32,16 +32,41 @@ export const useDeepInsightResults = () => {
           return;
         }
         
-        // In a real app, we would call an API to analyze the responses
-        // For now, we'll simulate a delay and generate a personalized analysis
+        console.log("Generating analysis for responses:", responseData);
         setLoading(true);
         
-        // Simulate API call delay
-        setTimeout(() => {
+        try {
+          // Call the Edge Function for analysis
+          console.log("Calling deep-insight-analysis edge function");
+          const { data, error } = await supabase.functions.invoke('deep-insight-analysis', {
+            method: 'POST',
+            body: { responses: responseData }
+          });
+          
+          if (error) {
+            console.error("Edge function error:", error);
+            throw new Error(`AI service error: ${error.message}`);
+          }
+          
+          if (!data || !data.success) {
+            console.error("Edge function failed:", data);
+            throw new Error("AI analysis service unavailable");
+          }
+          
+          console.log("Received analysis from edge function:", data.analysis);
+          setAnalysis(data.analysis);
+          toast.success("Analysis generated successfully!");
+          
+        } catch (apiError) {
+          console.error("API error, falling back to local analysis:", apiError);
+          toast.error("AI analysis service unavailable. Falling back to local analysis generation.");
+          
+          // Fallback to local analysis generation
           const generatedAnalysis = generateAnalysisFromResponses(responseData);
           setAnalysis(generatedAnalysis);
-          setLoading(false);
-        }, 3000); // 3 second delay to simulate processing
+        }
+        
+        setLoading(false);
         
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
