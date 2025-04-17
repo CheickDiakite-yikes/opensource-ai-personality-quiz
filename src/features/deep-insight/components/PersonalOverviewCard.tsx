@@ -13,6 +13,13 @@ interface PersonalOverviewCardProps {
 }
 
 export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ analysis, itemVariants }) => {
+  // Safely access overview with fallback
+  const overview = typeof analysis.overview === 'string' ? analysis.overview : 'No overview available';
+  
+  // Safely access core traits with fallbacks
+  const primaryType = analysis.coreTraits?.primary || 'Not specified';
+  const secondaryType = analysis.coreTraits?.secondary || 'Not specified';
+  
   return (
     <motion.div
       variants={itemVariants}
@@ -26,16 +33,16 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
           <CardDescription>A summary of your core personality traits</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p>{typeof analysis.overview === 'string' ? analysis.overview : 'No overview available'}</p>
+          <p>{overview}</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CoreTraitCard 
               title="Primary Type"
-              value={analysis.coreTraits?.primary}
+              value={primaryType}
             />
             <CoreTraitCard 
               title="Secondary Type"
-              value={analysis.coreTraits?.secondary}
+              value={secondaryType}
             />
             <IntelligenceScoreCard 
               cognitiveScore={analysis.intelligenceScore}

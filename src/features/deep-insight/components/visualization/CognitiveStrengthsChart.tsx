@@ -29,7 +29,12 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
   description = "Visualization of your cognitive abilities across different domains"
 }) => {
   // Extract and prepare data for the radar chart
-  const radarData = prepareRadarData(analysis);
+  const radarData = React.useMemo(() => {
+    return prepareRadarData(analysis);
+  }, [analysis]);
+  
+  // Check if this is default/sample data
+  const isDefaultData = !analysis.cognitivePatterning && !analysis.emotionalArchitecture;
   
   return (
     <Card>
@@ -75,11 +80,17 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
                   dataKey="value" 
                   stroke="#7C3AED" 
                   fill="#8B5CF6" 
-                  fillOpacity={0.6} 
+                  fillOpacity={isDefaultData ? 0.3 : 0.6} // Dim default data
                 />
               </RadarChart>
             </ResponsiveContainer>
           </ChartContainer>
+          
+          {isDefaultData && (
+            <div className="text-center mt-4 text-sm text-muted-foreground">
+              <p>This is sample data. Complete an assessment to see your personal cognitive profile.</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -140,8 +151,9 @@ function prepareRadarData(analysis: AnalysisData) {
 }
 
 // Helper function to map cognitive descriptions to numeric scores (1-10)
-// This is a placeholder - in a real app, these would be calculated based on analysis
 function mapScoreToValue(description: string): number {
+  if (!description) return 5; // Default fallback score
+  
   // Sample implementation: calculate score based on word count and positive terms
   const wordCount = description.split(' ').length;
   

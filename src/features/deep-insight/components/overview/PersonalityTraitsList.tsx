@@ -10,8 +10,48 @@ interface PersonalityTraitsListProps {
 export const PersonalityTraitsList: React.FC<PersonalityTraitsListProps> = ({ traits }) => {
   const [expanded, setExpanded] = React.useState(false);
   
-  // Ensure traits is an array before trying to render
-  const traitsList = Array.isArray(traits) ? traits : [];
+  // Ensure traits is an array and format each trait properly
+  const processTraits = (inputTraits: any[] | undefined): PersonalityTrait[] => {
+    if (!Array.isArray(inputTraits)) return [];
+    
+    return inputTraits.map(trait => {
+      // If trait is already a proper object, return it
+      if (typeof trait === 'object' && trait !== null && typeof trait.trait === 'string') {
+        return {
+          trait: trait.trait,
+          score: typeof trait.score === 'number' ? trait.score : 0,
+          description: typeof trait.description === 'string' ? trait.description : '',
+          strengths: Array.isArray(trait.strengths) ? trait.strengths : [],
+          challenges: Array.isArray(trait.challenges) ? trait.challenges : [],
+          growthSuggestions: Array.isArray(trait.growthSuggestions) ? trait.growthSuggestions : []
+        };
+      }
+      
+      // Convert string traits to proper object format
+      if (typeof trait === 'string') {
+        return {
+          trait: trait,
+          score: 50, // Default score
+          description: '',
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        };
+      }
+      
+      // Default for any other case
+      return {
+        trait: 'Undefined Trait',
+        score: 0,
+        description: '',
+        strengths: [],
+        challenges: [],
+        growthSuggestions: []
+      };
+    });
+  };
+  
+  const traitsList = processTraits(traits);
 
   return (
     <div>
@@ -34,9 +74,9 @@ export const PersonalityTraitsList: React.FC<PersonalityTraitsListProps> = ({ tr
                 <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-xs text-primary">
                   {index + 1}
                 </div>
-                {typeof trait === 'object' && trait !== null ? trait.trait : String(trait)}
+                {trait.trait}
               </div>
-              {typeof trait === 'object' && trait !== null && trait.description && (
+              {trait.description && (
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{trait.description}</p>
               )}
             </div>

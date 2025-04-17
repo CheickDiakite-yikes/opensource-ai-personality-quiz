@@ -11,28 +11,67 @@ interface StrengthsChallengesCardsProps {
 }
 
 export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> = ({ analysis, itemVariants }) => {
-  // Properly extract strengths and challenges, ensuring they are arrays
-  const strengths = Array.isArray(analysis.coreTraits?.strengths) 
-    ? analysis.coreTraits?.strengths 
-    : (Array.isArray(analysis.traits) 
-      ? analysis.traits.map(trait => trait.strengths?.[0]).filter(Boolean)
-      : []);
+  // Safely extract strengths and challenges with proper fallbacks
+  const extractStrengths = (): string[] => {
+    // Check for coreTraits.strengths array first
+    if (analysis.coreTraits?.strengths && Array.isArray(analysis.coreTraits.strengths)) {
+      return analysis.coreTraits.strengths;
+    }
+    
+    // Extract strengths from traits if available
+    if (Array.isArray(analysis.traits)) {
+      const traitStrengths = analysis.traits
+        .filter(trait => trait && typeof trait === 'object')
+        .map(trait => trait.strengths?.[0])
+        .filter(Boolean) as string[];
+        
+      if (traitStrengths.length > 0) {
+        return traitStrengths;
+      }
+    }
+    
+    // Return default if no strengths found
+    return ["Analytical thinking", "Problem-solving", "Attention to detail"];
+  };
   
-  const challenges = Array.isArray(analysis.coreTraits?.challenges) 
-    ? analysis.coreTraits?.challenges 
-    : (Array.isArray(analysis.weaknesses) ? analysis.weaknesses : []);
+  const extractChallenges = (): string[] => {
+    // Check for coreTraits.challenges array first
+    if (analysis.coreTraits?.challenges && Array.isArray(analysis.coreTraits.challenges)) {
+      return analysis.coreTraits.challenges;
+    }
+    
+    // Check for weaknesses array
+    if (Array.isArray(analysis.weaknesses)) {
+      return analysis.weaknesses;
+    }
+    
+    // Return default if no challenges found
+    return ["May overthink decisions", "Could struggle with ambiguity", "Balancing logic and emotion"];
+  };
   
-  // Get recommendations, ensuring they're an array
-  const growthPotentialRecs = Array.isArray(analysis.growthPotential?.recommendations) 
-    ? analysis.growthPotential?.recommendations 
-    : [];
-  
-  const growthAreas = Array.isArray(analysis.growthAreas) 
-    ? analysis.growthAreas 
-    : [];
-  
-  // Combine recommendations from both sources, ensuring we have an array
-  const recommendations = [...growthPotentialRecs, ...growthAreas].filter(Boolean);
+  const extractRecommendations = (): string[] => {
+    // Combine recommendations from multiple sources with proper checks
+    const growthPotentialRecs = Array.isArray(analysis.growthPotential?.recommendations) 
+      ? analysis.growthPotential.recommendations
+      : [];
+      
+    const growthAreas = Array.isArray(analysis.growthAreas)
+      ? analysis.growthAreas
+      : [];
+      
+    // Combine all valid recommendations
+    const allRecs = [...growthPotentialRecs, ...growthAreas].filter(Boolean);
+    
+    // Return combined recommendations or default
+    return allRecs.length > 0 
+      ? allRecs
+      : ["Practice mindfulness techniques", "Seek diverse perspectives", "Balance analytical thinking with intuition"];
+  };
+
+  // Process the data
+  const strengths = extractStrengths();
+  const challenges = extractChallenges();
+  const recommendations = extractRecommendations();
 
   return (
     <motion.div
@@ -56,7 +95,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 </div>
-                <span>{String(strength)}</span>
+                <span>{typeof strength === 'string' ? strength : String(strength)}</span>
               </li>
             ))}
           </ul>
@@ -77,7 +116,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-orange-500"></div>
                 </div>
-                <span>{String(challenge)}</span>
+                <span>{typeof challenge === 'string' ? challenge : String(challenge)}</span>
               </li>
             ))}
           </ul>
@@ -98,7 +137,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                 </div>
-                <span>{String(recommendation)}</span>
+                <span>{typeof recommendation === 'string' ? recommendation : String(recommendation)}</span>
               </li>
             ))}
           </ul>

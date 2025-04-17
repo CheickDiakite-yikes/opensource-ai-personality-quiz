@@ -17,15 +17,29 @@ interface ResponsePatternChartProps {
 
 const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData }) => {
   const data = React.useMemo(() => {
+    // Check for valid patternData with percentages
     if (!patternData || !patternData.percentages) {
-      return [{ name: "No data", value: 100 }];
+      return [
+        { name: "Analytical (Default)", value: 20 },
+        { name: "Emotional (Default)", value: 20 },
+        { name: "Practical (Default)", value: 20 },
+        { name: "Creative (Default)", value: 20 },
+        { name: "Social (Default)", value: 10 },
+        { name: "Organized (Default)", value: 10 }
+      ];
     }
     
-    return Object.entries(patternData.percentages)
-      .filter(([_, value]) => value > 0) // Only include non-zero values
-      .map(([key, value]) => ({
+    // Extract values from percentages, ensuring all keys exist
+    const percentages = patternData.percentages;
+    const requiredKeys = ['a', 'b', 'c', 'd', 'e', 'f'];
+    
+    // Create data array with proper labels
+    return requiredKeys
+      .filter(key => typeof percentages[key] === 'number' && percentages[key] > 0)
+      .map(key => ({
         name: getResponseName(key),
-        value
+        value: percentages[key],
+        key
       }));
   }, [patternData]);
   
@@ -44,17 +58,17 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
   }
   
   const renderLabel = (entry: any) => {
+    // Only render labels for segments with significant values
+    if (entry.value < 5) return null;
     return `${entry.name}: ${entry.value}%`;
   };
 
+  const isDefaultData = !patternData || !patternData.percentages;
+
   return (
-    <Card className="w-full h-[300px] md:h-[400px]">
+    <Card>
       <CardContent className="p-4">
-        {data.length === 1 && data[0].name === "No data" ? (
-          <div className="h-full flex items-center justify-center text-muted-foreground">
-            No response pattern data available
-          </div>
-        ) : (
+        <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -67,8 +81,12 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
                 fill="#8884d8"
                 dataKey="value"
               >
-                {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    opacity={isDefaultData ? 0.5 : 1} // Dim default data
+                  />
                 ))}
               </Pie>
               <Tooltip
@@ -81,7 +99,13 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
               <Legend />
             </PieChart>
           </ResponsiveContainer>
-        )}
+          
+          {isDefaultData && (
+            <div className="text-center mt-4 text-sm text-muted-foreground">
+              <p>This is sample data. Complete an assessment to see your personal response pattern.</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
