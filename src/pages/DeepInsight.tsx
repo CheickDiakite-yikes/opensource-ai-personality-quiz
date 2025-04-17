@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, ChevronRight, FileText } from "lucide-react";
-import DeepInsightHistory from "@/features/deep-insight/components/history/DeepInsightHistory";
+import { DeepInsightHistory } from "@/features/deep-insight/components/history/DeepInsightHistory";
 
 const containerVariants = {
   hidden: { opacity: 0 },

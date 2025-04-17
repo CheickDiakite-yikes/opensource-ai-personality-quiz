@@ -1,157 +1,119 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Clock, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { Calendar, ArrowRightIcon, History } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+export interface HistoryItem {
+  id: string;
+  created_at: string;
+  title: string;
+  overview: string | null;
+}
 
 export const DeepInsightHistory: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAnalyses = async () => {
+    const fetchHistory = async () => {
       if (!user) {
+        setHistory([]);
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        
-        // First try to get analyses from the deep_insight_analyses table
-        const { data: deepInsightData, error: deepError } = await supabase
+        const { data, error } = await supabase
           .from('deep_insight_analyses')
-          .select('*')
+          .select('id, created_at, title, overview')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (!deepError && deepInsightData && deepInsightData.length > 0) {
-          console.log(`Found ${deepInsightData.length} analyses in deep_insight_analyses`);
-          setAnalyses(deepInsightData);
-          setLoading(false);
-          return;
-        }
-        
-        // If nothing in the new table or if there was an error, try the old analyses table
-        const { data: oldAnalyses, error: oldError } = await supabase
-          .from('analyses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (!oldError && oldAnalyses && oldAnalyses.length > 0) {
-          console.log(`Found ${oldAnalyses.length} analyses in analyses`);
-          setAnalyses(oldAnalyses);
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error("Error fetching Deep Insight history:", error);
+          setError(error.message);
+          setHistory([]);
         } else {
-          // No analyses found in either table
-          console.log("No analyses found for user");
-          setAnalyses([]);
+          setHistory(data || []);
+          setError(null);
         }
-      } catch (err) {
-        console.error("Error fetching analyses:", err);
-        toast.error("Failed to load your analyses history");
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+        console.error("Error in fetchHistory:", errorMessage);
+        setError("Failed to load assessment history");
+        setHistory([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAnalyses();
+    fetchHistory();
   }, [user]);
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Your Analysis History
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <p>Loading your previous analyses...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Your Analysis History
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 text-center">
-          <p className="mb-4 text-muted-foreground">Please sign in to view your analysis history.</p>
-          <Button onClick={() => navigate('/auth')}>Sign In</Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (analyses.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Your Analysis History
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 text-center">
-          <p className="mb-4 text-muted-foreground">You haven't saved any analyses yet.</p>
-          <Button onClick={() => navigate('/deep-insight/quiz')}>Take Deep Insight Assessment</Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const viewAnalysis = (id: string) => {
+    navigate(`/deep-insight/results/${id}`);
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
-          Your Analysis History
-        </CardTitle>
+        <div className="flex items-center gap-2">
+          <History className="h-5 w-5 text-primary" />
+          <CardTitle>Recent Assessments</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {analyses.map((analysis) => (
-            <div 
-              key={analysis.id} 
-              className="flex items-center justify-between p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-all hover:shadow-md"
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-muted h-16 rounded-md" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center p-4 text-muted-foreground">
+            <p>Error: {error}</p>
+          </div>
+        ) : history.length === 0 ? (
+          <div className="text-center p-4 text-muted-foreground">
+            <p>You haven't taken any Deep Insight assessments yet.</p>
+            <Button 
+              variant="outline" 
+              className="mt-2" 
+              onClick={() => navigate("/deep-insight/quiz")}
             >
-              <div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h3 className="font-medium">
-                    {analysis.title || "Deep Insight Analysis"}
-                  </h3>
+              Take an Assessment
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {history.map((item) => (
+              <div key={item.id} className="p-3 bg-background border rounded-md shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="font-medium line-clamp-1">{item.title}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => viewAnalysis(item.id)} variant="outline" className="ml-2 flex-shrink-0">
+                    View <ArrowRightIcon className="ml-1 h-4 w-4" />
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {new Date(analysis.created_at).toLocaleDateString()} • {new Date(analysis.created_at).toLocaleTimeString()}
-                </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={() => navigate(`/deep-insight/results/${analysis.id}`)}
-              >
-                View
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

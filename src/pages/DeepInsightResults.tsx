@@ -79,7 +79,7 @@ const DeepInsightResults: React.FC = () => {
           if (!deepError && deepInsightAnalysis) {
             console.log(`Found analysis in deep_insight_analyses: ${id}`);
             // Use the complete_analysis field which contains the full PersonalityAnalysis
-            setAnalysis(deepInsightAnalysis.complete_analysis);
+            setAnalysis(deepInsightAnalysis.complete_analysis as PersonalityAnalysis);
             setError(null);
             setLoading(false);
             return;

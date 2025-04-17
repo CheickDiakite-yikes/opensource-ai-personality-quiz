@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Brain, Lightning, BookOpen, Focus } from "lucide-react";
+import { Brain, Zap, BookOpen, Focus } from "lucide-react";
 import { PersonalityAnalysis } from "@/utils/types";
 
 interface CognitiveTabProps {
@@ -27,7 +27,7 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
       <CardContent className="space-y-6">
         <div className="p-4 bg-background/80 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
           <div className="flex items-center gap-2 mb-3">
-            <Lightning className="h-5 w-5 text-amber-500" />
+            <Zap className="h-5 w-5 text-amber-500" />
             <h3 className="font-semibold text-lg">Decision Making Style</h3>
           </div>
           <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.decisionMaking}</p>

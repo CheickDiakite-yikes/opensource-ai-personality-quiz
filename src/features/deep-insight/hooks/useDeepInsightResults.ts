@@ -98,7 +98,6 @@ export const useDeepInsightResults = () => {
       const { error: analysisError } = await supabase
         .from('deep_insight_analyses')
         .insert({
-          id: analysis.id,
           user_id: user.id,
           title: "Deep Insight Analysis",
           overview: analysis.overview,
