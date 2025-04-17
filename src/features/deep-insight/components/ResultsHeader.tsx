@@ -4,20 +4,14 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { AnalysisData } from "../utils/analysis/types";
 
-export const ResultsHeader: React.FC = () => {
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5
-      }
-    })
-  };
+interface ResultsHeaderProps {
+  analysis: AnalysisData;
+  itemVariants: any;
+}
 
+export const ResultsHeader: React.FC<ResultsHeaderProps> = ({ analysis, itemVariants }) => {
   return (
     <header className="text-center">
       <div className="flex items-center gap-2 mb-6">
@@ -31,7 +25,7 @@ export const ResultsHeader: React.FC = () => {
       
       <motion.div 
         className="inline-flex items-center justify-center p-2 bg-primary/10 rounded-full text-primary mb-4"
-        variants={fadeInUp}
+        variants={itemVariants}
         initial="hidden"
         animate="visible"
         custom={0}
@@ -40,7 +34,7 @@ export const ResultsHeader: React.FC = () => {
       </motion.div>
       <motion.h1 
         className="text-3xl md:text-4xl font-bold mb-2"
-        variants={fadeInUp}
+        variants={itemVariants}
         initial="hidden"
         animate="visible"
         custom={1}
@@ -49,7 +43,7 @@ export const ResultsHeader: React.FC = () => {
       </motion.h1>
       <motion.p 
         className="text-muted-foreground max-w-2xl mx-auto"
-        variants={fadeInUp}
+        variants={itemVariants}
         initial="hidden"
         animate="visible"
         custom={2}
