@@ -49,6 +49,26 @@ const DeepInsightResults: React.FC = () => {
           
           if (data) {
             console.log("Successfully loaded legacy analysis:", data);
+            
+            // Make sure the data has the expected structure for rendering
+            // If interpersonalDynamics is missing, add defaults
+            if (!data.interpersonalDynamics) {
+              data.interpersonalDynamics = {
+                attachmentStyle: "Your attachment style shows a balanced approach to relationships.",
+                communicationPattern: "You communicate thoughtfully and prefer meaningful conversations.",
+                conflictResolution: "You approach conflicts by seeking to understand different perspectives."
+              };
+            }
+            
+            // Handle relationshipPatterns structure
+            if (!data.relationshipPatterns || Array.isArray(data.relationshipPatterns)) {
+              data.relationshipPatterns = {
+                strengths: Array.isArray(data.relationshipPatterns) ? data.relationshipPatterns : [],
+                challenges: [],
+                compatibleTypes: []
+              };
+            }
+            
             setLegacyAnalysis(data as AnalysisData);
             toast.success("Legacy analysis loaded successfully");
           } else {
