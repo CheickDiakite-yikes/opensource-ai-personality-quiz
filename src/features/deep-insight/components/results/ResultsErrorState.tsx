@@ -1,39 +1,74 @@
 
-import { motion } from "framer-motion";
+import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsErrorStateProps {
   error: string;
   onRetry: () => void;
 }
 
-export const ResultsErrorState = ({ error, onRetry }: ResultsErrorStateProps) => {
+export const ResultsErrorState: React.FC<ResultsErrorStateProps> = ({ error, onRetry }) => {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  const isNoResponsesError = error.includes("No responses found") || 
+                           error.toLowerCase().includes("assessment") || 
+                           error.toLowerCase().includes("complete");
+  
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 flex flex-col items-center justify-center min-h-[70vh]">
-      <Card className="w-full max-w-2xl p-8 flex flex-col items-center justify-center space-y-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center space-y-6"
-        >
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-destructive/10">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
-          </div>
-          
-          <h2 className="text-2xl font-bold text-center">Error Loading Analysis</h2>
-          
-          <p className="text-muted-foreground text-center max-w-md">
-            {error || "There was a problem generating your analysis. Please try again."}
+    <motion.div 
+      className="container max-w-4xl py-4 md:py-8 px-2 md:px-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <Alert variant="destructive" className="mb-4 md:mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle className="text-sm md:text-base">Error Processing Your Results</AlertTitle>
+        <AlertDescription className="text-xs md:text-sm mt-1">{error}</AlertDescription>
+      </Alert>
+      
+      <Card className="mb-4 md:mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg md:text-xl">What happened?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm md:text-base">
+            {isNoResponsesError ? (
+              "You need to complete the Deep Insight assessment before viewing results. This ensures your analysis is comprehensive and accurate."
+            ) : (
+              "We encountered an issue while generating your analysis. You can try again using the retry button below."
+            )}
           </p>
-          
-          <Button onClick={onRetry} variant="default" size="lg">
-            Retry Analysis
-          </Button>
-        </motion.div>
+        </CardContent>
       </Card>
-    </div>
+      
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-4 justify-center">
+        {!isNoResponsesError && (
+          <Button 
+            onClick={onRetry} 
+            variant="default" 
+            className="flex items-center gap-2"
+            size={isMobile ? "sm" : "default"}
+          >
+            <RefreshCw className="h-4 w-4" /> Try Again
+          </Button>
+        )}
+        
+        <Button 
+          onClick={() => navigate("/deep-insight/quiz")} 
+          variant="outline" 
+          className="flex items-center gap-2"
+          size={isMobile ? "sm" : "default"}
+        >
+          <ArrowLeft className="h-4 w-4" /> Return to Assessment
+        </Button>
+      </div>
+    </motion.div>
   );
 };

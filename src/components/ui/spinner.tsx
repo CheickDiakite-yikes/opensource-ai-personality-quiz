@@ -16,8 +16,13 @@ export const Spinner = ({ className, size = "md", ...props }: SpinnerProps) => {
   };
 
   return (
-    <div {...props} className={cn("flex justify-center items-center", className)}>
-      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
+    <div role="status" aria-label="Loading" {...props} className={cn("flex justify-center items-center", className)}>
+      <Loader2 
+        className={cn(
+          "animate-spin text-primary transition-all duration-200",
+          sizeClasses[size]
+        )} 
+      />
     </div>
   );
 };
