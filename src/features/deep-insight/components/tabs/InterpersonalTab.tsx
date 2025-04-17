@@ -18,32 +18,32 @@ export const InterpersonalTab: React.FC<InterpersonalTabProps> = ({ analysis }) 
         </CardTitle>
         <CardDescription>How you relate to and interact with others</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div>
-          <h3 className="font-semibold mb-2">Attachment Style</h3>
-          <p>{analysis.interpersonalDynamics.attachmentStyle}</p>
+          <h3 className="font-semibold mb-3 text-lg">Attachment Style</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.attachmentStyle}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Communication Pattern</h3>
-          <p>{analysis.interpersonalDynamics.communicationPattern}</p>
+          <h3 className="font-semibold mb-3 text-lg">Communication Pattern</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.communicationPattern}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Conflict Resolution</h3>
-          <p>{analysis.interpersonalDynamics.conflictResolution}</p>
+          <h3 className="font-semibold mb-3 text-lg">Conflict Resolution</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.interpersonalDynamics.conflictResolution}</p>
         </div>
-        <div className="mt-4">
-          <h3 className="font-semibold mb-2 flex items-center">
+        <div className="mt-6">
+          <h3 className="font-semibold mb-3 text-lg flex items-center">
             <Sparkles className="h-4 w-4 text-primary mr-1" />
             Relationship Compatibility
           </h3>
-          <div className="bg-secondary/10 p-3 rounded-md">
-            <h4 className="text-sm font-medium mb-1">Most Compatible Types</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
+          <div className="bg-secondary/10 p-4 rounded-md">
+            <h4 className="text-sm font-medium mb-2">Most Compatible Types</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm">
               {analysis.relationshipPatterns && 
                typeof analysis.relationshipPatterns === 'object' && 
                'compatibleTypes' in analysis.relationshipPatterns && 
                analysis.relationshipPatterns.compatibleTypes?.map((type, index) => (
-                <li key={index}>{type}</li>
+                <li key={index} className="text-muted-foreground">{type}</li>
               ))}
             </ul>
           </div>

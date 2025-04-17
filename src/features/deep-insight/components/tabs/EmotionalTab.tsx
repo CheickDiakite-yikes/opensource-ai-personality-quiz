@@ -18,18 +18,18 @@ export const EmotionalTab: React.FC<EmotionalTabProps> = ({ analysis }) => {
         </CardTitle>
         <CardDescription>How you experience and manage emotions</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div>
-          <h3 className="font-semibold mb-2">Emotional Awareness</h3>
-          <p>{analysis.emotionalArchitecture.emotionalAwareness}</p>
+          <h3 className="font-semibold mb-3 text-lg">Emotional Awareness</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.emotionalArchitecture.emotionalAwareness}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Regulation Style</h3>
-          <p>{analysis.emotionalArchitecture.regulationStyle}</p>
+          <h3 className="font-semibold mb-3 text-lg">Regulation Style</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.emotionalArchitecture.regulationStyle}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Empathic Capacity</h3>
-          <p>{analysis.emotionalArchitecture.empathicCapacity}</p>
+          <h3 className="font-semibold mb-3 text-lg">Empathic Capacity</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.emotionalArchitecture.empathicCapacity}</p>
         </div>
       </CardContent>
     </Card>

@@ -18,20 +18,25 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
         </CardTitle>
         <CardDescription>Areas for development and personal evolution</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="mb-4">
-          <h3 className="font-semibold mb-2">Development Areas</h3>
-          <ul className="list-disc list-inside space-y-1">
+      <CardContent className="space-y-6">
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3 text-lg">Development Areas</h3>
+          <ul className="list-disc list-inside space-y-2">
             {analysis.growthPotential.developmentAreas.map((area: string, i: number) => (
-              <li key={i}>{area}</li>
+              <li key={i} className="text-muted-foreground leading-relaxed pl-2">
+                <span className="text-foreground font-medium">{area.split(':')[0]}:</span>{' '}
+                {area.split(':').slice(1).join(':')}
+              </li>
             ))}
           </ul>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Recommendations</h3>
-          <ul className="list-disc list-inside space-y-1">
+          <h3 className="font-semibold mb-3 text-lg">Recommendations</h3>
+          <ul className="list-disc list-inside space-y-2">
             {analysis.growthPotential.recommendations.map((rec: string, i: number) => (
-              <li key={i}>{rec}</li>
+              <li key={i} className="text-muted-foreground leading-relaxed pl-2">
+                <span className="text-foreground font-medium">{i + 1}.</span> {rec}
+              </li>
             ))}
           </ul>
         </div>

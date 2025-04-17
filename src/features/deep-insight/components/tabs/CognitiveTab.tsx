@@ -18,18 +18,18 @@ export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
         </CardTitle>
         <CardDescription>How you process information and make decisions</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div>
-          <h3 className="font-semibold mb-2">Decision Making Style</h3>
-          <p>{analysis.cognitivePatterning.decisionMaking}</p>
+          <h3 className="font-semibold mb-3 text-lg">Decision Making Style</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.decisionMaking}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Learning Approach</h3>
-          <p>{analysis.cognitivePatterning.learningStyle}</p>
+          <h3 className="font-semibold mb-3 text-lg">Learning Approach</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.learningStyle}</p>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Attention Pattern</h3>
-          <p>{analysis.cognitivePatterning.attention}</p>
+          <h3 className="font-semibold mb-3 text-lg">Attention Pattern</h3>
+          <p className="text-muted-foreground leading-relaxed">{analysis.cognitivePatterning.attention}</p>
         </div>
       </CardContent>
     </Card>
