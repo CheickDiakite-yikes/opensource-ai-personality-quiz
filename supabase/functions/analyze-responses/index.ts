@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { AssessmentResponse, PersonalityAnalysis, QuestionCategory } from "./types.ts";
@@ -155,21 +154,40 @@ function calculateCategoryCoverage(responsesByCategory: Record<string, Assessmen
     const percentage = Math.min(100, Math.round((count / expected) * 100));
     
     // Calculate response quality based on whether custom responses were provided
-    // and how substantive they appear to be
+    // and how substantive they appear to be - now with more critical evaluation
     const responseQuality = responses.reduce((sum, response) => {
-      let quality = 0.5; // Default quality
+      let quality = 0.4; // Lower default quality
+      
+      // Evaluate quality based on option selected - options at the end of the list (e/f)
+      // generally indicate less sophisticated responses and get penalized
+      if (response.selectedOption) {
+        // Extract the option letter from the ID (e.g., "q31-a" -> "a")
+        const optionLetter = response.selectedOption.split('-')[1] || '';
+        
+        // Assign quality score based on the option letter
+        // Note: This is just an example, in reality we'd want to evaluate the actual response
+        switch(optionLetter) {
+          case 'a': quality = 0.8; break; // Usually insightful responses
+          case 'b': quality = 0.7; break; // Often thoughtful responses
+          case 'c': quality = 0.6; break; // Moderate responses
+          case 'd': quality = 0.5; break; // Basic responses
+          case 'e': quality = 0.3; break; // Potentially problematic responses
+          case 'f': quality = 0.2; break; // Often indicates lack of insight
+          default: quality = 0.4;
+        }
+      }
       
       // Higher quality for custom responses with substantial content
       if (response.customResponse && response.customResponse.trim().length > 0) {
-        quality = 0.7; // Base score for any custom response
+        quality = Math.max(quality, 0.5); // Base score for any custom response
         
         // If response includes detailed explanations (more than 100 chars)
         if (response.customResponse.length > 100) {
-          quality = 0.9;
+          quality = Math.max(quality, 0.7);
         }
         // If response is very detailed (more than 200 chars)
         if (response.customResponse.length > 200) {
-          quality = 1.0;
+          quality = Math.max(quality, 0.9);
         }
       }
       
@@ -236,32 +254,42 @@ async function generateAIAnalysis(
   1. COGNITIVE FLEXIBILITY SCORE CALCULATION:
      - Base score begins at ${cognitiveBaseScore}/100 based on question coverage
      - Evaluate specific cognitive indicators:
-       * Ability to consider multiple perspectives simultaneously (+10-20 points)
-       * Pattern recognition across disparate domains (+5-15 points)
-       * Comfort with ambiguity and uncertainty (+5-15 points) 
-       * Strategic thinking and mental simulation abilities (+5-10 points)
-       * Information processing speed and efficiency (+5-10 points)
-       * Analytical depth demonstrated in responses (+5-15 points)
-       * Creative problem-solving approaches (+5-15 points)
-     - Identify cognitive rigidity or fixed thinking patterns (-5 to -15 points)
-     - Consider evidence of cognitive biases and their awareness (-5 to +10 points)
+       * Ability to consider multiple perspectives simultaneously (+5-15 points)
+       * Pattern recognition across disparate domains (+5-12 points)
+       * Comfort with ambiguity and uncertainty (+3-10 points) 
+       * Strategic thinking and mental simulation abilities (+3-8 points)
+       * Information processing speed and efficiency (+3-8 points)
+       * Analytical depth demonstrated in responses (+3-12 points)
+       * Creative problem-solving approaches (+3-12 points)
+     - CRITICAL: Identify cognitive rigidity or fixed thinking patterns (-8 to -20 points)
+     - CRITICAL: Apply penalties for simplistic or black-and-white thinking (-5 to -15 points)
+     - CRITICAL: Evidence of cognitive biases without self-awareness (-5 to -15 points)
+     - CRITICAL: Inconsistent or contradictory reasoning patterns (-5 to -15 points)
      - Use concrete examples from their responses as evidence for your scoring
      - Final score should be 0-100, normalized based on all factors
+     - A score of 80+ should be RARE and require exceptional cognitive flexibility
+     - A score of 90+ should be EXTREMELY RARE and require outstanding reasoning
+     - Most scores should fall between 40-70 representing typical cognitive flexibility
   
   2. EMOTIONAL INTELLIGENCE SCORE CALCULATION:
      - Base score begins at ${emotionalBaseScore}/100 based on question coverage
      - Evaluate specific emotional intelligence indicators:
-       * Self-awareness of own emotional states (+10-20 points)
-       * Recognition of emotions in others (+5-15 points)
-       * Emotional regulation capabilities (+10-20 points) 
-       * Empathy demonstrated in responses (+5-15 points)
-       * Social awareness and relationship management (+5-15 points)
-       * Ability to articulate complex emotional experiences (+5-10 points)
-       * Integration of emotion with reasoning (+5-15 points)
-     - Identify emotional regulation challenges or blind spots (-5 to -15 points)
-     - Consider evidence of emotional depth versus superficiality (-10 to +10 points)
+       * Self-awareness of own emotional states (+5-15 points)
+       * Recognition of emotions in others (+3-12 points)
+       * Emotional regulation capabilities (+5-15 points) 
+       * Empathy demonstrated in responses (+3-12 points)
+       * Social awareness and relationship management (+3-12 points)
+       * Ability to articulate complex emotional experiences (+3-8 points)
+       * Integration of emotion with reasoning (+3-12 points)
+     - CRITICAL: Identify emotional regulation challenges (-8 to -20 points)
+     - CRITICAL: Apply penalties for emotional avoidance patterns (-5 to -15 points)
+     - CRITICAL: Detect lack of empathy or perspective-taking (-5 to -15 points)
+     - CRITICAL: Identify emotional reactivity without self-awareness (-5 to -15 points)
      - Use concrete examples from their responses as evidence for your scoring
      - Final score should be 0-100, normalized based on all factors
+     - A score of 80+ should be RARE and require exceptional emotional intelligence
+     - A score of 90+ should be EXTREMELY RARE and require outstanding emotional awareness
+     - Most scores should fall between 40-70 representing typical emotional intelligence
   
   ## Analysis Requirements - FOLLOW THESE EXACTLY
   
@@ -539,17 +567,17 @@ function calculateBaseScore(
 
   // Default base score if no relevant categories were found
   if (categoriesFound === 0) {
-    return 50; // Neutral starting point
+    return 40; // Lower neutral starting point
   }
 
   // Calculate averages
   const avgPercentage = totalPercentage / categoriesFound;
   const avgQuality = totalQuality / categoriesFound;
 
-  // Calculate base score: 70% weight on coverage, 30% on quality
-  // Scale to 40-70 range as base score (allows room for specific factor adjustments)
-  const baseScore = Math.round(((avgPercentage * 0.7) + (avgQuality * 100 * 0.3)) * 0.3) + 40;
+  // Calculate base score: 60% weight on coverage, 40% on quality
+  // Scale to 30-60 range as base score (allows room for specific factor adjustments)
+  const baseScore = Math.round(((avgPercentage * 0.6) + (avgQuality * 100 * 0.4)) * 0.3) + 30;
   
-  // Clamp score between 40 and 70
-  return Math.min(70, Math.max(40, baseScore));
+  // Clamp score between 30 and 60
+  return Math.min(60, Math.max(30, baseScore));
 }
