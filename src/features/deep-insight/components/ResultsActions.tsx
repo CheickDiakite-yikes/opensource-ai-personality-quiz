@@ -37,7 +37,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         // Store the analysis in Supabase
         const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
         
-        // Convert analysis to JSON-compatible object
+        // Convert full analysis to JSON-compatible object
         const jsonAnalysis = toJsonObject(analysis);
         
         // Prepare analysis data in the format required by the database
@@ -46,28 +46,28 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           user_id: user.id,
           assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
           overview: analysis.overview,
-          traits: analysis.traits || [],
-          intelligence: analysis.intelligence || {},
+          traits: jsonAnalysis.traits as Json,
+          intelligence: jsonAnalysis.intelligence as Json,
           intelligence_score: analysis.intelligenceScore || 0,
           emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
-          cognitive_style: analysis.cognitiveStyle || {},
-          value_system: analysis.valueSystem || [],
-          motivators: analysis.motivators || [],
-          inhibitors: analysis.inhibitors || [],
-          weaknesses: analysis.weaknesses || [],
-          growth_areas: analysis.growthAreas || [],
-          relationship_patterns: analysis.relationshipPatterns || {},
-          career_suggestions: analysis.careerSuggestions || [],
-          learning_pathways: analysis.learningPathways || [],
+          cognitive_style: jsonAnalysis.cognitiveStyle as Json,
+          value_system: jsonAnalysis.valueSystem as Json,
+          motivators: jsonAnalysis.motivators as Json,
+          inhibitors: jsonAnalysis.inhibitors as Json,
+          weaknesses: jsonAnalysis.weaknesses as Json,
+          growth_areas: jsonAnalysis.growthAreas as Json,
+          relationship_patterns: jsonAnalysis.relationshipPatterns as Json,
+          career_suggestions: jsonAnalysis.careerSuggestions as Json,
+          learning_pathways: jsonAnalysis.learningPathways as Json,
           roadmap: analysis.roadmap || "",
-          result: jsonAnalysis as Json, // Cast to Json type after conversion
+          result: jsonAnalysis as Json,
           // New Deep Insight specific fields
-          response_patterns: analysis.responsePatterns as unknown as Json,
-          core_traits: analysis.coreTraits as unknown as Json,
-          cognitive_patterning: analysis.cognitivePatterning as unknown as Json,
-          emotional_architecture: analysis.emotionalArchitecture as unknown as Json,
-          interpersonal_dynamics: analysis.interpersonalDynamics as unknown as Json,
-          growth_potential: analysis.growthPotential as unknown as Json
+          response_patterns: jsonAnalysis.responsePatterns as Json,
+          core_traits: jsonAnalysis.coreTraits as Json,
+          cognitive_patterning: jsonAnalysis.cognitivePatterning as Json,
+          emotional_architecture: jsonAnalysis.emotionalArchitecture as Json,
+          interpersonal_dynamics: jsonAnalysis.interpersonalDynamics as Json,
+          growth_potential: jsonAnalysis.growthPotential as Json
         };
 
         // Check if the analysis already exists
