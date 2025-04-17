@@ -43,51 +43,72 @@ export const ResultsActions = ({
         flex flex-col sm:flex-row 
         items-center 
         justify-center 
-        gap-3 
+        gap-4 
         w-full 
-        px-4 
-        ${isMobile ? 'space-y-2' : ''}
+        max-w-4xl 
+        mx-auto 
+        p-6 
+        rounded-xl
+        backdrop-blur-sm
+        bg-white/5
+        border border-white/10
+        ${isMobile ? 'space-y-3' : ''}
       `}
       variants={itemVariants}
       custom={5}
     >
       <Button 
-        variant="outline" 
+        variant="elegant"
+        size="lg"
         className={`
           w-full sm:w-auto 
-          flex items-center gap-2 
+          flex items-center gap-3
           justify-center
+          min-w-[200px]
+          transition-all
+          duration-300
+          hover:scale-105
         `} 
         onClick={onSave}
       >
-        <Save className="h-4 w-4" />
+        <Save className="h-5 w-5" />
         Save Analysis
       </Button>
 
       <Button 
-        variant="outline" 
+        variant="elegant"
+        size="lg" 
         className={`
           w-full sm:w-auto 
-          flex items-center gap-2 
+          flex items-center gap-3
           justify-center
+          min-w-[200px]
+          transition-all
+          duration-300
+          hover:scale-105
         `} 
         onClick={handleShare}
       >
-        <Share2 className="h-4 w-4" />
+        <Share2 className="h-5 w-5" />
         Share Results
       </Button>
 
       {onRefresh && (
         <Button 
-          variant={loadedFromCache ? "default" : "outline"} 
+          variant={loadedFromCache ? "warm" : "elegant"}
+          size="lg"
           className={`
             w-full sm:w-auto 
-            flex items-center gap-2 
+            flex items-center gap-3
             justify-center
+            min-w-[200px]
+            transition-all
+            duration-300
+            hover:scale-105
           `} 
           onClick={onRefresh}
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-5 w-5" />
           {loadedFromCache ? "Generate Fresh Analysis" : "Refresh Analysis"}
         </Button>
       )}

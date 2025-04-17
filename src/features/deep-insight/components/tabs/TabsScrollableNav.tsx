@@ -33,32 +33,59 @@ export const TabsScrollableNav: React.FC<TabsScrollableNavProps> = ({ defaultVal
   }, []);
 
   const tabTriggerClass = isMobile 
-    ? "text-sm py-1.5 px-3 min-w-[80px] flex-shrink-0 whitespace-nowrap"
-    : "px-4 py-2";
+    ? "text-sm py-2 px-4 min-w-[100px] flex-shrink-0 whitespace-nowrap transition-all duration-300"
+    : "px-6 py-3 min-w-[150px] transition-all duration-300";
 
   return (
     <TabsList 
       ref={scrollRef}
-      className="w-full max-w-[100vw] scrollbar-none flex overflow-x-auto pb-0.5 snap-x px-0.5 bg-background/60 backdrop-blur-sm"
+      className="
+        w-full max-w-[100vw] 
+        scrollbar-none flex 
+        overflow-x-auto 
+        pb-0.5 snap-x 
+        px-1 
+        bg-white/5
+        backdrop-blur-sm
+        border-y border-white/10
+        rounded-none
+        h-auto
+        py-2
+      "
     >
-      <TabsTrigger className={tabTriggerClass} value="cognitive">
-        <Brain className="h-4 w-4 mr-2" />
+      <TabsTrigger 
+        className={`${tabTriggerClass} data-[state=active]:bg-primary/20 data-[state=active]:text-primary`} 
+        value="cognitive"
+      >
+        <Brain className="h-5 w-5 mr-2" />
         <span>Cognitive</span>
       </TabsTrigger>
-      <TabsTrigger className={tabTriggerClass} value="emotional">
-        <Heart className="h-4 w-4 mr-2" />
+      <TabsTrigger 
+        className={`${tabTriggerClass} data-[state=active]:bg-primary/20 data-[state=active]:text-primary`} 
+        value="emotional"
+      >
+        <Heart className="h-5 w-5 mr-2" />
         <span>Emotional</span>
       </TabsTrigger>
-      <TabsTrigger className={tabTriggerClass} value="interpersonal">
-        <Users className="h-4 w-4 mr-2" />
+      <TabsTrigger 
+        className={`${tabTriggerClass} data-[state=active]:bg-primary/20 data-[state=active]:text-primary`} 
+        value="interpersonal"
+      >
+        <Users className="h-5 w-5 mr-2" />
         <span>Social</span>
       </TabsTrigger>
-      <TabsTrigger className={tabTriggerClass} value="career">
-        <Briefcase className="h-4 w-4 mr-2" />
+      <TabsTrigger 
+        className={`${tabTriggerClass} data-[state=active]:bg-primary/20 data-[state=active]:text-primary`} 
+        value="career"
+      >
+        <Briefcase className="h-5 w-5 mr-2" />
         <span>Career</span>
       </TabsTrigger>
-      <TabsTrigger className={tabTriggerClass} value="growth">
-        <Compass className="h-4 w-4 mr-2" />
+      <TabsTrigger 
+        className={`${tabTriggerClass} data-[state=active]:bg-primary/20 data-[state=active]:text-primary`} 
+        value="growth"
+      >
+        <Compass className="h-5 w-5 mr-2" />
         <span>Growth</span>
       </TabsTrigger>
     </TabsList>
