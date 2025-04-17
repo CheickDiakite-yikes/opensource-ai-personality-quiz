@@ -23,9 +23,9 @@ export const useDeepInsightResults = () => {
     const generateAnalysis = async () => {
       try {
         // Retrieve responses from location state
-        const responseData = location.state?.responses;
+        const responseData = location.state?.responses as DeepInsightResponses | undefined;
         
-        if (!responseData) {
+        if (!responseData || Object.keys(responseData).length === 0) {
           setError("No assessment data found. Please complete the assessment first.");
           setLoading(false);
           toast.error("No assessment data found", {
@@ -38,6 +38,8 @@ export const useDeepInsightResults = () => {
         
         console.log("Attempting to call edge function for analysis with", 
           Object.keys(responseData).length, "responses");
+        console.log("Response data sample:", 
+          JSON.stringify(Object.fromEntries(Object.entries(responseData).slice(0, 3))));
         
         // Update loading toast
         toast.loading("Generating your deep insight analysis with AI...", { 
@@ -58,7 +60,7 @@ export const useDeepInsightResults = () => {
             responses: responseData,
             timestamp: Date.now()
           };
-          console.log("Payload prepared:", payload);
+          console.log("Payload prepared:", JSON.stringify(payload).substring(0, 200) + "...");
           
           // Race the function call against the timeout
           console.log("Invoking analyze-deep-insight edge function");

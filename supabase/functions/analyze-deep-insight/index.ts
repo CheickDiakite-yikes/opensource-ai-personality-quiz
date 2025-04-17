@@ -63,6 +63,7 @@ serve(async (req) => {
     console.log('Response count:', Object.keys(responses).length);
     console.log('Sample response keys:', Object.keys(responses).slice(0, 5));
     console.log('Sample response values:', Object.values(responses).slice(0, 5));
+    console.log('Full responses object:', JSON.stringify(responses).substring(0, 500) + '...');
 
     // Measure execution time for debugging
     const startTime = Date.now()
@@ -107,93 +108,56 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model: "gpt-4o-mini", // Using gpt-4o-mini which is faster and more reliable
           messages: [
             {
               role: "system",
-              content: `You are a world-class psychological analyst specializing in creating extremely detailed personality profiles. Generate an EXCEPTIONALLY COMPREHENSIVE analysis (minimum 10,000 words) with these requirements:
+              content: `You are a world-class psychological analyst specializing in creating detailed personality profiles. Generate a comprehensive analysis with these requirements:
 
-1. CORE TRAITS ANALYSIS (minimum 1000 words):
+1. CORE TRAITS ANALYSIS:
 - Primary and secondary personality traits with detailed manifestations
-- In-depth analysis of trait interactions and their impact
-- Comprehensive strengths analysis with real-world examples
-- Detailed challenges analysis with specific growth strategies
+- Analysis of trait interactions and their impact
+- Strengths analysis with examples
+- Challenges analysis with growth strategies
 
-2. COGNITIVE PATTERNING (minimum 1500 words):
-- Decision-making style with specific scenarios and examples
-- Learning preferences with optimal environments and methods
-- Attention patterns and focus characteristics
-- Problem-solving approaches with detailed examples
+2. COGNITIVE PATTERNING:
+- Decision-making style
+- Learning preferences
+- Problem-solving approaches
 - Information processing style
 - Critical thinking patterns
-- Strategic thinking capabilities
-- Cognitive strengths and blind spots
-- Memory and recall patterns
-- Analytical vs. intuitive thinking balance
 
-3. EMOTIONAL ARCHITECTURE (minimum 1500 words):
-- Detailed emotional awareness assessment
-- Comprehensive regulation style analysis
-- In-depth empathic capacity evaluation
+3. EMOTIONAL ARCHITECTURE:
+- Emotional awareness assessment
+- Regulation style analysis
+- Empathic capacity evaluation
 - Emotional patterns and triggers
 - Emotional resilience profile
-- Emotional expression style
-- Self-awareness patterns
-- Emotional intelligence components
-- Stress response patterns
-- Emotional growth opportunities
 
-4. INTERPERSONAL DYNAMICS (minimum 1500 words):
-- Detailed attachment style analysis
-- Communication patterns in different contexts
+4. INTERPERSONAL DYNAMICS:
+- Attachment style analysis
+- Communication patterns
 - Conflict resolution approaches
 - Social needs and boundaries
 - Trust-building patterns
-- Leadership style
-- Collaboration preferences
-- Group dynamics
-- Relationship patterns
-- Social intelligence profile
 
-5. CAREER & PROFESSIONAL (minimum 1500 words):
-- Detailed work style analysis
-- Professional strengths and challenges
-- Leadership potential
-- Team dynamics
-- Career path recommendations
-- Professional development opportunities
-- Work environment preferences
-- Management style preferences
-- Professional growth trajectory
-- Success factors
-
-6. GROWTH & DEVELOPMENT (minimum 1500 words):
-- Comprehensive development areas
-- Detailed recommendations for each area
-- Long-term growth potential
-- Personal insights and reflections
+5. GROWTH & DEVELOPMENT:
+- Development areas
+- Recommendations for each area
+- Growth potential
 - Specific action steps
-- Growth milestones
-- Development timeline
-- Support system recommendations
-- Resources and tools
-- Progress indicators
 
-7. PERSONALITY TRAITS (minimum 1500 words):
-- Minimum 12 distinct traits
+6. PERSONALITY TRAITS (at least 7 traits):
 - Each trait must include:
-  * Detailed description (minimum 200 words)
+  * Description
   * Score (0-100)
-  * Real-world manifestations
-  * Specific strengths (minimum 5)
-  * Specific challenges (minimum 5)
-  * Growth suggestions (minimum 5)
-  * Interaction with other traits
+  * Strengths
+  * Challenges
+  * Growth suggestions
 
-8. RESPONSE PATTERNS (crucial for visualization):
-- Detailed percentage distribution for all response types (a, b, c, d, e, f)
+7. RESPONSE PATTERNS (crucial for visualization):
+- Detailed percentage distribution for response types
 - Primary and secondary choice identification
-- Pattern analysis and implications
 - Response signature generation
 - Must follow exact format:
   {
@@ -204,23 +168,22 @@ serve(async (req) => {
   }
 
 CRITICAL REQUIREMENTS:
-1. All sections must be exceptionally detailed and personalized
+1. All sections must be personalized
 2. Include specific, actionable insights
 3. Maintain consistent data structure for visualization
 4. Ensure all numerical scores are between 0-100
 5. Format as valid JSON without markdown
 6. Include intelligence and emotional intelligence scores
-7. Provide comprehensive arrays for all list-type data
-
-The analysis must be uniquely tailored to the individual based on their specific response patterns.`
+7. Provide arrays for all list-type data
+8. Total response length should be at least 3000 words equivalent`
             },
             {
               role: "user",
-              content: `Analyze these responses and generate an exceptionally detailed, personalized profile with extensive insights in each category: ${JSON.stringify(responses)}`
+              content: `Analyze these responses and generate a detailed, personalized profile with insights in each category: ${JSON.stringify(responses)}`
             }
           ],
           temperature: 0.7,
-          max_tokens: 14000
+          max_tokens: 4096
         }),
       });
 

@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
+
+const STORAGE_KEY = "deep_insight_progress";
+
+// Import local storage utility functions from correct location
 import { 
   saveAssessmentToStorage, 
   loadAnalysisHistory 
 } from "@/hooks/analysis/useLocalStorage";
-
-const STORAGE_KEY = "deep_insight_progress";
 
 export const useDeepInsightQuiz = (totalQuestions: number) => {
   const navigate = useNavigate();
