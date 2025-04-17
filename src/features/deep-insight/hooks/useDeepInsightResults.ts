@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export const useDeepInsightResults = () => {
   const { cacheAnalysis, loadCachedAnalysis } = useAnalysisCache();
   const { fetchAnalysisById, ensureValidUUID, isLegacyId } = useAnalysisFetch();
   
+  // Always check for the fresh parameter to force new analysis generation
   const forceNewAnalysis = searchParams.get('fresh') === 'true';
 
   useEffect(() => {
@@ -52,7 +54,8 @@ export const useDeepInsightResults = () => {
       setError(null);
 
       try {
-        if (analysisId) {
+        // Only attempt to load by ID if we have an ID parameter and aren't forcing fresh
+        if (analysisId && !forceNewAnalysis) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
           
           if (isLegacyId(analysisId)) {
@@ -109,7 +112,9 @@ export const useDeepInsightResults = () => {
           }
         }
 
+        // Only check cache if we're not forcing a fresh analysis
         if (!forceNewAnalysis) {
+          console.log("Checking for cached analysis");
           const cachedAnalysis = loadCachedAnalysis();
           if (cachedAnalysis) {
             console.log("Using cached analysis");

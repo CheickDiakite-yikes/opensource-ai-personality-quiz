@@ -20,11 +20,25 @@ const DeepInsightResults: React.FC = () => {
   const [searchParams] = useSearchParams();
   const queryParamId = searchParams.get('id');
   const isLegacy = searchParams.get('legacy') === 'true';
+  const isFresh = searchParams.get('fresh') === 'true';
   const navigate = useNavigate();
   const { analysis, isLoading, error, saveAnalysis, retryAnalysis, loadedFromCache } = useDeepInsightResults();
   const [legacyAnalysis, setLegacyAnalysis] = useState<AnalysisData | null>(null);
   const [isLegacyLoading, setIsLegacyLoading] = useState(false);
   const [legacyError, setLegacyError] = useState<Error | null>(null);
+
+  // When component loads, if we're using cached data but fresh was requested, show notification
+  useEffect(() => {
+    if (isFresh && loadedFromCache) {
+      toast.info("Using newly generated analysis", {
+        description: "Your analysis has been freshly generated based on your responses"
+      });
+    } else if (loadedFromCache) {
+      toast.info("Using cached analysis", {
+        description: "This is a previously generated analysis. For a fresh analysis, use the 'Refresh Analysis' option."
+      });
+    }
+  }, [isFresh, loadedFromCache]);
 
   // Legacy analysis support
   useEffect(() => {
@@ -127,6 +141,12 @@ const DeepInsightResults: React.FC = () => {
   const displayError = legacyError || error;
   const isDisplayLoading = isLegacyLoading || (isLoading && !displayAnalysis);
 
+  // Add refresh analysis function
+  const handleRefreshAnalysis = () => {
+    toast.info("Generating fresh analysis...");
+    navigate("/deep-insight/results?fresh=true");
+  };
+
   // Save analysis implementation
   const handleSaveAnalysis = async () => {
     if (legacyAnalysis) {
@@ -205,6 +225,8 @@ const DeepInsightResults: React.FC = () => {
           onSave={handleSaveAnalysis} 
           itemVariants={itemVariants}
           analysis={displayAnalysis} 
+          onRefresh={handleRefreshAnalysis}
+          loadedFromCache={loadedFromCache}
         />
 
         <ResultsTabs analysis={displayAnalysis} itemVariants={itemVariants} />
