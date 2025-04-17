@@ -10,12 +10,11 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   const [error, setError] = useState<string | null>(null);
-  const [isRestoredSession, setIsRestoredSession] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start with false to avoid unnecessary loading state
   const navigate = useNavigate();
   
   // Use the storage hook to handle saving/restoring progress
-  const { getResponses, saveResponses, clearSavedProgress, isLoading: storageLoading } = useDeepInsightStorage();
+  const { getResponses, saveResponses, clearSavedProgress } = useDeepInsightStorage();
   
   // Function to find the index of the last answered question
   const findLastAnsweredQuestionIndex = useCallback((savedResponses: DeepInsightResponses): number => {
@@ -52,30 +51,26 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
         if (Object.keys(savedResponses).length > 0) {
           setResponses(savedResponses);
           // Find the highest question index answered
-          const questionIds = Object.keys(savedResponses);
-          if (questionIds.length > 0) {
-            // Set current question to the next unanswered one or the last one if all are answered
-            const lastAnsweredIndex = findLastAnsweredQuestionIndex(savedResponses);
-            const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
-            setCurrentQuestionIndex(nextIndex);
-            setIsRestoredSession(true);
-            
-            // Show toast notification about progress restoration
-            if (questionIds.length < totalQuestions) {
-              toast.info(`Restored your progress (${questionIds.length}/${totalQuestions} questions answered)`, {
-                description: "Continue where you left off"
-              });
-            } else {
-              toast.success(`All ${totalQuestions} questions answered!`, {
-                description: "You can review or change your answers"
-              });
-            }
+          const lastAnsweredIndex = findLastAnsweredQuestionIndex(savedResponses);
+          const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
+          setCurrentQuestionIndex(nextIndex);
+          
+          // Show toast notification only for partial progress
+          const questionCount = Object.keys(savedResponses).length;
+          if (questionCount < totalQuestions) {
+            toast.info(`Restored your progress (${questionCount}/${totalQuestions} questions answered)`, {
+              description: "Continue where you left off"
+            });
+          } else if (questionCount === totalQuestions) {
+            toast.success(`All ${totalQuestions} questions answered!`, {
+              description: "You can review or change your answers"
+            });
           }
         }
       } catch (err) {
         console.error("Error loading saved responses:", err);
         if (isMounted) {
-          toast.error("Failed to load your previous progress");
+          setError("Failed to load your progress. Please try refreshing the page.");
         }
       } finally {
         if (isMounted) {
@@ -84,26 +79,24 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       }
     };
     
-    loadSavedResponses();
+    // Use a small timeout to prevent immediate loading state flicker
+    const timer = setTimeout(() => {
+      loadSavedResponses();
+    }, 100);
     
     // Cleanup function
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [totalQuestions, getResponses, findLastAnsweredQuestionIndex]);
   
   // Reset error when question changes
   useEffect(() => {
-    setError(null);
-  }, [currentQuestionIndex]);
-  
-  // Reset error when coming from a restored session to prevent false validation errors
-  useEffect(() => {
-    if (isRestoredSession) {
+    if (error) {
       setError(null);
-      setIsRestoredSession(false);
     }
-  }, [isRestoredSession]);
+  }, [currentQuestionIndex, error]);
   
   // Memoize handlers to prevent unnecessary re-renders
   const handleSubmitQuestion = useCallback(async (data: Record<string, string>) => {
@@ -212,7 +205,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     currentQuestionIndex,
     responses,
     error,
-    isLoading: isLoading || storageLoading,
+    isLoading,
     handleSubmitQuestion,
     handlePrevious,
     clearSavedProgress: handleClearProgress

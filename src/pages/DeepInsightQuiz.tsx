@@ -1,5 +1,5 @@
 
-import React, { Suspense } from "react";
+import React from "react";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-// Loading skeleton component for better UX during loading states
+// Loading skeleton component for better UX during brief loading states
 const QuizLoadingSkeleton = () => (
   <div className="space-y-8">
     <div className="text-center">
@@ -23,7 +23,7 @@ const QuizLoadingSkeleton = () => (
     <Skeleton className="h-2.5 w-full rounded-full" />
     
     <div className="space-y-4">
-      <Skeleton className="h-16 w-full" />
+      <Skeleton key="question" className="h-16 w-full" />
       {[1, 2, 3, 4, 5].map((i) => (
         <Skeleton key={i} className="h-16 w-full" />
       ))}
@@ -32,15 +32,6 @@ const QuizLoadingSkeleton = () => (
         <Skeleton className="h-10 w-24" />
       </div>
     </div>
-  </div>
-);
-
-// Error fallback component
-const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) => (
-  <div className="text-center p-6">
-    <h2 className="text-2xl font-bold text-destructive mb-2">Something went wrong</h2>
-    <p className="mb-4 text-muted-foreground">{error.message}</p>
-    <Button onClick={resetErrorBoundary}>Try again</Button>
   </div>
 );
 
@@ -64,37 +55,26 @@ const DeepInsightQuiz: React.FC = () => {
   const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
   const hasPartialProgress = completedQuestions > 0;
   
-  // Only try to access currentQuestion when not loading
-  const currentQuestion = !isLoading && currentQuestionIndex < totalQuestions 
+  // Only try to access currentQuestion when index is valid
+  const currentQuestion = currentQuestionIndex < totalQuestions 
     ? deepInsightQuestions[currentQuestionIndex] 
     : null;
     
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
-  // Early loading state for better UX
+  // Simplified loading approach - only show brief loading state
   if (isLoading) {
     return (
-      <motion.div 
-        className="container max-w-4xl py-8 px-4 md:px-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div className="container max-w-4xl py-8 px-4 md:px-6">
         <QuizLoadingSkeleton />
-      </motion.div>
+      </div>
     );
   }
   
-  // Handle any errors in the quiz
   if (error) {
     return (
-      <motion.div 
-        className="container max-w-4xl py-8 px-4 md:px-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div className="container max-w-4xl py-8 px-4 md:px-6">
         <div className="bg-destructive/15 text-destructive rounded-md p-6">
           <h2 className="text-xl font-bold mb-2">Error</h2>
           <p>{error}</p>
@@ -102,17 +82,12 @@ const DeepInsightQuiz: React.FC = () => {
             Reload Quiz
           </Button>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div 
-      className="container max-w-4xl py-8 px-4 md:px-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="container max-w-4xl py-8 px-4 md:px-6">
       <div className="flex flex-col gap-8">
         <header className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center justify-center gap-2">
@@ -172,7 +147,7 @@ const DeepInsightQuiz: React.FC = () => {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
