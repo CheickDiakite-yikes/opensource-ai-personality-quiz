@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   RadarChart,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AnalysisData } from "../../utils/analysis/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CognitiveStrengthsChartProps {
   analysis: AnalysisData;
@@ -28,17 +28,21 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
   title = "Cognitive Strengths Profile",
   description = "Visualization of your cognitive abilities across different domains"
 }) => {
+  const isMobile = useIsMobile();
+  
   // Extract and prepare data for the radar chart
   const radarData = prepareRadarData(analysis);
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+      <CardHeader className={isMobile ? "px-3 py-2" : "p-4 md:p-6"}>
+        <CardTitle className={isMobile ? "text-base" : "text-lg"}>{title}</CardTitle>
+        <CardDescription className={isMobile ? "text-xs" : "text-sm"}>
+          {description}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[350px]">
+      <CardContent className={isMobile ? "p-2" : "p-4"}>
+        <div className={`h-[${isMobile ? "280px" : "350px"}]`}>
           <ChartContainer
             config={{
               value: { label: "Score", color: "rgba(124, 58, 237, 0.8)" },
@@ -46,24 +50,35 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+              <RadarChart 
+                cx="50%" 
+                cy="50%" 
+                outerRadius={isMobile ? "65%" : "70%"} 
+                data={radarData}
+              >
                 <PolarGrid stroke="rgba(124, 58, 237, 0.2)" />
                 <PolarAngleAxis 
                   dataKey="subject" 
-                  tick={{ fill: 'var(--foreground)', fontSize: 12 }} 
+                  tick={{ 
+                    fill: 'var(--foreground)',
+                    fontSize: isMobile ? 10 : 12 
+                  }}
                 />
                 <PolarRadiusAxis 
                   angle={30} 
                   domain={[0, 10]} 
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }} 
+                  tick={{ 
+                    fill: 'var(--muted-foreground)',
+                    fontSize: isMobile ? 8 : 10 
+                  }}
                 />
                 <ChartTooltip
                   content={
                     <ChartTooltipContent 
                       formatter={(value, name, props) => (
-                        <div>
+                        <div className={isMobile ? "text-xs" : "text-sm"}>
                           <p className="font-medium">{props.payload.subject}</p>
-                          <p className="text-muted-foreground text-xs mt-1">{props.payload.description}</p>
+                          <p className="text-muted-foreground mt-1">{props.payload.description}</p>
                           <p className="font-medium mt-2">{value}/10</p>
                         </div>
                       )}
