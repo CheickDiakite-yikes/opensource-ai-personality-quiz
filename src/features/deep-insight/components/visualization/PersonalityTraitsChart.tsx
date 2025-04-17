@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { PersonalityTrait } from "../../utils/analysis/types";
+import { PersonalityTrait } from "@/utils/types";
 
 interface PersonalityTraitsChartProps {
   traits?: PersonalityTrait[];
