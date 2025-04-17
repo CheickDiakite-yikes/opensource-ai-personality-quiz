@@ -91,14 +91,6 @@ export interface RelationshipPatterns {
   compatibleTypes: string[];
 }
 
-// Response Pattern Analysis interface
-export interface ResponsePatternAnalysis {
-  percentages: Record<string, number>;
-  primaryChoice: string;
-  secondaryChoice: string;
-  responseSignature: string;
-}
-
 // Personality Analysis
 export interface PersonalityAnalysis {
   id: string;
@@ -120,33 +112,6 @@ export interface PersonalityAnalysis {
   roadmap: string;
   userId?: string;
   assessmentId?: string;
-  // Add missing properties needed for deep insights
-  responsePatterns?: ResponsePatternAnalysis;
-  coreTraits?: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  };
-  cognitivePatterning?: {
-    decisionMaking: string;
-    learningStyle: string;
-    attention: string;
-  };
-  emotionalArchitecture?: {
-    emotionalAwareness: string;
-    regulationStyle: string;
-    empathicCapacity: string;
-  };
-  interpersonalDynamics?: {
-    attachmentStyle: string;
-    communicationPattern: string;
-    conflictResolution: string;
-  };
-  growthPotential?: {
-    developmentAreas: string[];
-    recommendations: string[];
-  };
 }
 
 // Alias type for backwards compatibility
