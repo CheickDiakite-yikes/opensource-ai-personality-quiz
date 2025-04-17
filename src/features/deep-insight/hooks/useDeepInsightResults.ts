@@ -1,90 +1,85 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useDeepInsightStorage } from "./useDeepInsightStorage";
+import { analyzeDeepInsightResponses } from "../utils/analysisGenerator";
 import { DeepInsightResponses } from "../types";
-import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
-import { saveAnalysisToHistory } from "@/hooks/analysis/useLocalStorage";
-
-// Fix the re-export using "export type" for TypeScript's isolatedModules
-export type { AnalysisData };
+import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { convertToPersonalityAnalysis } from "@/hooks/aiAnalysis/utils";
 
 export const useDeepInsightResults = () => {
-  const location = useLocation();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { getResponses } = useDeepInsightStorage();
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
-  
-  // Effect to handle generating analysis from responses
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const analysisId = searchParams.get('id');
+
   useEffect(() => {
-    const generateAnalysis = async () => {
+    const fetchOrGenerateAnalysis = async () => {
+      setIsLoading(true);
+      setError(null);
+
       try {
-        // Retrieve responses from location state
-        const responseData = location.state?.responses;
-        
-        if (!responseData) {
-          setError("No assessment data found. Please complete the assessment first.");
-          setLoading(false);
-          return;
+        // If an ID is provided, try to fetch that specific analysis
+        if (analysisId) {
+          console.log(`Attempting to load analysis with ID: ${analysisId}`);
+          const { data, error } = await supabase
+            .from("analyses")
+            .select("*")
+            .eq("id", analysisId)
+            .maybeSingle();
+
+          if (error) {
+            throw new Error(`Error fetching analysis: ${error.message}`);
+          }
+
+          if (data) {
+            console.log(`Successfully loaded analysis: ${data.id}`);
+            const convertedAnalysis = convertToPersonalityAnalysis(data);
+            setAnalysis(convertedAnalysis as unknown as AnalysisData);
+            setIsLoading(false);
+            return;
+          } else {
+            console.log(`No analysis found with ID: ${analysisId}`);
+            toast.error("Analysis not found", {
+              description: "The requested analysis could not be found"
+            });
+          }
         }
-        
-        // In a real app, we would call an API to analyze the responses
-        // For now, we'll simulate a delay and generate a personalized analysis
-        setLoading(true);
-        
-        // Simulate API call delay
-        setTimeout(() => {
-          const generatedAnalysis = generateAnalysisFromResponses(responseData);
-          setAnalysis(generatedAnalysis);
-          setLoading(false);
-        }, 3000); // 3 second delay to simulate processing
-        
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
-        console.error("Error generating analysis:", errorMessage);
-        setError("Failed to generate your analysis. Please try again later.");
-        setLoading(false);
-        toast.error("Something went wrong while generating your analysis.");
+
+        // If no ID provided or the specified analysis wasn't found, generate a new one
+        const responses = getResponses();
+        if (!responses || Object.keys(responses).length === 0) {
+          throw new Error("No responses found. Please complete the assessment first.");
+        }
+
+        const result = await generateAnalysis(responses);
+        setAnalysis(result);
+      } catch (err) {
+        console.error("Error generating results:", err);
+        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    generateAnalysis();
-  }, [location.state]);
-  
-  // Function to save the analysis
-  const saveAnalysis = async () => {
+
+    fetchOrGenerateAnalysis();
+  }, [analysisId, getResponses]);
+
+  const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData> => {
     try {
-      if (!analysis) return;
-      
-      // Save to local storage regardless of user login status
-      const savedAnalysis = saveAnalysisToHistory(analysis);
-      
-      if (!user) {
-        // If not logged in, just save to local storage
-        toast.success("Your analysis has been saved locally!");
-        console.log("Analysis saved to local storage");
-        return;
-      }
-      
-      // For logged in users, we already save to Supabase in ResultsActions component
-      // This function is called by ResultsActions after saving to Supabase
-      console.log("Analysis saved for user:", user.id);
-      
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
-      console.error("Error saving analysis:", errorMessage);
-      toast.error("Failed to save your analysis. Please try again.");
+      const result = await analyzeDeepInsightResponses(responses);
+      return result;
+    } catch (error) {
+      console.error("Error analyzing responses:", error);
+      throw error;
     }
   };
-  
-  return {
-    analysis,
-    loading,
-    error,
-    saveAnalysis
-  };
+
+  return { analysis, isLoading, error };
 };

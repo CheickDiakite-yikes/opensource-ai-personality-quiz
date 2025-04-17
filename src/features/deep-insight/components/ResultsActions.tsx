@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Sparkles, Share2 } from "lucide-react";
+import { Download, Sparkles, Share2, History } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -9,6 +8,7 @@ import { AnalysisData, toJsonObject } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { Json } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -23,6 +23,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
 }) => {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
 
   const handleSaveToSupabase = async () => {
     if (!analysis) {
@@ -133,6 +134,10 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
     toast.info("Download functionality will be available soon!");
   };
 
+  const viewHistory = () => {
+    navigate("/deep-insight/history");
+  };
+
   return (
     <motion.div
       variants={itemVariants}
@@ -166,6 +171,15 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
       >
         <Download className="h-4 w-4" />
         Download PDF
+      </Button>
+
+      <Button 
+        variant="ghost" 
+        className="flex items-center gap-2"
+        onClick={viewHistory}
+      >
+        <History className="h-4 w-4" />
+        View History
       </Button>
     </motion.div>
   );
