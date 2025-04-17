@@ -76,18 +76,20 @@ const DeepInsightQuiz: React.FC = () => {
         <QuizProgress 
           currentQuestionIndex={currentQuestionIndex} 
           totalQuestions={totalQuestions}
-          currentCategory={currentQuestion.category}
+          currentCategory={currentQuestion?.category}
         />
         
-        <QuestionCard 
-          question={currentQuestion}
-          currentResponse={responses[currentQuestion.id] || ""}
-          onPrevious={handlePrevious}
-          onSubmit={handleSubmitQuestion}
-          isFirstQuestion={isFirstQuestion}
-          isLastQuestion={isLastQuestion}
-          error={error}
-        />
+        {currentQuestion && (
+          <QuestionCard 
+            question={currentQuestion}
+            currentResponse={responses[currentQuestion.id] || ""}
+            onPrevious={handlePrevious}
+            onSubmit={handleSubmitQuestion}
+            isFirstQuestion={isFirstQuestion}
+            isLastQuestion={isLastQuestion}
+            error={error}
+          />
+        )}
       </div>
     </motion.div>
   );
