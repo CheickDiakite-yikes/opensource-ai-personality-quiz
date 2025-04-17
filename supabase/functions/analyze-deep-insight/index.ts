@@ -62,6 +62,7 @@ serve(async (req) => {
     console.log('Request timestamp:', timestamp ? new Date(timestamp).toISOString() : 'Not provided');
     console.log('Response count:', Object.keys(responses).length);
     console.log('Sample response keys:', Object.keys(responses).slice(0, 5));
+    console.log('Sample response values:', Object.values(responses).slice(0, 5));
 
     // Measure execution time for debugging
     const startTime = Date.now()

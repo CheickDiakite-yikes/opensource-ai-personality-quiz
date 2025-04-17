@@ -28,6 +28,9 @@ export const useDeepInsightResults = () => {
         if (!responseData) {
           setError("No assessment data found. Please complete the assessment first.");
           setLoading(false);
+          toast.error("No assessment data found", {
+            description: "Please complete the assessment to view results."
+          });
           return;
         }
         
@@ -35,6 +38,8 @@ export const useDeepInsightResults = () => {
         
         console.log("Attempting to call edge function for analysis with", 
           Object.keys(responseData).length, "responses");
+        
+        // Update loading toast
         toast.loading("Generating your deep insight analysis with AI...", { 
           id: "analyze-deep-insight", 
           duration: 180000 // 3 minute toast for longer processing
@@ -123,7 +128,9 @@ export const useDeepInsightResults = () => {
         console.error("Error generating analysis:", errorMessage);
         setError("Failed to generate your analysis. Please try again later.");
         setLoading(false);
-        toast.error("Something went wrong while generating your analysis.");
+        toast.error("Something went wrong while generating your analysis.", {
+          description: "Please try again or contact support."
+        });
       }
     };
     

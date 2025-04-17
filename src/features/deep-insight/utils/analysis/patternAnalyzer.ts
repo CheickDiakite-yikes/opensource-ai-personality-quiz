@@ -12,6 +12,23 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
   // Extract key insights to personalize the analysis
   const responsesArray = Object.entries(responses);
   
+  if (!responsesArray || responsesArray.length === 0) {
+    console.warn("No valid responses provided to analyzeResponsePatterns");
+    return {
+      percentages: {
+        a: 20,
+        b: 20, 
+        c: 20,
+        d: 20,
+        e: 10,
+        f: 10
+      },
+      primaryChoice: "a",
+      secondaryChoice: "b",
+      responseSignature: "20-20-20-20-10-10"
+    };
+  }
+  
   // Count different answer choices to detect patterns
   const answerCounts = {
     a: 0,

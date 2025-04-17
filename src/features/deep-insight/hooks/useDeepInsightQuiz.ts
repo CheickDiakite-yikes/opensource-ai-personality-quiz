@@ -105,21 +105,29 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     // Handle last question submission
     if (currentQuestionIndex === totalQuestions - 1) {
       // This is the last question, navigate to results with responses
-      console.log("Final question submitted, navigating to results with responses:", {
+      const finalResponses = {
         ...responses,
         [questionId]: response
-      });
+      };
+      
+      console.log("Final question submitted, navigating to results with responses:", finalResponses);
       
       // Add a toast to indicate transition
-      toast.success("Assessment complete! Generating your analysis...");
+      toast.success("Assessment complete! Generating your analysis...", {
+        id: "assessment-complete",
+        duration: 4000
+      });
+      
+      // Set a processing toast that will be updated by the results page
+      toast.loading("Preparing your deep insight analysis...", { 
+        id: "analyze-deep-insight", 
+        duration: 180000 // 3 minute toast for longer processing
+      });
       
       // Critical: Navigate to the results page with all responses
       navigate("/deep-insight/results", { 
         state: { 
-          responses: {
-            ...responses,
-            [questionId]: response
-          }
+          responses: finalResponses
         } 
       });
       
