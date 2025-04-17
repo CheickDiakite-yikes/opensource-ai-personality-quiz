@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { QuestionCard } from "@/features/deep-insight/components/QuestionCard";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 const DeepInsightQuiz: React.FC = () => {
   const { user } = useAuth();
   const totalQuestions = deepInsightQuestions.length;
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Remove initial load state which was causing repeated toast notifications
   
   const {
     currentQuestionIndex,
@@ -37,16 +37,8 @@ const DeepInsightQuiz: React.FC = () => {
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
-  // Hide initial loading state after first render
-  React.useEffect(() => {
-    if (isInitialLoad) {
-      const timer = setTimeout(() => setIsInitialLoad(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialLoad]);
-
-  // Show a minimal loading indicator only during initial load
-  if (isInitialLoad && isLoading) {
+  // Simple loading state without the initial timeout that was causing issues
+  if (isLoading) {
     return (
       <div className="container max-w-4xl py-8 px-4 md:px-6 flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex space-x-2">

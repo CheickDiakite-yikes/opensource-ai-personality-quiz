@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
@@ -12,6 +12,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const toastShownRef = useRef(false);
   
   // Use the storage hook to handle saving/restoring progress
   const { getResponses, saveResponses, clearSavedProgress } = useDeepInsightStorage();
@@ -49,16 +50,18 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
           const nextIndex = lastAnsweredIndex < totalQuestions - 1 ? lastAnsweredIndex + 1 : lastAnsweredIndex;
           setCurrentQuestionIndex(nextIndex);
           
-          // Show toast notification only for partial progress
+          // Show toast notification only for partial progress and only once
           const questionCount = Object.keys(savedResponses).length;
-          if (questionCount < totalQuestions) {
+          if (questionCount < totalQuestions && !toastShownRef.current) {
             toast.info(`Restored your progress (${questionCount}/${totalQuestions} questions answered)`, {
               description: "Continue where you left off"
             });
-          } else if (questionCount === totalQuestions) {
+            toastShownRef.current = true;
+          } else if (questionCount === totalQuestions && !toastShownRef.current) {
             toast.success(`All ${totalQuestions} questions answered!`, {
               description: "You can review or change your answers"
             });
+            toastShownRef.current = true;
           }
         }
       } catch (err) {
@@ -179,6 +182,8 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       setResponses({});
       setCurrentQuestionIndex(0);
       toast.success("Progress cleared successfully");
+      // Reset the toast flag so it can show again if needed
+      toastShownRef.current = false;
     } catch (error) {
       console.error("Error clearing progress:", error);
       toast.error("Failed to clear progress");
