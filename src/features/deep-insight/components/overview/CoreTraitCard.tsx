@@ -8,8 +8,21 @@ interface CoreTraitCardProps {
 }
 
 export const CoreTraitCard: React.FC<CoreTraitCardProps> = ({ title, value }) => {
-  // Handle undefined or empty values
-  const displayValue = value || "Not specified";
+  // Handle undefined, null, empty values or object values
+  const getDisplayValue = () => {
+    if (value === undefined || value === null || value === '') {
+      return "Not specified";
+    }
+    
+    // If the value is an object (which would cause rendering issues), show a safe message
+    if (typeof value === 'object') {
+      return "Complex data (see details)";
+    }
+    
+    return value;
+  };
+  
+  const displayValue = getDisplayValue();
   
   return (
     <Card className="h-full flex flex-col">
