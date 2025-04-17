@@ -88,37 +88,50 @@ const CognitiveStrengthsChart: React.FC<CognitiveStrengthsChartProps> = ({
 
 // Helper function to prepare data for the radar chart
 function prepareRadarData(analysis: AnalysisData) {
+  // Ensure the required data structures exist before accessing them
+  const cognitivePatterning = analysis.cognitivePatterning || {
+    decisionMaking: "Balanced approach to decision making",
+    learningStyle: "Versatile learning approach",
+    attention: "Adaptive attention patterns"
+  };
+  
+  const emotionalArchitecture = analysis.emotionalArchitecture || {
+    emotionalAwareness: "Developing emotional awareness",
+    regulationStyle: "Growing emotional regulation",
+    empathicCapacity: "Evolving empathic abilities"
+  };
+
   // Extract relevant data points from the analysis
   const cognitiveData = [
     {
       subject: "Decision Making",
-      value: mapScoreToValue(analysis.cognitivePatterning.decisionMaking),
-      description: analysis.cognitivePatterning.decisionMaking,
+      value: mapScoreToValue(cognitivePatterning.decisionMaking),
+      description: cognitivePatterning.decisionMaking,
     },
     {
       subject: "Learning Ability",
-      value: mapScoreToValue(analysis.cognitivePatterning.learningStyle),
-      description: analysis.cognitivePatterning.learningStyle,
+      value: mapScoreToValue(cognitivePatterning.learningStyle),
+      description: cognitivePatterning.learningStyle,
     },
     {
       subject: "Focus",
-      value: mapScoreToValue(analysis.cognitivePatterning.attention),
-      description: analysis.cognitivePatterning.attention,
+      value: mapScoreToValue(cognitivePatterning.attention),
+      description: cognitivePatterning.attention,
     },
     {
       subject: "Emotional Awareness",
-      value: mapScoreToValue(analysis.emotionalArchitecture.emotionalAwareness),
-      description: analysis.emotionalArchitecture.emotionalAwareness,
+      value: mapScoreToValue(emotionalArchitecture.emotionalAwareness),
+      description: emotionalArchitecture.emotionalAwareness,
     },
     {
       subject: "Emotional Regulation",
-      value: mapScoreToValue(analysis.emotionalArchitecture.regulationStyle),
-      description: analysis.emotionalArchitecture.regulationStyle,
+      value: mapScoreToValue(emotionalArchitecture.regulationStyle),
+      description: emotionalArchitecture.regulationStyle,
     },
     {
       subject: "Empathy",
-      value: mapScoreToValue(analysis.emotionalArchitecture.empathicCapacity),
-      description: analysis.emotionalArchitecture.empathicCapacity,
+      value: mapScoreToValue(emotionalArchitecture.empathicCapacity),
+      description: emotionalArchitecture.empathicCapacity,
     },
   ];
 

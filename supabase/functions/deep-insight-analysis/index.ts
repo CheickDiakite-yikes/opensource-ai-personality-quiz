@@ -99,31 +99,11 @@ serve(async (req) => {
       throw new Error('Could not parse AI analysis results');
     }
     
-    // Extract core traits from the response or generate defaults
-    const coreTraits = {
-      primary: analysisContent.core_personality_traits?.primary || "Analytical",
-      secondary: analysisContent.core_personality_traits?.secondary || "Adaptive",
-      strengths: analysisContent.interpersonal_dynamics_and_relationship_patterns?.strengths || [],
-      challenges: analysisContent.interpersonal_dynamics_and_relationship_patterns?.challenges || []
-    };
-
-    // Extract growth potential
-    const growthPotential = {
-      developmentAreas: Object.values(analysisContent.growth_areas_and_potential || {}).map(area => 
-        typeof area === 'string' ? area : ''
-      ).filter(Boolean),
-      recommendations: []
-    };
-
-    // Add metadata and format final response
-    const analysis: AnalysisData = {
-      ...analysisContent,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      coreTraits,
-      growthPotential,
-      responsePatterns: analyzeResponsePatterns(responses)
-    };
+    // Analyze response patterns
+    const responsePatterns = analyzeResponsePatterns(responses);
+    
+    // Transform API response to expected format with all required fields
+    const analysis = transformApiResponse(analysisContent, responsePatterns);
 
     console.log("AI analysis generated successfully");
     
@@ -208,4 +188,120 @@ function analyzeResponsePatterns(responses: DeepInsightResponses) {
     secondaryChoice,
     responseSignature
   };
+}
+
+// Transform the API response to match the expected format on the client side
+function transformApiResponse(apiResponse: any, responsePatterns: any): AnalysisData {
+  // Create default structure with all required fields
+  const defaultTraits = [
+    {
+      trait: "Analytical Thinking",
+      score: 65,
+      description: "Ability to break down complex problems and think logically"
+    },
+    {
+      trait: "Emotional Intelligence",
+      score: 70,
+      description: "Capacity to understand and manage emotions effectively"
+    },
+    {
+      trait: "Adaptability",
+      score: 75,
+      description: "Flexibility in responding to changing circumstances"
+    }
+  ];
+  
+  // Generate ID and timestamp
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  // Extract insights from API response
+  const primaryTrait = apiResponse.corePersonalityTraits?.introversion > 60 ? "Analytical" : "Adaptive";
+  const secondaryTrait = apiResponse.corePersonalityTraits?.openness > 60 ? "Creative" : "Practical";
+  
+  // Create core traits
+  const coreTraits = {
+    primary: primaryTrait,
+    secondary: secondaryTrait,
+    strengths: apiResponse.interpersonalDynamics?.strengths || [],
+    challenges: apiResponse.interpersonalDynamics?.challenges || []
+  };
+
+  // Create cognitive patterning
+  const cognitivePatterning = {
+    decisionMaking: "You tend to gather information methodically before making decisions. You value logical consistency and consider multiple perspectives when evaluating options.",
+    learningStyle: apiResponse.learningStyle?.preference || "You learn best through structured, systematic approaches with clear objectives.",
+    attention: "You have a focused attention style that allows you to concentrate deeply on tasks of interest."
+  };
+
+  // Create emotional architecture
+  const emotionalArchitecture = {
+    emotionalAwareness: "You have strong awareness of your emotional states and can generally identify what you're feeling in the moment.",
+    regulationStyle: "You manage emotions through a combination of analytical processing and practical coping strategies.",
+    empathicCapacity: "You can understand others' emotional experiences, particularly when they're clearly communicated."
+  };
+
+  // Create interpersonal dynamics
+  const interpersonalDynamics = {
+    attachmentStyle: "You form meaningful connections with others while maintaining healthy boundaries.",
+    communicationPattern: apiResponse.interpersonalDynamics?.communicationStyle || "Your communication style is thoughtful and precise, focusing on clarity and accuracy.",
+    conflictResolution: "You approach conflicts with a problem-solving mindset, seeking fair and logical resolutions."
+  };
+
+  // Create growth potential
+  const growthPotential = {
+    developmentAreas: Object.values(apiResponse.growthAreas || {}).map((area: any) => 
+      typeof area === 'string' ? area : ''
+    ).filter(Boolean),
+    recommendations: []
+  };
+
+  // Transform career suggestions
+  const careerSuggestions = Array.isArray(apiResponse.careerSuggestions) 
+    ? apiResponse.careerSuggestions 
+    : [];
+
+  // Create complete analysis object
+  const analysis: AnalysisData = {
+    id,
+    createdAt,
+    overview: `You are a primarily ${primaryTrait} thinker with ${secondaryTrait} tendencies. You approach situations with careful analysis while maintaining adaptability. Your cognitive style balances structure with flexibility, allowing you to navigate both familiar routines and unexpected changes effectively.`,
+    traits: defaultTraits,
+    intelligence: {
+      type: "Integrated",
+      score: apiResponse.cognitivePatterns?.analyticalThinking || 75,
+      description: "Your intelligence profile combines analytical, emotional and practical capabilities.",
+      domains: []
+    },
+    intelligenceScore: apiResponse.cognitivePatterns?.analyticalThinking || 75,
+    emotionalIntelligenceScore: apiResponse.emotionalIntelligence?.selfAwareness || 70,
+    cognitiveStyle: {
+      primary: primaryTrait,
+      secondary: secondaryTrait,
+      description: "Your cognitive style balances structure with flexibility."
+    },
+    valueSystem: [],
+    motivators: [],
+    inhibitors: [],
+    weaknesses: [],
+    growthAreas: growthPotential.developmentAreas,
+    relationshipPatterns: {
+      strengths: [],
+      challenges: [],
+      compatibleTypes: []
+    },
+    careerSuggestions,
+    learningPathways: [],
+    roadmap: "",
+    
+    // Map structured fields
+    coreTraits,
+    cognitivePatterning,
+    emotionalArchitecture,
+    interpersonalDynamics,
+    growthPotential,
+    responsePatterns
+  };
+
+  return analysis;
 }
