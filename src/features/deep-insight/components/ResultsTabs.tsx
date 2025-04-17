@@ -2,7 +2,7 @@
 import React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { AnalysisData } from "../utils/analysis/types";
+import { PersonalityAnalysis } from "@/utils/types";
 import { TabsNavigator } from "./tabs/TabsNavigator";
 import { CognitiveTab } from "./tabs/CognitiveTab";
 import { EmotionalTab } from "./tabs/EmotionalTab";
@@ -11,7 +11,7 @@ import { CareerTab } from "./tabs/CareerTab";
 import { GrowthTab } from "./tabs/GrowthTab";
 
 interface ResultsTabsProps {
-  analysis: AnalysisData;
+  analysis: PersonalityAnalysis;
   itemVariants: any;
 }
 

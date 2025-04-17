@@ -168,7 +168,13 @@ const DeepInsightResults: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="patterns" className="mt-0">
-              <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
+              {displayAnalysis.responsePatterns ? (
+                <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
+              ) : (
+                <div className="text-center p-6 bg-muted/20 rounded-md">
+                  <p>Response pattern data is not available for this analysis.</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="cognitive" className="mt-0">

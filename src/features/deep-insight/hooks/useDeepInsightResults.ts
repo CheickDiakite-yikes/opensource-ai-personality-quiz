@@ -5,17 +5,14 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
-import { AnalysisData } from "../utils/analysis/types";
-
-// Fix the re-export using "export type" for TypeScript's isolatedModules
-export type { AnalysisData };
+import { PersonalityAnalysis } from "@/utils/types";
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   
   // Effect to handle generating analysis from responses
   useEffect(() => {
