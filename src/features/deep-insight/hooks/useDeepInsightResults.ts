@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
 import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
@@ -8,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 export const useDeepInsightResults = () => {
   const { getResponses, clearSavedProgress } = useDeepInsightStorage();
@@ -58,6 +58,28 @@ export const useDeepInsightResults = () => {
     
     // Save analysis implementation will be handled in ResultsActions component
     toast.success("Analysis saved successfully");
+  };
+
+  // Helper function to validate or generate a valid UUID
+  const ensureValidUUID = (id: string | undefined): string => {
+    try {
+      // Check if the ID is undefined or null
+      if (!id) {
+        return uuidv4();
+      }
+      
+      // Try to validate the UUID format
+      const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (regex.test(id)) {
+        return id;
+      }
+      
+      // If not a valid UUID, generate a new one
+      return uuidv4();
+    } catch (error) {
+      // If any error occurs, generate a new UUID
+      return uuidv4();
+    }
   };
 
   useEffect(() => {
@@ -200,13 +222,21 @@ export const useDeepInsightResults = () => {
         try {
           console.log("Saving analysis to database...");
           
+          // Ensure we have a valid UUID
+          const validId = ensureValidUUID(result.id);
+          
+          // Update the result with the valid UUID if changed
+          if (validId !== result.id) {
+            result.id = validId;
+          }
+          
           // Convert full analysis to JSON-compatible object
           const jsonAnalysis = toJsonObject(result);
           
           // We need to ensure all complex objects are converted to JSON-compatible format
           // This properly handles the ResponsePatternAnalysis types
           const analysisData = {
-            id: result.id, // Ensure we include the ID
+            id: validId, // Use the validated ID
             user_id: user.id,
             complete_analysis: jsonAnalysis,
             raw_responses: JSON.parse(JSON.stringify(responses)),

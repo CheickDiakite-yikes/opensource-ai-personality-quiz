@@ -25,6 +25,23 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
 
+  // Helper function to validate or generate a valid UUID
+  const ensureValidUUID = (id: string): string => {
+    try {
+      // Try to validate the UUID format first
+      const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (regex.test(id)) {
+        return id;
+      }
+      
+      // If not a valid UUID, generate a new one
+      return uuidv4();
+    } catch (error) {
+      // If any error occurs, generate a new UUID
+      return uuidv4();
+    }
+  };
+
   const handleSaveToSupabase = async () => {
     if (!analysis) {
       toast.error("No analysis data to save");
@@ -36,7 +53,8 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
     try {
       if (user) {
         // Store the analysis in Supabase using the new deep_insight_analyses table
-        const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
+        // Ensure we have a valid UUID
+        const analysisId = ensureValidUUID(analysis.id);
         
         // Convert full analysis to JSON-compatible object
         const jsonAnalysis = toJsonObject(analysis);

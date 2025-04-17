@@ -39,8 +39,8 @@ export const generateAnalysisFromResponses = (responses: DeepInsightResponses): 
     recommendations 
   } = generateStrengthsChallenges(primaryChoice, secondaryChoice);
   
-  // Create metadata
-  const uniqueId = `analysis-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  // Create metadata with a proper UUID
+  const uniqueId = uuidv4();
   const now = new Date().toISOString();
   
   // Generate final analysis
