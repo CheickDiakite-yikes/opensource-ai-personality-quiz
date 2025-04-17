@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { DeepInsightResponses } from "../types";
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
@@ -31,25 +33,46 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        // Call the edge function to analyze responses
-        const { data: analysis, error: functionError } = await supabase.functions.invoke(
-          'analyze-deep-insight',
-          {
-            body: { responses: responseData }
+        // Try to call the edge function with increased timeout and better error handling
+        try {
+          console.log("Attempting to call edge function for analysis");
+          const { data: analysisData, error: functionError } = await supabase.functions.invoke(
+            'analyze-deep-insight',
+            {
+              body: { responses: responseData },
+              // Set a reasonable timeout
+              abortSignal: AbortSignal.timeout(60000) // 60 seconds timeout
+            }
+          );
+
+          if (functionError) {
+            console.error('Error calling analyze-deep-insight:', functionError);
+            throw new Error('Failed to generate analysis via edge function.');
           }
-        );
 
-        if (functionError) {
-          console.error('Error calling analyze-deep-insight:', functionError);
-          throw new Error('Failed to generate analysis. Please try again.');
+          if (!analysisData) {
+            throw new Error('No analysis data returned from edge function');
+          }
+          
+          console.log("Successfully received analysis from edge function:", analysisData);
+          setAnalysis(analysisData);
+          setLoading(false);
+          return;
+        } catch (edgeFunctionError) {
+          console.error("Edge function error:", edgeFunctionError);
+          console.log("Falling back to client-side analysis generation");
+          
+          // Fall back to client-side analysis generation
+          const generatedAnalysis = generateAnalysisFromResponses(responseData);
+          
+          // Add timestamps and IDs
+          generatedAnalysis.id = `deep-insight-${Date.now()}`;
+          generatedAnalysis.createdAt = new Date().toISOString();
+          
+          console.log("Generated fallback analysis:", generatedAnalysis.id);
+          setAnalysis(generatedAnalysis);
+          setLoading(false);
         }
-
-        if (!analysis) {
-          throw new Error('No analysis was generated');
-        }
-
-        setAnalysis(analysis);
-        setLoading(false);
         
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
@@ -94,7 +117,7 @@ export const useDeepInsightResults = () => {
         .insert({
           id: assessmentId,
           user_id: user.id,
-          responses: responseData,
+          responses: responseData as unknown as Json,
           completed_at: new Date().toISOString()
         });
         

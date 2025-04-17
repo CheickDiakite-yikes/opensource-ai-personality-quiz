@@ -23,7 +23,7 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
     ]
   };
 
-  // Ensure developmentAreas and recommendations are arrays
+  // Ensure developmentAreas is an array
   const developmentAreas = Array.isArray(growthPotential.developmentAreas)
     ? growthPotential.developmentAreas
     : typeof growthPotential.developmentAreas === 'string'
@@ -34,6 +34,7 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
           "Balance: Finding equilibrium between work and rest"
         ];
 
+  // Ensure recommendations is an array
   const recommendations = Array.isArray(growthPotential.recommendations)
     ? growthPotential.recommendations
     : typeof growthPotential.recommendations === 'string'
@@ -43,6 +44,13 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
           "Seek feedback from trusted colleagues on communication style",
           "Establish clear boundaries between work and personal time"
         ];
+
+  // Process development areas to ensure they have the correct format (with colon separator)
+  const processedDevelopmentAreas = developmentAreas.map(area => {
+    if (typeof area !== 'string') return "Development Area: Details not available";
+    if (area.includes(':')) return area;
+    return `Area: ${area}`;
+  });
 
   return (
     <Card>
@@ -57,10 +65,14 @@ export const GrowthTab: React.FC<GrowthTabProps> = ({ analysis }) => {
         <div className="mb-6">
           <h3 className="font-semibold mb-3 text-lg">Development Areas</h3>
           <ul className="list-disc list-inside space-y-2">
-            {developmentAreas.map((area: string, i: number) => (
+            {processedDevelopmentAreas.map((area: string, i: number) => (
               <li key={i} className="text-muted-foreground leading-relaxed pl-2">
-                <span className="text-foreground font-medium">{area.split(':')[0]}:</span>{' '}
-                {area.split(':').slice(1).join(':')}
+                {area.includes(':') ? (
+                  <>
+                    <span className="text-foreground font-medium">{area.split(':')[0]}:</span>
+                    {area.split(':').slice(1).join(':')}
+                  </>
+                ) : area}
               </li>
             ))}
           </ul>

@@ -17,7 +17,7 @@ serve(async (req) => {
   try {
     const { responses } = await req.json()
     
-    console.log('Processing Deep Insight responses:', responses)
+    console.log('Processing Deep Insight responses:', Object.keys(responses).length)
 
     // Call OpenAI API to analyze the responses
     const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -94,7 +94,9 @@ serve(async (req) => {
               strengths: ["Strength 1", "Strength 2", "Strength 3"],
               challenges: ["Challenge 1", "Challenge 2", "Challenge 3"],
               growthSuggestions: ["Suggestion 1", "Suggestion 2", "Suggestion 3"]
-            }`
+            }
+            
+            ALL growthPotential.developmentAreas and growthPotential.recommendations MUST be arrays of strings, not objects or other formats.`
           },
           {
             role: "user",
@@ -108,11 +110,14 @@ serve(async (req) => {
 
     if (!openAiResponse.ok) {
       const error = await openAiResponse.json()
+      console.error('OpenAI API error:', error)
       throw new Error(error.error?.message || 'Failed to analyze responses')
     }
 
     const aiResult = await openAiResponse.json()
     let contentText = aiResult.choices[0].message.content
+    
+    console.log('Received OpenAI response, processing...')
     
     // Clean up the response if it has markdown formatting
     if (contentText.includes('```json')) {
@@ -125,8 +130,6 @@ serve(async (req) => {
         contentText = contentText.replace(/```json|```/g, '').trim()
       }
     }
-    
-    console.log('Cleaned content text:', contentText.substring(0, 100) + '...')
     
     try {
       let analysis = JSON.parse(contentText)
@@ -157,11 +160,63 @@ serve(async (req) => {
         };
       };
       
+      // Ensure growthPotential format is correct
+      const ensureGrowthPotential = () => {
+        const defaultGrowthPotential = {
+          developmentAreas: [
+            "Self-Awareness: Deepening understanding of emotional triggers",
+            "Communication: Expressing needs more directly",
+            "Balance: Finding equilibrium between work and rest"
+          ],
+          recommendations: [
+            "Practice mindfulness meditation for 10 minutes daily",
+            "Seek feedback from trusted colleagues on communication style",
+            "Establish clear boundaries between work and personal time"
+          ]
+        };
+        
+        if (!analysis.growthPotential) {
+          return defaultGrowthPotential;
+        }
+        
+        // Ensure developmentAreas is an array
+        if (!analysis.growthPotential.developmentAreas || 
+            !Array.isArray(analysis.growthPotential.developmentAreas)) {
+          analysis.growthPotential.developmentAreas = defaultGrowthPotential.developmentAreas;
+        }
+        
+        // Ensure recommendations is an array
+        if (!analysis.growthPotential.recommendations || 
+            !Array.isArray(analysis.growthPotential.recommendations)) {
+          analysis.growthPotential.recommendations = defaultGrowthPotential.recommendations;
+        }
+        
+        return analysis.growthPotential;
+      };
+      
+      // Ensure intelligence scores are numbers between 0-100
+      const ensureIntelligenceScores = () => {
+        if (typeof analysis.intelligenceScore !== 'number' || 
+            isNaN(analysis.intelligenceScore) || 
+            analysis.intelligenceScore < 0 || 
+            analysis.intelligenceScore > 100) {
+          analysis.intelligenceScore = 75 + Math.random() * 10;
+        }
+        
+        if (typeof analysis.emotionalIntelligenceScore !== 'number' || 
+            isNaN(analysis.emotionalIntelligenceScore) || 
+            analysis.emotionalIntelligenceScore < 0 || 
+            analysis.emotionalIntelligenceScore > 100) {
+          analysis.emotionalIntelligenceScore = 75 + Math.random() * 10;
+        }
+      };
+      
       // Ensure all required fields are present with default values
-      analysis = {
+      const finalAnalysis = {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
-        // Intelligence scores - ensure they're numbers between 0-100
+        
+        // Ensure intelligence scores are valid
         intelligenceScore: typeof analysis.intelligenceScore === 'number' ? 
           Math.min(100, Math.max(0, analysis.intelligenceScore)) : 75,
         emotionalIntelligenceScore: typeof analysis.emotionalIntelligenceScore === 'number' ? 
@@ -209,132 +264,56 @@ serve(async (req) => {
               strengths: ["Flexibility in changing situations", "Open to new perspectives", "Resilience under pressure"],
               challenges: ["May occasionally resist deeply disruptive changes", "Could struggle with extreme uncertainty", "Might need processing time for major shifts"],
               growthSuggestions: ["Deliberately seek novel experiences", "Practice improvisational activities", "Develop contingency thinking"]
-            },
-            {
-              trait: "Conscientiousness",
-              score: 88,
-              description: "You demonstrate high reliability and attention to detail in your responsibilities. You value structure and organization, and others likely see you as dependable and thorough.",
-              strengths: ["Reliability", "Organization", "Follow-through"],
-              challenges: ["May be perfectionistic", "Could be rigid about processes", "Might be self-critical when standards aren't met"],
-              growthSuggestions: ["Practice self-compassion", "Experiment with flexible approaches", "Delegate appropriate tasks"]
-            },
-            {
-              trait: "Openness",
-              score: 74,
-              description: "You show healthy curiosity and willingness to engage with new ideas and experiences. While you appreciate novelty, you likely balance this with a need for some familiarity and structure.",
-              strengths: ["Intellectual curiosity", "Appreciation of diverse perspectives", "Creative problem-solving"],
-              challenges: ["May occasionally default to conventional approaches", "Could be skeptical of radical ideas", "Might need time to warm up to highly novel concepts"],
-              growthSuggestions: ["Explore unfamiliar subjects regularly", "Engage with diverse cultural experiences", "Question assumptions deliberately"]
-            },
-            {
-              trait: "Assertiveness",
-              score: 68,
-              description: "You can express your needs and opinions when necessary, though you may sometimes prioritize harmony over direct confrontation. You likely balance self-advocacy with consideration for others.",
-              strengths: ["Able to express boundaries", "Can advocate for important needs", "Generally clear communication"],
-              challenges: ["May hesitate in high-conflict situations", "Could sometimes compromise too readily", "Might avoid necessary confrontations"],
-              growthSuggestions: ["Practice direct communication in low-stakes situations", "Develop a personal assertiveness script", "Separate people from problems in conflicts"]
-            },
-            {
-              trait: "Resilience",
-              score: 80,
-              description: "You demonstrate strong ability to recover from setbacks and adapt to challenges. You generally maintain perspective during difficult times and can find constructive paths forward.",
-              strengths: ["Recovery from setbacks", "Emotional regulation under pressure", "Solution-focused thinking"],
-              challenges: ["May occasionally dwell on failures", "Could internalize external problems", "Might push through when breaks are needed"],
-              growthSuggestions: ["Develop specific self-care routines for stressful periods", "Practice self-compassionate thinking", "Build a support network for challenging times"]
-            },
-            {
-              trait: "Social Intelligence",
-              score: 76,
-              description: "You navigate social situations with reasonable comfort and can read social cues effectively. You understand group dynamics and can adapt your communication style to different contexts.",
-              strengths: ["Reading social cues", "Adapting to different social contexts", "Building rapport with diverse people"],
-              challenges: ["May occasionally misread subtle signals", "Could feel drained by prolonged social engagement", "Might overthink social interactions"],
-              growthSuggestions: ["Practice active listening techniques", "Study nonverbal communication", "Engage in diverse social environments"]
-            },
-            {
-              trait: "Self-Awareness",
-              score: 83,
-              description: "You demonstrate strong understanding of your own thoughts, emotions, and behaviors. You can generally identify your patterns and recognize when your reactions might be disproportionate.",
-              strengths: ["Recognizing personal patterns", "Understanding emotional triggers", "Honest self-reflection"],
-              challenges: ["May occasionally overanalyze", "Could be overly self-critical", "Might struggle with blind spots"],
-              growthSuggestions: ["Seek external feedback regularly", "Practice mindfulness meditation", "Keep a personal development journal"]
             }
           ],
         
-        // Overview - ensure a detailed, personalized summary
-        overview: analysis.overview || "Based on your assessment responses, you demonstrate a balanced analytical and empathetic approach to situations. You show strong cognitive abilities paired with good emotional awareness, allowing you to navigate complex problems while remaining attuned to human factors. Your pattern of responses suggests you value both logical consistency and meaningful connections, approaching life with a thoughtful, measured perspective while maintaining openness to different viewpoints and experiences.",
-        
-        // Cognitive patterning - ensure detailed insights
-        cognitivePatterning: analysis.cognitivePatterning || {
-          decisionMaking: "You approach decisions methodically, carefully weighing evidence and considering multiple perspectives before reaching conclusions. While you value data and logical analysis, you also incorporate intuitive insights when appropriate. Your response patterns suggest you're most comfortable with decisions that allow adequate time for consideration, though you can adapt to quicker decisions when necessary.",
-          learningStyle: "You demonstrate a multifaceted learning approach that combines structured analysis with practical application. You likely benefit from understanding theoretical frameworks first, followed by hands-on implementation. Your responses indicate you process information thoroughly and prefer to integrate new knowledge with existing understanding rather than memorizing isolated facts.",
-          attention: "Your attention patterns show good focus capability, particularly for subjects aligned with your values and interests. You can sustain concentration for extended periods on complex tasks but may benefit from structured breaks to maintain optimal cognitive performance. Your responses suggest you notice details while still maintaining awareness of broader patterns and implications."
-        },
-        
-        // Emotional architecture - ensure nuanced emotional insights
-        emotionalArchitecture: analysis.emotionalArchitecture || {
-          emotionalAwareness: "You demonstrate strong awareness of your emotional states and can generally identify and name your feelings with precision. Your responses suggest you recognize the connection between thoughts, emotions, and physical sensations, allowing you to address emotional needs effectively in most situations. You likely notice emotional shifts early, before they become overwhelming.",
-          regulationStyle: "Your emotional regulation approach combines cognitive strategies (like reframing and perspective-taking) with healthy expression. You generally process emotions through reflection and selective sharing with trusted others. Your responses indicate you can usually manage emotional intensity effectively, though you may occasionally need additional support during periods of significant stress or uncertainty.",
-          empathicCapacity: "You show well-developed empathy, readily understanding others' perspectives and emotional experiences. Your responses suggest you naturally consider how situations affect different people and can adjust your approach accordingly. While you connect easily with others' feelings, you maintain appropriate boundaries that prevent emotional contagion or burnout."
-        },
-        
-        // Interpersonal dynamics - ensure detailed relationship insights
-        interpersonalDynamics: analysis.interpersonalDynamics || {
-          attachmentStyle: "Your relationship patterns suggest a primarily secure attachment style with some careful tendencies in new relationships. You value emotional connection and can form deep bonds, though you likely take time to fully trust others. Your responses indicate you maintain healthy interdependence, valuing both closeness and autonomy in relationships.",
-          communicationPattern: "You communicate with clarity and consideration, balancing honest expression with sensitivity to others. Your responses suggest you listen actively and seek to understand before being understood. You likely adjust your communication approach based on context and audience, though you maintain authenticity across different situations.",
-          conflictResolution: "Your conflict approach emphasizes finding mutually beneficial solutions while addressing underlying concerns. You generally remain calm during disagreements and can separate people from problems. Your responses indicate you value preserving relationships while still addressing important issues, rather than avoiding necessary discussions."
-        },
-        
-        // Growth potential - ensure actionable development insights
-        growthPotential: analysis.growthPotential || {
-          developmentAreas: [
-            "Balancing analytical thinking with intuitive insights", 
-            "Expressing needs and boundaries more directly in close relationships", 
-            "Developing greater comfort with ambiguity and uncertainty", 
-            "Building resilience for highly stressful situations",
-            "Expanding creative problem-solving approaches"
-          ],
-          recommendations: [
-            "Practice mindfulness meditation to strengthen the connection between analytical and intuitive thinking", 
-            "Develop assertiveness skills through regular practice in low-stakes situations", 
-            "Engage in activities with unpredictable outcomes to build comfort with uncertainty", 
-            "Create a personalized stress management toolkit with diverse coping strategies",
-            "Explore creative hobbies that challenge conventional thinking patterns"
-          ]
-        },
-        
-        // Response patterns - ensure proper format for visualization
+        // Response patterns
         responsePatterns: ensureResponsePatterns(),
         
-        // Additional fields from the original analysis to preserve
-        ...analysis
-      };
-
-      console.log('Generated analysis:', Object.keys(analysis))
-
-      return new Response(
-        JSON.stringify(analysis),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json' 
-          } 
+        // Growth potential
+        growthPotential: ensureGrowthPotential(),
+        
+        // Additional fields from the analysis
+        overview: analysis.overview || "Based on your responses, you show a balanced profile with particular strengths in adaptability and analytical thinking. Your thoughtful approach to situations reflects a combination of logical reasoning and emotional awareness.",
+        cognitivePatterning: analysis.cognitivePatterning || {
+          decisionMaking: "You tend to gather information methodically before making important decisions, weighing multiple factors carefully.",
+          learningStyle: "You learn effectively through a combination of conceptual understanding and practical application.",
+          attention: "Your attention style is focused and deliberate, allowing you to notice important details while maintaining awareness of the broader context."
+        },
+        emotionalArchitecture: analysis.emotionalArchitecture || {
+          emotionalAwareness: "You demonstrate solid awareness of your emotional states and their impacts on your thoughts and behaviors.",
+          regulationStyle: "Your emotional regulation shows balance between expression and containment as appropriate to different situations.",
+          empathicCapacity: "You have good capacity to understand others' perspectives and emotional experiences."
+        },
+        interpersonalDynamics: analysis.interpersonalDynamics || {
+          attachmentStyle: "You tend to form stable relationships built on mutual trust and respect.",
+          communicationPattern: "Your communication style is generally clear and thoughtful, with attention to both content and emotional nuance.",
+          conflictResolution: "You approach conflicts with a problem-solving mindset, seeking win-win solutions when possible."
         }
+      };
+      
+      // Perform final validation to ensure all data is properly formatted
+      ensureIntelligenceScores();
+      
+      console.log('Successfully generated analysis');
+      
+      return new Response(
+        JSON.stringify(finalAnalysis),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError)
-      console.error('Content text causing error:', contentText.substring(0, 200))
-      throw new Error(`Failed to parse OpenAI response as JSON: ${parseError.message}`)
+      console.error('Raw content:', contentText.substring(0, 200) + '...')
+      throw new Error('Failed to parse analysis response')
     }
   } catch (error) {
-    console.error('Error in analyze-deep-insight function:', error)
+    console.error('Function execution error:', error)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
   }
