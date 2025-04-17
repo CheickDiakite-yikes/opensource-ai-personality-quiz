@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DeepInsightResponses } from "../../types";
 import { deepInsightQuestions } from "../../data/questions";
 
@@ -10,13 +10,15 @@ export const useQuizProgress = (totalQuestions: number) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<DeepInsightResponses>({});
   
-  // Find the index of the last answered question
-  const findLastAnsweredQuestionIndex = useCallback((savedResponses: DeepInsightResponses): number => {
-    // Create a map of all questions by ID for faster lookup
-    const questionMap = new Map(
+  // Create question map once for better performance
+  const questionMap = useMemo(() => {
+    return new Map(
       deepInsightQuestions.map((q, index) => [q.id, index])
     );
-    
+  }, []);
+  
+  // Find the index of the last answered question
+  const findLastAnsweredQuestionIndex = useCallback((savedResponses: DeepInsightResponses): number => {
     // Find the highest index of answered questions
     let highestIndex = -1;
     
@@ -28,7 +30,7 @@ export const useQuizProgress = (totalQuestions: number) => {
     }
     
     return highestIndex;
-  }, []);
+  }, [questionMap]);
   
   // Navigate to the previous question
   const handlePrevious = useCallback(() => {

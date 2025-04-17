@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DeepInsightResponses } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,10 +15,17 @@ const STORAGE_KEY = 'deep_insight_responses';
 export const useDeepInsightStorage = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-
-  // Get saved responses - try database first, fallback to localStorage
+  const cachedResponsesRef = useRef<DeepInsightResponses | null>(null);
+  
+  // Get saved responses with caching to prevent repeated fetches
   const getResponses = async (): Promise<DeepInsightResponses> => {
     try {
+      // Return cached responses if available to prevent redundant fetching
+      if (cachedResponsesRef.current) {
+        console.log("Using cached responses to improve performance");
+        return cachedResponsesRef.current;
+      }
+      
       setIsLoading(true);
       
       // If user is authenticated, get responses from database
@@ -43,10 +50,14 @@ export const useDeepInsightStorage = () => {
           }, {} as DeepInsightResponses);
           
           console.log(`Retrieved ${Object.keys(formattedResponses).length} responses from database.`);
+          
+          // Cache the responses for future use
+          cachedResponsesRef.current = formattedResponses;
           return formattedResponses;
         }
         
         console.log("No saved responses found in database.");
+        cachedResponsesRef.current = {};
         return {};
       }
       
@@ -54,11 +65,13 @@ export const useDeepInsightStorage = () => {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (!savedData) {
         console.log("No saved responses found in localStorage.");
+        cachedResponsesRef.current = {};
         return {};
       }
       
       const parsedData = JSON.parse(savedData);
       console.log(`Retrieved ${Object.keys(parsedData).length} responses from localStorage.`);
+      cachedResponsesRef.current = parsedData;
       return parsedData;
     } catch (error) {
       console.error("Error retrieving responses:", error);
@@ -72,16 +85,18 @@ export const useDeepInsightStorage = () => {
   const saveResponses = async (responses: DeepInsightResponses): Promise<void> => {
     try {
       const responseCount = Object.keys(responses).length;
-      console.log(`Saving ${responseCount} responses...`);
       
       if (responseCount === 0) {
         console.warn("Attempted to save empty responses object.");
         return;
       }
       
+      // Update the cache with the latest responses
+      cachedResponsesRef.current = responses;
+      
       // If user is authenticated, save to database
       if (user) {
-        console.log("Saving responses to database for user:", user.id);
+        console.log(`Saving ${responseCount} responses to database...`);
         
         // Convert responses object to array of objects for upsert
         const responsesToUpsert = Object.entries(responses).map(([question_id, response]) => ({
@@ -104,13 +119,11 @@ export const useDeepInsightStorage = () => {
           throw new Error("Failed to save your progress to database. Please try again.");
         }
         
-        console.log("Responses saved successfully to database.");
         return;
       }
       
       // Fallback to localStorage for non-authenticated users
       localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
-      console.log("Responses saved successfully to localStorage.");
     } catch (error) {
       console.error("Error saving responses:", error);
       toast.error("Failed to save your progress. Please try again.");
@@ -118,9 +131,12 @@ export const useDeepInsightStorage = () => {
     }
   };
 
-  // Clear saved progress
+  // Clear saved progress and cache
   const clearSavedProgress = async (): Promise<void> => {
     try {
+      // Clear the cache
+      cachedResponsesRef.current = null;
+      
       // If user is authenticated, delete from database
       if (user) {
         console.log("Clearing saved progress from database for user:", user.id);
@@ -135,13 +151,11 @@ export const useDeepInsightStorage = () => {
           throw error;
         }
         
-        console.log("Cleared saved progress from database.");
         return;
       }
       
       // Fallback to localStorage for non-authenticated users
       localStorage.removeItem(STORAGE_KEY);
-      console.log("Cleared saved progress from localStorage.");
     } catch (error) {
       console.error("Error clearing saved progress:", error);
       toast.error("Failed to clear your progress. Please try again.");

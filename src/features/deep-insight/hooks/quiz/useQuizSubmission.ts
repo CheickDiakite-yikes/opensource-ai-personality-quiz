@@ -1,12 +1,12 @@
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../../types";
 import { useDeepInsightStorage } from "../useDeepInsightStorage";
 
 /**
- * Hook for handling quiz submission and navigation logic
+ * Hook for handling quiz submission and navigation logic with optimized performance
  */
 export const useQuizSubmission = (
   totalQuestions: number,
@@ -19,7 +19,7 @@ export const useQuizSubmission = (
   const navigate = useNavigate();
   const { saveResponses } = useDeepInsightStorage();
   
-  // Handle submission of a single question
+  // Handle submission of a single question - optimized for performance
   const handleSubmitQuestion = useCallback(async (data: Record<string, string>) => {
     try {
       const questionId = Object.keys(data)[0];
@@ -28,42 +28,42 @@ export const useQuizSubmission = (
       // Validate response
       if (!responseValue || responseValue.trim() === '') {
         setError("Please select an answer before continuing");
-        toast.error("Please select an answer");
         return;
       }
       
       setError(null);
       
-      // Save response
-      const updatedResponses = {
-        ...responses,
-        [questionId]: responseValue
-      };
-      
-      setResponses(updatedResponses);
-      
-      // Save to storage asynchronously - don't await here to improve UI responsiveness
-      saveResponses(updatedResponses).catch(e => {
-        console.error("Error saving responses:", e);
-        toast.error("Failed to save your progress");
-      });
+      // Check if the response has actually changed before updating state
+      if (responses[questionId] !== responseValue) {
+        // Save response
+        const updatedResponses = {
+          ...responses,
+          [questionId]: responseValue
+        };
+        
+        setResponses(updatedResponses);
+        
+        // Save to storage asynchronously - don't block UI thread
+        saveResponses(updatedResponses).catch(e => {
+          console.error("Error saving responses:", e);
+        });
+      }
       
       // Move to next question or submit if done
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         // Submit all responses
-        await handleCompleteQuiz(updatedResponses);
+        await handleCompleteQuiz(responses);
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error processing question:", errorMessage);
       setError("An error occurred. Please try again.");
-      toast.error("Something went wrong. Please try again.");
     }
   }, [currentQuestionIndex, responses, saveResponses, totalQuestions, setResponses, setCurrentQuestionIndex, setError]);
   
-  // Handle completion of the entire quiz
+  // Handle completion of the entire quiz - optimized for performance
   const handleCompleteQuiz = useCallback(async (finalResponses: DeepInsightResponses) => {
     try {
       // Verify we have all the responses
@@ -86,13 +86,13 @@ export const useQuizSubmission = (
         return;
       }
       
-      // First verify responses have been saved successfully
-      await saveResponses(finalResponses);
-      
       // Show a more detailed toast message about the analysis process
       toast.success("Your Deep Insight assessment is complete!", {
         description: "Preparing your comprehensive personality analysis..."
       });
+      
+      // First ensure responses have been saved successfully
+      await saveResponses(finalResponses);
       
       // Navigate to results page
       navigate("/deep-insight/results");
@@ -100,7 +100,6 @@ export const useQuizSubmission = (
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       console.error("Error completing quiz:", errorMessage);
       setError("Failed to complete the assessment. Please try again.");
-      toast.error("Failed to submit your responses. Please try again.");
     }
   }, [navigate, saveResponses, totalQuestions, setCurrentQuestionIndex, setError]);
 

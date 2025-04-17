@@ -14,6 +14,7 @@ export const useQuizState = (totalQuestions: number) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const toastShownRef = useRef(false);
+  const loadedRef = useRef(false);
   
   // Get progress tracking functions
   const {
@@ -38,8 +39,11 @@ export const useQuizState = (totalQuestions: number) => {
     setError
   );
   
-  // Load saved responses if they exist
+  // Load saved responses only once if they exist
   useEffect(() => {
+    // Prevent repeated data fetching that might cause lag
+    if (loadedRef.current) return;
+    
     const loadSavedResponses = async () => {
       try {
         const savedResponses = await getResponses();
@@ -70,10 +74,11 @@ export const useQuizState = (totalQuestions: number) => {
         setError("Failed to load your progress. Please try refreshing the page.");
       } finally {
         setIsLoading(false);
+        loadedRef.current = true;
       }
     };
     
-    // Load responses immediately without delay
+    // Load responses immediately
     loadSavedResponses();
   }, [totalQuestions, getResponses, findLastAnsweredQuestionIndex, setResponses, setCurrentQuestionIndex]);
   
@@ -93,6 +98,8 @@ export const useQuizState = (totalQuestions: number) => {
       toast.success("Progress cleared successfully");
       // Reset the toast flag so it can show again if needed
       toastShownRef.current = false;
+      // Reset the loaded flag so we can load again if needed
+      loadedRef.current = false;
     } catch (error) {
       console.error("Error clearing progress:", error);
       toast.error("Failed to clear progress");
