@@ -33,56 +33,74 @@ export const useDeepInsightResults = () => {
         
         setLoading(true);
         
-        // Try to call the edge function with better error handling
+        // Create an abortable fetch request
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 180000); // 3 minutes timeout
+        
+        console.log("Attempting to call edge function for analysis");
+        toast.loading("Generating your deep insight analysis with AI...", { 
+          id: "analyze-deep-insight", 
+          duration: 180000 // 3 minute toast for longer processing
+        });
+        
         try {
-          console.log("Attempting to call edge function for analysis");
-          toast.loading("Generating your deep insight analysis with AI...", { 
-            id: "analyze-deep-insight", 
-            duration: 180000 // 3 minute toast for longer processing
+          console.log("Payload prepared:", { 
+            responses: responseData,
+            timestamp: Date.now()
           });
           
-          // Create a promise that will timeout after 150 seconds (extended significantly)
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Edge function call timed out")), 150000);
-          });
-
-          // The actual edge function call - with additional checking
-          const functionPromise = supabase.functions.invoke(
+          // Make the edge function call with the abort controller
+          const { data, error } = await supabase.functions.invoke(
             'analyze-deep-insight',
             {
               body: { 
                 responses: responseData,
                 timestamp: Date.now() // Add timestamp to help with debugging
+              },
+              signal: abortController.signal,
+              headers: {
+                'Content-Type': 'application/json'
               }
             }
           );
+          
+          // Clear the timeout since we got a response
+          clearTimeout(timeoutId);
 
-          // Use Promise.race to implement the timeout
-          const result = await Promise.race([
-            functionPromise,
-            timeoutPromise
-          ]) as { data: PersonalityAnalysis | null, error: any };
-
-          if (result.error) {
-            console.error('Error calling analyze-deep-insight:', result.error);
-            throw new Error(`Failed to generate analysis: ${result.error.message || 'Unknown error'}`);
+          if (error) {
+            console.error('Edge function returned error:', error);
+            throw new Error(`Failed to generate analysis: ${error.message || 'Unknown error'}`);
           }
 
-          if (!result.data) {
+          if (!data) {
+            console.error('No data returned from edge function');
             throw new Error('No analysis data returned from edge function');
           }
           
-          console.log("Successfully received analysis from edge function:", result.data);
+          console.log("Successfully received analysis from edge function:", data);
           toast.success("Analysis complete!", { id: "analyze-deep-insight" });
-          setAnalysis(result.data);
+          setAnalysis(data);
           setLoading(false);
-          return;
+          
         } catch (edgeFunctionError) {
-          console.error("Edge function error:", edgeFunctionError);
-          toast.error("AI analysis service unavailable", { 
-            id: "analyze-deep-insight",
-            description: "Falling back to local analysis generation" 
-          });
+          // Clear the timeout if there was an error
+          clearTimeout(timeoutId);
+          
+          // Check if this was an abort error
+          if (edgeFunctionError.name === 'AbortError') {
+            console.error("Edge function call timed out after 3 minutes");
+            toast.error("AI analysis service timed out", { 
+              id: "analyze-deep-insight",
+              description: "Falling back to local analysis generation" 
+            });
+          } else {
+            console.error("Edge function error:", edgeFunctionError);
+            toast.error("AI analysis service unavailable", { 
+              id: "analyze-deep-insight",
+              description: "Falling back to local analysis generation" 
+            });
+          }
+          
           console.log("Falling back to client-side analysis generation");
           
           // Fall back to client-side analysis generation

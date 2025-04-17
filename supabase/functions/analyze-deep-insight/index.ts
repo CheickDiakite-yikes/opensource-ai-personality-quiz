@@ -38,19 +38,25 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY appears to be invalid')
     }
 
-    console.log('Making OpenAI API request...')
-    const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a world-class psychological analyst specializing in creating extremely detailed personality profiles. Generate an EXCEPTIONALLY COMPREHENSIVE analysis (minimum 10,000 words) with these requirements:
+    console.log('Making OpenAI API request with model gpt-4o...')
+    
+    // Set a longer timeout for the OpenAI request - 4 minutes (240 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 240000);
+    
+    try {
+      const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: `You are a world-class psychological analyst specializing in creating extremely detailed personality profiles. Generate an EXCEPTIONALLY COMPREHENSIVE analysis (minimum 10,000 words) with these requirements:
 
 1. CORE TRAITS ANALYSIS (minimum 1000 words):
 - Primary and secondary personality traits with detailed manifestations
@@ -152,136 +158,152 @@ CRITICAL REQUIREMENTS:
 7. Provide comprehensive arrays for all list-type data
 
 The analysis must be uniquely tailored to the individual based on their specific response patterns.`
-          },
-          {
-            role: "user",
-            content: `Analyze these responses and generate an exceptionally detailed, personalized profile with extensive insights in each category: ${JSON.stringify(responses)}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 14000
-      })
-    })
+            },
+            {
+              role: "user",
+              content: `Analyze these responses and generate an exceptionally detailed, personalized profile with extensive insights in each category: ${JSON.stringify(responses)}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 14000
+        }),
+        signal: controller.signal
+      });
 
-    const processingTime = (Date.now() - startTime) / 1000
-    console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`)
+      // Clear the timeout since we got a response
+      clearTimeout(timeoutId);
 
-    if (!openAiResponse.ok) {
-      console.error('OpenAI API response status:', openAiResponse.status)
-      console.error('OpenAI API response status text:', openAiResponse.statusText)
-      
-      const error = await openAiResponse.json()
-      console.error('OpenAI API error:', error)
-      throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
-    }
+      const processingTime = (Date.now() - startTime) / 1000
+      console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`)
 
-    const aiResult = await openAiResponse.json()
-    let contentText = aiResult.choices[0].message.content
-    
-    console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds')
-    console.log('Response length:', contentText.length, 'characters')
-    
-    // Clean up the response if it has markdown formatting
-    if (contentText.includes('```json')) {
-      const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-      if (jsonMatch && jsonMatch[1]) {
-        contentText = jsonMatch[1].trim()
-        console.log('Extracted JSON from markdown code block')
-      } else {
-        contentText = contentText.replace(/```json|```/g, '').trim()
-        console.log('Removed markdown code block markers')
+      if (!openAiResponse.ok) {
+        console.error('OpenAI API response status:', openAiResponse.status)
+        console.error('OpenAI API response status text:', openAiResponse.statusText)
+        
+        const error = await openAiResponse.json()
+        console.error('OpenAI API error:', error)
+        throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
       }
-    }
-    
-    try {
-      console.log('Attempting to parse JSON response...')
-      let analysis = JSON.parse(contentText)
-      console.log('Successfully parsed JSON response')
 
-      // Validate response pattern format
-      console.log('Validating responsePatterns format...')
-      if (!analysis.responsePatterns || !analysis.responsePatterns.percentages) {
-        console.warn('Response patterns missing or invalid, generating fallback')
-        analysis.responsePatterns = {
-          percentages: { 
-            a: Math.round(Math.random() * 30 + 10),
-            b: Math.round(Math.random() * 30 + 10),
-            c: Math.round(Math.random() * 20 + 10),
-            d: Math.round(Math.random() * 10 + 5),
-            e: Math.round(Math.random() * 5 + 5),
-            f: Math.round(Math.random() * 5 + 5)
-          },
-          primaryChoice: 'a',
-          secondaryChoice: 'b',
-          responseSignature: '25-25-25-15-5-5'
+      const aiResult = await openAiResponse.json()
+      let contentText = aiResult.choices[0].message.content
+      
+      console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds')
+      console.log('Response length:', contentText.length, 'characters')
+      
+      // Clean up the response if it has markdown formatting
+      if (contentText.includes('```json')) {
+        const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+        if (jsonMatch && jsonMatch[1]) {
+          contentText = jsonMatch[1].trim()
+          console.log('Extracted JSON from markdown code block')
+        } else {
+          contentText = contentText.replace(/```json|```/g, '').trim()
+          console.log('Removed markdown code block markers')
         }
-      } else {
-        console.log('Valid responsePatterns found:', analysis.responsePatterns.responseSignature)
-      }
-
-      // Ensure emotionalArchitecture has all required fields
-      console.log('Validating emotionalArchitecture...')
-      analysis.emotionalArchitecture = {
-        ...analysis.emotionalArchitecture,
-        emotionalPatterns: analysis.emotionalArchitecture?.emotionalPatterns || "Your emotional patterns show a balanced approach to processing and expressing emotions.",
-        emotionalStrengths: analysis.emotionalArchitecture?.emotionalStrengths || [
-          "Strong emotional awareness",
-          "Effective self-regulation",
-          "Good empathic understanding"
-        ],
-        emotionalChallenges: analysis.emotionalArchitecture?.emotionalChallenges || [
-          "Managing intense emotions",
-          "Balancing emotional needs",
-          "Setting emotional boundaries"
-        ],
-        recommendations: analysis.emotionalArchitecture?.recommendations || [
-          "Practice mindfulness regularly",
-          "Develop emotional vocabulary",
-          "Establish emotional boundaries"
-        ]
-      }
-
-      // Ensure interpersonalDynamics has all required fields
-      console.log('Validating interpersonalDynamics...')
-      analysis.interpersonalDynamics = {
-        ...analysis.interpersonalDynamics,
-        socialNeedsBalance: analysis.interpersonalDynamics?.socialNeedsBalance || "You maintain a healthy balance between social connection and personal space.",
-        trustBuilding: analysis.interpersonalDynamics?.trustBuilding || "You build trust through consistent and authentic interactions.",
-        boundarySettings: analysis.interpersonalDynamics?.boundarySettings || "You set appropriate boundaries while remaining open to meaningful connections."
-      }
-
-      // Ensure growthPotential has all required fields
-      console.log('Validating growthPotential...')
-      analysis.growthPotential = {
-        ...analysis.growthPotential,
-        longTermGoals: analysis.growthPotential?.longTermGoals || [
-          "Develop advanced emotional regulation skills",
-          "Enhance leadership capabilities",
-          "Build stronger professional relationships"
-        ],
-        personalInsights: analysis.growthPotential?.personalInsights || "Your growth journey shows strong potential for personal and professional development."
-      }
-
-      // Add id and timestamp if not present
-      if (!analysis.id) {
-        analysis.id = `deep-insight-${Date.now()}`;
       }
       
-      if (!analysis.createdAt) {
-        analysis.createdAt = new Date().toISOString();
-      }
+      try {
+        console.log('Attempting to parse JSON response...')
+        let analysis = JSON.parse(contentText)
+        console.log('Successfully parsed JSON response')
 
-      console.log('Successfully generated enhanced analysis')
-      console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds')
+        // Validate response pattern format
+        console.log('Validating responsePatterns format...')
+        if (!analysis.responsePatterns || !analysis.responsePatterns.percentages) {
+          console.warn('Response patterns missing or invalid, generating fallback')
+          analysis.responsePatterns = {
+            percentages: { 
+              a: Math.round(Math.random() * 30 + 10),
+              b: Math.round(Math.random() * 30 + 10),
+              c: Math.round(Math.random() * 20 + 10),
+              d: Math.round(Math.random() * 10 + 5),
+              e: Math.round(Math.random() * 5 + 5),
+              f: Math.round(Math.random() * 5 + 5)
+            },
+            primaryChoice: 'a',
+            secondaryChoice: 'b',
+            responseSignature: '25-25-25-15-5-5'
+          }
+        } else {
+          console.log('Valid responsePatterns found:', analysis.responsePatterns.responseSignature)
+        }
+
+        // Ensure emotionalArchitecture has all required fields
+        console.log('Validating emotionalArchitecture...')
+        analysis.emotionalArchitecture = {
+          ...analysis.emotionalArchitecture,
+          emotionalPatterns: analysis.emotionalArchitecture?.emotionalPatterns || "Your emotional patterns show a balanced approach to processing and expressing emotions.",
+          emotionalStrengths: analysis.emotionalArchitecture?.emotionalStrengths || [
+            "Strong emotional awareness",
+            "Effective self-regulation",
+            "Good empathic understanding"
+          ],
+          emotionalChallenges: analysis.emotionalArchitecture?.emotionalChallenges || [
+            "Managing intense emotions",
+            "Balancing emotional needs",
+            "Setting emotional boundaries"
+          ],
+          recommendations: analysis.emotionalArchitecture?.recommendations || [
+            "Practice mindfulness regularly",
+            "Develop emotional vocabulary",
+            "Establish emotional boundaries"
+          ]
+        }
+
+        // Ensure interpersonalDynamics has all required fields
+        console.log('Validating interpersonalDynamics...')
+        analysis.interpersonalDynamics = {
+          ...analysis.interpersonalDynamics,
+          socialNeedsBalance: analysis.interpersonalDynamics?.socialNeedsBalance || "You maintain a healthy balance between social connection and personal space.",
+          trustBuilding: analysis.interpersonalDynamics?.trustBuilding || "You build trust through consistent and authentic interactions.",
+          boundarySettings: analysis.interpersonalDynamics?.boundarySettings || "You set appropriate boundaries while remaining open to meaningful connections."
+        }
+
+        // Ensure growthPotential has all required fields
+        console.log('Validating growthPotential...')
+        analysis.growthPotential = {
+          ...analysis.growthPotential,
+          longTermGoals: analysis.growthPotential?.longTermGoals || [
+            "Develop advanced emotional regulation skills",
+            "Enhance leadership capabilities",
+            "Build stronger professional relationships"
+          ],
+          personalInsights: analysis.growthPotential?.personalInsights || "Your growth journey shows strong potential for personal and professional development."
+        }
+
+        // Add id and timestamp if not present
+        if (!analysis.id) {
+          analysis.id = `deep-insight-${Date.now()}`;
+        }
+        
+        if (!analysis.createdAt) {
+          analysis.createdAt = new Date().toISOString();
+        }
+
+        console.log('Successfully generated enhanced analysis')
+        console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds')
+        
+        return new Response(
+          JSON.stringify(analysis),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } catch (parseError) {
+        console.error('Error parsing OpenAI response:', parseError)
+        console.error('First 200 chars of response:', contentText.substring(0, 200))
+        throw new Error('Failed to parse analysis response')
+      }
+    } catch (fetchError) {
+      // Clear the timeout if there was an error
+      clearTimeout(timeoutId);
       
-      return new Response(
-        JSON.stringify(analysis),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError)
-      console.error('First 100 chars of response:', contentText.substring(0, 100))
-      throw new Error('Failed to parse analysis response')
+      console.error('Error fetching from OpenAI:', fetchError)
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error('OpenAI request timed out after 4 minutes')
+      }
+      
+      throw fetchError;
     }
   } catch (error) {
     console.error('Function execution error:', error)
@@ -297,4 +319,4 @@ The analysis must be uniquely tailored to the individual based on their specific
       }
     )
   }
-})
+});
