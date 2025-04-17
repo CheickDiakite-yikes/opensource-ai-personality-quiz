@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
@@ -79,7 +78,8 @@ const DeepInsightResults: React.FC = () => {
           if (!deepError && deepInsightAnalysis) {
             console.log(`Found analysis in deep_insight_analyses: ${id}`);
             // Use the complete_analysis field which contains the full PersonalityAnalysis
-            setAnalysis(deepInsightAnalysis.complete_analysis as PersonalityAnalysis);
+            // Properly cast the JSON data to PersonalityAnalysis type
+            setAnalysis(deepInsightAnalysis.complete_analysis as unknown as PersonalityAnalysis);
             setError(null);
             setLoading(false);
             return;
