@@ -15,13 +15,32 @@ serve(async (req) => {
 
   try {
     // Parse the request body and extract required data
-    const requestData = await req.json()
-    const { responses, timestamp } = requestData
+    let requestData;
+    try {
+      // Add explicit error handling for JSON parsing
+      const text = await req.text();
+      if (!text || text.trim() === '') {
+        throw new Error('Request body is empty');
+      }
+      requestData = JSON.parse(text);
+      console.log('Successfully parsed request JSON');
+    } catch (parseError) {
+      console.error('Error parsing request JSON:', parseError);
+      console.error('Request content type:', req.headers.get('content-type'));
+      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
+    }
     
-    console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`)
-    console.log('Request timestamp:', timestamp ? new Date(timestamp).toISOString() : 'Not provided')
-    console.log('Response count:', Object.keys(responses).length)
-    console.log('Sample response keys:', Object.keys(responses).slice(0, 5))
+    const { responses, timestamp } = requestData || {};
+    
+    if (!responses) {
+      console.error('Missing responses in request data');
+      throw new Error('Missing responses in request data');
+    }
+    
+    console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`);
+    console.log('Request timestamp:', timestamp ? new Date(timestamp).toISOString() : 'Not provided');
+    console.log('Response count:', Object.keys(responses).length);
+    console.log('Sample response keys:', Object.keys(responses).slice(0, 5));
 
     // Measure execution time for debugging
     const startTime = Date.now()
@@ -180,16 +199,51 @@ The analysis must be uniquely tailored to the individual based on their specific
         console.error('OpenAI API response status:', openAiResponse.status)
         console.error('OpenAI API response status text:', openAiResponse.statusText)
         
-        const error = await openAiResponse.json()
-        console.error('OpenAI API error:', error)
-        throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`)
+        let errorText = '';
+        try {
+          const error = await openAiResponse.json();
+          errorText = JSON.stringify(error);
+          console.error('OpenAI API error:', error);
+          throw new Error(error.error?.message || `Failed to analyze responses (Status: ${openAiResponse.status})`);
+        } catch (jsonError) {
+          // If we can't parse the error as JSON, try to get the text
+          try {
+            errorText = await openAiResponse.text();
+          } catch (textError) {
+            errorText = 'Could not extract error details';
+          }
+          console.error('OpenAI API error (raw):', errorText);
+          throw new Error(`Failed to analyze responses (Status: ${openAiResponse.status}, ${errorText})`);
+        }
       }
 
-      const aiResult = await openAiResponse.json()
-      let contentText = aiResult.choices[0].message.content
+      // Carefully parse the response with explicit error handling
+      let aiResult;
+      let contentText = '';
       
-      console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds')
-      console.log('Response length:', contentText.length, 'characters')
+      try {
+        aiResult = await openAiResponse.json();
+        contentText = aiResult.choices[0].message.content;
+        
+        console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds');
+        console.log('Response length:', contentText.length, 'characters');
+        
+        if (!contentText || typeof contentText !== 'string') {
+          throw new Error('Invalid or empty content in OpenAI response');
+        }
+      } catch (jsonError) {
+        console.error('Error parsing OpenAI response JSON:', jsonError);
+        
+        // Try to get the raw text if JSON parsing fails
+        try {
+          contentText = await openAiResponse.text();
+          console.error('Raw OpenAI response:', contentText.substring(0, 500) + '...');
+        } catch (textError) {
+          console.error('Could not extract text from response:', textError);
+        }
+        
+        throw new Error(`Failed to parse OpenAI response: ${jsonError.message}`);
+      }
       
       // Clean up the response if it has markdown formatting
       if (contentText.includes('```json')) {

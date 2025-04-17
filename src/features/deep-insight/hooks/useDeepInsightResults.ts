@@ -39,14 +39,9 @@ export const useDeepInsightResults = () => {
           duration: 180000 // 3 minute toast for longer processing
         });
         
-        // Set a timeout for the API call
-        let timeoutId: NodeJS.Timeout | null = null;
-        let timedOut = false;
-        
         // Create a promise that rejects after timeout
         const timeoutPromise = new Promise<never>((_resolve, reject) => {
-          timeoutId = setTimeout(() => {
-            timedOut = true;
+          setTimeout(() => {
             reject(new Error("Edge function call timed out after 3 minutes"));
           }, 180000); // 3 minutes timeout
         });
@@ -64,18 +59,12 @@ export const useDeepInsightResults = () => {
               body: { 
                 responses: responseData,
                 timestamp: Date.now() // Add timestamp to help with debugging
-              },
-              headers: {
-                'Content-Type': 'application/json'
               }
             }
           );
           
           // Wait for either the function call to complete or the timeout to occur
           const result = await Promise.race([functionPromise, timeoutPromise]);
-          
-          // Clear the timeout since we got a response
-          if (timeoutId) clearTimeout(timeoutId);
           
           // Handle the function response
           if (result.error) {
@@ -94,11 +83,10 @@ export const useDeepInsightResults = () => {
           setLoading(false);
           
         } catch (edgeFunctionError) {
-          // Clear the timeout if there was an error
-          if (timeoutId) clearTimeout(timeoutId);
+          // Check if this was a timeout error or other error
+          const errorMessage = edgeFunctionError instanceof Error ? edgeFunctionError.message : String(edgeFunctionError);
           
-          // Check if this was a timeout error
-          if (timedOut) {
+          if (errorMessage.includes("timed out")) {
             console.error("Edge function call timed out after 3 minutes");
             toast.error("AI analysis service timed out", { 
               id: "analyze-deep-insight",
