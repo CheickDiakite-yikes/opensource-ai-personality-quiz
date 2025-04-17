@@ -17,7 +17,7 @@ import { ChartBar, PieChart, Activity } from "lucide-react";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
-  const { analysis, loading, error, saveAnalysis } = useDeepInsightResults();
+  const { analysis, isLoading, error, saveAnalysis } = useDeepInsightResults();
   
   // Animation variants
   const containerVariants = {
@@ -42,12 +42,12 @@ const DeepInsightResults: React.FC = () => {
     })
   };
   
-  if (loading) {
+  if (isLoading) {
     return <ResultsLoading />;
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} />;
+    return <ResultsError error={error?.message || "No analysis data found"} />;
   }
   
   return (

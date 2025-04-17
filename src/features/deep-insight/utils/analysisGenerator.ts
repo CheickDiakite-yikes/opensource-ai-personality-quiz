@@ -1,226 +1,13 @@
 
 import { DeepInsightResponses } from "../types";
+import { AnalysisData } from "./analysis/types";
 import { PersonalityAnalysis } from "@/utils/types";
+import { analyzeResponsePatterns } from "./analysis/patternAnalyzer";
+import { determinePersonalityTraits } from "./analysis/personalityTraits";
+import { generateStrengthsAndChallenges } from "./analysis/strengthsChallenges";
+import { v4 as uuidv4 } from "uuid";
 
-// Define AnalysisData type explicitly
-export interface AnalysisData extends PersonalityAnalysis {
-  coreTraits: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  };
-  cognitivePatterning: {
-    decisionMaking: string;
-    learningStyle: string;
-    attention: string;
-  };
-  emotionalArchitecture: {
-    emotionalAwareness: string;
-    regulationStyle: string;
-    empathicCapacity: string;
-  };
-  interpersonalDynamics: {
-    attachmentStyle: string;
-    communicationPattern: string;
-    conflictResolution: string;
-  };
-  growthPotential: {
-    developmentAreas: string[];
-    recommendations: string[];
-  };
-}
-
-// Function to generate strengths based on response patterns
-const generateStrengthsAndChallenges = (
-  primaryChoice: string, 
-  secondaryChoice: string
-): {
-  strengths: string[];
-  challenges: string[];
-  growthAreas: string[];
-  recommendations: string[];
-} => {
-  const strengths: string[] = [];
-  const challenges: string[] = [];
-  const growthAreas: string[] = [];
-  const recommendations: string[] = [];
-  
-  // Add strengths based on primary and secondary choices
-  if (primaryChoice === 'a' || secondaryChoice === 'a') {
-    strengths.push("Analytical problem-solving", "Strategic planning", "Critical evaluation");
-    challenges.push("May sometimes overthink decisions", "Could benefit from trusting intuition more");
-    growthAreas.push("Developing comfort with ambiguity", "Balancing analysis with action");
-    recommendations.push("Practice making quicker decisions in low-stakes situations", "Set time limits for analysis phases");
-  }
-  
-  if (primaryChoice === 'b' || secondaryChoice === 'b') {
-    strengths.push("Emotional intelligence", "Building meaningful connections", "Collaborative skills");
-    challenges.push("May prioritize others' needs over your own", "Could be oversensitive to criticism");
-    growthAreas.push("Setting healthy boundaries", "Balancing empathy with self-care");
-    recommendations.push("Practice assertive communication techniques", "Schedule regular self-care activities");
-  }
-  
-  if (primaryChoice === 'c' || secondaryChoice === 'c') {
-    strengths.push("Adaptability", "Practical problem-solving", "Resourcefulness");
-    challenges.push("Might avoid long-term planning", "Could benefit from more reflection time");
-    growthAreas.push("Developing long-term strategic vision", "Finding deeper meaning in practical work");
-    recommendations.push("Dedicate time for reflection and planning", "Connect daily actions to larger goals");
-  }
-  
-  if (primaryChoice === 'd' || secondaryChoice === 'd') {
-    strengths.push("Creative thinking", "Seeing new possibilities", "Inspiring others");
-    challenges.push("May struggle with follow-through", "Could get distracted by new ideas");
-    growthAreas.push("Translating vision into structured action", "Balancing exploration with completion");
-    recommendations.push("Use project management tools to track progress", "Partner with detail-oriented people");
-  }
-  
-  return { strengths, challenges, growthAreas, recommendations };
-};
-
-// Function to determine personality traits based on response patterns
-const determinePersonalityTraits = (primaryChoice: string): {
-  primaryTrait: string;
-  analyticalScore: number;
-  emotionalScore: number;
-  adaptabilityScore: number;
-  decisionMakingStyle: string;
-  learningStyle: string;
-  emotionalAwareness: string;
-} => {
-  let primaryTrait, analyticalScore, emotionalScore, adaptabilityScore;
-  let decisionMakingStyle, learningStyle, emotionalAwareness;
-  
-  // Primary trait based on most common response
-  switch(primaryChoice) {
-    case 'a':
-      primaryTrait = "Analytical Strategist";
-      analyticalScore = 85 + Math.random() * 10;
-      emotionalScore = 65 + Math.random() * 15;
-      adaptabilityScore = 72 + Math.random() * 8;
-      decisionMakingStyle = "You tend to gather all available information before making decisions, weighing pros and cons meticulously. This methodical approach serves you well for complex choices but may slow you down for simpler ones.";
-      learningStyle = "You learn best through structured, logical frameworks and detailed analysis. You prefer to master fundamental concepts before moving forward.";
-      emotionalAwareness = "You have strong cognitive awareness of emotions, though you may sometimes intellectualize feelings rather than experiencing them directly.";
-      break;
-    case 'b':
-      primaryTrait = "Empathic Connector";
-      analyticalScore = 70 + Math.random() * 10;
-      emotionalScore = 87 + Math.random() * 8;
-      adaptabilityScore = 78 + Math.random() * 12;
-      decisionMakingStyle = "You balance rational analysis with intuition, often considering how choices will affect others. You're skilled at understanding multiple perspectives when making decisions.";
-      learningStyle = "You learn best through collaborative discussion and connecting new information to personal experiences. Social learning environments tend to enhance your understanding.";
-      emotionalAwareness = "You possess exceptional awareness of your emotional landscape and can often sense others' feelings with remarkable accuracy. This emotional intelligence is a cornerstone of your personality.";
-      break;
-    case 'c':
-      primaryTrait = "Adaptive Innovator";
-      analyticalScore = 75 + Math.random() * 12;
-      emotionalScore = 72 + Math.random() * 10;
-      adaptabilityScore = 88 + Math.random() * 7;
-      decisionMakingStyle = "You're comfortable making decisions with incomplete information, trusting your ability to adjust as new data emerges. This adaptive approach serves you well in rapidly changing situations.";
-      learningStyle = "You learn through experimentation and practical application, preferring to dive in and learn by doing rather than extensive preparation.";
-      emotionalAwareness = "You have a balanced awareness of emotions and can generally identify what you're feeling, though you may sometimes prioritize action over processing emotions fully.";
-      break;
-    case 'd':
-      primaryTrait = "Visionary Explorer";
-      analyticalScore = 79 + Math.random() * 11;
-      emotionalScore = 76 + Math.random() * 14;
-      adaptabilityScore = 83 + Math.random() * 9;
-      decisionMakingStyle = "You often rely on intuition and big-picture thinking when making decisions. You have a knack for seeing possibilities others miss and are comfortable taking calculated risks.";
-      learningStyle = "You learn best when exploring connections between diverse concepts and ideas. You're drawn to the novel and unconventional in your approach to knowledge.";
-      emotionalAwareness = "You have good emotional awareness, particularly when emotions connect to your values and aspirations. You're especially attuned to feelings of wonder, curiosity, and inspiration.";
-      break;
-    default:
-      primaryTrait = "Balanced Thinker";
-      analyticalScore = 75 + Math.random() * 10;
-      emotionalScore = 75 + Math.random() * 10;
-      adaptabilityScore = 75 + Math.random() * 10;
-      decisionMakingStyle = "You approach decisions with a balanced perspective, weighing both logical and intuitive factors.";
-      learningStyle = "You have a flexible learning style that adapts to different contexts and subject matters.";
-      emotionalAwareness = "You have a solid awareness of your emotions and can generally navigate emotional situations effectively.";
-  }
-  
-  return {
-    primaryTrait,
-    analyticalScore,
-    emotionalScore,
-    adaptabilityScore,
-    decisionMakingStyle,
-    learningStyle,
-    emotionalAwareness
-  };
-};
-
-// Function to determine secondary trait based on response pattern
-const determineSecondaryTrait = (secondaryChoice: string): string => {
-  switch(secondaryChoice) {
-    case 'a': return "Systematic Thinker";
-    case 'b': return "Relationship Focused";
-    case 'c': return "Pragmatic Adapter";
-    case 'd': return "Creative Explorer";
-    default: return "Balanced Thinker";
-  }
-};
-
-// Analyze response patterns to generate percentages
-export const analyzeResponsePatterns = (responses: DeepInsightResponses): {
-  percentages: Record<string, number>;
-  primaryChoice: string;
-  secondaryChoice: string;
-  responseSignature: string;
-} => {
-  console.log("Processing responses:", responses);
-  
-  // Extract key insights to personalize the analysis
-  const responsesArray = Object.entries(responses);
-  
-  // Count different answer choices to detect patterns
-  const answerCounts = {
-    a: 0,
-    b: 0, 
-    c: 0,
-    d: 0
-  };
-  
-  responsesArray.forEach(([_, answer]) => {
-    if (answer.includes('-a')) answerCounts.a++;
-    if (answer.includes('-b')) answerCounts.b++;
-    if (answer.includes('-c')) answerCounts.c++;
-    if (answer.includes('-d')) answerCounts.d++;
-  });
-  
-  console.log("Response distribution:", answerCounts);
-  
-  const totalResponses = responsesArray.length;
-  const percentages = {
-    a: Math.round((answerCounts.a / totalResponses) * 100),
-    b: Math.round((answerCounts.b / totalResponses) * 100),
-    c: Math.round((answerCounts.c / totalResponses) * 100),
-    d: Math.round((answerCounts.d / totalResponses) * 100)
-  };
-  
-  // Generate a unique response signature for this user
-  const responseSignature = `${percentages.a}-${percentages.b}-${percentages.c}-${percentages.d}`;
-  console.log("Response signature:", responseSignature);
-  
-  // Determine primary tendencies based on highest percentages
-  const sortedChoices = Object.entries(percentages)
-    .sort(([, a], [, b]) => b - a)
-    .map(([choice]) => choice);
-  
-  const primaryChoice = sortedChoices[0];
-  const secondaryChoice = sortedChoices[1];
-  
-  console.log(`Primary choice: ${primaryChoice} (${percentages[primaryChoice]}%), Secondary: ${secondaryChoice} (${percentages[secondaryChoice]}%)`);
-  
-  return {
-    percentages,
-    primaryChoice,
-    secondaryChoice,
-    responseSignature
-  };
-};
-
-// The main analysis generator function
+// Main export function that the hook will call
 export const generateAnalysisFromResponses = (responses: DeepInsightResponses): AnalysisData => {
   // Analyze response patterns
   const { 
@@ -345,6 +132,26 @@ export const generateAnalysisFromResponses = (responses: DeepInsightResponses): 
     growthPotential: {
       developmentAreas: growthAreas,
       recommendations: recommendations
+    },
+    responsePatterns: {
+      percentages: percentages,
+      primaryChoice,
+      secondaryChoice,
+      responseSignature
     }
   };
 };
+
+// Function to determine secondary trait based on response pattern
+const determineSecondaryTrait = (secondaryChoice: string): string => {
+  switch(secondaryChoice) {
+    case 'a': return "Systematic Thinker";
+    case 'b': return "Relationship Focused";
+    case 'c': return "Pragmatic Adapter";
+    case 'd': return "Creative Explorer";
+    default: return "Balanced Thinker";
+  }
+};
+
+// For backwards compatibility - alias the function
+export const analyzeDeepInsightResponses = generateAnalysisFromResponses;

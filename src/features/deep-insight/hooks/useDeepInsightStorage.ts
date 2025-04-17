@@ -1,108 +1,38 @@
 
-import { useEffect } from "react";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
 import { DeepInsightResponses } from "../types";
 
-const STORAGE_KEY = "deep_insight_progress";
+const STORAGE_KEY = 'deep-insight-responses';
 
-interface SavedProgress {
-  responses: DeepInsightResponses;
-  currentQuestionIndex: number;
-  lastUpdated: string;
-}
-
-export const useDeepInsightStorage = (
-  responses: DeepInsightResponses,
-  currentQuestionIndex: number,
-  setResponses: (responses: DeepInsightResponses) => void,
-  setCurrentQuestionIndex: (index: number) => void,
-  totalQuestions: number,
-  setIsRestoredSession?: (isRestored: boolean) => void
-) => {
-  // Load saved progress on initial mount
-  useEffect(() => {
+export const useDeepInsightStorage = () => {
+  // Function to get saved responses from localStorage
+  const getResponses = (): DeepInsightResponses => {
     try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        const savedProgress: SavedProgress = JSON.parse(savedData);
-        
-        if (
-          savedProgress && 
-          savedProgress.responses && 
-          savedProgress.currentQuestionIndex >= 0 &&
-          savedProgress.currentQuestionIndex < totalQuestions
-        ) {
-          console.log("Found saved progress:", savedProgress);
-          
-          // Set restored session flag first before changing any state
-          if (setIsRestoredSession) {
-            setIsRestoredSession(true);
-          }
-          
-          // Wait to ensure flag is set before updating state
-          setTimeout(() => {
-            setResponses(savedProgress.responses);
-            setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
-            
-            // Calculate how many questions were answered
-            const answeredQuestions = Object.keys(savedProgress.responses).length;
-            
-            // Format the last updated time
-            const lastUpdated = new Date(savedProgress.lastUpdated);
-            const timeAgo = getTimeAgo(lastUpdated);
-            
-            if (answeredQuestions > 0) {
-              toast.info(
-                `Progress restored (${answeredQuestions} questions answered)`, 
-                { description: `Last active ${timeAgo}` }
-              );
-              console.log("Deep Insight quiz progress restored:", savedProgress);
-            }
-          }, 200); // Increased timeout for more reliable state updates
-        }
-      }
-    } catch (error) {
-      console.error("Error loading saved Deep Insight quiz progress:", error);
+      const savedResponses = localStorage.getItem(STORAGE_KEY);
+      return savedResponses ? JSON.parse(savedResponses) : {};
+    } catch (err) {
+      console.error("Error retrieving responses from localStorage:", err);
+      return {};
     }
-  }, [setResponses, setCurrentQuestionIndex, totalQuestions, setIsRestoredSession]);
-  
-  // Save progress whenever responses or currentQuestionIndex changes
-  useEffect(() => {
-    // Only save if there's at least one response
-    if (Object.keys(responses).length > 0) {
-      try {
-        const progressToSave: SavedProgress = {
-          responses,
-          currentQuestionIndex,
-          lastUpdated: new Date().toISOString()
-        };
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
-        console.log("Deep Insight quiz progress saved:", progressToSave);
-      } catch (error) {
-        console.error("Error saving Deep Insight quiz progress:", error);
-      }
-    }
-  }, [responses, currentQuestionIndex]);
-  
-  // Helper function to format time ago
-  const getTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return "just now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
-  
+
+  // Function to save responses to localStorage
+  const saveResponses = (responses: DeepInsightResponses) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
+    } catch (err) {
+      console.error("Error saving responses to localStorage:", err);
+    }
+  };
+
   // Function to clear saved progress
   const clearSavedProgress = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    toast.success("Progress cleared", {
-      description: "Starting fresh"
-    });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      console.error("Error clearing saved progress:", err);
+    }
   };
-  
-  return { clearSavedProgress };
+
+  return { getResponses, saveResponses, clearSavedProgress };
 };

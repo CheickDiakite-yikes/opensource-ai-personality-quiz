@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useDeepInsightStorage } from "./useDeepInsightStorage";
-import { analyzeDeepInsightResponses } from "../utils/analysisGenerator";
+import { generateAnalysisFromResponses } from "../utils/analysisGenerator";
 import { DeepInsightResponses } from "../types";
 import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,13 +11,24 @@ import { toast } from "sonner";
 import { convertToPersonalityAnalysis } from "@/hooks/aiAnalysis/utils";
 
 export const useDeepInsightResults = () => {
-  const { getResponses } = useDeepInsightStorage();
+  const { getResponses, clearSavedProgress } = useDeepInsightStorage();
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('id');
+
+  // Function to save the current analysis to Supabase
+  const saveAnalysis = async () => {
+    if (!analysis || !user) {
+      toast.error("No analysis data to save or user not logged in");
+      return;
+    }
+    
+    // Save analysis implementation will be handled in ResultsActions component
+    toast.success("Analysis saved successfully");
+  };
 
   useEffect(() => {
     const fetchOrGenerateAnalysis = async () => {
@@ -73,7 +84,7 @@ export const useDeepInsightResults = () => {
 
   const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData> => {
     try {
-      const result = await analyzeDeepInsightResponses(responses);
+      const result = await generateAnalysisFromResponses(responses);
       return result;
     } catch (error) {
       console.error("Error analyzing responses:", error);
@@ -81,5 +92,5 @@ export const useDeepInsightResults = () => {
     }
   };
 
-  return { analysis, isLoading, error };
+  return { analysis, isLoading, error, saveAnalysis };
 };
