@@ -6,7 +6,7 @@ import { DeepInsightResponses } from "../types";
 
 const STORAGE_KEY = "deep_insight_progress";
 
-// Import local storage utility functions from correct location
+// Use correct import path for the local storage utilities
 import { 
   saveAssessmentToStorage, 
   loadAnalysisHistory 
@@ -126,7 +126,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
         duration: 180000 // 3 minute toast for longer processing
       });
       
-      // Critical: Navigate to the results page with all responses
+      // Navigate to the results page with all responses
       navigate("/deep-insight/results", { 
         state: { 
           responses: finalResponses

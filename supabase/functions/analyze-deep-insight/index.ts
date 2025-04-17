@@ -8,18 +8,25 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log("Edge function received a request");
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    console.log("Handling OPTIONS preflight request");
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("Request method:", req.method);
+    console.log("Request headers:", Object.fromEntries(req.headers));
+    
     // Parse the request body and extract required data
     let requestData;
     try {
       // Add explicit error handling for JSON parsing
       const text = await req.text();
       if (!text || text.trim() === '') {
+        console.error("Request body is empty");
         throw new Error('Request body is empty');
       }
       
@@ -39,7 +46,7 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
     
     const { responses, timestamp } = requestData || {};
@@ -55,7 +62,7 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
     
     console.log(`Processing Deep Insight responses at ${new Date().toISOString()}`);
@@ -63,15 +70,14 @@ serve(async (req) => {
     console.log('Response count:', Object.keys(responses).length);
     console.log('Sample response keys:', Object.keys(responses).slice(0, 5));
     console.log('Sample response values:', Object.values(responses).slice(0, 5));
-    console.log('Full responses object:', JSON.stringify(responses).substring(0, 500) + '...');
 
     // Measure execution time for debugging
-    const startTime = Date.now()
+    const startTime = Date.now();
     
     // Ensure OPENAI_API_KEY is available and valid
-    const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAiApiKey) {
-      console.error('OPENAI_API_KEY is not set in environment variables')
+      console.error('OPENAI_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
           error: 'OPENAI_API_KEY is not set in environment variables',
@@ -81,11 +87,11 @@ serve(async (req) => {
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
     
     if (openAiApiKey.length < 20) {
-      console.error('OPENAI_API_KEY appears to be invalid (too short)')
+      console.error('OPENAI_API_KEY appears to be invalid (too short)');
       return new Response(
         JSON.stringify({ 
           error: 'OPENAI_API_KEY appears to be invalid',
@@ -95,10 +101,10 @@ serve(async (req) => {
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
-    console.log('Making OpenAI API request with model gpt-4o...')
+    console.log('Making OpenAI API request with model gpt-4o-mini...');
     
     try {
       const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -187,12 +193,12 @@ CRITICAL REQUIREMENTS:
         }),
       });
 
-      const processingTime = (Date.now() - startTime) / 1000
-      console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`)
+      const processingTime = (Date.now() - startTime) / 1000;
+      console.log(`OpenAI API request completed in ${processingTime.toFixed(2)} seconds`);
 
       if (!openAiResponse.ok) {
-        console.error('OpenAI API response status:', openAiResponse.status)
-        console.error('OpenAI API response status text:', openAiResponse.statusText)
+        console.error('OpenAI API response status:', openAiResponse.status);
+        console.error('OpenAI API response status text:', openAiResponse.statusText);
         
         let errorText = '';
         try {
@@ -222,6 +228,7 @@ CRITICAL REQUIREMENTS:
         
         console.log('Received OpenAI response in', (Date.now() - startTime)/1000, 'seconds');
         console.log('Response length:', contentText.length, 'characters');
+        console.log('First 200 chars of response:', contentText.substring(0, 200));
         
         if (!contentText || typeof contentText !== 'string') {
           throw new Error('Invalid or empty content in OpenAI response');
@@ -242,25 +249,25 @@ CRITICAL REQUIREMENTS:
       
       // Clean up the response if it has markdown formatting
       if (contentText.includes('```json')) {
-        const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+        const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         if (jsonMatch && jsonMatch[1]) {
-          contentText = jsonMatch[1].trim()
-          console.log('Extracted JSON from markdown code block')
+          contentText = jsonMatch[1].trim();
+          console.log('Extracted JSON from markdown code block');
         } else {
-          contentText = contentText.replace(/```json|```/g, '').trim()
-          console.log('Removed markdown code block markers')
+          contentText = contentText.replace(/```json|```/g, '').trim();
+          console.log('Removed markdown code block markers');
         }
       }
       
       try {
-        console.log('Attempting to parse JSON response...')
-        let analysis = JSON.parse(contentText)
-        console.log('Successfully parsed JSON response')
+        console.log('Attempting to parse JSON response...');
+        let analysis = JSON.parse(contentText);
+        console.log('Successfully parsed JSON response');
 
         // Validate response pattern format
-        console.log('Validating responsePatterns format...')
+        console.log('Validating responsePatterns format...');
         if (!analysis.responsePatterns || !analysis.responsePatterns.percentages) {
-          console.warn('Response patterns missing or invalid, generating fallback')
+          console.warn('Response patterns missing or invalid, generating fallback');
           analysis.responsePatterns = {
             percentages: { 
               a: Math.round(Math.random() * 30 + 10),
@@ -273,9 +280,9 @@ CRITICAL REQUIREMENTS:
             primaryChoice: 'a',
             secondaryChoice: 'b',
             responseSignature: '25-25-25-15-5-5'
-          }
+          };
         } else {
-          console.log('Valid responsePatterns found:', analysis.responsePatterns.responseSignature)
+          console.log('Valid responsePatterns found:', analysis.responsePatterns.responseSignature);
         }
 
         // Ensure emotionalArchitecture has all required fields
@@ -330,16 +337,16 @@ CRITICAL REQUIREMENTS:
           analysis.createdAt = new Date().toISOString();
         }
 
-        console.log('Successfully generated enhanced analysis')
-        console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds')
+        console.log('Successfully generated enhanced analysis');
+        console.log('Total processing time:', (Date.now() - startTime)/1000, 'seconds');
         
         return new Response(
           JSON.stringify(analysis),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        );
       } catch (parseError) {
-        console.error('Error parsing OpenAI response:', parseError)
-        console.error('First 200 chars of response:', contentText.substring(0, 200))
+        console.error('Error parsing OpenAI response:', parseError);
+        console.error('First 200 chars of response:', contentText.substring(0, 200));
         return new Response(
           JSON.stringify({ 
             error: 'Failed to parse analysis response',
@@ -350,10 +357,10 @@ CRITICAL REQUIREMENTS:
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
     } catch (fetchError) {
-      console.error('Error fetching from OpenAI:', fetchError)
+      console.error('Error fetching from OpenAI:', fetchError);
       
       return new Response(
         JSON.stringify({ 
@@ -364,10 +371,10 @@ CRITICAL REQUIREMENTS:
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
   } catch (error) {
-    console.error('Function execution error:', error)
+    console.error('Function execution error:', error);
     
     return new Response(
       JSON.stringify({ 
@@ -378,6 +385,6 @@ CRITICAL REQUIREMENTS:
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
 });

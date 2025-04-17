@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -38,8 +37,6 @@ export const useDeepInsightResults = () => {
         
         console.log("Attempting to call edge function for analysis with", 
           Object.keys(responseData).length, "responses");
-        console.log("Response data sample:", 
-          JSON.stringify(Object.fromEntries(Object.entries(responseData).slice(0, 3))));
         
         // Update loading toast
         toast.loading("Generating your deep insight analysis with AI...", { 
@@ -64,9 +61,12 @@ export const useDeepInsightResults = () => {
           
           // Race the function call against the timeout
           console.log("Invoking analyze-deep-insight edge function");
+
+          // FIXED: Ensure we're properly calling the edge function with the correct method
           const functionPromise = supabase.functions.invoke(
             'analyze-deep-insight',
             {
+              method: 'POST', // Explicitly set method
               body: payload
             }
           );
