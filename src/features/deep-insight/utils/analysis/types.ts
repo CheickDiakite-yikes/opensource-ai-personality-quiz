@@ -1,6 +1,7 @@
 
 import { PersonalityAnalysis } from "@/utils/types";
 import { DeepInsightResponses } from "../../types";
+import { Json } from "@/integrations/supabase/types";
 
 // Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
@@ -31,6 +32,11 @@ export interface AnalysisData extends PersonalityAnalysis {
   };
   responsePatterns: ResponsePatternAnalysis;
 }
+
+// Helper function to convert AnalysisData to Json-compatible format
+export const toJsonObject = (analysis: AnalysisData): Record<string, Json> => {
+  return JSON.parse(JSON.stringify(analysis));
+};
 
 // Pattern analysis response interface
 export interface ResponsePatternAnalysis {

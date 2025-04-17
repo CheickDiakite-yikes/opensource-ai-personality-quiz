@@ -5,9 +5,10 @@ import { Download, Sparkles, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AnalysisData } from "../utils/analysis/types";
+import { AnalysisData, toJsonObject } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { Json } from "@/integrations/supabase/types";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -36,6 +37,9 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         // Store the analysis in Supabase
         const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
         
+        // Convert analysis to JSON-compatible object
+        const jsonAnalysis = toJsonObject(analysis);
+        
         // Prepare analysis data in the format required by the database
         const analysisData = {
           id: analysisId,
@@ -56,14 +60,14 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           career_suggestions: analysis.careerSuggestions || [],
           learning_pathways: analysis.learningPathways || [],
           roadmap: analysis.roadmap || "",
-          result: analysis,
+          result: jsonAnalysis as Json, // Cast to Json type after conversion
           // New Deep Insight specific fields
-          response_patterns: analysis.responsePatterns || {},
-          core_traits: analysis.coreTraits || {},
-          cognitive_patterning: analysis.cognitivePatterning || {},
-          emotional_architecture: analysis.emotionalArchitecture || {},
-          interpersonal_dynamics: analysis.interpersonalDynamics || {},
-          growth_potential: analysis.growthPotential || {}
+          response_patterns: analysis.responsePatterns as unknown as Json,
+          core_traits: analysis.coreTraits as unknown as Json,
+          cognitive_patterning: analysis.cognitivePatterning as unknown as Json,
+          emotional_architecture: analysis.emotionalArchitecture as unknown as Json,
+          interpersonal_dynamics: analysis.interpersonalDynamics as unknown as Json,
+          growth_potential: analysis.growthPotential as unknown as Json
         };
 
         // Check if the analysis already exists
