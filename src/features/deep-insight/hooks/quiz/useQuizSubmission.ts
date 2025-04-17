@@ -96,8 +96,8 @@ export const useQuizSubmission = (
       // First ensure responses have been saved successfully
       await saveResponses(finalResponses);
       
-      // Navigate directly to results page, not history
-      navigate("/deep-insight/results");
+      // Navigate directly to results page with fresh=true parameter to force new analysis generation
+      navigate("/deep-insight/results?fresh=true");
       return true; // Return success
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";

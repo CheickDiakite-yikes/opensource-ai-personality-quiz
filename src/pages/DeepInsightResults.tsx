@@ -171,7 +171,7 @@ const DeepInsightResults: React.FC = () => {
           itemVariants={itemVariants} 
         />
 
-        {/* Visual summary charts - new addition */}
+        {/* Visual summary charts */}
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
           variants={itemVariants}

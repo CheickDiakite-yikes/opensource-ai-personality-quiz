@@ -20,11 +20,14 @@ export const useDeepInsightResults = () => {
   const analysisId = searchParams.get('id');
   const navigate = useNavigate();
   const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 1; // CRITICAL FIX: Reduced from 3 to 1 to prevent perpetual loops
-  const retryDelay = 3000; // Increased delay between retries
+  const maxRetries = 1;
+  const retryDelay = 3000;
   const [loadedFromCache, setLoadedFromCache] = useState(false);
   const isRetrying = useRef(false);
   const hasAutoRetried = useRef(false);
+  
+  // Force new analysis generation (don't use cache) if coming directly from quiz
+  const forceNewAnalysis = searchParams.get('fresh') === 'true';
 
   // Cache analysis in session storage to prevent loss on page refresh
   const cacheAnalysis = (data: AnalysisData) => {
@@ -90,7 +93,7 @@ export const useDeepInsightResults = () => {
 
   useEffect(() => {
     const fetchOrGenerateAnalysis = async () => {
-      // CRITICAL FIX: Don't proceed if we're already retrying
+      // Don't proceed if we're already retrying
       if (isRetrying.current) {
         console.log("Already in retry process, skipping redundant fetch");
         return;
@@ -100,18 +103,7 @@ export const useDeepInsightResults = () => {
       setError(null);
 
       try {
-        // First check if we have a cached analysis from this session
-        if (!analysisId) {
-          const cachedAnalysis = loadCachedAnalysis();
-          if (cachedAnalysis) {
-            console.log("Using cached analysis");
-            setAnalysis(cachedAnalysis);
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        // If an ID is provided, try to fetch that specific analysis
+        // First check if we have an analysis ID in the URL
         if (analysisId) {
           console.log(`Attempting to load analysis with ID: ${analysisId}`);
           
@@ -133,6 +125,8 @@ export const useDeepInsightResults = () => {
               if (data) {
                 console.log(`Successfully loaded legacy analysis`);
                 const analysisData = data as AnalysisData;
+                // Ensure the structure is complete
+                ensureAnalysisStructure(analysisData);
                 setAnalysis(analysisData);
                 cacheAnalysis(analysisData);
                 setIsLoading(false);
@@ -140,7 +134,6 @@ export const useDeepInsightResults = () => {
               }
             } catch (legacyErr) {
               console.error("Failed to fetch legacy analysis:", legacyErr);
-              // Continue to next approach (we'll try to generate a new analysis)
             }
           } else {
             // For UUID format IDs, try to fetch from the database
@@ -159,6 +152,8 @@ export const useDeepInsightResults = () => {
               console.log(`Successfully loaded analysis: ${data.id}`);
               // Extract the complete analysis from the data
               const convertedAnalysis = data.complete_analysis as unknown as AnalysisData;
+              // Ensure the structure is complete
+              ensureAnalysisStructure(convertedAnalysis);
               setAnalysis(convertedAnalysis);
               cacheAnalysis(convertedAnalysis);
               setIsLoading(false);
@@ -170,6 +165,21 @@ export const useDeepInsightResults = () => {
               });
             }
           }
+        }
+
+        // Check if we should use cached analysis (only if not forcing new analysis)
+        if (!forceNewAnalysis) {
+          const cachedAnalysis = loadCachedAnalysis();
+          if (cachedAnalysis) {
+            console.log("Using cached analysis");
+            // Ensure the structure is complete
+            ensureAnalysisStructure(cachedAnalysis);
+            setAnalysis(cachedAnalysis);
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          console.log("Forcing new analysis generation, bypassing cache");
         }
 
         // If no ID provided or the specified analysis wasn't found, generate a new one
@@ -216,7 +226,7 @@ export const useDeepInsightResults = () => {
         console.error("Error generating results:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
         
-        // CRITICAL FIX: Only auto-retry once, and only if we haven't tried before
+        // Only auto-retry once, and only if we haven't tried before
         if (retryCount < maxRetries && !hasAutoRetried.current) {
           const nextRetryCount = retryCount + 1;
           console.log(`Auto-retrying analysis generation (${nextRetryCount}/${maxRetries}) in ${retryDelay}ms`);
@@ -246,7 +256,70 @@ export const useDeepInsightResults = () => {
     };
 
     fetchOrGenerateAnalysis();
-  }, [analysisId, getResponses, navigate, retryCount]);
+  }, [analysisId, getResponses, navigate, retryCount, forceNewAnalysis]);
+
+  // Ensure all required properties are present in the analysis
+  const ensureAnalysisStructure = (analysisData: AnalysisData): void => {
+    // Make sure responsePatterns exists
+    if (!analysisData.responsePatterns) {
+      analysisData.responsePatterns = {
+        percentages: { a: 20, b: 20, c: 20, d: 20, e: 10, f: 10 },
+        primaryChoice: 'a',
+        secondaryChoice: 'b',
+        responseSignature: 'AB'
+      };
+    }
+    
+    // Make sure interpersonalDynamics exists
+    if (!analysisData.interpersonalDynamics) {
+      analysisData.interpersonalDynamics = {
+        attachmentStyle: "Your attachment style shows a balanced approach to relationships.",
+        communicationPattern: "You communicate thoughtfully and prefer meaningful conversations.",
+        conflictResolution: "You approach conflicts by seeking to understand different perspectives."
+      };
+    }
+    
+    // Make sure relationshipPatterns has the correct structure
+    if (!analysisData.relationshipPatterns || Array.isArray(analysisData.relationshipPatterns)) {
+      analysisData.relationshipPatterns = {
+        strengths: Array.isArray(analysisData.relationshipPatterns) 
+          ? analysisData.relationshipPatterns 
+          : ["Good listening skills", "Thoughtfulness"],
+        challenges: [],
+        compatibleTypes: []
+      };
+    }
+    
+    // Ensure traits are properly structured
+    if (!analysisData.traits || !Array.isArray(analysisData.traits) || analysisData.traits.length === 0) {
+      analysisData.traits = [
+        {
+          trait: "Analytical Thinking",
+          score: 7.5,
+          description: "Your analytical abilities help you understand complex situations."
+        },
+        {
+          trait: "Emotional Intelligence",
+          score: 7.0,
+          description: "Your emotional awareness influences how you connect with others."
+        },
+        {
+          trait: "Adaptability",
+          score: 6.5,
+          description: "Your flexibility in handling change is a key part of your approach."
+        }
+      ];
+    }
+    
+    // Ensure cognitivePatterning is present
+    if (!analysisData.cognitivePatterning) {
+      analysisData.cognitivePatterning = {
+        decisionMaking: "You tend to weigh options carefully before making decisions.",
+        learningStyle: "You learn best through a combination of concepts and practical applications.",
+        attention: "Your attention is most focused when dealing with meaningful content."
+      };
+    }
+  };
 
   const generateAnalysis = async (responses: DeepInsightResponses): Promise<AnalysisData | null> => {
     try {
@@ -315,7 +388,7 @@ export const useDeepInsightResults = () => {
 
   // Add a manual retry function with safeguards to prevent multiple simultaneous retries
   const retryAnalysis = async () => {
-    // CRITICAL FIX: Prevent multiple simultaneous retry attempts
+    // Prevent multiple simultaneous retry attempts
     if (isRetrying.current) {
       console.warn("Already retrying analysis, ignoring duplicate request");
       toast.error("Retry already in progress", {
