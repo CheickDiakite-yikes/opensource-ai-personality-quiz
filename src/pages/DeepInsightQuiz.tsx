@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { QuestionCard } from "@/features/deep-insight/components/QuestionCard";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 const DeepInsightQuiz: React.FC = () => {
   const { user } = useAuth();
   const totalQuestions = deepInsightQuestions.length;
-  // Remove initial load state which was causing repeated toast notifications
   
   const {
     currentQuestionIndex,
