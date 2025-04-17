@@ -47,10 +47,12 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({
           <div className="w-full md:w-1/2 h-[250px]">
             <ChartContainer
               config={{
-                a: { label: "Analytical (A)", color: "#8b5cf6" },  // violet-500
-                b: { label: "Emotional (B)", color: "#ec4899" },   // pink-500
-                c: { label: "Practical (C)", color: "#14b8a6" },   // teal-500
-                d: { label: "Creative (D)", color: "#f59e0b" }     // amber-500
+                a: { label: "Analytical", color: "#8b5cf6" },     // violet-500
+                b: { label: "Emotional", color: "#ec4899" },      // pink-500
+                c: { label: "Practical", color: "#14b8a6" },      // teal-500
+                d: { label: "Creative", color: "#f59e0b" },       // amber-500
+                e: { label: "Cautious", color: "#6b7280" },       // gray-500
+                f: { label: "Reflective", color: "#3b82f6" }      // blue-500
               }}
             >
               <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +120,9 @@ const getResponseLabel = (key: string): string => {
     case 'b': return 'Emotional';
     case 'c': return 'Practical';
     case 'd': return 'Creative';
-    default: return key;
+    case 'e': return 'Cautious';
+    case 'f': return 'Reflective';
+    default: return 'Other';
   }
 };
 
@@ -128,6 +132,8 @@ const getResponseColor = (key: string): string => {
     case 'b': return '#ec4899'; // pink-500
     case 'c': return '#14b8a6'; // teal-500
     case 'd': return '#f59e0b'; // amber-500
+    case 'e': return '#6b7280'; // gray-500
+    case 'f': return '#3b82f6'; // blue-500
     default: return '#94a3b8'; // slate-400
   }
 };
@@ -135,13 +141,17 @@ const getResponseColor = (key: string): string => {
 const getResponseDescription = (key: string): string => {
   switch (key) {
     case 'a': 
-      return 'You tend to approach situations with logic and analysis, focusing on systematic thinking.';
+      return 'You tend to approach situations with logic and analysis, focusing on systematic thinking and rational evaluation.';
     case 'b': 
-      return 'You tend to prioritize feelings and relationships, with a focus on emotional understanding.';
+      return 'You tend to prioritize feelings and relationships, with a focus on emotional understanding and interpersonal harmony.';
     case 'c': 
-      return 'You tend to focus on practical solutions and real-world applications.';
+      return 'You tend to focus on practical solutions and real-world applications, valuing efficiency and tangible results.';
     case 'd': 
-      return 'You tend to think outside the box and focus on innovation and possibilities.';
+      return 'You tend to think outside the box and focus on innovation and possibilities, embracing new ideas and unconventional approaches.';
+    case 'e': 
+      return 'You tend to approach situations with careful consideration of risks and potential problems, prioritizing security and stability.';
+    case 'f': 
+      return 'You tend to engage in deep introspection and thoughtful contemplation, often examining your own thoughts and motivations.';
     default: 
       return 'No specific pattern detected.';
   }

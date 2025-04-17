@@ -18,8 +18,8 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     b: 0, 
     c: 0,
     d: 0,
-    e: 0,  // Added new option
-    f: 0   // Added new option
+    e: 0,
+    f: 0
   };
   
   responsesArray.forEach(([_, answer]) => {
@@ -28,8 +28,8 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     if (lastChar === 'b') answerCounts.b++;
     if (lastChar === 'c') answerCounts.c++;
     if (lastChar === 'd') answerCounts.d++;
-    if (lastChar === 'e') answerCounts.e++;  // Support for new option e
-    if (lastChar === 'f') answerCounts.f++;  // Support for new option f
+    if (lastChar === 'e') answerCounts.e++;
+    if (lastChar === 'f') answerCounts.f++;
   });
   
   console.log("Response distribution:", answerCounts);
@@ -40,8 +40,8 @@ export const analyzeResponsePatterns = (responses: DeepInsightResponses): Respon
     b: Math.round((answerCounts.b / totalResponses) * 100),
     c: Math.round((answerCounts.c / totalResponses) * 100),
     d: Math.round((answerCounts.d / totalResponses) * 100),
-    e: Math.round((answerCounts.e / totalResponses) * 100),  // Percentage for new option
-    f: Math.round((answerCounts.f / totalResponses) * 100)   // Percentage for new option
+    e: Math.round((answerCounts.e / totalResponses) * 100),
+    f: Math.round((answerCounts.f / totalResponses) * 100)
   };
   
   // Generate a unique response signature for this user
