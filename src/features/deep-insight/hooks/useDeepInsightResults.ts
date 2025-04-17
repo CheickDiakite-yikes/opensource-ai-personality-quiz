@@ -95,10 +95,10 @@ export const useDeepInsightResults = () => {
       }
       
       // Then save the analysis to deep_insight_analyses
-      // Fix: Format the insert data as a single object, not as an array property
+      // Fix: Format the insert data as an array of objects, not as a single object
       const { error: analysisError } = await supabase
         .from('deep_insight_analyses')
-        .insert({
+        .insert([{  // Wrap the object in an array
           user_id: user.id,
           title: "Deep Insight Analysis",
           overview: analysis.overview,
@@ -112,7 +112,7 @@ export const useDeepInsightResults = () => {
           emotional_intelligence_score: analysis.emotionalIntelligenceScore,
           response_patterns: analysis.responsePatterns,
           raw_responses: responseData
-        });
+        }]);
         
       if (analysisError) {
         console.error("Error saving analysis:", analysisError);
