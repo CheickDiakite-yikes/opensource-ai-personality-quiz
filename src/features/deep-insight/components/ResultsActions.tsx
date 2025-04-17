@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { RefreshCw, Save, Share2 } from "lucide-react";
 import { AnalysisData } from "../utils/analysis/types";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -20,6 +21,8 @@ export const ResultsActions = ({
   onRefresh,
   loadedFromCache
 }: ResultsActionsProps) => {
+  const isMobile = useIsMobile();
+  
   const handleShare = () => {
     try {
       // Create a shareable URL with the analysis ID
@@ -36,13 +39,25 @@ export const ResultsActions = ({
 
   return (
     <motion.div 
-      className="flex flex-wrap gap-3 justify-center"
+      className={`
+        flex flex-col sm:flex-row 
+        items-center 
+        justify-center 
+        gap-3 
+        w-full 
+        px-4 
+        ${isMobile ? 'space-y-2' : ''}
+      `}
       variants={itemVariants}
       custom={5}
     >
       <Button 
         variant="outline" 
-        className="flex items-center gap-1" 
+        className={`
+          w-full sm:w-auto 
+          flex items-center gap-2 
+          justify-center
+        `} 
         onClick={onSave}
       >
         <Save className="h-4 w-4" />
@@ -51,7 +66,11 @@ export const ResultsActions = ({
 
       <Button 
         variant="outline" 
-        className="flex items-center gap-1" 
+        className={`
+          w-full sm:w-auto 
+          flex items-center gap-2 
+          justify-center
+        `} 
         onClick={handleShare}
       >
         <Share2 className="h-4 w-4" />
@@ -61,7 +80,11 @@ export const ResultsActions = ({
       {onRefresh && (
         <Button 
           variant={loadedFromCache ? "default" : "outline"} 
-          className="flex items-center gap-1" 
+          className={`
+            w-full sm:w-auto 
+            flex items-center gap-2 
+            justify-center
+          `} 
           onClick={onRefresh}
         >
           <RefreshCw className="h-4 w-4" />
