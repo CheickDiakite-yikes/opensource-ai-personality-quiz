@@ -9,7 +9,7 @@ import {
   Legend
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { ResponsePatternAnalysis } from "@/features/deep-insight/types";
+import { ResponsePatternAnalysis } from "@/features/deep-insight/utils/analysis/types";
 
 interface ResponsePatternChartProps {
   patternData?: ResponsePatternAnalysis;

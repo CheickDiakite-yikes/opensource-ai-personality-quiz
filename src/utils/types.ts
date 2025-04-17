@@ -91,13 +91,10 @@ export interface RelationshipPatterns {
   compatibleTypes: string[];
 }
 
-// Response Pattern Analysis interface
-export interface ResponsePatternAnalysis {
-  percentages: Record<string, number>;
-  primaryChoice: string;
-  secondaryChoice: string;
-  responseSignature: string;
-}
+// Use the ResponsePatternAnalysis from deep-insight/types.ts
+// Import the type directly to maintain compatibility
+import { ResponsePatternAnalysis as DeepInsightResponsePatternAnalysis } from '@/features/deep-insight/types';
+export type ResponsePatternAnalysis = DeepInsightResponsePatternAnalysis;
 
 // Personality Analysis
 export interface PersonalityAnalysis {
@@ -121,7 +118,7 @@ export interface PersonalityAnalysis {
   userId?: string;
   assessmentId?: string;
   // Add missing properties needed for deep insights
-  responsePatterns?: ResponsePatternAnalysis;
+  responsePatterns?: DeepInsightResponsePatternAnalysis;
   coreTraits?: {
     primary: string;
     secondary: string;

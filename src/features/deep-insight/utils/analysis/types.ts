@@ -1,6 +1,6 @@
 
 import { PersonalityAnalysis } from "@/utils/types";
-import { DeepInsightResponses } from "../../types";
+import { DeepInsightResponses, ResponsePatternAnalysis as DeepInsightResponsePatternAnalysis } from "../../types";
 
 // Define AnalysisData type to extend PersonalityAnalysis
 export interface AnalysisData extends PersonalityAnalysis {
@@ -29,16 +29,11 @@ export interface AnalysisData extends PersonalityAnalysis {
     developmentAreas: string[];
     recommendations: string[];
   };
-  responsePatterns?: ResponsePatternAnalysis;
+  responsePatterns?: DeepInsightResponsePatternAnalysis;
 }
 
-// Pattern analysis response interface
-export interface ResponsePatternAnalysis {
-  percentages: Record<string, number>;
-  primaryChoice: string;
-  secondaryChoice: string;
-  responseSignature: string;
-}
+// Export the ResponsePatternAnalysis type to match with the type in DeepInsight/types.ts
+export type ResponsePatternAnalysis = DeepInsightResponsePatternAnalysis;
 
 // Personality trait determination response
 export interface PersonalityTraitsDetermination {
