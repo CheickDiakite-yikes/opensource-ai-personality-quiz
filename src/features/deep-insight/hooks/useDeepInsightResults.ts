@@ -7,6 +7,7 @@ import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
@@ -95,24 +96,24 @@ export const useDeepInsightResults = () => {
       }
       
       // Then save the analysis to deep_insight_analyses
-      // Fix: Format the insert data as an array of objects, not as a single object
+      // Fix: Cast the analysis to Json type and use the correct insert format
       const { error: analysisError } = await supabase
         .from('deep_insight_analyses')
-        .insert([{  // Wrap the object in an array
+        .insert({
           user_id: user.id,
           title: "Deep Insight Analysis",
           overview: analysis.overview,
-          complete_analysis: analysis,
-          core_traits: analysis.coreTraits,
-          cognitive_patterning: analysis.cognitivePatterning,
-          emotional_architecture: analysis.emotionalArchitecture,
-          interpersonal_dynamics: analysis.interpersonalDynamics,
-          growth_potential: analysis.growthPotential,
+          complete_analysis: analysis as unknown as Json,
+          core_traits: analysis.coreTraits as unknown as Json,
+          cognitive_patterning: analysis.cognitivePatterning as unknown as Json,
+          emotional_architecture: analysis.emotionalArchitecture as unknown as Json,
+          interpersonal_dynamics: analysis.interpersonalDynamics as unknown as Json,
+          growth_potential: analysis.growthPotential as unknown as Json,
           intelligence_score: analysis.intelligenceScore,
           emotional_intelligence_score: analysis.emotionalIntelligenceScore,
-          response_patterns: analysis.responsePatterns,
+          response_patterns: analysis.responsePatterns as unknown as Json,
           raw_responses: responseData
-        }]);
+        });
         
       if (analysisError) {
         console.error("Error saving analysis:", analysisError);
