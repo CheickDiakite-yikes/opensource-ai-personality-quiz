@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
-import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { PersonalityAnalysis } from "@/utils/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -31,16 +29,27 @@ export const useDeepInsightResults = () => {
           return;
         }
         
-        // In a real app, we would call an API to analyze the responses
-        // For now, we'll simulate a delay and generate a personalized analysis
         setLoading(true);
         
-        // Simulate API call delay
-        setTimeout(() => {
-          const generatedAnalysis = generateAnalysisFromResponses(responseData);
-          setAnalysis(generatedAnalysis);
-          setLoading(false);
-        }, 1500); // 1.5 second delay to simulate processing
+        // Call the edge function to analyze responses
+        const { data: analysis, error: functionError } = await supabase.functions.invoke(
+          'analyze-deep-insight',
+          {
+            body: { responses: responseData }
+          }
+        );
+
+        if (functionError) {
+          console.error('Error calling analyze-deep-insight:', functionError);
+          throw new Error('Failed to generate analysis. Please try again.');
+        }
+
+        if (!analysis) {
+          throw new Error('No analysis was generated');
+        }
+
+        setAnalysis(analysis);
+        setLoading(false);
         
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
