@@ -16,8 +16,8 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
   
   // Find current category name if available
-  const category = currentCategory ? 
-    DeepInsightCategories.find(cat => cat.id === currentCategory)?.name : 
+  const categoryObj = currentCategory ? 
+    DeepInsightCategories.find(cat => cat.id === currentCategory) : 
     undefined;
   
   // Calculate which section of the assessment we're in
@@ -37,7 +37,7 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({
       <div className="flex flex-wrap justify-between items-center gap-2">
         <div className="text-sm text-muted-foreground">
           Question {currentQuestionIndex + 1} of {totalQuestions}
-          {category && <span className="ml-1">• {category}</span>}
+          {categoryObj && <span className="ml-1">• {categoryObj.name}</span>}
         </div>
         
         <div className="text-sm font-medium">
