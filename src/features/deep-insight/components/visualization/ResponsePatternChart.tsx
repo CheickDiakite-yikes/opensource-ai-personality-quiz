@@ -8,7 +8,8 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertTriangle } from "lucide-react";
 import { ResponsePatternAnalysis } from "@/features/deep-insight/utils/analysis/types";
 
 interface ResponsePatternChartProps {
@@ -16,32 +17,66 @@ interface ResponsePatternChartProps {
 }
 
 const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData }) => {
+  // Enhanced data processing with improved fallbacks
   const data = React.useMemo(() => {
+    // Debug the incoming data
+    console.log("Response pattern data:", patternData);
+    
     // Check for valid patternData with percentages
-    if (!patternData || !patternData.percentages) {
-      return [
-        { name: "Analytical (Default)", value: 20 },
-        { name: "Emotional (Default)", value: 20 },
-        { name: "Practical (Default)", value: 20 },
-        { name: "Creative (Default)", value: 20 },
-        { name: "Social (Default)", value: 10 },
-        { name: "Organized (Default)", value: 10 }
-      ];
+    if (!patternData) {
+      console.log("No pattern data provided");
+      return generateDefaultData();
     }
     
-    // Extract values from percentages, ensuring all keys exist
-    const percentages = patternData.percentages;
-    const requiredKeys = ['a', 'b', 'c', 'd', 'e', 'f'];
+    // Handle direct percentages object
+    if (patternData.percentages && typeof patternData.percentages === 'object') {
+      const percentages = patternData.percentages;
+      console.log("Using direct percentages:", percentages);
+      
+      // Filter out only keys with valid numeric values
+      return Object.entries(percentages)
+        .filter(([key, value]) => typeof value === 'number' && value > 0)
+        .map(([key, value]) => ({
+          name: getResponseName(key),
+          value: value,
+          key
+        }));
+    }
     
-    // Create data array with proper labels
-    return requiredKeys
-      .filter(key => typeof percentages[key] === 'number' && percentages[key] > 0)
-      .map(key => ({
-        name: getResponseName(key),
-        value: percentages[key],
-        key
-      }));
+    // Handle legacy format where percentages might be nested differently
+    if (typeof patternData === 'object') {
+      // Try to extract percentages from potential nested structure
+      const possiblePercentages = Object.entries(patternData)
+        .filter(([key, value]) => 
+          typeof value === 'number' && 
+          ['a', 'b', 'c', 'd', 'e', 'f'].includes(key)
+        );
+      
+      if (possiblePercentages.length > 0) {
+        console.log("Found legacy percentages format:", possiblePercentages);
+        return possiblePercentages.map(([key, value]) => ({
+          name: getResponseName(key),
+          value: value as number,
+          key
+        }));
+      }
+    }
+    
+    console.log("Could not process pattern data, using default");
+    return generateDefaultData();
   }, [patternData]);
+  
+  // Generate default data for fallback
+  function generateDefaultData() {
+    return [
+      { name: "Analytical (Default)", value: 20, key: 'a' },
+      { name: "Emotional (Default)", value: 20, key: 'b' },
+      { name: "Practical (Default)", value: 20, key: 'c' },
+      { name: "Creative (Default)", value: 20, key: 'd' },
+      { name: "Social (Default)", value: 10, key: 'e' },
+      { name: "Organized (Default)", value: 10, key: 'f' }
+    ];
+  }
   
   const COLORS = ['#FF8042', '#FFBB28', '#00C49F', '#0088FE', '#8884d8', '#82ca9d'];
   
@@ -64,9 +99,36 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({ patternData
   };
 
   const isDefaultData = !patternData || !patternData.percentages;
+  
+  // No data scenario - show helpful message instead of empty chart
+  if (data.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-lg mb-2">No Response Pattern Data</h3>
+            <p className="text-muted-foreground mb-4">
+              The analysis doesn't contain any response pattern data to visualize.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
+      <CardHeader className={!isDefaultData ? "pb-0" : "pb-4"}>
+        {!isDefaultData && (
+          <>
+            <CardTitle className="text-lg">Response Pattern Analysis</CardTitle>
+            <CardDescription>
+              Distribution of your response tendencies across different thinking styles
+            </CardDescription>
+          </>
+        )}
+      </CardHeader>
       <CardContent className="p-4">
         <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
