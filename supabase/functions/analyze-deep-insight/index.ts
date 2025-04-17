@@ -34,7 +34,7 @@ serve(async (req) => {
             content: `You are a highly skilled psychological analyst specializing in personality assessment. 
             Analyze the provided assessment responses to generate a comprehensive personality profile.
             Your analysis should be detailed, balanced, and focus on core traits, cognitive patterns, 
-            emotional architecture, and growth potential. Format the response as a structured JSON object.`
+            emotional architecture, and growth potential. Format the response as a valid JSON object without markdown formatting or code blocks.`
           },
           {
             role: "user",
@@ -51,26 +51,48 @@ serve(async (req) => {
     }
 
     const aiResult = await openAiResponse.json()
-    const analysis = JSON.parse(aiResult.choices[0].message.content)
-
-    // Add metadata
-    const enrichedAnalysis = {
-      ...analysis,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    }
-
-    console.log('Generated analysis:', enrichedAnalysis)
-
-    return new Response(
-      JSON.stringify(enrichedAnalysis),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+    let contentText = aiResult.choices[0].message.content
+    
+    // Clean up the response if it has markdown formatting
+    if (contentText.includes('```json')) {
+      // Extract the JSON content from markdown code blocks
+      const jsonMatch = contentText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+      if (jsonMatch && jsonMatch[1]) {
+        contentText = jsonMatch[1].trim()
+      } else {
+        // If there's no match but we detected markdown, try to clean it up
+        contentText = contentText.replace(/```json|```/g, '').trim()
       }
-    )
+    }
+    
+    console.log('Cleaned content text:', contentText.substring(0, 100) + '...')
+    
+    try {
+      const analysis = JSON.parse(contentText)
+      
+      // Add metadata
+      const enrichedAnalysis = {
+        ...analysis,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      }
+
+      console.log('Generated analysis:', Object.keys(enrichedAnalysis))
+
+      return new Response(
+        JSON.stringify(enrichedAnalysis),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response:', parseError)
+      console.error('Content text causing error:', contentText.substring(0, 200))
+      throw new Error(`Failed to parse OpenAI response as JSON: ${parseError.message}`)
+    }
   } catch (error) {
     console.error('Error in analyze-deep-insight function:', error)
     return new Response(
