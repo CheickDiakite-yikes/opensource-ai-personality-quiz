@@ -95,6 +95,7 @@ export const useDeepInsightResults = () => {
       }
       
       // Then save the analysis to deep_insight_analyses
+      // Fix: Format the insert data as a single object, not as an array property
       const { error: analysisError } = await supabase
         .from('deep_insight_analyses')
         .insert({
