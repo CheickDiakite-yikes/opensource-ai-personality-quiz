@@ -26,7 +26,7 @@ export const PersonalOverviewCard: React.FC<PersonalOverviewCardProps> = ({ anal
           <CardDescription>A summary of your core personality traits</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p>{analysis.overview}</p>
+          <p>{typeof analysis.overview === 'string' ? analysis.overview : 'No overview available'}</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CoreTraitCard 

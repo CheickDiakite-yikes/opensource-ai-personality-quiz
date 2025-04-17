@@ -9,6 +9,9 @@ interface PersonalityTraitsListProps {
 
 export const PersonalityTraitsList: React.FC<PersonalityTraitsListProps> = ({ traits }) => {
   const [expanded, setExpanded] = React.useState(false);
+  
+  // Ensure traits is an array before trying to render
+  const traitsList = Array.isArray(traits) ? traits : [];
 
   return (
     <div>
@@ -25,15 +28,17 @@ export const PersonalityTraitsList: React.FC<PersonalityTraitsListProps> = ({ tr
       
       {expanded && (
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 animate-in fade-in">
-          {traits.slice(0, 9).map((trait, index) => (
+          {traitsList.slice(0, 9).map((trait, index) => (
             <div key={index} className="bg-secondary/10 p-2 rounded-md">
               <div className="font-medium flex items-center">
                 <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-xs text-primary">
                   {index + 1}
                 </div>
-                {trait.trait}
+                {typeof trait === 'object' && trait !== null ? trait.trait : String(trait)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{trait.description}</p>
+              {typeof trait === 'object' && trait !== null && trait.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{trait.description}</p>
+              )}
             </div>
           ))}
         </div>

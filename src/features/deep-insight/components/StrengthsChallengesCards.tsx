@@ -11,9 +11,28 @@ interface StrengthsChallengesCardsProps {
 }
 
 export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> = ({ analysis, itemVariants }) => {
-  const strengths = analysis.coreTraits?.strengths || analysis.traits?.map(trait => trait.strengths[0]) || [];
-  const challenges = analysis.coreTraits?.challenges || analysis.weaknesses || [];
-  const recommendations = analysis.growthPotential?.recommendations || analysis.growthAreas || [];
+  // Properly extract strengths and challenges, ensuring they are arrays
+  const strengths = Array.isArray(analysis.coreTraits?.strengths) 
+    ? analysis.coreTraits?.strengths 
+    : (Array.isArray(analysis.traits) 
+      ? analysis.traits.map(trait => trait.strengths?.[0]).filter(Boolean)
+      : []);
+  
+  const challenges = Array.isArray(analysis.coreTraits?.challenges) 
+    ? analysis.coreTraits?.challenges 
+    : (Array.isArray(analysis.weaknesses) ? analysis.weaknesses : []);
+  
+  // Get recommendations, ensuring they're an array
+  const growthPotentialRecs = Array.isArray(analysis.growthPotential?.recommendations) 
+    ? analysis.growthPotential?.recommendations 
+    : [];
+  
+  const growthAreas = Array.isArray(analysis.growthAreas) 
+    ? analysis.growthAreas 
+    : [];
+  
+  // Combine recommendations from both sources, ensuring we have an array
+  const recommendations = [...growthPotentialRecs, ...growthAreas].filter(Boolean);
 
   return (
     <motion.div
@@ -37,7 +56,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 </div>
-                <span>{strength}</span>
+                <span>{String(strength)}</span>
               </li>
             ))}
           </ul>
@@ -58,7 +77,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-orange-500"></div>
                 </div>
-                <span>{challenge}</span>
+                <span>{String(challenge)}</span>
               </li>
             ))}
           </ul>
@@ -79,7 +98,7 @@ export const StrengthsChallengesCards: React.FC<StrengthsChallengesCardsProps> =
                 <div className="h-6 w-6 flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                 </div>
-                <span>{recommendation}</span>
+                <span>{String(recommendation)}</span>
               </li>
             ))}
           </ul>

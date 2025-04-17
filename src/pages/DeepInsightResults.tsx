@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
@@ -132,6 +133,32 @@ const DeepInsightResults: React.FC = () => {
     return <ResultsError error={displayError || "No analysis data found"} />;
   }
 
+  // Function to safely render a chart only if the data is valid
+  const renderSafeTraitsChart = () => {
+    if (Array.isArray(displayAnalysis.traits)) {
+      return <PersonalityTraitsChart traits={displayAnalysis.traits} />;
+    }
+    return (
+      <div className="text-center p-6 bg-muted/20 rounded-md">
+        <p>Personality trait data is not available in the correct format.</p>
+      </div>
+    );
+  };
+
+  // Function to safely render the response patterns chart
+  const renderSafeResponsePatternChart = () => {
+    if (displayAnalysis.responsePatterns && 
+        typeof displayAnalysis.responsePatterns === 'object' &&
+        displayAnalysis.responsePatterns.percentages) {
+      return <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />;
+    }
+    return (
+      <div className="text-center p-6 bg-muted/20 rounded-md">
+        <p>Response pattern data is not available for this analysis.</p>
+      </div>
+    );
+  };
+
   return (
     <motion.div 
       className="container max-w-4xl py-8 px-4 md:px-6"
@@ -191,21 +218,22 @@ const DeepInsightResults: React.FC = () => {
             </TabsList>
             
             <TabsContent value="traits" className="mt-0">
-              <PersonalityTraitsChart traits={displayAnalysis.traits} />
+              {renderSafeTraitsChart()}
             </TabsContent>
             
             <TabsContent value="patterns" className="mt-0">
-              {displayAnalysis.responsePatterns ? (
-                <ResponsePatternChart patternData={displayAnalysis.responsePatterns} />
-              ) : (
-                <div className="text-center p-6 bg-muted/20 rounded-md">
-                  <p>Response pattern data is not available for this analysis.</p>
-                </div>
-              )}
+              {renderSafeResponsePatternChart()}
             </TabsContent>
             
             <TabsContent value="cognitive" className="mt-0">
-              <CognitiveStrengthsChart analysis={displayAnalysis} />
+              {displayAnalysis.cognitivePatterning && 
+               displayAnalysis.emotionalArchitecture ? (
+                <CognitiveStrengthsChart analysis={displayAnalysis} />
+              ) : (
+                <div className="text-center p-6 bg-muted/20 rounded-md">
+                  <p>Cognitive profile data is not available for this analysis.</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </motion.div>

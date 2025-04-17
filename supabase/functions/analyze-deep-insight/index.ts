@@ -37,7 +37,19 @@ serve(async (req) => {
             emotional architecture, and growth potential. Format the response as a valid JSON object without markdown formatting or code blocks.
             
             IMPORTANT: Always include numerical scores for intelligenceScore and emotionalIntelligenceScore as numbers between 0-100.
-            Always include all required fields: coreTraits (with primary and secondary properties), traits, intelligence, overview.`
+            Always include all required fields: coreTraits (with primary and secondary properties), traits, intelligence, overview.
+            
+            Ensure traits is an array of objects with the following structure:
+            traits: [
+              {
+                trait: "name of the trait",
+                score: number,
+                description: "description of the trait",
+                strengths: ["strength 1", "strength 2"],
+                challenges: ["challenge 1", "challenge 2"],
+                growthSuggestions: ["suggestion 1", "suggestion 2"]
+              }
+            ]`
           },
           {
             role: "user",
@@ -86,8 +98,22 @@ serve(async (req) => {
           strengths: ["Adaptability", "Balance"],
           challenges: ["May lack specialization"]
         },
-        traits: analysis.traits || [],
-        overview: analysis.overview || "Analysis overview not available."
+        traits: Array.isArray(analysis.traits) ? analysis.traits : [],
+        overview: analysis.overview || "Analysis overview not available.",
+        cognitivePatterning: analysis.cognitivePatterning || {
+          decisionMaking: "You have a balanced approach to decision making, considering both facts and intuition.",
+          learningStyle: "You learn through a combination of practical experience and theoretical understanding.",
+          attention: "Your attention tends to be focused, though you can switch contexts when needed."
+        },
+        emotionalArchitecture: analysis.emotionalArchitecture || {
+          emotionalAwareness: "You have a moderate level of awareness regarding your emotional states.",
+          regulationStyle: "You generally manage emotions effectively through various coping strategies.",
+          empathicCapacity: "You can understand and relate to others' emotions in most situations."
+        },
+        growthPotential: analysis.growthPotential || {
+          developmentAreas: ["Self-awareness", "Communication skills", "Stress management"],
+          recommendations: ["Practice mindfulness", "Seek feedback", "Establish healthy boundaries"]
+        }
       }
 
       console.log('Generated analysis:', Object.keys(analysis))
