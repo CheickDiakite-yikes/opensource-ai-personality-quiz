@@ -35,6 +35,15 @@ const QuizLoadingSkeleton = () => (
   </div>
 );
 
+// Error fallback component
+const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) => (
+  <div className="text-center p-6">
+    <h2 className="text-2xl font-bold text-destructive mb-2">Something went wrong</h2>
+    <p className="mb-4 text-muted-foreground">{error.message}</p>
+    <Button onClick={resetErrorBoundary}>Try again</Button>
+  </div>
+);
+
 // Main component
 const DeepInsightQuiz: React.FC = () => {
   const { user } = useAuth();
@@ -50,15 +59,18 @@ const DeepInsightQuiz: React.FC = () => {
     clearSavedProgress
   } = useDeepInsightQuiz(totalQuestions);
   
-  // Only try to access currentQuestion when not loading
-  const currentQuestion = !isLoading ? deepInsightQuestions[currentQuestionIndex] : null;
-  const isFirstQuestion = currentQuestionIndex === 0;
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
-  
   // Calculate progress percentage for display
   const completedQuestions = Object.keys(responses).length;
   const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
   const hasPartialProgress = completedQuestions > 0;
+  
+  // Only try to access currentQuestion when not loading
+  const currentQuestion = !isLoading && currentQuestionIndex < totalQuestions 
+    ? deepInsightQuestions[currentQuestionIndex] 
+    : null;
+    
+  const isFirstQuestion = currentQuestionIndex === 0;
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
   // Early loading state for better UX
   if (isLoading) {
@@ -70,6 +82,26 @@ const DeepInsightQuiz: React.FC = () => {
         transition={{ duration: 0.3 }}
       >
         <QuizLoadingSkeleton />
+      </motion.div>
+    );
+  }
+  
+  // Handle any errors in the quiz
+  if (error) {
+    return (
+      <motion.div 
+        className="container max-w-4xl py-8 px-4 md:px-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="bg-destructive/15 text-destructive rounded-md p-6">
+          <h2 className="text-xl font-bold mb-2">Error</h2>
+          <p>{error}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Reload Quiz
+          </Button>
+        </div>
       </motion.div>
     );
   }
@@ -108,7 +140,7 @@ const DeepInsightQuiz: React.FC = () => {
           )}
         </header>
         
-        {currentQuestion && (
+        {currentQuestion ? (
           <>
             <QuizProgress 
               currentQuestionIndex={currentQuestionIndex} 
@@ -128,6 +160,16 @@ const DeepInsightQuiz: React.FC = () => {
               isLoading={false}
             />
           </>
+        ) : (
+          <div className="text-center p-6 border rounded-lg">
+            <h2 className="text-xl font-bold mb-2">No questions found</h2>
+            <p className="text-muted-foreground">
+              There was a problem loading the assessment questions.
+            </p>
+            <Button className="mt-4" onClick={() => window.location.reload()}>
+              Reload Quiz
+            </Button>
+          </div>
         )}
       </div>
     </motion.div>

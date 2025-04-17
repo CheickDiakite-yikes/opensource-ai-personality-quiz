@@ -14,17 +14,18 @@ export const QuizProgress: React.FC<QuizProgressProps> = memo(({
   totalQuestions,
   currentCategory 
 }) => {
+  // Calculate progress percentage
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
   
   // Find current category name if available
-  const categoryObj = currentCategory ? 
-    DeepInsightCategories.find(cat => cat.id === currentCategory) : 
+  const categoryName = currentCategory ? 
+    DeepInsightCategories.find(cat => cat.id === currentCategory)?.name : 
     undefined;
   
   // Calculate which section of the assessment we're in
   const section = Math.floor((currentQuestionIndex / totalQuestions) * 5) + 1;
-  const questionInSection = (currentQuestionIndex % (totalQuestions / 5)) + 1;
-  const questionsInSection = totalQuestions / 5;
+  const questionsInSection = Math.ceil(totalQuestions / 5);
+  const questionInSection = (currentQuestionIndex % questionsInSection) + 1;
   
   return (
     <div className="w-full space-y-2">
@@ -37,7 +38,7 @@ export const QuizProgress: React.FC<QuizProgressProps> = memo(({
       <div className="flex flex-wrap justify-between items-center gap-2">
         <div className="text-sm text-muted-foreground">
           Question {currentQuestionIndex + 1} of {totalQuestions}
-          {categoryObj && <span className="ml-1">• {categoryObj.name}</span>}
+          {categoryName && <span className="ml-1">• {categoryName}</span>}
         </div>
         
         <div className="text-sm font-medium">
