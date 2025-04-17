@@ -60,68 +60,76 @@ const DeepInsightQuiz: React.FC = () => {
   const progressPercentage = ((completedQuestions / totalQuestions) * 100).toFixed(0);
   const hasPartialProgress = completedQuestions > 0;
 
+  // Early loading state for better UX
+  if (isLoading) {
+    return (
+      <motion.div 
+        className="container max-w-4xl py-8 px-4 md:px-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <QuizLoadingSkeleton />
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div 
       className="container max-w-4xl py-8 px-4 md:px-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      {isLoading ? (
-        <QuizLoadingSkeleton />
-      ) : (
-        <div className="flex flex-col gap-8">
-          <header className="text-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center justify-center gap-2">
-              <Sparkles className="h-8 w-8 text-primary" />
-              Deep Insight Assessment
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover your authentic self through this comprehensive personality assessment. 
-              Answer thoughtfully to receive a detailed analysis of your inner workings.
-            </p>
-            
-            {hasPartialProgress && (
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>You've completed {completedQuestions} of {totalQuestions} questions ({progressPercentage}%).</p>
-                <p className="text-xs mt-1">All {totalQuestions} questions must be answered for a complete analysis.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2" 
-                  onClick={clearSavedProgress}
-                >
-                  Start Over
-                </Button>
-              </div>
-            )}
-          </header>
+      <div className="flex flex-col gap-8">
+        <header className="text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center justify-center gap-2">
+            <Sparkles className="h-8 w-8 text-primary" />
+            Deep Insight Assessment
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Discover your authentic self through this comprehensive personality assessment. 
+            Answer thoughtfully to receive a detailed analysis of your inner workings.
+          </p>
           
-          {currentQuestion && (
-            <>
-              <QuizProgress 
-                currentQuestionIndex={currentQuestionIndex} 
-                totalQuestions={totalQuestions}
-                currentCategory={currentQuestion.category}
-              />
-              
-              <Suspense fallback={<Skeleton className="h-64 w-full rounded-md" />}>
-                <QuestionCard 
-                  key={currentQuestion.id} 
-                  question={currentQuestion}
-                  currentResponse={responses[currentQuestion.id] || ""}
-                  onPrevious={handlePrevious}
-                  onSubmit={handleSubmitQuestion}
-                  isFirstQuestion={isFirstQuestion}
-                  isLastQuestion={isLastQuestion}
-                  error={error}
-                  isLoading={false}
-                />
-              </Suspense>
-            </>
+          {hasPartialProgress && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>You've completed {completedQuestions} of {totalQuestions} questions ({progressPercentage}%).</p>
+              <p className="text-xs mt-1">All {totalQuestions} questions must be answered for a complete analysis.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2" 
+                onClick={clearSavedProgress}
+              >
+                Start Over
+              </Button>
+            </div>
           )}
-        </div>
-      )}
+        </header>
+        
+        {currentQuestion && (
+          <>
+            <QuizProgress 
+              currentQuestionIndex={currentQuestionIndex} 
+              totalQuestions={totalQuestions}
+              currentCategory={currentQuestion.category}
+            />
+            
+            <QuestionCard 
+              key={`question-${currentQuestion.id}`}
+              question={currentQuestion}
+              currentResponse={responses[currentQuestion.id] || ""}
+              onPrevious={handlePrevious}
+              onSubmit={handleSubmitQuestion}
+              isFirstQuestion={isFirstQuestion}
+              isLastQuestion={isLastQuestion}
+              error={error}
+              isLoading={false}
+            />
+          </>
+        )}
+      </div>
     </motion.div>
   );
 };

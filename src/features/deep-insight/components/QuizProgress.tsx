@@ -1,6 +1,7 @@
 
 import React, { memo } from "react";
 import { DeepInsightCategories } from "../types";
+import { Progress } from "@/components/ui/progress";
 
 interface QuizProgressProps {
   currentQuestionIndex: number;
@@ -27,12 +28,11 @@ export const QuizProgress: React.FC<QuizProgressProps> = memo(({
   
   return (
     <div className="w-full space-y-2">
-      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-        <div 
-          className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out" 
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <Progress 
+        value={progress} 
+        className="h-2.5" 
+        indicatorClassName="transition-all duration-300 ease-out"
+      />
       
       <div className="flex flex-wrap justify-between items-center gap-2">
         <div className="text-sm text-muted-foreground">

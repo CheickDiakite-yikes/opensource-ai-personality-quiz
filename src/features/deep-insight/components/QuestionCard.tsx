@@ -4,7 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DeepInsightQuestion } from "../types";
 
 interface QuestionCardProps {
@@ -29,7 +29,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = memo(({
   error,
   isLoading = false,
 }) => {
-  const { control, handleSubmit, setValue, watch } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue, formState } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
@@ -95,13 +95,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = memo(({
                     key={option.id}
                     className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition cursor-pointer"
                   >
-                    <input 
-                      type="radio" 
-                      className="form-radio" 
-                      name={question.id} 
-                      value={option.id}
+                    <RadioGroupItem 
+                      value={option.id} 
+                      id={option.id}
                       checked={field.value === option.id}
-                      onChange={() => field.onChange(option.id)}
                     />
                     <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {option.text}
