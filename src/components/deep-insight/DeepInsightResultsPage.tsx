@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +16,9 @@ import CognitivePatterningSection from "./results-sections/CognitivePatterningSe
 import EmotionalArchitectureSection from "./results-sections/EmotionalArchitectureSection";
 import InterpersonalDynamicsSection from "./results-sections/InterpersonalDynamicsSection";
 import GrowthPotentialSection from "./results-sections/GrowthPotentialSection";
+import CareerInsightsSection from "./results-sections/CareerInsightsSection";
+import MotivationSection from "./results-sections/MotivationSection";
+import TopTraitsSection from "./results-sections/TopTraitsSection";
 
 const DeepInsightResultsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -161,6 +163,13 @@ const DeepInsightResultsPage: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+            
+            <TopTraitsSection coreTraits={analysis.core_traits} />
+            <CareerInsightsSection careerInsights={analysis.complete_analysis?.careerInsights || {}} />
+            <MotivationSection 
+              motivators={analysis.complete_analysis?.motivationalProfile?.primaryDrivers} 
+              inhibitors={analysis.complete_analysis?.motivationalProfile?.inhibitors}
+            />
             
             <Tabs defaultValue="core-traits" className="mb-8">
               <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-6">
