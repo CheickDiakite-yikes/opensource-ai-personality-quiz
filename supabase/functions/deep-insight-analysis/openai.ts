@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Calls the OpenAI API with GPT-4o model and falls back to GPT-4o-mini on failure.
+ */
 export async function callOpenAI(openAIApiKey: string, formattedResponses: string) {
   if (!openAIApiKey || openAIApiKey.trim() === "") {
     throw new Error("OpenAI API key is missing or invalid");
@@ -14,117 +17,100 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
   console.log("Starting OpenAI API call with model: gpt-4o");
   console.time("openai-api-call");
 
-/**
- * Calls the OpenAI API using GPT-4.1 with advanced config, and falls back to GPT-4o on failure.
- */
-async function callOpenAI(): Promise<any> {
-  // Prepare the API endpoint and authorization (using raw fetch, not OpenAI SDK).
-  const OPENAI_API_URL = "https://api.openai.com/v1/responses";  // Using the Responses API endpoint for advanced features
-  const apiKey = process.env.OPENAI_API_KEY;  // Assume API key is set in environment
-  
-  // Build the messages payload with system and user content.
+  // Build the messages payload with system and user content
   const messages = [
-    { role: "system", content: SYSTEM_PROMPT },                   // System prompt with detailed instructions
-    { role: "user", content: formattedResponses }                // User content from formattedResponses (already formatted)
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: formattedResponses }
   ];
   
-  // Construct the request body for GPT-4.1 with advanced configuration.
-  const requestBody: any = {
-    model: "gpt-4.1",                                           // **Model update:** use GPT-4.1 instead of GPT-4o
-    messages: messages,
-    text: { format: { type: "json_object" } },                  // **New:** request structured JSON object output
-    reasoning: {},                                              // **New:** include reasoning chain (if model supports it)
-    tools: [                                                    // **New:** enable web search tool for additional context
-      { 
-        type: "web_search_preview", 
-        user_location: { type: "approximate", country: "US" },  // approximate user location (country-level)
-        search_context_size: "medium"                           // medium search context for web results
-      }
-    ],
-    temperature: 1,                                             // preserve temperature setting (1 for maximum creativity)
-    top_p: 1,                                                   // preserve top_p setting (1 for full distribution)
-    store: true,                                                // **New:** store conversation state on OpenAI side for continuity
-    max_output_tokens: 30009                                    // **New:** allow up to 30009 tokens in the output (long context support)
-    // Note: 'max_output_tokens' replaces any 'max_tokens' usage for the Responses API.
-  };
-  
-  // Use AbortController to enforce a 90s timeout on the request.
+  // Use AbortController to enforce a timeout on the request
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90_000);  // 90,000 ms = 90 seconds
+  const timeoutId = setTimeout(() => controller.abort(), 90_000); // 90 seconds
   
   try {
-    // Make the primary API call to GPT-4.1
-    const response = await fetch(OPENAI_API_URL, {
+    // Make the API call to GPT-4o
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${openAIApiKey}`
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: messages,
+        temperature: 1,
+        top_p: 1,
+        max_tokens: 30000
+      }),
       signal: controller.signal
     });
-    clearTimeout(timeoutId);  // Clear the timeout since the request completed
+    
+    // Clear the timeout since the request completed
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      // Log the error details for debugging (preserving existing error logging behavior)
+      // Log the error details for debugging
       const errText = await response.text();
-      console.error(`GPT-4.1 API call failed: ${response.status} - ${errText}`);
-      throw new Error(`GPT-4.1 call failed with status ${response.status}`);
+      console.error(`OpenAI API call failed: ${response.status} - ${errText}`);
+      throw new Error(`OpenAI call failed with status ${response.status}`);
     }
     
-    // Parse the successful response from GPT-4.1
+    // Parse the successful response
     const data = await response.json();
-    return data;  // Return the entire response data (includes assistant message content in JSON format)
+    console.timeEnd("openai-api-call");
+    return data;
     
-  } catch (primaryError) {
-    // If the primary call fails or times out, log the error and fall back to GPT-4o
-    if (primaryError.name === "AbortError") {
-      console.error("GPT-4.1 request timed out (90s). Falling back to GPT-4o...");
+  } catch (error) {
+    // If the primary call fails or times out, log the error and fall back to GPT-4o-mini
+    if (error.name === "AbortError") {
+      console.error("GPT-4o request timed out (90s). Falling back to GPT-4o-mini...");
     } else {
-      console.error("GPT-4.1 request error:", primaryError);
-      console.error("Falling back to GPT-4o with a simplified prompt...");
+      console.error("GPT-4o request error:", error);
+      console.error("Falling back to GPT-4o-mini with a simplified prompt...");
     }
     
-    // **Fallback:** Use GPT-4o (full model) with a simpler version of the prompt (no web search tool or reasoning).
-    const fallbackBody: any = {
-      model: "gpt-4o",                                         // Fallback to original GPT-4 model
-      messages: messages,                                      // Reuse the same system and user messages
-      text: { format: { type: "json_object" } },               // Still request JSON formatted output for consistency
-      // We omit 'reasoning' and 'tools' for the fallback to simplify the request
-      temperature: 1,
-      top_p: 1,
-      store: true,                                             // Still store the conversation (if supported)
-      max_output_tokens: 30009
-    };
+    // Clear any existing timeout
+    clearTimeout(timeoutId);
     
-    // (Optional) Use a new AbortController for the fallback call to enforce the same 90s timeout
+    // Fallback to GPT-4o-mini
+    console.log("Starting fallback OpenAI API call with model: gpt-4o-mini");
+    console.time("openai-api-fallback-call");
+    
+    // New AbortController for the fallback call
     const fallbackController = new AbortController();
     const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 90_000);
+    
     try {
-      const fallbackResponse = await fetch(OPENAI_API_URL, {
+      const fallbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
+          "Authorization": `Bearer ${openAIApiKey}`
         },
-        body: JSON.stringify(fallbackBody),
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: messages,
+          temperature: 1,
+          top_p: 1,
+          max_tokens: 30000
+        }),
         signal: fallbackController.signal
       });
+      
       clearTimeout(fallbackTimeoutId);
       
       if (!fallbackResponse.ok) {
-        // Log error from fallback attempt as well
         const errText = await fallbackResponse.text();
-        console.error(`GPT-4o fallback call failed: ${fallbackResponse.status} - ${errText}`);
-        throw new Error(`GPT-4o fallback failed with status ${fallbackResponse.status}`);
+        console.error(`Fallback OpenAI API call failed: ${fallbackResponse.status} - ${errText}`);
+        throw new Error(`Fallback OpenAI call failed with status ${fallbackResponse.status}`);
       }
       
       const fallbackData = await fallbackResponse.json();
+      console.timeEnd("openai-api-fallback-call");
       return fallbackData;
     } catch (fallbackError) {
       clearTimeout(fallbackTimeoutId);
-      console.error("Both GPT-4.1 and GPT-4o calls failed.", fallbackError);
-      // Propagate the error up (or handle it according to the app's error strategy)
+      console.error("Both primary and fallback OpenAI calls failed.", fallbackError);
       throw fallbackError;
     }
   }
