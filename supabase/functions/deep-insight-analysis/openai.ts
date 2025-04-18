@@ -26,8 +26,8 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // Enhanced prompt size handling
-    const MAX_PROMPT_SIZE = 14000; // Leave room for system prompt and response processing
+    // More conservative prompt size limit
+    const MAX_PROMPT_SIZE = 10000; // Reduced from 14000 to leave more space for processing
   
     let optimizedPrompt = formattedResponses;
   
@@ -38,19 +38,19 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       const keptResponses = [];
       let totalLength = 0;
     
-      // Intelligent response sampling with preference for complete responses
+      // Enhanced sampling strategy for better response selection
       for (const response of responses) {
-        // Prioritize longer, more detailed responses
-        if (totalLength + response.length <= MAX_PROMPT_SIZE - 500 && response.length > 100) {
+        // Prioritize detailed responses but with stricter length criteria
+        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000 && response.length > 150) {
           keptResponses.push(response);
           totalLength += response.length + 1;
         }
       }
     
-      // If we've sampled too few responses, add some shorter ones
-      if (keptResponses.length < 10) {
+      // If we haven't collected enough detailed responses, add some shorter ones
+      if (keptResponses.length < 12) { // Increased minimum responses
         for (const response of responses) {
-          if (totalLength + response.length <= MAX_PROMPT_SIZE - 500) {
+          if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000) {
             keptResponses.push(response);
             totalLength += response.length + 1;
           }
@@ -58,7 +58,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       }
     
       optimizedPrompt = keptResponses.join('\n');
-      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Analyzing key patterns across responses.]";
+      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Focus on key patterns and detailed insights.]";
     
       logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
     }
