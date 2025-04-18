@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { AlertCircle, Wand2 } from "lucide-react";
@@ -45,13 +46,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   // For debugging
   const watchedValue = watch(question.id);
-  console.log(`Current form value for ${question.id}:`, watchedValue);
-  console.log(`Current response prop for ${question.id}:`, currentResponse);
 
   // Update form value when question or currentResponse changes
   useEffect(() => {
     if (currentResponse) {
-      console.log(`Setting form value for ${question.id} to:`, currentResponse);
       setValue(question.id, currentResponse);
     }
   }, [question.id, currentResponse, setValue]);
@@ -59,7 +57,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const processSubmit = (data: Record<string, string>) => {
     // Make sure we're submitting the correct question ID
     const selectedOption = data[question.id];
-    console.log(`Processing submission for question ${question.id} with value:`, selectedOption);
     onSubmit(question.id, selectedOption);
   };
 
@@ -130,7 +127,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 type="button"
                 variant="elegant"
                 onClick={startAutoTest}
-                disabled={isAutoTesting || currentQuestionIndex > 0}
+                disabled={isAutoTesting}
                 className="flex items-center gap-2"
               >
                 <Wand2 className="h-4 w-4" />
@@ -147,13 +144,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {isLastQuestion ? "Complete" : "Next"}
           </Button>
         </div>
-        
-        {error && (
-          <div className="bg-destructive/15 text-destructive rounded-md p-3 flex items-center gap-2 mt-4">
-            <AlertCircle className="h-5 w-5" />
-            <p>{error}</p>
-          </div>
-        )}
       </CardFooter>
     </Card>
   );

@@ -19,16 +19,25 @@ export const useAutoTest = (
     // Process all questions except the last one
     for (let i = 0; i < questions.length - 1; i++) {
       const question = questions[i];
+      
+      // Skip to next iteration if this question somehow doesn't have options
+      if (!question.options || question.options.length === 0) {
+        console.warn(`Question ${question.id} has no options to select from`);
+        continue;
+      }
+      
       // Randomly select an option
       const randomOption = question.options[Math.floor(Math.random() * question.options.length)];
-      // Submit the random answer
+      
+      // Submit the random answer and log for debugging
+      console.log(`Auto-selecting option ${randomOption.id} for question ${question.id}`);
       onSubmit(question.id, randomOption.id);
       
-      // Brief delay to prevent overwhelming the system
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Brief delay to prevent race conditions and allow state updates
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Go to the last question
+    // Go to the last question after all answers have been submitted
     setCurrentQuestionIndex(questions.length - 1);
     setIsAutoTesting(false);
     
