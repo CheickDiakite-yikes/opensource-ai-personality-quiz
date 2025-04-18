@@ -34,7 +34,11 @@ const ResponsePatternChart: React.FC<ResponsePatternChartProps> = ({
     name: getResponseLabel(key),
     value,
     color: getResponseColor(key)
-  })).filter(item => item.value > 0); // Only include non-zero values
+  })).filter(item => {
+    // Fix the comparison by ensuring value is treated as a number
+    const itemValue = typeof item.value === 'number' ? item.value : 0;
+    return itemValue > 0;
+  });
   
   return (
     <Card>

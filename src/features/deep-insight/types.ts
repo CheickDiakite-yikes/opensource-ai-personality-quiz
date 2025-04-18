@@ -59,3 +59,17 @@ export interface InterpersonalDynamics {
   communicationPattern: string;
   conflictResolution: string;
 }
+
+// Add the missing DeepInsightCategories export
+export const DeepInsightCategories = [
+  { id: 'personality', name: 'Personality Traits' },
+  { id: 'emotional', name: 'Emotional Intelligence' },
+  { id: 'cognitive', name: 'Cognitive Patterns' },
+  { id: 'social', name: 'Social Interaction' },
+  { id: 'motivation', name: 'Motivation' },
+  { id: 'values', name: 'Value Systems' },
+  { id: 'resilience', name: 'Resilience' },
+  { id: 'creativity', name: 'Creativity' },
+  { id: 'leadership', name: 'Leadership' },
+  { id: 'mindfulness', name: 'Mindfulness' }
+];
