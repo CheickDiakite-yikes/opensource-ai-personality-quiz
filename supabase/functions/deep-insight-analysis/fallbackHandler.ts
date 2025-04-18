@@ -1,10 +1,10 @@
 
 import { API_CONFIG } from "./openaiConfig.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
-import { logError } from "./logging.ts";
+import { logError, logDebug } from "./logging.ts";
 
 export async function handleFallback(openAIApiKey: string, formattedResponses: string) {
-  console.log("Using simplified fallback approach with smaller model");
+  logDebug("Using simplified fallback approach with smaller model");
   console.time("openai-fallback-call");
   
   try {
@@ -12,26 +12,27 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort("Fallback timeout exceeded");
-      console.warn("Manually aborting fallback request after timeout:", API_CONFIG.FALLBACK_TIMEOUT);
+      logDebug("Manually aborting fallback request after timeout", { timeout: API_CONFIG.FALLBACK_TIMEOUT });
     }, API_CONFIG.FALLBACK_TIMEOUT);
     
     try {
-      const simplifiedPrompt = formattedResponses.length > 8000 
-        ? formattedResponses.substring(0, 8000) + "..." // Truncate if extremely long
+      const simplifiedPrompt = formattedResponses.length > 6000 
+        ? formattedResponses.substring(0, 6000) + "..." // Further truncate if extremely long
         : formattedResponses;
       
-      console.log(`Fallback using model: ${API_CONFIG.FALLBACK_MODEL}, response length: ${simplifiedPrompt.length}`);
+      logDebug(`Fallback using model: ${API_CONFIG.FALLBACK_MODEL}, response length: ${simplifiedPrompt.length}`);
       
+      // Use a simpler prompt and smaller model for the fallback
       const fallbackResponse = await createOpenAIRequest(
         openAIApiKey,
         [
           { 
             role: "system", 
-            content: "Create a personality profile as JSON with this schema: { cognitivePatterning: { decisionMaking, learningStyle }, emotionalArchitecture: { emotionalAwareness, regulationStyle }, coreTraits: { primary, tertiaryTraits }, interpersonalDynamics: { attachmentStyle, communicationPattern } }"
+            content: "Create a personality profile as JSON. Include: cognitivePatterning, emotionalArchitecture, coreTraits, and interpersonalDynamics. Keep it brief."
           },
           { 
             role: "user", 
-            content: `Analyze these assessment responses to create a personality profile:\n${simplifiedPrompt}` 
+            content: `Quick personality analysis from these responses:\n${simplifiedPrompt}` 
           }
         ],
         API_CONFIG.FALLBACK_MAX_TOKENS,
@@ -42,38 +43,38 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
       clearTimeout(timeoutId); // Clear timeout if request completes
       const result = await handleOpenAIResponse(fallbackResponse);
       console.timeEnd("openai-fallback-call");
-      console.log("Fallback completed successfully");
+      logDebug("Fallback completed successfully");
       return result;
     } catch (error) {
       clearTimeout(timeoutId); // Clear timeout on error
-      console.error("Fallback request error:", error.name, error.message);
+      logError(error, "Fallback request");
       throw error;
     }
   } catch (fallbackError) {
     logError(fallbackError, "Fallback attempt");
     
     // Create ultra-minimal fallback response if all else fails
-    console.log("Creating minimal static fallback response");
+    logDebug("Creating minimal static fallback response");
     return {
       choices: [
         {
           message: {
             content: JSON.stringify({
               cognitivePatterning: {
-                decisionMaking: "Balanced approach combining analytical and intuitive elements",
-                learningStyle: "Adaptive learning style with preference for practical application"
+                decisionMaking: "Balanced analytical and intuitive approach",
+                learningStyle: "Adaptive learning with practical application focus"
               },
               emotionalArchitecture: {
-                emotionalAwareness: "Moderate emotional awareness with ability to identify core feelings",
-                regulationStyle: "Generally balanced emotional regulation with occasional fluctuations"
+                emotionalAwareness: "Moderate emotional awareness with core feelings identification",
+                regulationStyle: "Balanced emotional regulation with occasional fluctuations"
               },
               coreTraits: {
                 primary: "Conscientious and thoughtful individual",
                 tertiaryTraits: ["Analytical", "Adaptable", "Curious", "Practical", "Resilient"]
               },
               interpersonalDynamics: {
-                attachmentStyle: "Securely attached with healthy boundaries",
-                communicationPattern: "Direct and thoughtful communication style"
+                attachmentStyle: "Secure attachment with healthy boundaries",
+                communicationPattern: "Direct and thoughtful communication"
               }
             })
           }

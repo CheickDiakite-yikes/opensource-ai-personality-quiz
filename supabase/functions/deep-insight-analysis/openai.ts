@@ -2,16 +2,16 @@
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { corsHeaders, API_CONFIG } from "./openaiConfig.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
-import { logRequestConfig, logError } from "./logging.ts";
+import { logRequestConfig, logError, logDebug } from "./logging.ts";
 import { handleFallback } from "./fallbackHandler.ts";
 
 export async function callOpenAI(openAIApiKey: string, formattedResponses: string) {
   if (!openAIApiKey || openAIApiKey.trim() === "") {
-    console.error("OpenAI API key missing or empty");
+    logDebug("OpenAI API key missing or empty");
     throw new Error("OpenAI API key is missing or invalid");
   }
 
-  console.log(`Starting OpenAI API call with model: ${API_CONFIG.DEFAULT_MODEL}`);
+  logDebug(`Starting OpenAI API call with model: ${API_CONFIG.DEFAULT_MODEL}`);
   console.time("openai-api-call");
 
   try {
@@ -29,70 +29,74 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     // Determine if we should reduce the prompt size based on token count
     let optimizedPrompt = formattedResponses;
-    if (formattedResponses.length > 12000) {
-      console.log("Very large input detected, optimizing prompt size");
-      optimizedPrompt = formattedResponses.substring(0, 12000) + "...";
-      console.log(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
+    if (formattedResponses.length > 8000) {
+      logDebug("Very large input detected, optimizing prompt size");
+      optimizedPrompt = formattedResponses.substring(0, 8000) + "...";
+      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
     }
     
-    // Create an AbortController to handle timeouts manually
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort("Request timeout exceeded");
-      console.warn("Manually aborting request after timeout:", API_CONFIG.MAIN_TIMEOUT);
-    }, API_CONFIG.MAIN_TIMEOUT);
+    // Implement retry loop
+    let lastError = null;
     
-    try {
-      // Pass signal to fetch request
-      console.log("Sending request to OpenAI with timeout:", API_CONFIG.MAIN_TIMEOUT);
-      const fetchPromise = createOpenAIRequest(
-        openAIApiKey, 
-        [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Please analyze these assessment responses:\n${optimizedPrompt}` }
-        ],
-        API_CONFIG.MAIN_MAX_TOKENS,
-        controller.signal
-      );
-      
-      const openAIRes = await fetchPromise;
-      clearTimeout(timeoutId); // Clear the timeout if request completes
-      console.log("Successfully received OpenAI response");
-      console.timeEnd("openai-api-call");
-      
-      return await handleOpenAIResponse(openAIRes);
-    } catch (error) {
-      clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
-      console.error("Main API call error:", error.name, error.message, error.stack);
-      throw error;
+    for (let attemptCount = 0; attemptCount <= API_CONFIG.RETRY_COUNT; attemptCount++) {
+      try {
+        if (attemptCount > 0) {
+          logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT}`);
+        }
+        
+        // Create an AbortController to handle timeouts manually
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort("Request timeout exceeded");
+          logDebug("Manually aborting request after timeout", { timeout: API_CONFIG.MAIN_TIMEOUT });
+        }, API_CONFIG.MAIN_TIMEOUT);
+        
+        try {
+          // Pass signal to fetch request
+          logDebug("Sending request to OpenAI", { timeout: API_CONFIG.MAIN_TIMEOUT });
+          const fetchPromise = createOpenAIRequest(
+            openAIApiKey, 
+            [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: `Please analyze these assessment responses:\n${optimizedPrompt}` }
+            ],
+            API_CONFIG.MAIN_MAX_TOKENS,
+            controller.signal
+          );
+          
+          const openAIRes = await fetchPromise;
+          clearTimeout(timeoutId); // Clear the timeout if request completes
+          logDebug("Successfully received OpenAI response");
+          console.timeEnd("openai-api-call");
+          
+          return await handleOpenAIResponse(openAIRes);
+        } catch (error) {
+          clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
+          logError(error, `API call attempt ${attemptCount + 1}`);
+          lastError = error;
+          // Continue to next retry attempt
+        }
+      } catch (retryError) {
+        logError(retryError, `Retry wrapper error attempt ${attemptCount + 1}`);
+        lastError = retryError;
+        // Continue to next retry attempt
+      }
     }
+    
+    // All retry attempts failed, throw the last error to trigger the fallback
+    logDebug("All retry attempts failed, using fallback");
+    throw lastError || new Error("All OpenAI API attempts failed");
   } catch (error) {
     logError(error, "OpenAI API call");
     
-    // Check for all possible abort-related errors
-    if (error.name === "AbortError" || 
-        error.message?.includes("abort") ||
-        error.message?.includes("timeout") || 
-        error.message?.includes("exceeded") ||
-        error.message?.includes("Failed to fetch") ||
-        error.name === "TypeError") {
-      
-      console.log("Main API call failed or aborted. Attempting fallback with simplified approach...");
-      try {
-        return await handleFallback(openAIApiKey, formattedResponses);
-      } catch (fallbackError) {
-        console.error("Both main and fallback approaches failed:", fallbackError);
-        throw new Error("Analysis processing failed after multiple attempts: " + (fallbackError.message || "Unknown error"));
-      }
-    } else if (error.name === "OpenAIAPIError" || error.message?.includes("OpenAI API Error")) {
-      console.log("OpenAI API returned an error. Attempting fallback with different model...");
-      try {
-        return await handleFallback(openAIApiKey, formattedResponses);
-      } catch (fallbackError) {
-        console.error("Both main and fallback approaches failed:", fallbackError);
-        throw new Error("OpenAI API error: " + (error.message || "Unknown error"));
-      }
+    // Now we'll try the fallback
+    logDebug("Main API call failed. Attempting fallback...");
+    try {
+      return await handleFallback(openAIApiKey, formattedResponses);
+    } catch (fallbackError) {
+      logError(fallbackError, "Both main and fallback approaches failed");
+      throw new Error("Analysis processing failed after multiple attempts: " + 
+        (fallbackError instanceof Error ? fallbackError.message : "Unknown error"));
     }
-    throw error;
   }
 }
