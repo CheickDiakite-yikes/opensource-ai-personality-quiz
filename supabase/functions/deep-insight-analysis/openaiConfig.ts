@@ -10,8 +10,8 @@ export const API_CONFIG = {
   FALLBACK_TIMEOUT: 40000, // 40 seconds - further reduced for safe completion
   DEFAULT_MODEL: "gpt-4o",
   FALLBACK_MODEL: "gpt-4o-mini", // Using smaller/faster model as fallback
-  MAIN_MAX_TOKENS: 8000, // Reduced to ensure faster completion
-  FALLBACK_MAX_TOKENS: 4000, // Further reduced for fallback
+  MAIN_MAX_TOKENS: 15000, // Reduced to ensure faster completion
+  FALLBACK_MAX_TOKENS: 14000, // Further reduced for fallback
   TEMPERATURE: 0.4,
   TOP_P: 0.9,
   FREQUENCY_PENALTY: 0.3
