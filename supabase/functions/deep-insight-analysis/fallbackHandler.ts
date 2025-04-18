@@ -16,9 +16,34 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
     }, API_CONFIG.FALLBACK_TIMEOUT);
     
     try {
-      const simplifiedPrompt = formattedResponses.length > 6000 
-        ? formattedResponses.substring(0, 6000) + "..." // Further truncate if extremely long
-        : formattedResponses;
+      // Further simplify and reduce the prompt for fallback
+      const MAX_FALLBACK_SIZE = 4000; // Even more strict limit for fallback
+      let simplifiedPrompt = formattedResponses;
+      
+      if (formattedResponses.length > MAX_FALLBACK_SIZE) {
+        // Get a representative sample of responses instead of just truncating
+        const allResponses = formattedResponses.split('\n');
+        const totalResponses = allResponses.length;
+        
+        // Calculate how many responses to sample with a minimum of 10
+        const sampleSize = Math.max(10, Math.floor(totalResponses * 0.4));
+        let sampledResponses = [];
+        
+        // Take responses from beginning, middle and end for better representation
+        sampledResponses = sampledResponses.concat(allResponses.slice(0, Math.floor(sampleSize/3)));
+        sampledResponses = sampledResponses.concat(
+          allResponses.slice(
+            Math.floor(totalResponses/2 - sampleSize/6), 
+            Math.floor(totalResponses/2 + sampleSize/6)
+          )
+        );
+        sampledResponses = sampledResponses.concat(
+          allResponses.slice(totalResponses - Math.floor(sampleSize/3))
+        );
+        
+        simplifiedPrompt = sampledResponses.join('\n');
+        simplifiedPrompt += "\n\n[Content sampled for analysis. Please analyze key patterns in available responses.]";
+      }
       
       logDebug(`Fallback using model: ${API_CONFIG.FALLBACK_MODEL}, response length: ${simplifiedPrompt.length}`);
       

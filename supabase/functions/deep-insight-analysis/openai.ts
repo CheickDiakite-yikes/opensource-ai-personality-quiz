@@ -1,4 +1,3 @@
-
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { corsHeaders, API_CONFIG } from "./openaiConfig.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
@@ -27,33 +26,61 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // Determine if we should reduce the prompt size based on token count
+    // Optimize prompt size based on length with better chunking
     let optimizedPrompt = formattedResponses;
-    if (formattedResponses.length > 8000) {
-      logDebug("Very large input detected, optimizing prompt size");
-      optimizedPrompt = formattedResponses.substring(0, 8000) + "...";
-      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
+    const MAX_PROMPT_SIZE = 6000; // Reduced from 8000 for better reliability
+    
+    if (formattedResponses.length > MAX_PROMPT_SIZE) {
+      logDebug(`Large input detected (${formattedResponses.length} chars), optimizing prompt size`);
+      
+      // More intelligent chunking - try to keep full response units
+      const responses = formattedResponses.split('\n');
+      let totalLength = 0;
+      const keptResponses = [];
+      
+      // Keep responses up to MAX_PROMPT_SIZE with some buffer
+      for (const response of responses) {
+        if (totalLength + response.length <= MAX_PROMPT_SIZE - 100) {
+          keptResponses.push(response);
+          totalLength += response.length + 1; // +1 for newline
+        } else {
+          break;
+        }
+      }
+      
+      optimizedPrompt = keptResponses.join('\n');
+      optimizedPrompt += "\n\n[Content truncated due to length. Please analyze available responses.]";
+      
+      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters, keeping ${keptResponses.length}/${responses.length} responses`);
     }
     
-    // Implement retry loop
+    // Implement retry loop with exponential backoff
     let lastError = null;
     
     for (let attemptCount = 0; attemptCount <= API_CONFIG.RETRY_COUNT; attemptCount++) {
       try {
         if (attemptCount > 0) {
-          logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT}`);
+          // Exponential backoff - wait longer for each retry
+          const backoffDelay = Math.pow(2, attemptCount) * 1000; // 2s, 4s, 8s, etc.
+          logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT} after ${backoffDelay}ms delay`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
         
-        // Create an AbortController to handle timeouts manually
+        // Create an AbortController with a more generous timeout
         const controller = new AbortController();
+        const extendedTimeout = API_CONFIG.MAIN_TIMEOUT * (attemptCount + 1); // Increase timeout for each retry
         const timeoutId = setTimeout(() => {
           controller.abort("Request timeout exceeded");
-          logDebug("Manually aborting request after timeout", { timeout: API_CONFIG.MAIN_TIMEOUT });
-        }, API_CONFIG.MAIN_TIMEOUT);
+          logDebug("Manually aborting request after timeout", { timeout: extendedTimeout });
+        }, extendedTimeout);
         
         try {
-          // Pass signal to fetch request
-          logDebug("Sending request to OpenAI", { timeout: API_CONFIG.MAIN_TIMEOUT });
+          // Add attempt information to logs
+          logDebug(`Sending request to OpenAI (attempt ${attemptCount + 1}/${API_CONFIG.RETRY_COUNT + 1})`, { 
+            timeout: extendedTimeout,
+            promptLength: optimizedPrompt.length 
+          });
+          
           const fetchPromise = createOpenAIRequest(
             openAIApiKey, 
             [
@@ -66,20 +93,37 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           
           const openAIRes = await fetchPromise;
           clearTimeout(timeoutId); // Clear the timeout if request completes
-          logDebug("Successfully received OpenAI response");
+          
+          logDebug(`Successfully received OpenAI response on attempt ${attemptCount + 1}`);
           console.timeEnd("openai-api-call");
           
           return await handleOpenAIResponse(openAIRes);
         } catch (error) {
           clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
-          logError(error, `API call attempt ${attemptCount + 1}`);
-          lastError = error;
-          // Continue to next retry attempt
+          
+          // Add more context to the error
+          const enhancedError = error instanceof Error 
+            ? new Error(`API call attempt ${attemptCount + 1} failed: ${error.message}`)
+            : new Error(`API call attempt ${attemptCount + 1} failed with unknown error`);
+            
+          logError(enhancedError, `API call attempt ${attemptCount + 1}`);
+          lastError = enhancedError;
+          
+          // If this is the last retry, don't continue to the next attempt
+          if (attemptCount >= API_CONFIG.RETRY_COUNT) {
+            throw lastError;
+          }
+          // Otherwise, continue to next retry attempt
         }
       } catch (retryError) {
         logError(retryError, `Retry wrapper error attempt ${attemptCount + 1}`);
         lastError = retryError;
-        // Continue to next retry attempt
+        
+        // If this is the last retry, don't continue to the next attempt
+        if (attemptCount >= API_CONFIG.RETRY_COUNT) {
+          throw lastError;
+        }
+        // Otherwise, continue to next retry attempt
       }
     }
     

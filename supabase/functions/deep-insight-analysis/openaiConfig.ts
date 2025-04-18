@@ -6,16 +6,16 @@ export const corsHeaders = {
 
 export const API_CONFIG = {
   BASE_URL: "https://api.openai.com/v1/chat/completions",
-  MAIN_TIMEOUT: 45000, // 45 seconds - further reduced from 55s
-  FALLBACK_TIMEOUT: 30000, // 30 seconds - further reduced from 40s
+  MAIN_TIMEOUT: 60000, // Increased from 45 seconds to 60 seconds
+  FALLBACK_TIMEOUT: 45000, // Increased from 30 seconds to 45 seconds
   DEFAULT_MODEL: "gpt-4o",
   FALLBACK_MODEL: "gpt-4o-mini", // Using smaller/faster model as fallback
-  MAIN_MAX_TOKENS: 12000, // Further reduced to ensure faster completion
-  FALLBACK_MAX_TOKENS: 8000, // Further reduced for fallback
+  MAIN_MAX_TOKENS: 8000, // Reduced from 12000 to ensure faster completion
+  FALLBACK_MAX_TOKENS: 6000, // Reduced from 8000 for fallback
   TEMPERATURE: 0.4,
   TOP_P: 0.9,
   FREQUENCY_PENALTY: 0.3,
-  RETRY_COUNT: 1 // Number of retries for failed requests
+  RETRY_COUNT: 2 // Increased from 1 to 2 retries for failed requests
 };
 
 export interface OpenAIConfig {
