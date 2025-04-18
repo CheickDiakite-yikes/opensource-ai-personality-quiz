@@ -51,13 +51,38 @@ serve(async (req) => {
         let analysisContent;
         
         try {
-          analysisContent = JSON.parse(rawContent);
+          // First, clean any markdown formatting from the raw content
+          let cleanedJson = rawContent;
+          
+          // Check if the response is wrapped in markdown code blocks
+          if (cleanedJson.includes("```json") || cleanedJson.includes("```")) {
+            console.log("Detected markdown in JSON response, cleaning...");
+            
+            // Remove markdown code block indicators
+            cleanedJson = cleanedJson.replace(/```json\s*/g, "");
+            cleanedJson = cleanedJson.replace(/```\s*/g, "");
+            
+            // Trim any whitespace
+            cleanedJson = cleanedJson.trim();
+            
+            console.log("Cleaned JSON from markdown formatting");
+          }
+          
+          // Now try to parse the cleaned JSON
+          analysisContent = JSON.parse(cleanedJson);
         } catch (jsonError) {
           console.error("JSON parsing error:", jsonError);
           console.log("Attempting to fix malformed JSON...");
           
+          // Log the raw content to help with debugging
+          console.log("Raw content snippet (first 100 chars):", rawContent.substring(0, 100));
+          
           // Attempt to fix common JSON errors
           let fixedJson = rawContent;
+          
+          // Remove markdown code block indicators
+          fixedJson = fixedJson.replace(/```json\s*/g, "");
+          fixedJson = fixedJson.replace(/```\s*/g, "");
           
           // Fix missing closing brackets/braces
           const openBraces = (fixedJson.match(/{/g) || []).length;

@@ -124,5 +124,5 @@ Output **exactly** this JSON schema:
   }
 }
 
-Return **only** the JSON object, no markdown or explanation.
+Return **only** pure JSON without any markdown formatting. Do not use markdown code blocks. Return only valid JSON that can be parsed directly by JSON.parse().
 `;

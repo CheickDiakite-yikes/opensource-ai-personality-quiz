@@ -1,3 +1,4 @@
+
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
@@ -29,10 +30,13 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
     try {
       logDebug("Sending fallback request to OpenAI");
 
+      // Add specific instruction to return only plain JSON without markdown formatting
+      const enhancedSystemPrompt = SYSTEM_PROMPT + "\n\nIMPORTANT: Return ONLY the JSON without any markdown formatting, code blocks, or explanation.";
+
       const openAIRes = await createOpenAIRequest(
         openAIApiKey,
         [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: enhancedSystemPrompt },
           { role: "user", content: `Please analyze these assessment responses:\n${formattedResponses}` }
         ],
         API_CONFIG.FALLBACK_MAX_TOKENS,
