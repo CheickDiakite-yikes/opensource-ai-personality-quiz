@@ -11,56 +11,55 @@ export const useAutoTest = (
   const [isAutoTesting, setIsAutoTesting] = useState(false);
 
   const startAutoTest = async () => {
+    if (isAutoTesting) return; // Prevent multiple simultaneous runs
+    
     setIsAutoTesting(true);
     toast.info("Auto-test mode activated", {
-      description: "Automatically filling responses..."
+      description: "Filling all responses at once..."
     });
 
     try {
-      // Process one question at a time with delays between each
-      for (let i = 0; i < questions.length - 1; i++) {
-        // Set current question index first
-        setCurrentQuestionIndex(i);
-        
-        // More substantial delay to ensure the UI updates before we select an option
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const question = questions[i];
-        console.log(`Auto-test: Processing question ${i+1}/${questions.length-1}: ${question.id}`);
-        
-        // Skip to next iteration if this question somehow doesn't have options
-        if (!question.options || question.options.length === 0) {
-          console.warn(`Auto-test: Question ${question.id} has no options to select from`);
-          continue;
+      // First, prepare all answers in memory
+      const answers = {};
+      
+      // Pre-select answers for all questions
+      questions.forEach((question, index) => {
+        if (question.options && question.options.length > 0) {
+          // Always select the first option for consistency and speed
+          const selectedOption = question.options[0];
+          answers[question.id] = selectedOption.id;
         }
+      });
+      
+      console.log(`Auto-test: Prepared ${Object.keys(answers).length} answers`);
+      
+      // Go to the first question
+      setCurrentQuestionIndex(0);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Submit answers one by one with minimal delay
+      for (let i = 0; i < questions.length - 1; i++) {
+        const question = questions[i];
         
-        // Randomly select an option
-        const randomIndex = Math.floor(Math.random() * question.options.length);
-        const randomOption = question.options[randomIndex];
-        
-        // Log for debugging
-        console.log(`Auto-test: Selected option ${randomOption.id} for question ${question.id}`);
+        // Skip if somehow this question doesn't have a prepared answer
+        if (!answers[question.id]) continue;
         
         try {
-          // Submit answer for the current question and wait for it to complete
-          onSubmit(question.id, randomOption.id);
+          // Submit the prepared answer
+          onSubmit(question.id, answers[question.id]);
           
-          // Log after submission attempt
-          console.log(`Auto-test: Submitted answer for question ${question.id}`);
-          
-          // Wait for state updates to complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } catch (submitError) {
-          console.error(`Auto-test: Error submitting answer for question ${question.id}:`, submitError);
+          // Minimal delay to allow state updates
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Error submitting answer for question ${question.id}:`, error);
         }
       }
 
       // Go to the last question after all answers have been submitted
       setCurrentQuestionIndex(questions.length - 1);
-      console.log(`Auto-test: Navigation to final question complete`);
       
       toast.success("Auto-test completed", {
-        description: "You're now on the final question. Click Complete to analyze results."
+        description: "All questions answered. Click Complete to see results."
       });
     } catch (error) {
       console.error("Auto-test error:", error);

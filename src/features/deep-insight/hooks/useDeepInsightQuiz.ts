@@ -46,20 +46,16 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       
       setError(null);
       
-      // Save the response with the current timestamp
+      // Save the response
       const updatedResponses = {
         ...responses,
         [questionId]: selectedOption
       };
       
-      console.log(`Quiz: Saving response for question ${questionId}: ${selectedOption}`);
-      
-      // Set responses first to ensure storage
+      // Update responses in localStorage
       setResponses(updatedResponses);
       
-      console.log(`Quiz: Total responses now: ${Object.keys(updatedResponses).length}`);
-      
-      // Move to the next question if not on the last question
+      // For auto-testing, we need to move to the next question immediately
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
@@ -109,7 +105,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   
   return {
     currentQuestionIndex,
-    setCurrentQuestionIndex, // Explicitly export this
+    setCurrentQuestionIndex,
     responses,
     error,
     handleSubmitQuestion,

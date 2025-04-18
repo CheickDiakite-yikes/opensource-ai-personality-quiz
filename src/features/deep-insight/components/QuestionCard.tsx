@@ -34,7 +34,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 }) => {
   const [formKey, setFormKey] = useState(0); // Add a key to force form re-rendering
   
-  const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
+  const { control, handleSubmit, setValue, formState } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
@@ -53,12 +53,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       // Force re-render of the form when the question changes
       setFormKey(prevKey => prevKey + 1);
     }
-  }, [question.id, currentResponse, setValue, question]);
+  }, [question.id, currentResponse, setValue]);
 
   // Method to manually submit the current selection
   const processSubmit = (data: Record<string, string>) => {
     const selectedOption = data[question.id];
-    console.log(`Submitting form for ${question.id}:`, selectedOption);
     
     if (!selectedOption) {
       console.error(`No option selected for question ${question.id}`);
@@ -92,7 +91,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             render={({ field }) => (
               <RadioGroup
                 onValueChange={(value) => {
-                  console.log(`Radio selection: ${value} for question ${question.id}`);
                   field.onChange(value);
                 }}
                 value={field.value}
@@ -112,7 +110,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       checked={field.value === option.id}
                       onChange={() => {
                         field.onChange(option.id);
-                        console.log(`Selected option ${option.id} for question ${question.id}`);
                       }}
                       disabled={isAutoTesting}
                     />
@@ -154,7 +151,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 className="flex items-center gap-2"
               >
                 <Wand2 className="h-4 w-4" />
-                Test Mode
+                Auto-Fill All
               </Button>
             )}
           </div>

@@ -21,6 +21,9 @@ export const useDeepInsightStorage = (
 ) => {
   // Add a ref to track initialization
   const isInitialized = useRef(false);
+  
+  // Track if we're in auto-test mode
+  const isAutoTestingRef = useRef(false);
 
   // Load saved progress on initial mount
   useEffect(() => {
@@ -36,26 +39,19 @@ export const useDeepInsightStorage = (
           if (
             savedProgress && 
             savedProgress.responses && 
+            Object.keys(savedProgress.responses).length > 0 &&
             savedProgress.currentQuestionIndex >= 0 &&
             savedProgress.currentQuestionIndex < totalQuestions
           ) {
-            console.log("Storage: Found saved progress:", savedProgress);
-            
             // Set restored session flag first
             if (setIsRestoredSession) {
               setIsRestoredSession(true);
-              
-              // Wait to ensure flag is set before updating state
-              await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            // Update responses first
+            // Update responses
             setResponses(savedProgress.responses);
             
-            // Add a delay between state updates
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            // Then update question index
+            // Update question index
             setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
             
             // Calculate how many questions were answered
@@ -70,54 +66,36 @@ export const useDeepInsightStorage = (
                 `Progress restored (${answeredQuestions} questions answered)`, 
                 { description: `Last active ${timeAgo}` }
               );
-              console.log("Storage: Deep Insight quiz progress restored with", 
-                answeredQuestions, "questions answered.");
             }
           }
         }
       } catch (error) {
-        console.error("Storage: Error loading saved Deep Insight quiz progress:", error);
+        console.error("Error loading saved progress:", error);
       }
     };
     
     loadSavedProgress();
   }, [setResponses, setCurrentQuestionIndex, totalQuestions, setIsRestoredSession]);
   
-  // Use a ref for debounced saving
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
   // Save progress whenever responses or currentQuestionIndex changes
   useEffect(() => {
-    // Cancel any pending save operation
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+    // Don't save during auto-testing - we'll save at the end
+    if (isAutoTestingRef.current) return;
     
-    // Debounced save to prevent excessive writes
-    saveTimeoutRef.current = setTimeout(() => {
+    try {
       // Only save if there's at least one response
       if (Object.keys(responses).length > 0) {
-        try {
-          const progressToSave: SavedProgress = {
-            responses,
-            currentQuestionIndex,
-            lastUpdated: new Date().toISOString()
-          };
-          
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
-          console.log("Storage: Deep Insight quiz progress saved. Current responses:", 
-            Object.keys(responses).length);
-        } catch (error) {
-          console.error("Storage: Error saving Deep Insight quiz progress:", error);
-        }
+        const progressToSave: SavedProgress = {
+          responses,
+          currentQuestionIndex,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
       }
-    }, 300);
-    
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
+    } catch (error) {
+      console.error("Error saving progress:", error);
+    }
   }, [responses, currentQuestionIndex]);
   
   // Helper function to format time ago
@@ -139,5 +117,10 @@ export const useDeepInsightStorage = (
     });
   };
   
-  return { clearSavedProgress };
+  return { 
+    clearSavedProgress,
+    setAutoTesting: (value: boolean) => {
+      isAutoTestingRef.current = value;
+    }
+  };
 };
