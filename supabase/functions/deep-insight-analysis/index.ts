@@ -188,9 +188,9 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4o", 
-        max_tokens: 32000,
-        temperature: 0.4, // Reduced temperature for more consistent scoring
-        top_p: 0.9,    // Slightly reduced top_p for more focused outputs
+        max_tokens: 16000, // Reduced from 32000 to comply with gpt-4o limits
+        temperature: 0.4,
+        top_p: 0.9,
         frequency_penalty: 0.3,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
