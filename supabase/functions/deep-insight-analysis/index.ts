@@ -86,7 +86,6 @@ serve(async (req) => {
       .map(([id, answer]) => `Q${id}: ${answer}`)
       .join("\n");
 
-    /* ---------- 2a.  CALL OPENAI  ---------- */
     console.log(`Calling OpenAI API with ${Object.keys(responses).length} responses`);
     
     const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -96,7 +95,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Using gpt-4o which is a powerful and capable model
+        model: "gpt-4o", 
         max_tokens: 32000,
         temperature: 0.55,
         top_p: 1.0,
@@ -113,7 +112,7 @@ serve(async (req) => {
       const errorText = await openAIRes.text();
       console.error("OpenAI error →", errorText);
       
-      // Specific error for API key issues
+      // Specific error handling for different types of API errors
       if (errorText.includes("invalid_api_key") || errorText.includes("Incorrect API key")) {
         return new Response(
           JSON.stringify({ 
@@ -131,7 +130,21 @@ serve(async (req) => {
         );
       }
       
-      throw new Error(`OpenAI API ${openAIRes.status}: ${errorText}`);
+      // Generic error handling for other API errors
+      return new Response(
+        JSON.stringify({ 
+          error: "OpenAI API Error", 
+          success: false,
+          message: `API request failed: ${errorText}` 
+        }), 
+        { 
+          status: openAIRes.status, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
     }
 
     const { choices } = await openAIRes.json();
@@ -141,7 +154,7 @@ serve(async (req) => {
     try {
       const analysisContent = JSON.parse(cleanJSON);
 
-      /* ---------- 3.  AUGMENT + RETURN  ---------- */
+      // Enhanced analysis with additional metadata
       const analysis = {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
@@ -204,11 +217,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function for JSON responses with CORS headers
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
