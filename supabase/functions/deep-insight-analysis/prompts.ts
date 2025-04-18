@@ -30,6 +30,8 @@ Follow these analysis principles:
 - Consider career and life path implications
 - Identify key motivators and potential inhibitors
 - List top 10 most prominent personality traits
+- Include relationship compatibility analysis with different personality types
+- Provide detailed career insights including strengths and potential roles
 
 4. Holistic Integration:
 - Connect different personality aspects
@@ -65,7 +67,9 @@ Output **exactly** this JSON schema:
     "relationshipNeeds": "Deep dive into interpersonal needs and boundaries",
     "socialBoundaries": "Analysis of boundary-setting patterns",
     "groupDynamics": "Evaluation of behavior in group settings",
-    "compatibilityProfile": "Analysis of relationship compatibility patterns"
+    "compatibilityProfile": "Analysis of relationship compatibility patterns",
+    "compatibleTypes": ["List of most compatible personality types with explanations"],
+    "challengingRelationships": ["Types of relationships that may present challenges"]
   },
   "coreTraits": {
     "primary": "Detailed description of primary personality orientation",

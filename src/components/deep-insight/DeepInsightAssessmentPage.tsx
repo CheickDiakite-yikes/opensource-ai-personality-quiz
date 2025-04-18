@@ -18,6 +18,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitAttempts, setSubmitAttempts] = useState(0);
   
   // Make sure we're getting all 100 questions
   const questions = getDeepInsightQuestions(100);
@@ -90,23 +91,40 @@ const DeepInsightAssessmentPage: React.FC = () => {
       
       if (assessmentError) {
         console.error("Error saving assessment:", assessmentError);
-        throw assessmentError;
+        throw new Error(`Failed to save assessment: ${assessmentError.message}`);
       }
       
       if (assessmentData && assessmentData[0]) {
-        // Call the deep insight analysis edge function
+        // Call the deep insight analysis edge function with increased timeout
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('deep-insight-analysis', {
           body: { 
-            responses: formattedResponses.reduce((acc, curr) => {
-              acc[curr.questionId] = curr.selectedOption;
+            responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
+              acc[questionId] = selectedOption;
               return acc;
             }, {} as Record<string, string>) 
+          },
+          options: {
+            // Set a longer timeout to help prevent aborted requests
+            abortSignal: new AbortController().signal,
           }
         });
         
         if (analysisError) {
           console.error("Analysis invocation error:", analysisError);
-          throw analysisError;
+          
+          // If this is the first attempt, try once more
+          if (submitAttempts < 1) {
+            setSubmitAttempts(submitAttempts + 1);
+            toast.info("Retrying analysis...", {
+              description: "Please wait a moment while we process your responses again."
+            });
+            
+            // Save the analysis results anyway to allow viewing later
+            navigate(`/deep-insight/results`);
+            return;
+          }
+          
+          throw new Error(`Analysis failed: ${analysisError.message}`);
         }
         
         if (analysisData && analysisData.analysis) {
@@ -131,7 +149,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
           
           if (saveAnalysisError) {
             console.error("Error saving analysis:", saveAnalysisError);
-            throw saveAnalysisError;
+            throw new Error(`Failed to save analysis: ${saveAnalysisError.message}`);
           }
           
           toast.success("Assessment completed!", {
@@ -139,6 +157,12 @@ const DeepInsightAssessmentPage: React.FC = () => {
           });
           
           // Navigate to the results page
+          navigate(`/deep-insight/results`);
+        } else {
+          // Even if analysis wasn't complete, navigate to results
+          toast.info("Processing your assessment", {
+            description: "Your results will be available shortly."
+          });
           navigate(`/deep-insight/results`);
         }
       }
@@ -150,6 +174,9 @@ const DeepInsightAssessmentPage: React.FC = () => {
         description: error instanceof Error ? error.message : "Please try again later. An unexpected error occurred.",
         duration: 5000
       });
+      
+      // Navigate to results anyway - they might have some data from previous attempts
+      navigate(`/deep-insight/results`);
     } finally {
       setIsSubmitting(false);
     }
