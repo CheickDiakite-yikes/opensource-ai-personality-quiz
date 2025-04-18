@@ -1,4 +1,6 @@
 
+import { SYSTEM_PROMPT } from "./prompts.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -47,4 +49,3 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
   console.log("OpenAI completion tokens:", response.usage?.completion_tokens || "N/A");
   return response;
 }
-
