@@ -65,7 +65,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4.1", // Changed from gpt-4o-128k to gpt-4o which is widely available
-        max_tokens: 16000,
+        max_tokens: 32000,
         temperature: 0.55,
         top_p: 1.0,
         frequency_penalty: 0.2,
