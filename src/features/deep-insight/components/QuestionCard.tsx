@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { AlertCircle, Wand2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -32,6 +32,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   currentQuestionIndex,
   setCurrentQuestionIndex,
 }) => {
+  const [formKey, setFormKey] = useState(0); // Add a key to force form re-rendering
+  
   const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
@@ -46,19 +48,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   // Update form value when question or currentResponse changes
   useEffect(() => {
-    if (currentResponse) {
-      setValue(question.id, currentResponse);
+    if (question) {
+      setValue(question.id, currentResponse || "");
+      // Force re-render of the form when the question changes
+      setFormKey(prevKey => prevKey + 1);
     }
   }, [question.id, currentResponse, setValue]);
 
+  // Method to manually submit the current selection
   const processSubmit = (data: Record<string, string>) => {
-    // Make sure we're submitting the correct question ID
     const selectedOption = data[question.id];
+    console.log(`Submitting form for ${question.id}:`, selectedOption);
     onSubmit(question.id, selectedOption);
   };
 
-  // Show the test mode button only on the first question
-  const showTestModeButton = isFirstQuestion;
+  // Only show test button on the first question and when not already testing
+  const showTestModeButton = isFirstQuestion && !isAutoTesting;
 
   return (
     <Card className="w-full">
@@ -69,7 +74,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         )}
       </CardHeader>
       <CardContent>
-        <form id="quiz-form" onSubmit={handleSubmit(processSubmit)}>
+        <form id={`quiz-form-${formKey}`} onSubmit={handleSubmit(processSubmit)} key={formKey}>
           <Controller
             control={control}
             name={question.id}
@@ -79,11 +84,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 onValueChange={field.onChange}
                 value={field.value}
                 className="flex flex-col space-y-3"
+                disabled={isAutoTesting}
               >
                 {question.options.map((option) => (
                   <label 
                     key={option.id}
-                    className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition cursor-pointer"
+                    className={`flex items-center space-x-3 space-y-0 rounded-md border p-4 ${isAutoTesting ? 'opacity-70' : 'hover:bg-muted/50 transition cursor-pointer'}`}
                   >
                     <input 
                       type="radio" 
@@ -91,7 +97,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       name={question.id} 
                       value={option.id}
                       checked={field.value === option.id}
-                      onChange={() => field.onChange(option.id)}
+                      onChange={() => {
+                        field.onChange(option.id);
+                        console.log(`Selected option ${option.id} for question ${question.id}`);
+                      }}
+                      disabled={isAutoTesting}
                     />
                     <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {option.text}
@@ -138,7 +148,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           
           <Button 
             type="submit" 
-            form="quiz-form"
+            form={`quiz-form-${formKey}`}
             disabled={isAutoTesting}
           >
             {isLastQuestion ? "Complete" : "Next"}

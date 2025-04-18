@@ -21,27 +21,34 @@ export const useDeepInsightStorage = (
 ) => {
   // Load saved progress on initial mount
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        const savedProgress: SavedProgress = JSON.parse(savedData);
-        
-        if (
-          savedProgress && 
-          savedProgress.responses && 
-          savedProgress.currentQuestionIndex >= 0 &&
-          savedProgress.currentQuestionIndex < totalQuestions
-        ) {
-          console.log("Found saved progress:", savedProgress);
+    const loadSavedProgress = async () => {
+      try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          const savedProgress: SavedProgress = JSON.parse(savedData);
           
-          // Set restored session flag first before changing any state
-          if (setIsRestoredSession) {
-            setIsRestoredSession(true);
-          }
-          
-          // Wait to ensure flag is set before updating state
-          setTimeout(() => {
+          if (
+            savedProgress && 
+            savedProgress.responses && 
+            savedProgress.currentQuestionIndex >= 0 &&
+            savedProgress.currentQuestionIndex < totalQuestions
+          ) {
+            console.log("Found saved progress:", savedProgress);
+            
+            // Set restored session flag first
+            if (setIsRestoredSession) {
+              setIsRestoredSession(true);
+              
+              // Wait to ensure flag is set before updating state
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // Update states with saved data
             setResponses(savedProgress.responses);
+            
+            // Short delay between state updates
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
             
             // Calculate how many questions were answered
@@ -56,33 +63,42 @@ export const useDeepInsightStorage = (
                 `Progress restored (${answeredQuestions} questions answered)`, 
                 { description: `Last active ${timeAgo}` }
               );
-              console.log("Deep Insight quiz progress restored:", savedProgress);
+              console.log("Deep Insight quiz progress restored with", 
+                answeredQuestions, "questions answered.");
             }
-          }, 200); // Increased timeout for more reliable state updates
+          }
         }
+      } catch (error) {
+        console.error("Error loading saved Deep Insight quiz progress:", error);
       }
-    } catch (error) {
-      console.error("Error loading saved Deep Insight quiz progress:", error);
-    }
+    };
+    
+    loadSavedProgress();
   }, [setResponses, setCurrentQuestionIndex, totalQuestions, setIsRestoredSession]);
   
   // Save progress whenever responses or currentQuestionIndex changes
   useEffect(() => {
-    // Only save if there's at least one response
-    if (Object.keys(responses).length > 0) {
-      try {
-        const progressToSave: SavedProgress = {
-          responses,
-          currentQuestionIndex,
-          lastUpdated: new Date().toISOString()
-        };
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
-        console.log("Deep Insight quiz progress saved. Current responses:", Object.keys(responses).length);
-      } catch (error) {
-        console.error("Error saving Deep Insight quiz progress:", error);
+    // Debounced save to prevent excessive writes
+    const saveTimeout = setTimeout(() => {
+      // Only save if there's at least one response
+      if (Object.keys(responses).length > 0) {
+        try {
+          const progressToSave: SavedProgress = {
+            responses,
+            currentQuestionIndex,
+            lastUpdated: new Date().toISOString()
+          };
+          
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
+          console.log("Deep Insight quiz progress saved. Current responses:", 
+            Object.keys(responses).length);
+        } catch (error) {
+          console.error("Error saving Deep Insight quiz progress:", error);
+        }
       }
-    }
+    }, 300);
+    
+    return () => clearTimeout(saveTimeout);
   }, [responses, currentQuestionIndex]);
   
   // Helper function to format time ago
