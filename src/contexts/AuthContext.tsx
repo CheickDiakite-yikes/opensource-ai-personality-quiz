@@ -8,10 +8,18 @@ type User = {
   name?: string;
 };
 
+type UserProfile = {
+  age?: number;
+  city?: string;
+  state?: string;
+  gender?: string;
+};
+
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, profile?: UserProfile, avatarFile?: File | null) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -35,6 +43,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (email: string, password: string, name: string, profile?: UserProfile, avatarFile?: File | null) => {
+    try {
+      setIsLoading(true);
+      // Mock signup
+      setUser({ id: '1', email, name });
+      toast.success("Account created successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Error creating account");
+      console.error("Sign up error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -52,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     isLoading,
     signIn,
+    signUp,
     signOut,
   };
 
