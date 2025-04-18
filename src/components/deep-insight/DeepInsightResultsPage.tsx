@@ -170,7 +170,7 @@ const DeepInsightResultsPage: React.FC = () => {
             <TopTraitsSection coreTraits={analysis.core_traits} />
             
             <Tabs defaultValue="traits" className="mb-8">
-              <TabsList className="grid grid-cols-4 gap-2 mb-6">
+              <TabsList className="grid grid-cols-4 gap-2 mb-6 p-1 bg-muted/30 rounded-lg">
                 <TabsTrigger value="traits" className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   Core Traits
