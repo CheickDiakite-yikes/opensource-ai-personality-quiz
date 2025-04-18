@@ -45,7 +45,97 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
 
       clearTimeout(timeoutId);
       logDebug("Successfully received fallback OpenAI response");
-      return await handleOpenAIResponse(openAIRes);
+      const rawData = await handleOpenAIResponse(openAIRes);
+      
+      // If there's no content, throw error
+      if (!rawData || !rawData.choices || !rawData.choices[0] || !rawData.choices[0].message) {
+        throw new Error("Invalid response structure from OpenAI API in fallback");
+      }
+      
+      const rawContent = rawData.choices[0].message.content || "";
+      logDebug(`Fallback response length: ${rawContent.length} chars`);
+      
+      // Extract JSON from the raw content
+      let jsonString = rawContent;
+      
+      // Check if response contains markdown JSON blocks and extract just the JSON
+      if (jsonString.includes("```json")) {
+        const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          jsonString = jsonMatch[1].trim();
+        } else {
+          // Try without the "json" language specifier
+          const basicMatch = jsonString.match(/```\s*([\s\S]*?)\s*```/);
+          if (basicMatch && basicMatch[1]) {
+            jsonString = basicMatch[1].trim();
+          }
+        }
+      }
+      
+      logDebug("Cleaning JSON in fallback...");
+      
+      // Very aggressive JSON cleaning that handles multiple issues
+      // 1. Replace single-quoted property names with double quotes
+      jsonString = jsonString.replace(/'([^']+?)'\s*:/g, '"$1":');
+      
+      // 2. Replace unquoted property names with double quotes (handles alphanumeric and underscores)
+      jsonString = jsonString.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+      
+      // 3. Replace single-quoted string values with double quotes (avoiding apostrophes in words)
+      jsonString = jsonString.replace(/:\s*'([^']*)'/g, ': "$1"');
+      
+      // 4. Fix trailing commas before closing braces and brackets
+      jsonString = jsonString.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+      
+      // 5. Balance missing brackets if needed
+      const openBraces = (jsonString.match(/{/g) || []).length;
+      const closeBraces = (jsonString.match(/}/g) || []).length;
+      if (openBraces > closeBraces) {
+        jsonString += '}'.repeat(openBraces - closeBraces);
+      }
+      
+      // 6. Fix NaN, undefined and other JavaScript values not valid in JSON
+      jsonString = jsonString
+        .replace(/:\s*undefined/g, ': null')
+        .replace(/:\s*NaN/g, ': null')
+        .replace(/:\s*Infinity/g, ': null');
+      
+      try {
+        return JSON.parse(jsonString);
+      } catch (jsonError) {
+        logError(jsonError, "Fallback JSON parsing");
+        
+        // Try an even more aggressive approach as a last resort
+        logDebug("Attempting final JSON recovery in fallback...");
+        
+        // Try to find a valid JSON object by looking for an object that starts with { and ends with }
+        const possibleJsonMatch = rawContent.match(/{[\s\S]*}/);
+        if (possibleJsonMatch) {
+          let lastResortJson = possibleJsonMatch[0];
+          
+          // Apply the same cleanups as before
+          lastResortJson = lastResortJson.replace(/'([^']+?)'\s*:/g, '"$1":');
+          lastResortJson = lastResortJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+          lastResortJson = lastResortJson.replace(/:\s*'([^']*)'/g, ': "$1"');
+          lastResortJson = lastResortJson.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+          
+          try {
+            return JSON.parse(lastResortJson);
+          } catch (finalError) {
+            // Create an emergency fallback object
+            return {
+              cognitivePatterning: { decisionMaking: "Analysis unavailable due to technical issues" },
+              emotionalArchitecture: { emotionalAwareness: "Analysis generation encountered errors" },
+              coreTraits: { 
+                primary: "Analysis unavailable", 
+                tertiaryTraits: ["Technical issue encountered"] 
+              }
+            };
+          }
+        } else {
+          throw new Error("Could not parse JSON or extract valid structure from OpenAI response");
+        }
+      }
     } catch (error) {
       clearTimeout(timeoutId);
       logError(error, "Fallback OpenAI API call");

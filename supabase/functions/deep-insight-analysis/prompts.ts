@@ -58,7 +58,16 @@ Guidelines for analysis:
 7. Connect different aspects of personality
 8. Ground all observations in response evidence
 
-Output **exactly** this JSON schema with double quotes for ALL property names and string values:
+TECHNICAL REQUIREMENTS - CRITICAL:
+- You MUST output ONLY valid JSON data.
+- ALL property names MUST be surrounded by double quotes, never single quotes.
+- ALL string values MUST be surrounded by double quotes, never single quotes.
+- NEVER use unquoted property names.
+- DO NOT include markdown formatting, especially no \`\`\` blocks.
+- DO NOT include any explanatory text before or after the JSON.
+- Ensure the JSON can be directly parsed with JSON.parse() without any modifications.
+
+Output with this exact JSON schema:
 
 {
   "cognitivePatterning": {
@@ -124,5 +133,5 @@ Output **exactly** this JSON schema with double quotes for ALL property names an
   }
 }
 
-Return **only** pure JSON without any markdown formatting. Use DOUBLE QUOTES for ALL property names and string values. Do not use markdown code blocks. Return only valid JSON that can be parsed directly by JSON.parse().
+I REPEAT: Return ONLY pure JSON with DOUBLE QUOTES for ALL property names and string values. No single quotes, no unquoted properties, no markdown formatting, no code blocks, no explanation.
 `;

@@ -44,89 +44,111 @@ serve(async (req) => {
       }
       
       const rawContent = openAIData.choices[0].message.content || "";
-      console.log("OpenAI response length:", rawContent.length);
+      console.log("OpenAI response received with length:", rawContent.length);
       
       try {
         console.time("analysis-processing");
-        let analysisContent;
         
-        try {
-          // First, clean any markdown formatting from the raw content
-          let cleanedJson = rawContent;
-          
-          console.log("Beginning JSON cleaning process");
-          
-          // Check if the response is wrapped in markdown code blocks
-          if (cleanedJson.includes("```json") || cleanedJson.includes("```")) {
-            console.log("Detected markdown in JSON response, cleaning...");
-            
-            // Remove markdown code block indicators
-            cleanedJson = cleanedJson.replace(/```json\s*/g, "");
-            cleanedJson = cleanedJson.replace(/```\s*/g, "");
+        // Extract JSON from the raw content
+        console.log("Extracting and cleaning JSON from response...");
+        let jsonString = rawContent;
+        
+        // First, check if response contains markdown JSON blocks and extract just the JSON
+        if (jsonString.includes("```json")) {
+          console.log("Removing markdown JSON code blocks...");
+          const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch && jsonMatch[1]) {
+            jsonString = jsonMatch[1].trim();
+          } else {
+            // Try without the "json" language specifier
+            const basicMatch = jsonString.match(/```\s*([\s\S]*?)\s*```/);
+            if (basicMatch && basicMatch[1]) {
+              jsonString = basicMatch[1].trim();
+            }
           }
-          
-          // Trim any whitespace
-          cleanedJson = cleanedJson.trim();
-          
-          // Fix property names that aren't double-quoted (single quotes or no quotes)
-          // This regex finds property names that either:
-          // 1. Start with a letter/underscore followed by word chars and a colon
-          // 2. Have single quotes around property names
-          cleanedJson = cleanedJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
-          cleanedJson = cleanedJson.replace(/'([^']+)'\s*:/g, '"$1":');
-          
-          console.log("Cleaned JSON. First 200 chars:", cleanedJson.substring(0, 200));
-          
-          // Now try to parse the cleaned JSON
-          analysisContent = JSON.parse(cleanedJson);
+        }
+        
+        console.log("Starting JSON cleanup process...");
+        console.log("JSON sample before cleanup (first 100 chars):", jsonString.substring(0, 100));
+        
+        // Very aggressive JSON cleaning that handles multiple issues
+        // 1. Replace single-quoted property names with double quotes
+        jsonString = jsonString.replace(/'([^']+?)'\s*:/g, '"$1":');
+        
+        // 2. Replace unquoted property names with double quotes (handles alphanumeric and underscores)
+        jsonString = jsonString.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+        
+        // 3. Replace single-quoted string values with double quotes (avoiding apostrophes in words)
+        jsonString = jsonString.replace(/:\s*'([^']*)'/g, ': "$1"');
+        
+        // 4. Fix trailing commas before closing braces and brackets
+        jsonString = jsonString.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+        
+        // 5. Balance missing brackets if needed
+        const openBraces = (jsonString.match(/{/g) || []).length;
+        const closeBraces = (jsonString.match(/}/g) || []).length;
+        if (openBraces > closeBraces) {
+          jsonString += '}'.repeat(openBraces - closeBraces);
+        }
+        
+        // 6. Fix NaN, undefined and other JavaScript values not valid in JSON
+        jsonString = jsonString
+          .replace(/:\s*undefined/g, ': null')
+          .replace(/:\s*NaN/g, ': null')
+          .replace(/:\s*Infinity/g, ': null');
+        
+        console.log("JSON sample after cleanup (first 100 chars):", jsonString.substring(0, 100));
+        
+        let analysisContent;
+        try {
+          analysisContent = JSON.parse(jsonString);
           console.log("Successfully parsed JSON without errors");
         } catch (jsonError) {
-          console.error("JSON parsing error:", jsonError);
-          console.log("Attempting to fix malformed JSON...");
+          console.error("Initial JSON parsing error:", jsonError);
           
-          // Log the raw content to help with debugging
-          console.log("Raw content snippet (first 200 chars):", rawContent.substring(0, 200));
+          // Try an even more aggressive approach as a last resort
+          console.log("Attempting final JSON recovery...");
           
-          // More aggressive attempt to fix common JSON errors
-          let fixedJson = rawContent;
-          
-          // Remove markdown code block indicators
-          fixedJson = fixedJson.replace(/```json\s*/g, "");
-          fixedJson = fixedJson.replace(/```\s*/g, "");
-          
-          // Convert single quotes to double quotes for strings, but be careful with apostrophes
-          // This is a complex operation and might not catch all cases
-          fixedJson = fixedJson.replace(/'([^']*)'(\s*:)/g, '"$1"$2');
-          
-          // Fix unquoted property names 
-          fixedJson = fixedJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
-          
-          // Fix single quoted property values
-          fixedJson = fixedJson.replace(/:\s*'([^']*)'/g, ': "$1"');
-          
-          // Fix missing closing brackets/braces
-          const openBraces = (fixedJson.match(/{/g) || []).length;
-          const closeBraces = (fixedJson.match(/}/g) || []).length;
-          if (openBraces > closeBraces) {
-            fixedJson += '}'.repeat(openBraces - closeBraces);
-          }
-          
-          // Fix trailing commas
-          fixedJson = fixedJson.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
-          
-          console.log("Attempted to fix JSON. First 200 chars:", fixedJson.substring(0, 200));
-          
-          try {
-            analysisContent = JSON.parse(fixedJson);
-            console.log("Successfully fixed JSON format");
-          } catch (secondError) {
-            console.error("Could not fix JSON, using fallback structure");
+          // Try to find a valid JSON object by looking for an object that starts with { and ends with }
+          const possibleJsonMatch = rawContent.match(/{[\s\S]*}/);
+          if (possibleJsonMatch) {
+            let lastResortJson = possibleJsonMatch[0];
+            
+            // Apply the same cleanups as before
+            lastResortJson = lastResortJson.replace(/'([^']+?)'\s*:/g, '"$1":');
+            lastResortJson = lastResortJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+            lastResortJson = lastResortJson.replace(/:\s*'([^']*)'/g, ': "$1"');
+            lastResortJson = lastResortJson.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+            
+            try {
+              analysisContent = JSON.parse(lastResortJson);
+              console.log("JSON recovered using last resort approach");
+            } catch (finalError) {
+              console.error("All JSON parsing attempts failed:", finalError);
+              
+              // Create an emergency fallback object when all parsing attempts fail
+              analysisContent = {
+                cognitivePatterning: { 
+                  decisionMaking: "Analysis unavailable due to technical issues",
+                  learningStyle: "Please try again later"
+                },
+                emotionalArchitecture: { 
+                  emotionalAwareness: "Analysis generation encountered errors" 
+                },
+                coreTraits: { 
+                  primary: "Analysis results unavailable",
+                  tertiaryTraits: ["Retry analysis recommended"]
+                }
+              };
+            }
+          } else {
+            // Complete fallback if no JSON-like structure found
             analysisContent = {
               cognitivePatterning: { decisionMaking: "Analysis unavailable due to formatting issues" },
               emotionalArchitecture: { emotionalAwareness: "Analysis unavailable due to formatting issues" },
               coreTraits: { 
-                primary: "Could not fully process analysis", 
-                tertiaryTraits: ["Analytical", "Thoughtful", "Detail-oriented"] 
+                primary: "Could not process analysis", 
+                tertiaryTraits: ["Please try again later"] 
               }
             };
           }
