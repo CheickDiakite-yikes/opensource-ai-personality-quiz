@@ -18,7 +18,9 @@ const DeepInsightAssessmentPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const questions = getDeepInsightQuestions();
+  
+  // Make sure we're getting all 100 questions
+  const questions = getDeepInsightQuestions(100);
   
   const {
     currentQuestionIndex,

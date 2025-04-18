@@ -1,91 +1,54 @@
 
-import { useState, useEffect } from "react";
-import { AssessmentQuestion } from "@/utils/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { AssessmentQuestion } from '@/utils/types';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+
+type DeepInsightResponses = Record<string, string>;
 
 export const useDeepInsightState = (questions: AssessmentQuestion[]) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  const [responses, setResponses] = useState<Record<string, string>>({});
-  const { user } = useAuth();
-  
-  // Calculate progress percentage
-  const progress = (Object.keys(responses).length / questions.length) * 100;
-  
-  // Get current question
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [responses, setResponses] = useLocalStorage<DeepInsightResponses>('deep_insight_responses', {});
+  const [progress, setProgress] = useState(0);
+
+  // Current question is the one at the current index
   const currentQuestion = questions[currentQuestionIndex];
-  
-  // Check if current question has a response
+
+  // Calculate progress whenever responses or questions change
+  useEffect(() => {
+    const responseCount = Object.keys(responses).length;
+    const completionPercentage = (responseCount / questions.length) * 100;
+    setProgress(completionPercentage);
+  }, [responses, questions.length]);
+
+  // Check if there's a response for a given question ID
   const hasResponse = (questionId: string) => {
     return !!responses[questionId];
   };
-  
-  // Update response for a question
+
+  // Update a response for a specific question
   const updateResponse = (questionId: string, selectedOption: string) => {
     setResponses(prev => ({
       ...prev,
       [questionId]: selectedOption
     }));
-    
-    // Save progress to localStorage
-    saveProgress();
   };
-  
-  // Save progress to localStorage
-  const saveProgress = () => {
-    if (user) {
-      try {
-        localStorage.setItem("deep_insight_progress", JSON.stringify({
-          responses,
-          currentQuestionIndex,
-          lastSaved: new Date().toISOString(),
-          userId: user.id
-        }));
-      } catch (error) {
-        console.error("Error saving progress:", error);
-      }
-    }
+
+  // Clear all responses and start fresh
+  const resetResponses = () => {
+    setResponses({});
+    setCurrentQuestionIndex(0);
   };
-  
-  // Load progress from localStorage on initial load
-  useEffect(() => {
-    if (user) {
-      try {
-        const savedProgress = localStorage.getItem("deep_insight_progress");
-        
-        if (savedProgress) {
-          const { responses: savedResponses, currentQuestionIndex: savedIndex, userId } = JSON.parse(savedProgress);
-          
-          // Only restore if it belongs to the current user
-          if (userId === user.id) {
-            setResponses(savedResponses);
-            setCurrentQuestionIndex(savedIndex);
-            
-            toast.info("Your progress has been restored", {
-              description: "Continue your assessment where you left off."
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error loading progress:", error);
-      }
-    }
-  }, [user]);
-  
-  // Save progress when responses or currentQuestionIndex changes
-  useEffect(() => {
-    if (Object.keys(responses).length > 0) {
-      saveProgress();
-    }
-  }, [responses, currentQuestionIndex]);
-  
+
   return {
     currentQuestionIndex,
     setCurrentQuestionIndex,
     responses,
     updateResponse,
+    resetResponses,
     currentQuestion,
     hasResponse,
     progress
   };
 };
+
+export default useDeepInsightState;
