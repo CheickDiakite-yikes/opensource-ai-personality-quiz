@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,15 +27,17 @@ type AuthContextType = {
   signOut: () => Promise<void>;
 };
 
+// Create context with undefined as initial value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Move useNavigate inside the component
+  const navigate = useNavigate();
+  // Initialize state hooks inside the functional component
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // Track initial session check to avoid race conditions
   const [initialSessionChecked, setInitialSessionChecked] = useState(false);
-  const navigate = useNavigate();
 
   // CRITICAL FIX: Improved auth state management to prevent token errors
   useEffect(() => {
@@ -90,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeAuth();
-  }, [navigate]);
+  }, [navigate, initialSessionChecked]);
 
   const signUp = async (
     email: string, 

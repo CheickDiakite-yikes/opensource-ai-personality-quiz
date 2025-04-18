@@ -2,7 +2,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 
 // Lazy load pages for better initial load performance
@@ -29,7 +29,7 @@ const PageLoader = () => (
   </div>
 );
 
-// Private route component
+// Private route component that uses useAuth
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
@@ -44,7 +44,7 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-function App() {
+function AppContent() {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
@@ -137,6 +137,15 @@ function App() {
       </Routes>
       <Toaster />
     </>
+  );
+}
+
+// Main App component that wraps the content with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

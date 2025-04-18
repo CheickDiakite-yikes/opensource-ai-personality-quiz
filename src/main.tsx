@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from 'next-themes';
 import App from './App.tsx';
 import './index.css';
@@ -17,15 +16,13 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-// Render app with proper provider hierarchy to ensure
-// authentication context is always available
+// Render app with proper provider hierarchy
+// Important: Move AuthProvider inside Router since it uses useNavigate
 root.render(
   <React.StrictMode>
     <Router>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <App />
       </ThemeProvider>
     </Router>
   </React.StrictMode>
