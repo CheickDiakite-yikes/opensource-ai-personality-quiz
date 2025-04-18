@@ -22,7 +22,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
       
       // Find the highest question index that has been answered
       const questionIds = Object.keys(responses);
-      const highestAnsweredId = Math.max(...questionIds.map(id => parseInt(id, 10)));
+      const highestAnsweredId = Math.max(...questionIds.map(id => parseInt(id.replace('q', ''), 10)));
       
       // If we have a valid highest ID and it's not the last question, start from the next question
       if (!isNaN(highestAnsweredId) && highestAnsweredId < totalQuestions) {
@@ -104,11 +104,11 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
   
   return {
     currentQuestionIndex,
+    setCurrentQuestionIndex, // Explicitly export this
     responses,
     error,
     handleSubmitQuestion,
     handlePrevious,
-    clearSavedProgress,
-    setCurrentQuestionIndex // Add this line to export the setCurrentQuestionIndex function
+    clearSavedProgress
   };
 };

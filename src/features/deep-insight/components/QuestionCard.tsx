@@ -44,9 +44,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setCurrentQuestionIndex
   );
 
-  // For debugging
-  const watchedValue = watch(question.id);
-
   // Update form value when question or currentResponse changes
   useEffect(() => {
     if (currentResponse) {
@@ -59,6 +56,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const selectedOption = data[question.id];
     onSubmit(question.id, selectedOption);
   };
+
+  // Show the test mode button only on the first question
+  const showTestModeButton = isFirstQuestion;
 
   return (
     <Card className="w-full">
@@ -122,12 +122,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               Previous
             </Button>
             
-            {!isLastQuestion && (
+            {showTestModeButton && (
               <Button 
                 type="button"
                 variant="elegant"
                 onClick={startAutoTest}
-                disabled={isAutoTesting}
+                disabled={isAutoTesting || currentQuestionIndex > 0}
                 className="flex items-center gap-2"
               >
                 <Wand2 className="h-4 w-4" />

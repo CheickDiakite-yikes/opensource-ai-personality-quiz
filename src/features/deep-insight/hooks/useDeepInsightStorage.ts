@@ -78,7 +78,7 @@ export const useDeepInsightStorage = (
         };
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
-        console.log("Deep Insight quiz progress saved:", progressToSave);
+        console.log("Deep Insight quiz progress saved. Current responses:", Object.keys(responses).length);
       } catch (error) {
         console.error("Error saving Deep Insight quiz progress:", error);
       }
