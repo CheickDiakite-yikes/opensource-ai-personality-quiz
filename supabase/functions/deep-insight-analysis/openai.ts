@@ -27,31 +27,52 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("OpenAI request timed out after 240 seconds")), API_CONFIG.MAIN_TIMEOUT)
-    );
+    // Create an AbortController to handle timeouts manually
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort("Request timeout exceeded");
+      console.warn("Manually aborting request after timeout:", API_CONFIG.MAIN_TIMEOUT);
+    }, API_CONFIG.MAIN_TIMEOUT);
     
-    const fetchPromise = createOpenAIRequest(openAIApiKey, [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Please analyze these assessment responses with rigorous scoring standards:\n${formattedResponses}` }
-    ]);
-    
-    const openAIRes = await Promise.race([fetchPromise, timeoutPromise]);
-    console.timeEnd("openai-api-call");
-    
-    return await handleOpenAIResponse(openAIRes);
+    try {
+      // Pass signal to fetch request
+      const fetchPromise = createOpenAIRequest(
+        openAIApiKey, 
+        [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Please analyze these assessment responses with rigorous scoring standards:\n${formattedResponses}` }
+        ],
+        API_CONFIG.MAIN_MAX_TOKENS,
+        controller.signal
+      );
+      
+      const openAIRes = await fetchPromise;
+      clearTimeout(timeoutId); // Clear the timeout if request completes
+      console.timeEnd("openai-api-call");
+      
+      return await handleOpenAIResponse(openAIRes);
+    } catch (error) {
+      clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
+      throw error;
+    }
   } catch (error) {
     logError(error, "OpenAI API call");
     
+    // Check for all possible abort-related errors
     if (error.name === "AbortError" || 
-        error.message.includes("timeout") || 
-        error.message.includes("Failed to fetch") ||
+        error.message?.includes("abort") ||
+        error.message?.includes("timeout") || 
+        error.message?.includes("Failed to fetch") ||
         error.name === "TypeError") {
       
-      console.log("Main API call failed. Attempting fallback with simpler prompt...");
-      return await handleFallback(openAIApiKey, formattedResponses);
+      console.log("Main API call failed or aborted. Attempting fallback with simpler prompt...");
+      try {
+        return await handleFallback(openAIApiKey, formattedResponses);
+      } catch (fallbackError) {
+        console.error("Both main and fallback approaches failed:", fallbackError);
+        throw new Error("Analysis processing failed after multiple attempts");
+      }
     }
     throw error;
   }
 }
-

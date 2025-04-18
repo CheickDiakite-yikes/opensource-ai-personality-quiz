@@ -6,8 +6,8 @@ export const corsHeaders = {
 
 export const API_CONFIG = {
   BASE_URL: "https://api.openai.com/v1/chat/completions",
-  MAIN_TIMEOUT: 240000, // 4 minutes
-  FALLBACK_TIMEOUT: 120000, // 2 minutes
+  MAIN_TIMEOUT: 80000, // 80 seconds - reduced from 240s to be below Edge Function limits
+  FALLBACK_TIMEOUT: 60000, // 60 seconds - reduced from 120s to be below Edge Function limits
   DEFAULT_MODEL: "gpt-4o",
   FALLBACK_MODEL: "gpt-4o",
   MAIN_MAX_TOKENS: 16000,
@@ -26,4 +26,3 @@ export interface OpenAIConfig {
   totalPromptTokens: number;
   responsesCount: number;
 }
-

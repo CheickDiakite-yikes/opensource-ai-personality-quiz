@@ -2,7 +2,12 @@
 import { API_CONFIG } from "./openaiConfig.ts";
 import { logRequestConfig, logResponseStats } from "./logging.ts";
 
-export async function createOpenAIRequest(openAIApiKey: string, messages: Array<{ role: string; content: string }>, maxTokens: number = API_CONFIG.MAIN_MAX_TOKENS) {
+export async function createOpenAIRequest(
+  openAIApiKey: string, 
+  messages: Array<{ role: string; content: string }>, 
+  maxTokens: number = API_CONFIG.MAIN_MAX_TOKENS, 
+  signal?: AbortSignal
+) {
   return await fetch(API_CONFIG.BASE_URL, {
     method: "POST",
     headers: {
@@ -18,6 +23,7 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: Array<
       messages,
       response_format: { type: "json_object" },
     }),
+    signal // Pass the abort signal to fetch
   });
 }
 
@@ -38,4 +44,3 @@ export async function handleOpenAIResponse(response: Response) {
   logResponseStats(data);
   return data;
 }
-

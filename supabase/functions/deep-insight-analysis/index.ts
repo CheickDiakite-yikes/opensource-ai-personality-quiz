@@ -1,17 +1,12 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from "./openaiConfig.ts";
 import { DeepInsightResponses } from "./types.ts";
 import { generateDefaultScore, calculateSafeDomainScore } from "./scoring.ts";
 import { getStringSafely, getArraySafely, generateOverview } from "./utils.ts";
 import { callOpenAI } from "./openai.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -21,7 +16,7 @@ serve(async (req) => {
     console.log("Deep Insight Analysis function started");
     console.time("total-processing-time");
     
-    // Parse request body
+    // Parse request body early to quickly return errors if needed
     let responses;
     try {
       const body = await req.json();
@@ -93,7 +88,6 @@ serve(async (req) => {
     console.log("Calling OpenAI API...");
     
     try {
-      // Let the edge function know we're starting a potentially long operation
       const openAIData = await callOpenAI(openAIApiKey, formatted);
       
       if (!openAIData || !openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
