@@ -1,13 +1,10 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmotionalArchitecture } from "../types/deepInsight";
 
 interface EmotionalArchitectureProps {
-  data: {
-    emotionalAwareness: string;
-    regulationStyle: string;
-    empathicCapacity: string;
-  } | null;
+  data: EmotionalArchitecture | null;
 }
 
 const EmotionalArchitectureSection: React.FC<EmotionalArchitectureProps> = ({ data }) => {
@@ -26,7 +23,7 @@ const EmotionalArchitectureSection: React.FC<EmotionalArchitectureProps> = ({ da
           <CardTitle className="text-amber-700 dark:text-amber-400">Emotional Awareness</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.emotionalAwareness)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.emotionalAwareness || "")}</p>
         </CardContent>
       </Card>
       
@@ -35,7 +32,7 @@ const EmotionalArchitectureSection: React.FC<EmotionalArchitectureProps> = ({ da
           <CardTitle className="text-emerald-700 dark:text-emerald-400">Regulation Style</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.regulationStyle)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.regulationStyle || "")}</p>
         </CardContent>
       </Card>
       
@@ -44,7 +41,7 @@ const EmotionalArchitectureSection: React.FC<EmotionalArchitectureProps> = ({ da
           <CardTitle className="text-pink-700 dark:text-pink-400">Empathic Capacity</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.empathicCapacity)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(emotionalData.empathicCapacity || "")}</p>
         </CardContent>
       </Card>
     </div>

@@ -1,14 +1,10 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CoreTraits } from "../types/deepInsight";
 
 interface CoreTraitsProps {
-  data: {
-    primary: string;
-    secondary: string;
-    strengths: string[];
-    challenges: string[];
-  } | null;
+  data: CoreTraits | null;
 }
 
 const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {

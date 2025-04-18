@@ -59,23 +59,23 @@ const DeepInsightTabs: React.FC<DeepInsightTabsProps> = ({ analysis }) => {
       </TabsList>
 
       <TabsContent value="traits">
-        <CoreTraitsSection data={analysis.core_traits} />
+        <CoreTraitsSection data={analysis.core_traits || null} />
       </TabsContent>
       
       <TabsContent value="cognitive">
-        <CognitivePatterningSection data={analysis.cognitive_patterning} />
+        <CognitivePatterningSection data={analysis.cognitive_patterning || null} />
       </TabsContent>
       
       <TabsContent value="emotional">
-        <EmotionalArchitectureSection data={analysis.emotional_architecture} />
+        <EmotionalArchitectureSection data={analysis.emotional_architecture || null} />
       </TabsContent>
       
       <TabsContent value="interpersonal">
-        <InterpersonalDynamicsSection data={analysis.interpersonal_dynamics} />
+        <InterpersonalDynamicsSection data={analysis.interpersonal_dynamics || null} />
       </TabsContent>
       
       <TabsContent value="growth">
-        <GrowthPotentialSection data={analysis.growth_potential} />
+        <GrowthPotentialSection data={analysis.growth_potential || null} />
       </TabsContent>
       
       <TabsContent value="career">
@@ -90,7 +90,7 @@ const DeepInsightTabs: React.FC<DeepInsightTabsProps> = ({ analysis }) => {
       </TabsContent>
       
       <TabsContent value="relationships">
-        <InterpersonalDynamicsSection data={analysis.interpersonal_dynamics} />
+        <InterpersonalDynamicsSection data={analysis.interpersonal_dynamics || null} />
       </TabsContent>
     </Tabs>
   );

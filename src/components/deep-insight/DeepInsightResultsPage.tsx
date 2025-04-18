@@ -43,7 +43,8 @@ const DeepInsightResultsPage: React.FC = () => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          setAnalysis(data[0]);
+          // Cast data properly to match our DeepInsightAnalysis type
+          setAnalysis(data[0] as unknown as DeepInsightAnalysis);
         } else {
           setError("No analysis found. Please complete the assessment first.");
         }

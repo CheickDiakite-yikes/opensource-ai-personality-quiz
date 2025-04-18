@@ -1,16 +1,10 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CognitivePatterns } from "../types/deepInsight";
 
 interface CognitivePatterningProps {
-  data: {
-    decisionMaking: string;
-    learningStyle: string;
-    attention: string;
-    problemSolvingApproach?: string;
-    informationProcessing?: string;
-    analyticalTendencies?: string;
-  } | null;
+  data: CognitivePatterns | null;
 }
 
 const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }) => {
@@ -32,7 +26,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-blue-700 dark:text-blue-400">Decision Making</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.decisionMaking)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.decisionMaking || "")}</p>
         </CardContent>
       </Card>
       
@@ -41,7 +35,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-purple-700 dark:text-purple-400">Learning Style</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.learningStyle)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.learningStyle || "")}</p>
         </CardContent>
       </Card>
       
@@ -50,7 +44,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-cyan-700 dark:text-cyan-400">Attention Pattern</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.attention)}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.attention || "")}</p>
         </CardContent>
       </Card>
 

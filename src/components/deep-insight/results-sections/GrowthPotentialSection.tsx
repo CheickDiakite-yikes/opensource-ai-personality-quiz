@@ -1,12 +1,10 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GrowthPotential } from "../types/deepInsight";
 
 interface GrowthPotentialProps {
-  data: {
-    developmentAreas: string[];
-    recommendations: string[];
-  } | null;
+  data: GrowthPotential | null;
 }
 
 const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
