@@ -1,115 +1,54 @@
-
 import { API_CONFIG } from "./openaiConfig.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
 import { logError, logDebug } from "./logging.ts";
+import { SYSTEM_PROMPT } from "./prompts.ts";
 
 export async function handleFallback(openAIApiKey: string, formattedResponses: string) {
-  logDebug("Using simplified fallback approach with smaller model");
-  console.time("openai-fallback-call");
-  
+  logDebug("Attempting fallback analysis...");
+
   try {
-    // Create an AbortController for the fallback
+    const config = {
+      model: API_CONFIG.FALLBACK_MODEL,
+      max_tokens: API_CONFIG.FALLBACK_MAX_TOKENS,
+      temperature: API_CONFIG.TEMPERATURE,
+      top_p: API_CONFIG.TOP_P,
+      frequency_penalty: API_CONFIG.FREQUENCY_PENALTY,
+      totalPromptTokens: SYSTEM_PROMPT.length + formattedResponses.length,
+      responsesCount: formattedResponses.split('\n').length
+    };
+
+    logDebug("Fallback config:", config);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      controller.abort("Fallback timeout exceeded");
-      logDebug("Manually aborting fallback request after timeout", { timeout: API_CONFIG.FALLBACK_TIMEOUT });
+      controller.abort("Fallback request timeout exceeded");
+      logDebug("Fallback request manually aborted after timeout", { timeout: API_CONFIG.FALLBACK_TIMEOUT });
     }, API_CONFIG.FALLBACK_TIMEOUT);
-    
+
     try {
-      // Further simplify and reduce the prompt for fallback
-      const MAX_FALLBACK_SIZE = 4000; // Even more strict limit for fallback
-      let simplifiedPrompt = formattedResponses;
-      
-      if (formattedResponses.length > MAX_FALLBACK_SIZE) {
-        // Get a representative sample of responses instead of just truncating
-        const allResponses = formattedResponses.split('\n');
-        const totalResponses = allResponses.length;
-        
-        // Calculate how many responses to sample with a minimum of 10
-        const sampleSize = Math.max(10, Math.floor(totalResponses * 0.4));
-        let sampledResponses = [];
-        
-        // Take responses from beginning, middle and end for better representation
-        sampledResponses = sampledResponses.concat(allResponses.slice(0, Math.floor(sampleSize/3)));
-        sampledResponses = sampledResponses.concat(
-          allResponses.slice(
-            Math.floor(totalResponses/2 - sampleSize/6), 
-            Math.floor(totalResponses/2 + sampleSize/6)
-          )
-        );
-        sampledResponses = sampledResponses.concat(
-          allResponses.slice(totalResponses - Math.floor(sampleSize/3))
-        );
-        
-        simplifiedPrompt = sampledResponses.join('\n');
-        simplifiedPrompt += "\n\n[Content sampled for analysis. Please analyze key patterns in available responses.]";
-      }
-      
-      logDebug(`Fallback using model: ${API_CONFIG.FALLBACK_MODEL}, response length: ${simplifiedPrompt.length}`);
-      
-      // Use a simpler prompt and smaller model for the fallback
-      const fallbackResponse = await createOpenAIRequest(
+      logDebug("Sending fallback request to OpenAI");
+
+      const openAIRes = await createOpenAIRequest(
         openAIApiKey,
         [
-          { 
-            role: "system", 
-            content: "Create a personality profile as JSON. Include: cognitivePatterning, emotionalArchitecture, coreTraits, and interpersonalDynamics. Keep it brief."
-          },
-          { 
-            role: "user", 
-            content: `Quick personality analysis from these responses:\n${simplifiedPrompt}` 
-          }
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Please analyze these assessment responses:\n${formattedResponses}` }
         ],
         API_CONFIG.FALLBACK_MAX_TOKENS,
-        controller.signal,
-        API_CONFIG.FALLBACK_MODEL // Use smaller/faster model for fallback
+        controller.signal
       );
 
-      clearTimeout(timeoutId); // Clear timeout if request completes
-      const result = await handleOpenAIResponse(fallbackResponse);
-      console.timeEnd("openai-fallback-call");
-      logDebug("Fallback completed successfully");
-      return result;
+      clearTimeout(timeoutId);
+      logDebug("Successfully received fallback OpenAI response");
+      return await handleOpenAIResponse(openAIRes);
     } catch (error) {
-      clearTimeout(timeoutId); // Clear timeout on error
-      logError(error, "Fallback request");
+      clearTimeout(timeoutId);
+      logError(error, "Fallback OpenAI API call");
       throw error;
     }
-  } catch (fallbackError) {
-    logError(fallbackError, "Fallback attempt");
-    
-    // Create ultra-minimal fallback response if all else fails
-    logDebug("Creating minimal static fallback response");
-    return {
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              cognitivePatterning: {
-                decisionMaking: "Balanced analytical and intuitive approach",
-                learningStyle: "Adaptive learning with practical application focus"
-              },
-              emotionalArchitecture: {
-                emotionalAwareness: "Moderate emotional awareness with core feelings identification",
-                regulationStyle: "Balanced emotional regulation with occasional fluctuations"
-              },
-              coreTraits: {
-                primary: "Conscientious and thoughtful individual",
-                tertiaryTraits: ["Analytical", "Adaptable", "Curious", "Practical", "Resilient"]
-              },
-              interpersonalDynamics: {
-                attachmentStyle: "Secure attachment with healthy boundaries",
-                communicationPattern: "Direct and thoughtful communication"
-              }
-            })
-          }
-        }
-      ],
-      usage: {
-        total_tokens: 0,
-        completion_tokens: 0,
-        prompt_tokens: 0
-      }
-    };
+  } catch (error) {
+    logError(error, "Fallback analysis");
+    throw new Error("Fallback analysis failed: " + (error instanceof Error ? error.message : "Unknown error"));
   }
 }

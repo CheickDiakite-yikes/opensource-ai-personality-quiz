@@ -1,4 +1,5 @@
 
+
 export const API_CONFIG = {
   BASE_URL: "https://api.openai.com/v1/chat/completions",
   MAIN_TIMEOUT: 90000, // Increased to 90 seconds
@@ -22,3 +23,4 @@ export interface OpenAIConfig {
   totalPromptTokens: number;
   responsesCount: number;
 }
+

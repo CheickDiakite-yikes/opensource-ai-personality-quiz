@@ -1,5 +1,7 @@
+
 import { SYSTEM_PROMPT } from "./prompts.ts";
-import { corsHeaders, API_CONFIG } from "./openaiConfig.ts";
+import { API_CONFIG } from "./openaiConfig.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
 import { logRequestConfig, logError, logDebug } from "./logging.ts";
 import { handleFallback } from "./fallbackHandler.ts";
