@@ -5,6 +5,7 @@ import {
   Star, Lightbulb, Flower, Users, 
   Sparkles, Briefcase, FlameIcon, Heart 
 } from "lucide-react";
+import { DeepInsightAnalysis } from "../types/deepInsight";
 
 // Import all section components
 import CoreTraitsSection from "../results-sections/CoreTraitsSection";
@@ -16,7 +17,7 @@ import CareerInsightsSection from "../results-sections/CareerInsightsSection";
 import MotivationSection from "../results-sections/MotivationSection";
 
 interface DeepInsightTabsProps {
-  analysis: any;
+  analysis: DeepInsightAnalysis;
 }
 
 const DeepInsightTabs: React.FC<DeepInsightTabsProps> = ({ analysis }) => {

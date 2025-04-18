@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
@@ -6,7 +5,7 @@ interface PersonalityOverviewProps {
   overview: string;
 }
 
-const PersonalityOverview = ({ overview }: PersonalityOverviewProps) => {
+const PersonalityOverview: React.FC<PersonalityOverviewProps> = ({ overview }) => {
   return (
     <Card className="mb-8 border-primary/20 bg-primary/5">
       <CardHeader>

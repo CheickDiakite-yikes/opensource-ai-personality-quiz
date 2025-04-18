@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/ui/PageTransition";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brain } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DeepInsightAnalysis } from "./types/deepInsight";
 
 // Import components
 import DeepInsightHeader from "./components/DeepInsightHeader";
@@ -20,7 +22,7 @@ const DeepInsightResultsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<DeepInsightAnalysis | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -101,7 +103,7 @@ const DeepInsightResultsPage: React.FC = () => {
         
         {analysis && (
           <>
-            <PersonalityOverview overview={analysis.overview} />
+            <PersonalityOverview overview={analysis.overview || ""} />
             
             <AnalysisScores 
               intelligenceScore={analysis.intelligence_score}

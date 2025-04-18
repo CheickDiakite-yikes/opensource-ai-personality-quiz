@@ -1,15 +1,15 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { DeepInsightAnalysis } from "../types/deepInsight";
 
 interface AnalysisActionsProps {
-  analysis: any;
+  analysis: DeepInsightAnalysis;
 }
 
-const AnalysisActions = ({ analysis }: AnalysisActionsProps) => {
+const AnalysisActions: React.FC<AnalysisActionsProps> = ({ analysis }) => {
   const navigate = useNavigate();
 
   return (
