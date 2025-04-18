@@ -32,9 +32,9 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     console.log("Total responses to analyze:", formattedResponses.split('\n').length);
     console.log("First 100 chars of responses:", formattedResponses.substring(0, 100) + "...");
     
-    // Increase timeout to 120 seconds (2 minutes) for complex analyses
+    // Increase timeout to 240 seconds (4 minutes) for complex analyses
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("OpenAI request timed out after 120 seconds")), 120000)
+      setTimeout(() => reject(new Error("OpenAI request timed out after 240 seconds")), 240000)
     );
     
     // Create fetch with enhanced retry logic
@@ -123,13 +123,8 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       console.time("openai-fallback-call");
       
       try {
-        // Create a simplified version of the response data for the fallback
-        const simplifiedResponses = formattedResponses
-          .split('\n')
-          .slice(0, 25)  // Take only first 25 responses
-          .join('\n');
-          
-        console.log("Using fallback with simplified prompt length:", simplifiedResponses.length);
+        // Use all responses in the fallback, no limiting
+        console.log("Using fallback with full responses. Length:", formattedResponses.length);
         
         const fallbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -148,13 +143,13 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
               },
               { 
                 role: "user", 
-                content: `Analyze these key assessment responses to create a personality profile:\n${simplifiedResponses}` 
+                content: `Analyze these key assessment responses to create a personality profile:\n${formattedResponses}` 
               },
             ],
             response_format: { type: "json_object" },
           }),
-          // Set a hard timeout of 30 seconds for the fallback
-          signal: AbortSignal.timeout(30000),
+          // Set a timeout of 120 seconds (2 minutes) for the fallback
+          signal: AbortSignal.timeout(120000),
         });
         
         console.timeEnd("openai-fallback-call");
