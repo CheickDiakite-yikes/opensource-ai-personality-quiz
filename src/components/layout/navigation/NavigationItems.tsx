@@ -1,5 +1,5 @@
 
-import { User, Brain, BarChart, ClipboardList, Home, LogOut, Sparkles } from "lucide-react";
+import { User, BarChart, ClipboardList, Home, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export interface NavigationItem {
@@ -18,10 +18,9 @@ export const useNavigationItems = () => {
 
   // Navigation items used in both sidebar and mobile menu
   const navigationItems: NavigationItem[] = [
-    { name: "Assessment", path: "/assessment", icon: Brain, requiresAuth: true },
-    { name: "Report", path: "/report", icon: ClipboardList, requiresAuth: true },
+    { name: "Assessment", path: "/assessment", icon: ClipboardList, requiresAuth: true },
+    { name: "Report", path: "/report", icon: BarChart, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
-    { name: "Deep Insight", path: "/deep-insight", icon: Sparkles, requiresAuth: true },
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
   ];
 
