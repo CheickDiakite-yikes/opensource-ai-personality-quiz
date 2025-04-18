@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DeepInsightResponses } from "./types.ts";
@@ -130,28 +131,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Validate API key presence
-    if (!openAIApiKey || openAIApiKey.trim() === "") {
-      console.error("OpenAI API key is missing or invalid");
-      return new Response(
-        JSON.stringify({ 
-          error: "OpenAI API key is not configured", 
-          success: false,
-          message: "Server configuration error (API key missing)" 
-        }), 
-        { 
-          status: 500, 
-          headers: { 
-            ...corsHeaders, 
-            "Content-Type": "application/json" 
-          } 
-        }
-      );
-    }
-
-    const reqBody = await req.json();
-
-try {
     // Validate API key presence
     if (!openAIApiKey || openAIApiKey.trim() === "") {
       console.error("OpenAI API key is missing or invalid");
