@@ -11,7 +11,7 @@ interface QuestionCardProps {
   question: DeepInsightQuestion;
   currentResponse: string;
   onPrevious: () => void;
-  onSubmit: (data: Record<string, string>) => void;
+  onSubmit: (questionId: string, selectedOption: string) => void;
   isFirstQuestion: boolean;
   isLastQuestion: boolean;
   error: string | null;
@@ -47,11 +47,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const processSubmit = (data: Record<string, string>) => {
     // Make sure we're submitting the correct question ID
-    const formattedData = {
-      [question.id]: data[question.id]
-    };
-    console.log(`Processing submission for question ${question.id} with value:`, formattedData[question.id]);
-    onSubmit(formattedData);
+    const selectedOption = data[question.id];
+    console.log(`Processing submission for question ${question.id} with value:`, selectedOption);
+    onSubmit(question.id, selectedOption);
   };
 
   return (
