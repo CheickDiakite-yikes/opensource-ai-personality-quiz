@@ -1,6 +1,4 @@
-// src/utils/openai.ts
-//--------------------------------------------------------------
-//  OpenAI → GPT‑4.1 personality analysis (Responses API)
+// src/utils/openai.ts  — GPT‑4.1 call *without* Web‑Search
 //--------------------------------------------------------------
 
 import { SYSTEM_PROMPT } from "./prompts.ts";
@@ -11,11 +9,6 @@ export const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Call GPT‑4.1 (Responses API) with quiz answers.
- * @param openAIApiKey   – your secret key
- * @param formattedResponses – the user’s answers (plain text)
- */
 export async function callOpenAI(
   openAIApiKey: string,
   formattedResponses: string,
@@ -24,17 +17,13 @@ export async function callOpenAI(
     throw new Error("OpenAI API key is missing or invalid");
   }
 
-  /* ------------------ Build the Responses‑API payload ------------------ */
+  /* ------------ Build GPT‑4.1 request (NO tools) ------------ */
   const requestBody = {
     model: "gpt-4.1",
-
-    // 👇 NEW: conversation turns live under `input`, NOT `messages`
     input: [
       {
         role: "system",
-        content: [
-          { type: "input_text", text: SYSTEM_PROMPT },
-        ],
+        content: [{ type: "input_text", text: SYSTEM_PROMPT }],
       },
       {
         role: "user",
@@ -48,17 +37,11 @@ export async function callOpenAI(
       },
     ],
 
-    /* Structured‑output + advanced knobs */
+    // structured JSON output
     text: { format: { type: "json_object" } },
-    reasoning: {},
 
-    tools: [
-      {
-        type: "web_search_preview",
-        user_location: { type: "approximate", country: "US" },
-        search_context_size: "medium",
-      },
-    ],
+    // optional chain‑of‑thought (kept; safe for JSON mode)
+    reasoning: {},
 
     temperature: 1,
     top_p: 1,
@@ -66,7 +49,7 @@ export async function callOpenAI(
     store: true,
   };
 
-  /* ------------------ Fire the request with 90 s timeout ------------------ */
+  /* ------------ 90‑s timeout guard ------------ */
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 90_000);
 
@@ -90,12 +73,10 @@ export async function callOpenAI(
     }
 
     const data = await res.json();
-
-    // Optional logging
     console.log("GPT‑4.1 total tokens:", data.usage?.total_tokens ?? "N/A");
     console.log("GPT‑4.1 completion tokens:", data.usage?.completion_tokens ?? "N/A");
 
-    return data; // Includes your JSON‑object analysis
+    return data;
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
