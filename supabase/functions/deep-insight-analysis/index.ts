@@ -1,3 +1,4 @@
+
 // supabase/functions/deep-insight-analysis/index.ts
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve }    from "https://deno.land/std@0.168.0/http/server.ts";
@@ -13,7 +14,7 @@ const corsHeaders = {
 /* ---------- 1.  SYSTEM PROMPT  ---------- */
 const SYSTEM_PROMPT = `
 You are **Atlas**, an elite interdisciplinary psychological analyst.
-Your task: turn a user’s raw assessment answers into an *exceptionally detailed, brutally honest, yet respectful* report.
+Your task: turn a user's raw assessment answers into an *exceptionally detailed, brutally honest, yet respectful* report.
 
 Output **exactly** this JSON schema, no more, no less, no re‑ordering:
 
@@ -28,7 +29,7 @@ Output **exactly** this JSON schema, no more, no less, no re‑ordering:
 **Analytic standards**
 • Evidence‑based inference (hedge if weak).  
 • Depth over fluff: ~4–6 sentences per string field, concrete daily‑life examples.  
-• Second‑person voice (“You …”).  
+• Second‑person voice ("You …").  
 • Minimal sugar‑coating; clear on weaknesses.  
 • Leverage Big‑Five, CBT, attachment theory silently.  
 • Cultural/gender sensitivity.  
@@ -36,7 +37,7 @@ Output **exactly** this JSON schema, no more, no less, no re‑ordering:
 • No disclaimers/references.
 
 **Generation budget**
-You may use **up to 16 000 tokens** for the completion; aim for rich, nuanced detail throughout.
+You may use **up to 16 000 tokens** for the completion; aim for rich, nuanced detail throughout.
 
 Return **only** the JSON object, no markdown.
 `;
@@ -63,8 +64,8 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-128k",
-        max_tokens: 16_000,
+        model: "gpt-4o", // Changed from gpt-4o-128k to gpt-4o which is widely available
+        max_tokens: 16000,
         temperature: 0.55,
         top_p: 1.0,
         frequency_penalty: 0.2,
