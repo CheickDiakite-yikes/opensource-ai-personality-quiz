@@ -120,12 +120,14 @@ const DeepInsightAssessmentPage: React.FC = () => {
       }
       
       if (assessmentData && assessmentData[0]) {
-        // Set a timeout for the API call to prevent UI freezing
-        const abortController = new AbortController();
+        // Create a timeout mechanism to prevent UI freezing
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Analysis request timed out")), 60000)
+        );
         
         try {
-          // Call the deep insight analysis edge function with increased timeout
-          const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
+          // Call the deep insight analysis edge function with options but without using abortSignal
+          const analysisPromise = supabase.functions.invoke(
             'deep-insight-analysis', 
             {
               body: { 
@@ -133,10 +135,17 @@ const DeepInsightAssessmentPage: React.FC = () => {
                   acc[questionId] = selectedOption;
                   return acc;
                 }, {} as Record<string, string>) 
-              },
-              abortSignal: abortController.signal
+              }
             }
           );
+          
+          // Race the analysis promise against the timeout
+          const { data: analysisData, error: analysisError } = await Promise.race([
+            analysisPromise,
+            timeoutPromise.then(() => {
+              throw new Error("Analysis request timed out after 60 seconds");
+            })
+          ]);
           
           if (analysisError) {
             console.error("Analysis invocation error:", analysisError);
