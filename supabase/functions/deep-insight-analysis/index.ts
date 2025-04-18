@@ -74,18 +74,9 @@ serve(async (req) => {
     const responseLengths = Object.values(responses).map(r => String(r).length);
     const avgLength = responseLengths.reduce((a, b) => a + b, 0) / responseLengths.length;
     console.log(`Average response length: ${avgLength}`);
-    console.log(`Shortest response: ${Math.min(...responseLengths)}`);
-    console.log(`Longest response: ${Math.max(...responseLengths)}`);
+    console.log(`Total response length: ${formatted.length} characters`);
     
-    // Log response length distribution
-    const lengthDistribution = responseLengths.reduce((acc: Record<string, number>, len) => {
-      const bracket = Math.floor(len / 50) * 50;
-      acc[`${bracket}-${bracket + 50}`] = (acc[`${bracket}-${bracket + 50}`] || 0) + 1;
-      return acc;
-    }, {});
-    console.log("Response length distribution:", lengthDistribution);
-
-    console.log("Calling OpenAI API...");
+    console.log("Calling OpenAI API with proper error handling...");
     
     try {
       const openAIData = await callOpenAI(openAIApiKey, formatted);
@@ -206,10 +197,6 @@ serve(async (req) => {
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
         console.log("Analysis generated successfully with ID:", analysis.id);
-        console.log("Analysis overview length:", analysis.overview?.length || 0);
-        console.log("Career paths identified:", analysis.careerSummary.recommendedPaths.length);
-        console.log("Core values identified:", analysis.motivationSummary.coreValues.length);
-        console.log("Trait scores generated:", analysis.traitScores.length);
 
         return new Response(
           JSON.stringify({ analysis, success: true, message: "Enhanced analysis generated successfully" }), 
@@ -254,6 +241,7 @@ serve(async (req) => {
       console.error("Error calling OpenAI:", openAIError);
       console.error("OpenAI error message:", openAIError.message);
       console.error("OpenAI error name:", openAIError.name);
+      console.error("OpenAI error stack:", openAIError.stack);
       
       // Return a useful error response
       return new Response(
