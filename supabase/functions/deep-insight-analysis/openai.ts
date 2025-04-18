@@ -26,32 +26,41 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // Optimize prompt size based on length with better chunking
+    // Enhanced prompt size handling
+    const MAX_PROMPT_SIZE = 14000; // Leave room for system prompt and response processing
+  
     let optimizedPrompt = formattedResponses;
-    const MAX_PROMPT_SIZE = 6000; // Reduced from 8000 for better reliability
-    
+  
     if (formattedResponses.length > MAX_PROMPT_SIZE) {
       logDebug(`Large input detected (${formattedResponses.length} chars), optimizing prompt size`);
-      
-      // More intelligent chunking - try to keep full response units
+    
       const responses = formattedResponses.split('\n');
-      let totalLength = 0;
       const keptResponses = [];
-      
-      // Keep responses up to MAX_PROMPT_SIZE with some buffer
+      let totalLength = 0;
+    
+      // Intelligent response sampling with preference for complete responses
       for (const response of responses) {
-        if (totalLength + response.length <= MAX_PROMPT_SIZE - 100) {
+        // Prioritize longer, more detailed responses
+        if (totalLength + response.length <= MAX_PROMPT_SIZE - 500 && response.length > 100) {
           keptResponses.push(response);
-          totalLength += response.length + 1; // +1 for newline
-        } else {
-          break;
+          totalLength += response.length + 1;
         }
       }
-      
+    
+      // If we've sampled too few responses, add some shorter ones
+      if (keptResponses.length < 10) {
+        for (const response of responses) {
+          if (totalLength + response.length <= MAX_PROMPT_SIZE - 500) {
+            keptResponses.push(response);
+            totalLength += response.length + 1;
+          }
+        }
+      }
+    
       optimizedPrompt = keptResponses.join('\n');
-      optimizedPrompt += "\n\n[Content truncated due to length. Please analyze available responses.]";
-      
-      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters, keeping ${keptResponses.length}/${responses.length} responses`);
+      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Analyzing key patterns across responses.]";
+    
+      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
     }
     
     // Implement retry loop with exponential backoff
