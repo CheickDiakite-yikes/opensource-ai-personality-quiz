@@ -14,6 +14,13 @@ import {
   Star, FlameIcon, Lightbulb, Flower, Users, Sparkles 
 } from "lucide-react";
 
+// Import new components
+import DeepInsightHeader from "./components/DeepInsightHeader";
+import PersonalityOverview from "./components/PersonalityOverview";
+import AnalysisScores from "./components/AnalysisScores";
+import AnalysisActions from "./components/AnalysisActions";
+
+// Import existing section components
 import CoreTraitsSection from "./results-sections/CoreTraitsSection";
 import CognitivePatterningSection from "./results-sections/CognitivePatterningSection";
 import EmotionalArchitectureSection from "./results-sections/EmotionalArchitectureSection";
@@ -62,7 +69,7 @@ const DeepInsightResultsPage: React.FC = () => {
     
     fetchAnalysis();
   }, [user, id]);
-  
+
   if (loading) {
     return (
       <PageTransition>
@@ -85,7 +92,7 @@ const DeepInsightResultsPage: React.FC = () => {
       </PageTransition>
     );
   }
-  
+
   if (error) {
     return (
       <PageTransition>
@@ -100,72 +107,21 @@ const DeepInsightResultsPage: React.FC = () => {
       </PageTransition>
     );
   }
-  
+
   return (
     <PageTransition>
       <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
-        <div className="mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Brain className="h-12 w-12 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-center">Your Deep Insight Analysis</h1>
-          <p className="text-muted-foreground text-center mt-2">
-            A comprehensive analysis of your personality traits, cognitive patterns, and emotional architecture
-          </p>
-        </div>
+        <DeepInsightHeader />
         
         {analysis && (
           <>
-            <Card className="mb-8 border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle>Personality Overview</CardTitle>
-                <CardDescription>Summary of your core personality traits and tendencies</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg leading-relaxed">
-                  {analysis.overview || "Your Deep Insight Analysis reveals a multifaceted personality with unique cognitive patterns and emotional depths. The following sections break down the key components of your psychological profile."}
-                </p>
-              </CardContent>
-            </Card>
+            <PersonalityOverview overview={analysis.overview} />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <Card>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-lg font-medium">Cognitive Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-center">
-                    {analysis.intelligence_score || 75}/100
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-lg font-medium">Emotional Intelligence</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-center">
-                    {analysis.emotional_intelligence_score || 70}/100
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-lg font-medium">Response Pattern</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center">
-                    {analysis.response_patterns?.primaryChoice ? (
-                      <span className="text-lg font-medium capitalize">Type {analysis.response_patterns.primaryChoice}-{analysis.response_patterns.secondaryChoice}</span>
-                    ) : (
-                      <span className="text-lg font-medium">Balanced</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <AnalysisScores 
+              intelligenceScore={analysis.intelligence_score}
+              emotionalIntelligenceScore={analysis.emotional_intelligence_score}
+              responsePatterns={analysis.response_patterns}
+            />
             
             <TopTraitsSection coreTraits={analysis.core_traits} />
             
@@ -241,50 +197,7 @@ const DeepInsightResultsPage: React.FC = () => {
               </TabsContent>
             </Tabs>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/deep-insight")}
-                className="flex items-center"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retake Assessment
-              </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  // Download as JSON
-                  const blob = new Blob([JSON.stringify(analysis, null, 2)], { type: 'application/json' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'deep-insight-analysis.json';
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  
-                  toast.success("Analysis downloaded");
-                }}
-                className="flex items-center"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Analysis
-              </Button>
-              
-              <Button 
-                onClick={() => {
-                  // Copy share link
-                  const shareUrl = `${window.location.origin}/deep-insight/results/${analysis.id}`;
-                  navigator.clipboard.writeText(shareUrl);
-                  
-                  toast.success("Share link copied to clipboard");
-                }}
-                className="flex items-center bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                Share Results
-              </Button>
-            </div>
+            <AnalysisActions analysis={analysis} />
           </>
         )}
       </div>
