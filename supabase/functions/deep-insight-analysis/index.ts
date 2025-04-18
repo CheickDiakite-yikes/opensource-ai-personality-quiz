@@ -37,7 +37,7 @@ Output **exactly** this JSON schema, no more, no less, no re‑ordering:
 • No disclaimers/references.
 
 **Generation budget**
-You may use **up to 16 000 tokens** for the completion; aim for rich, nuanced detail throughout.
+You may use **up to 30000 tokens, nothing less than 14000** for the completion; aim for rich, nuanced detail throughout.
 
 Return **only** the JSON object, no markdown.
 `;
