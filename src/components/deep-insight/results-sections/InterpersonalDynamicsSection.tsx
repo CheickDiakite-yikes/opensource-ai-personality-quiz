@@ -26,7 +26,7 @@ const InterpersonalDynamicsSection: React.FC<InterpersonalDynamicsProps> = ({ da
           <CardTitle className="text-orange-700 dark:text-orange-400">Attachment Style</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{interpersonalData.attachmentStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(interpersonalData.attachmentStyle)}</p>
         </CardContent>
       </Card>
       
@@ -35,7 +35,7 @@ const InterpersonalDynamicsSection: React.FC<InterpersonalDynamicsProps> = ({ da
           <CardTitle className="text-indigo-700 dark:text-indigo-400">Communication Pattern</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{interpersonalData.communicationPattern}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(interpersonalData.communicationPattern)}</p>
         </CardContent>
       </Card>
       
@@ -44,7 +44,7 @@ const InterpersonalDynamicsSection: React.FC<InterpersonalDynamicsProps> = ({ da
           <CardTitle className="text-teal-700 dark:text-teal-400">Conflict Resolution</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{interpersonalData.conflictResolution}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(interpersonalData.conflictResolution)}</p>
         </CardContent>
       </Card>
     </div>

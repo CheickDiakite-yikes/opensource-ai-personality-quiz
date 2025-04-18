@@ -1,12 +1,11 @@
 
-// Helper function to safely access nested properties from a potentially undefined object
-export function getStringSafely(obj: any, path: string, defaultValue: string = ""): string {
+export function getStringSafely(obj: any, path: string, defaultValue: string = ''): string {
   try {
     const parts = path.split('.');
     let current = obj;
     
     for (const part of parts) {
-      if (current === undefined || current === null) {
+      if (current === null || current === undefined) {
         return defaultValue;
       }
       current = current[part];
@@ -18,40 +17,55 @@ export function getStringSafely(obj: any, path: string, defaultValue: string = "
   }
 }
 
-// Helper function to safely get an array from a potentially undefined object
-export function getArraySafely(obj: any, path: string, limit: number = 0): any[] {
+export function getArraySafely(obj: any, path: string, minLength: number = 0): string[] {
   try {
     const parts = path.split('.');
     let current = obj;
     
     for (const part of parts) {
-      if (current === undefined || current === null) {
-        return [];
+      if (current === null || current === undefined) {
+        return minLength > 0 ? Array(minLength).fill('') : [];
       }
       current = current[part];
     }
     
     if (!Array.isArray(current)) {
-      return [];
+      return minLength > 0 ? Array(minLength).fill('') : [];
     }
     
-    return limit > 0 ? current.slice(0, limit) : current;
-  } catch (e) {
-    return [];
-  }
-}
-
-// Helper function to generate an overview from the analysis content
-export function generateOverview(analysisContent: any): string {
-  try {
-    const primary = getStringSafely(analysisContent, "coreTraits.primary", "introspective");
-    const secondary = getStringSafely(analysisContent, "coreTraits.secondary", "analytical");
-    const decisionMaking = getStringSafely(analysisContent, "cognitivePatterning.decisionMaking", "structured decision-making");
-    const emotional = getStringSafely(analysisContent, "emotionalArchitecture.emotionalAwareness", "emotional awareness");
+    // Filter out non-string values
+    const filteredArray = current.filter(item => typeof item === 'string');
     
-    return `Based on your assessment responses, you exhibit ${primary} tendencies combined with ${secondary} characteristics. Your cognitive style shows ${decisionMaking}, while your emotional landscape reveals ${emotional}.`;
+    // If we don't have enough items, pad the array
+    if (minLength > 0 && filteredArray.length < minLength) {
+      return [...filteredArray, ...Array(minLength - filteredArray.length).fill('')];
+    }
+    
+    return filteredArray;
   } catch (e) {
-    return "Your assessment reveals a unique blend of cognitive patterns, emotional traits, and interpersonal dynamics.";
+    return minLength > 0 ? Array(minLength).fill('') : [];
   }
 }
 
+export function generateOverview(analysisContent: any): string {
+  // Default overview if we can't generate a proper one
+  const defaultOverview = "Your Deep Insight Analysis reveals a unique cognitive and emotional profile shaped by your individual experiences and perspectives. The analysis provides a comprehensive view of your personality traits, thinking patterns, emotional architecture, and interpersonal dynamics.";
+  
+  try {
+    // Attempt to extract key components from various sections
+    const primaryTrait = getStringSafely(analysisContent, 'coreTraits.primary');
+    const cognitiveStyle = getStringSafely(analysisContent, 'cognitivePatterning.decisionMaking');
+    const emotionalStyle = getStringSafely(analysisContent, 'emotionalArchitecture.emotionalAwareness');
+    const interpersonalStyle = getStringSafely(analysisContent, 'interpersonalDynamics.communicationPattern');
+    const primaryMotivators = getArraySafely(analysisContent, 'motivationalProfile.primaryDrivers', 1)[0];
+    
+    // Only generate a custom overview if we have enough data
+    if (primaryTrait && cognitiveStyle && emotionalStyle) {
+      return `Your personality analysis reveals you as primarily a ${primaryTrait}. ${cognitiveStyle} When it comes to emotions, ${emotionalStyle.toLowerCase()} In interpersonal dynamics, ${interpersonalStyle.toLowerCase()} ${primaryMotivators ? `You're primarily motivated by ${primaryMotivators.toLowerCase()}.` : ''}`;
+    }
+    
+    return defaultOverview;
+  } catch (e) {
+    return defaultOverview;
+  }
+}

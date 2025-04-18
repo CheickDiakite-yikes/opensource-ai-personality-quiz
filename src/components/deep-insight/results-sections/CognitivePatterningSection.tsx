@@ -26,7 +26,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-blue-700 dark:text-blue-400">Decision Making</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{cognitiveData.decisionMaking}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.decisionMaking)}</p>
         </CardContent>
       </Card>
       
@@ -35,7 +35,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-purple-700 dark:text-purple-400">Learning Style</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{cognitiveData.learningStyle}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.learningStyle)}</p>
         </CardContent>
       </Card>
       
@@ -44,7 +44,7 @@ const CognitivePatterningSection: React.FC<CognitivePatterningProps> = ({ data }
           <CardTitle className="text-cyan-700 dark:text-cyan-400">Attention Pattern</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <p className="text-muted-foreground leading-relaxed">{cognitiveData.attention}</p>
+          <p className="text-muted-foreground leading-relaxed">{String(cognitiveData.attention)}</p>
         </CardContent>
       </Card>
     </div>

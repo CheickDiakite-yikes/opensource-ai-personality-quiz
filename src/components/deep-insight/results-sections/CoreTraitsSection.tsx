@@ -19,7 +19,17 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
     challenges: ["Perfectionism", "Overthinking", "Difficulty with ambiguity"]
   };
   
+  // Use default data if data is null
   const traitData = data || defaultData;
+  
+  // Ensure strengths and challenges are always arrays of strings
+  const safeStrengths = Array.isArray(traitData.strengths) 
+    ? traitData.strengths.filter(item => typeof item === 'string')
+    : [];
+    
+  const safeChallenges = Array.isArray(traitData.challenges)
+    ? traitData.challenges.filter(item => typeof item === 'string')
+    : [];
   
   return (
     <div className="space-y-6">
@@ -31,12 +41,12 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-medium mb-2">Primary Trait</h3>
-              <p className="text-muted-foreground">{traitData.primary}</p>
+              <p className="text-muted-foreground">{String(traitData.primary)}</p>
             </div>
             
             <div>
               <h3 className="text-xl font-medium mb-2">Secondary Trait</h3>
-              <p className="text-muted-foreground">{traitData.secondary}</p>
+              <p className="text-muted-foreground">{String(traitData.secondary)}</p>
             </div>
           </div>
         </CardContent>
@@ -49,7 +59,7 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
           </CardHeader>
           <CardContent className="pt-6">
             <ul className="list-disc ml-6 space-y-2">
-              {traitData.strengths.map((strength, index) => (
+              {safeStrengths.map((strength, index) => (
                 <li key={index} className="text-muted-foreground">{strength}</li>
               ))}
             </ul>
@@ -62,7 +72,7 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
           </CardHeader>
           <CardContent className="pt-6">
             <ul className="list-disc ml-6 space-y-2">
-              {traitData.challenges.map((challenge, index) => (
+              {safeChallenges.map((challenge, index) => (
                 <li key={index} className="text-muted-foreground">{challenge}</li>
               ))}
             </ul>

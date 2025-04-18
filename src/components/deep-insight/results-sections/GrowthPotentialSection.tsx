@@ -17,6 +17,15 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
   
   const growthData = data || defaultData;
   
+  // Ensure arrays are properly handled
+  const safeDevelopmentAreas = Array.isArray(growthData.developmentAreas)
+    ? growthData.developmentAreas.filter(item => typeof item === 'string')
+    : [];
+    
+  const safeRecommendations = Array.isArray(growthData.recommendations)
+    ? growthData.recommendations.filter(item => typeof item === 'string')
+    : [];
+  
   return (
     <div className="space-y-6">
       <Card className="border-violet-200 dark:border-violet-900">
@@ -25,7 +34,7 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
         </CardHeader>
         <CardContent className="pt-6">
           <ul className="list-disc ml-6 space-y-3">
-            {growthData.developmentAreas.map((area, index) => (
+            {safeDevelopmentAreas.map((area, index) => (
               <li key={index} className="text-muted-foreground">{area}</li>
             ))}
           </ul>
@@ -38,7 +47,7 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
         </CardHeader>
         <CardContent className="pt-6">
           <ul className="list-disc ml-6 space-y-3">
-            {growthData.recommendations.map((recommendation, index) => (
+            {safeRecommendations.map((recommendation, index) => (
               <li key={index} className="text-muted-foreground">{recommendation}</li>
             ))}
           </ul>
