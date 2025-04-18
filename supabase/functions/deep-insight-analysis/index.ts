@@ -1,12 +1,12 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve }    from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DeepInsightResponses } from "./types.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -50,16 +50,36 @@ serve(async (req) => {
     // Validate API key presence
     if (!openAIApiKey || openAIApiKey.trim() === "") {
       console.error("OpenAI API key is missing or invalid");
-      return json({ 
-        error: "OpenAI API key is not configured or invalid", 
-        success: false,
-        message: "Server configuration error (API key missing)" 
-      }, 500);
+      return new Response(
+        JSON.stringify({ 
+          error: "OpenAI API key is not configured", 
+          success: false,
+          message: "Server configuration error (API key missing)" 
+        }), 
+        { 
+          status: 500, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
     }
 
-    const { responses } = await req.json();
+    const reqBody = await req.json();
+    const { responses } = reqBody;
+
     if (!responses || Object.keys(responses).length === 0) {
-      return json({ error: "No responses provided", success: false }, 400);
+      return new Response(
+        JSON.stringify({ error: "No responses provided", success: false }), 
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
     }
 
     const formatted = Object.entries(responses)
@@ -76,12 +96,11 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Using gpt-4o which is widely available
+        model: "gpt-4o", // Using gpt-4o which is a powerful and capable model
         max_tokens: 32000,
         temperature: 0.55,
         top_p: 1.0,
         frequency_penalty: 0.2,
-        // stream: true,               // ← flip on when you want streaming
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user",   content: `Please analyse these assessment responses:\n${formatted}` },
@@ -96,11 +115,20 @@ serve(async (req) => {
       
       // Specific error for API key issues
       if (errorText.includes("invalid_api_key") || errorText.includes("Incorrect API key")) {
-        return json({ 
-          error: "Invalid OpenAI API key", 
-          success: false,
-          message: "The OpenAI API key is invalid or has expired. Please update it in the Supabase dashboard." 
-        }, 401);
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid OpenAI API key", 
+            success: false,
+            message: "The OpenAI API key is invalid or has expired. Please update it in the Supabase dashboard." 
+          }), 
+          { 
+            status: 401, 
+            headers: { 
+              ...corsHeaders, 
+              "Content-Type": "application/json" 
+            } 
+          }
+        );
       }
       
       throw new Error(`OpenAI API ${openAIRes.status}: ${errorText}`);
@@ -108,7 +136,7 @@ serve(async (req) => {
 
     const { choices } = await openAIRes.json();
     const rawContent = choices?.[0]?.message?.content ?? "";
-    const cleanJSON  = rawContent.replace(/```json|```/g, "").trim();
+    const cleanJSON = rawContent.replace(/```json|```/g, "").trim();
     
     try {
       const analysisContent = JSON.parse(cleanJSON);
@@ -123,7 +151,6 @@ serve(async (req) => {
           `You combine ${analysisContent.coreTraits.secondary} with ` +
           `${analysisContent.emotionalArchitecture.empathicCapacity}.`,
         ...analysisContent,
-        responsePatterns: analyzeResponsePatterns(responses),
         traits: [
           { trait: "Analytical Thinking",   score: 75, description: "Breaks down complex problems logically." },
           { trait: "Emotional Intelligence",score: 70, description: "Understands and regulates emotions well." },
@@ -133,61 +160,55 @@ serve(async (req) => {
         emotionalIntelligenceScore: 70,
       };
 
-      return json({ analysis, success: true, message: "Analysis generated successfully" });
+      return new Response(
+        JSON.stringify({ analysis, success: true, message: "Analysis generated successfully" }), 
+        { 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError, "Raw content:", rawContent);
-      return json({ 
-        error: "Failed to parse AI response", 
-        success: false,
-        message: "The AI generated an invalid response format. Please try again."
-      }, 500);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to parse AI response", 
+          success: false,
+          message: "The AI generated an invalid response format. Please try again."
+        }), 
+        { 
+          status: 500, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
     }
   } catch (err) {
     console.error("Deep‑insight‑analysis error:", err);
-    return json({ 
-      error: err.message, 
-      success: false, 
-      message: "Failed to generate analysis. Please check Supabase logs for details."
-    }, 500);
+    return new Response(
+      JSON.stringify({ 
+        error: err.message, 
+        success: false, 
+        message: "Failed to generate analysis. Please check Supabase logs for details."
+      }), 
+      { 
+        status: 500, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json" 
+        } 
+      }
+    );
   }
 });
 
-/* ---------- 4.  HELPERS  ---------- */
-
-/** Quick CORS‑aware JSON shortcut */
+// Helper function for JSON responses with CORS headers
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
-
-/**
- * Derives answer‑pattern stats for UI visualisations.
- */
-function analyzeResponsePatterns(responses: DeepInsightResponses) {
-  const counts = { a: 0, b: 0, c: 0, d: 0, e: 0, f: 0 } as Record<string, number>;
-  for (const ans of Object.values(responses)) {
-    const key = ans.slice(-1);
-    if (counts[key] !== undefined) counts[key]++;
-  }
-  const total = Object.values(responses).length;
-  const pct = Object.fromEntries(
-    Object.entries(counts).map(([k, v]) => [k, Math.round((v / total) * 100)])
-  ) as Record<string, number>;
-
-  const ranked = Object.entries(pct).sort(([, a], [, b]) => b - a).map(([k]) => k);
-  return {
-    percentages: pct,
-    primaryChoice: ranked[0],
-    secondaryChoice: ranked[1],
-    responseSignature: ranked.map((k) => pct[k]).join("-"),
-  };
-}
-
-/* Optional: naïve token estimator if you later want to enforce budgets
-import { encoding_for_model } from "https://deno.land/x/gpt_tokenizer/mod.ts";
-function estimateTokens(str: string, model = "gpt-4o-128k") {
-  return encoding_for_model(model).encode(str).length;
-}
-*/
