@@ -50,13 +50,24 @@ const DeepInsightAssessmentPage: React.FC = () => {
   
   const handleSubmit = async () => {
     if (!user) {
-      toast.error("You must be logged in to submit the assessment");
+      toast.error("You must be logged in to submit the assessment", {
+        description: "Please log in and try again."
+      });
       return;
     }
     
     setIsSubmitting(true);
     
     try {
+      // Validate responses
+      if (Object.keys(responses).length < questions.length) {
+        toast.error("Incomplete Assessment", {
+          description: "Please answer all questions before submitting."
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Convert responses to the format expected by the database
       const formattedResponses = Object.entries(responses).map(([questionId, selectedOption]) => ({
         questionId,
@@ -66,7 +77,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
       }));
       
       // Save responses to Supabase
-      const { data, error } = await supabase
+      const { data: assessmentData, error: assessmentError } = await supabase
         .from('deep_insight_assessments')
         .insert({
           user_id: user.id,
@@ -75,22 +86,30 @@ const DeepInsightAssessmentPage: React.FC = () => {
         })
         .select('id');
       
-      if (error) throw error;
+      if (assessmentError) {
+        console.error("Error saving assessment:", assessmentError);
+        throw assessmentError;
+      }
       
-      if (data && data[0]) {
+      if (assessmentData && assessmentData[0]) {
         // Call the deep insight analysis edge function
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('deep-insight-analysis', {
-          body: { responses: formattedResponses.reduce((acc, curr) => {
-            acc[curr.questionId] = curr.selectedOption;
-            return acc;
-          }, {} as Record<string, string>) }
+          body: { 
+            responses: formattedResponses.reduce((acc, curr) => {
+              acc[curr.questionId] = curr.selectedOption;
+              return acc;
+            }, {} as Record<string, string>) 
+          }
         });
         
-        if (analysisError) throw analysisError;
+        if (analysisError) {
+          console.error("Analysis invocation error:", analysisError);
+          throw analysisError;
+        }
         
         if (analysisData && analysisData.analysis) {
           // Save the analysis to Supabase
-          const { error: saveError } = await supabase
+          const { error: saveAnalysisError } = await supabase
             .from('deep_insight_analyses')
             .insert({
               user_id: user.id,
@@ -108,20 +127,26 @@ const DeepInsightAssessmentPage: React.FC = () => {
             })
             .select('id');
           
-          if (saveError) throw saveError;
+          if (saveAnalysisError) {
+            console.error("Error saving analysis:", saveAnalysisError);
+            throw saveAnalysisError;
+          }
           
           toast.success("Assessment completed!", {
             description: "Your deep insight analysis is ready to view."
           });
           
           // Navigate to the results page
-          navigate(`/deep-insight/results/${data[0].id}`);
+          navigate(`/deep-insight/results`);
         }
       }
     } catch (error) {
-      console.error("Error submitting assessment:", error);
+      console.error("Comprehensive submission error:", error);
+      
+      // More detailed error toast
       toast.error("Failed to submit assessment", {
-        description: "Please try again later."
+        description: error instanceof Error ? error.message : "Please try again later. An unexpected error occurred.",
+        duration: 5000
       });
     } finally {
       setIsSubmitting(false);
