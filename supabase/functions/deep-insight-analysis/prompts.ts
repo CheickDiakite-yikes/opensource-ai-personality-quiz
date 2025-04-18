@@ -25,9 +25,11 @@ Follow these analysis principles:
 - Start with core personality structure
 - Examine cognitive processing patterns
 - Analyze emotional architecture
-- Evaluate interpersonal dynamics
+- Evaluate interpersonal dynamics and relationship compatibility
 - Assess growth mindset indicators
 - Consider career and life path implications
+- Identify key motivators and potential inhibitors
+- List top 10 most prominent personality traits
 
 4. Holistic Integration:
 - Connect different personality aspects
@@ -62,12 +64,13 @@ Output **exactly** this JSON schema:
     "conflictResolution": "Assessment of conflict handling approaches",
     "relationshipNeeds": "Deep dive into interpersonal needs and boundaries",
     "socialBoundaries": "Analysis of boundary-setting patterns",
-    "groupDynamics": "Evaluation of behavior in group settings"
+    "groupDynamics": "Evaluation of behavior in group settings",
+    "compatibilityProfile": "Analysis of relationship compatibility patterns"
   },
   "coreTraits": {
     "primary": "Detailed description of primary personality orientation",
     "secondary": "Analysis of secondary personality characteristics",
-    "tertiaryTraits": ["Array of additional significant traits with explanations"],
+    "tertiaryTraits": ["Array of top 10 significant traits with explanations"],
     "strengths": ["Detailed analysis of key strengths with examples"],
     "challenges": ["Thoughtful analysis of growth areas"],
     "adaptivePatterns": ["Analysis of adaptation and flexibility patterns"],
@@ -79,7 +82,8 @@ Output **exactly** this JSON schema:
     "leadershipStyle": "Comprehensive analysis of leadership approach",
     "idealWorkEnvironment": "Detailed description of optimal work setting",
     "careerPathways": ["Well-reasoned career direction suggestions"],
-    "professionalChallenges": ["Analysis of potential career growth areas"]
+    "professionalChallenges": ["Analysis of potential career growth areas"],
+    "potentialRoles": ["Specific job roles and positions that align with profile"]
   },
   "motivationalProfile": {
     "primaryDrivers": ["Deep analysis of core motivations"],
@@ -99,16 +103,5 @@ Output **exactly** this JSON schema:
   }
 }
 
-Guidelines for analysis:
-1. Provide substantive, paragraph-length analysis for each area
-2. Include specific examples from responses
-3. Offer actionable insights and recommendations
-4. Maintain a supportive yet professional tone
-5. Focus on patterns and underlying dynamics
-6. Consider both strengths and growth areas
-7. Connect different aspects of personality
-8. Ground all observations in response evidence
-
 Return **only** the JSON object, no markdown or explanation.
 `;
-
