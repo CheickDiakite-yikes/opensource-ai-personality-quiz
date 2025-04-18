@@ -116,7 +116,43 @@ serve(async (req) => {
       
       try {
         console.time("analysis-processing");
-        const analysisContent = JSON.parse(rawContent);
+        let analysisContent;
+        
+        try {
+          analysisContent = JSON.parse(rawContent);
+        } catch (jsonError) {
+          console.error("JSON parsing error:", jsonError);
+          console.log("Attempting to fix malformed JSON...");
+          
+          // Attempt to fix common JSON errors
+          let fixedJson = rawContent;
+          
+          // Fix missing closing brackets/braces
+          const openBraces = (fixedJson.match(/{/g) || []).length;
+          const closeBraces = (fixedJson.match(/}/g) || []).length;
+          if (openBraces > closeBraces) {
+            fixedJson += '}'.repeat(openBraces - closeBraces);
+          }
+          
+          // Fix trailing commas
+          fixedJson = fixedJson.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+          
+          try {
+            analysisContent = JSON.parse(fixedJson);
+            console.log("Successfully fixed JSON format");
+          } catch (secondError) {
+            console.error("Could not fix JSON, using fallback structure");
+            // Use a basic fallback structure
+            analysisContent = {
+              cognitivePatterning: { decisionMaking: "Analysis unavailable due to formatting issues" },
+              emotionalArchitecture: { emotionalAwareness: "Analysis unavailable due to formatting issues" },
+              coreTraits: { 
+                primary: "Could not fully process analysis", 
+                tertiaryTraits: ["Analytical", "Thoughtful", "Detail-oriented"] 
+              }
+            };
+          }
+        }
 
         // Generate default trait scores safely
         const traitScores = [
