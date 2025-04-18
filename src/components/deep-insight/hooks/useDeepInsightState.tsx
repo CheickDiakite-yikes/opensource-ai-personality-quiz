@@ -27,11 +27,12 @@ export const useDeepInsightState = (questions: AssessmentQuestion[]) => {
 
   // Update a response for a specific question
   const updateResponse = (questionId: string, selectedOption: string) => {
-    // Fix: explicitly type the previous state parameter
-    setResponses((prev: DeepInsightResponses) => ({
-      ...prev,
+    // Using direct object assignment which matches the DeepInsightResponses type
+    const updatedResponses = {
+      ...responses,
       [questionId]: selectedOption
-    }));
+    };
+    setResponses(updatedResponses);
   };
 
   // Clear all responses and start fresh
