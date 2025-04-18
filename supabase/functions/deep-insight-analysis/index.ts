@@ -21,6 +21,7 @@ serve(async (req) => {
     const { responses } = await req.json();
 
     if (!responses || Object.keys(responses).length === 0) {
+      console.error("No responses provided in request");
       return new Response(
         JSON.stringify({ error: "No responses provided", success: false }), 
         { 
@@ -34,7 +35,7 @@ serve(async (req) => {
       .map(([id, answer]) => `Q${id}: ${answer}`)
       .join("\n");
 
-    console.log(`Calling OpenAI API with ${Object.keys(responses).length} responses`);
+    console.log(`Processing ${Object.keys(responses).length} responses`);
     
     // Enhanced logging of response patterns
     console.log("Response distribution analysis:");
@@ -43,7 +44,16 @@ serve(async (req) => {
     console.log(`Average response length: ${avgLength}`);
     console.log(`Shortest response: ${Math.min(...responseLengths)}`);
     console.log(`Longest response: ${Math.max(...responseLengths)}`);
+    
+    // Log response length distribution
+    const lengthDistribution = responseLengths.reduce((acc: Record<string, number>, len) => {
+      const bracket = Math.floor(len / 50) * 50;
+      acc[`${bracket}-${bracket + 50}`] = (acc[`${bracket}-${bracket + 50}`] || 0) + 1;
+      return acc;
+    }, {});
+    console.log("Response length distribution:", lengthDistribution);
 
+    console.log("Calling OpenAI API...");
     const openAIData = await callOpenAI(openAIApiKey!, formatted);
     
     if (!openAIData || !openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
@@ -65,6 +75,7 @@ serve(async (req) => {
     console.log("OpenAI response length:", rawContent.length);
     
     try {
+      console.time("analysis-processing");
       const analysisContent = JSON.parse(rawContent);
 
       // Generate default trait scores safely
@@ -118,13 +129,21 @@ serve(async (req) => {
         resilienceScore: calculateSafeDomainScore("resilience")
       };
 
+      console.timeEnd("analysis-processing");
+      console.log("Analysis generated successfully with ID:", analysis.id);
+      console.log("Analysis overview length:", analysis.overview?.length || 0);
+      console.log("Career paths identified:", analysis.careerSummary.recommendedPaths.length);
+      console.log("Core values identified:", analysis.motivationSummary.coreValues.length);
+      console.log("Trait scores generated:", analysis.traitScores.length);
+
       return new Response(
         JSON.stringify({ analysis, success: true, message: "Enhanced analysis generated successfully" }), 
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
 
     } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError, "Raw content:", rawContent.substring(0, 1000) + "...");
+      console.error("Error parsing OpenAI response:", parseError);
+      console.error("Raw content sample:", rawContent.substring(0, 1000) + "...");
       return new Response(
         JSON.stringify({ 
           error: "Failed to parse AI response", 
@@ -139,6 +158,7 @@ serve(async (req) => {
     }
   } catch (err) {
     console.error("Deep‑insight‑analysis error:", err);
+    console.error("Error stack:", err.stack);
     return new Response(
       JSON.stringify({ 
         error: err.message, 

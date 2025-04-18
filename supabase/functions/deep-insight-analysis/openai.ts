@@ -9,6 +9,9 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     throw new Error("OpenAI API key is missing or invalid");
   }
 
+  console.log("Starting OpenAI API call with model: gpt-4o");
+  console.time("openai-api-call");
+
   const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -29,12 +32,19 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     }),
   });
 
+  console.timeEnd("openai-api-call");
+  
   if (!openAIRes.ok) {
     const errorText = await openAIRes.text();
     console.error("OpenAI error →", errorText);
+    console.error("OpenAI HTTP status:", openAIRes.status);
+    console.error("OpenAI response headers:", Object.fromEntries(openAIRes.headers.entries()));
     throw new Error(`OpenAI API Error: ${errorText}`);
   }
 
-  return openAIRes.json();
+  const response = await openAIRes.json();
+  console.log("OpenAI response tokens:", response.usage?.total_tokens || "N/A");
+  console.log("OpenAI completion tokens:", response.usage?.completion_tokens || "N/A");
+  return response;
 }
 
