@@ -14,10 +14,13 @@ import ResponsePatternChart from "@/features/deep-insight/components/visualizati
 import CognitiveStrengthsChart from "@/features/deep-insight/components/visualization/CognitiveStrengthsChart";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ChartBar, PieChart, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 // Result component
 const DeepInsightResults: React.FC = () => {
   const { analysis, loading, error, saveAnalysis } = useDeepInsightResults();
+  const navigate = useNavigate();
   
   // Animation variants
   const containerVariants = {
@@ -47,7 +50,12 @@ const DeepInsightResults: React.FC = () => {
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} />;
+    return (
+      <ResultsError 
+        error={error || "No analysis data found"} 
+        retryAction={() => navigate("/deep-insight/quiz")}
+      />
+    );
   }
   
   return (
@@ -89,7 +97,7 @@ const DeepInsightResults: React.FC = () => {
             </TabsList>
             
             <TabsContent value="traits" className="mt-0">
-              <PersonalityTraitsChart traits={analysis.traits} />
+              <PersonalityTraitsChart traits={analysis.traits || []} />
             </TabsContent>
             
             <TabsContent value="patterns" className="mt-0">
@@ -110,6 +118,22 @@ const DeepInsightResults: React.FC = () => {
         
         {/* Actions */}
         <ResultsActions onSave={saveAnalysis} itemVariants={itemVariants} analysis={analysis} />
+        
+        {/* Retake Assessment Button */}
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          custom={10}
+          className="text-center mt-8"
+        >
+          <Button 
+            variant="outline"
+            onClick={() => navigate("/deep-insight/quiz")}
+          >
+            Take Assessment Again
+          </Button>
+        </motion.div>
       </div>
     </motion.div>
   );

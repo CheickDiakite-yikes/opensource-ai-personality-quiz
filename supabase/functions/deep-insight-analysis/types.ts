@@ -39,8 +39,6 @@ export interface AnalysisData {
     trait: string;
     score: number;
     description: string;
-    strengths: string[];
-    challenges: string[];
   }[];
   intelligence?: {
     type: string;

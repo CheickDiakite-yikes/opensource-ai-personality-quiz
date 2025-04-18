@@ -1,48 +1,43 @@
 
 import React from "react";
-import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 
 interface ResultsErrorProps {
   error: string;
-  onRetry?: () => void;
+  retryAction?: () => void;
 }
 
-export const ResultsError: React.FC<ResultsErrorProps> = ({ error, onRetry }) => {
+export const ResultsError: React.FC<ResultsErrorProps> = ({ 
+  error,
+  retryAction 
+}) => {
   const navigate = useNavigate();
-  
+
+  const handleRetry = () => {
+    if (retryAction) {
+      retryAction();
+    } else {
+      navigate("/deep-insight/quiz");
+    }
+  };
+
   return (
-    <motion.div 
-      className="container max-w-4xl py-16"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error Processing Your Responses</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-      
-      <p className="text-muted-foreground mb-8">
-        We apologize for the inconvenience. This could be due to a temporary issue with our analysis
-        system or a problem with the response data. You can try again or return to the assessment.
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+      <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
+      <p className="text-muted-foreground mb-6 max-w-md">
+        {error}
       </p>
-      
-      <div className="flex flex-wrap gap-4 justify-center">
-        {onRetry && (
-          <Button onClick={onRetry} variant="default" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" /> Try Again
-          </Button>
-        )}
-        
-        <Button onClick={() => navigate("/deep-insight")} variant="outline" className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" /> Return to Deep Insight
+      <div className="flex gap-4">
+        <Button onClick={handleRetry} className="bg-primary text-white">
+          Take Assessment
+        </Button>
+        <Button onClick={() => navigate("/")} variant="outline">
+          Go to Home
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 };

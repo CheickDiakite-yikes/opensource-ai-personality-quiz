@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeepInsightResponses } from "../types";
@@ -14,6 +14,7 @@ export type { AnalysisData };
 
 export const useDeepInsightResults = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +30,8 @@ export const useDeepInsightResults = () => {
         if (!responseData) {
           setError("No assessment data found. Please complete the assessment first.");
           setLoading(false);
+          // Redirect to quiz page if no data is found
+          navigate("/deep-insight/quiz");
           return;
         }
         
@@ -36,8 +39,35 @@ export const useDeepInsightResults = () => {
         setLoading(true);
         
         try {
+          // First, save responses to the database if the user is logged in
+          let assessmentId = null;
+          if (user) {
+            try {
+              const { data: assessmentData, error: saveError } = await supabase
+                .from('deep_insight_assessments')
+                .insert({
+                  user_id: user.id,
+                  responses: responseData,
+                  completed_at: new Date().toISOString()
+                })
+                .select('id')
+                .single();
+              
+              if (!saveError && assessmentData) {
+                assessmentId = assessmentData.id;
+                console.log("Saved assessment to database with ID:", assessmentId);
+              } else {
+                console.error("Error saving assessment:", saveError);
+              }
+            } catch (dbError) {
+              console.error("Database error:", dbError);
+            }
+          }
+          
           // Call the Edge Function for analysis
           console.log("Calling deep-insight-analysis edge function");
+          toast.loading("Analyzing your responses...", { id: "analysis-toast", duration: 60000 });
+          
           const { data, error } = await supabase.functions.invoke('deep-insight-analysis', {
             method: 'POST',
             body: { responses: responseData }
@@ -54,12 +84,43 @@ export const useDeepInsightResults = () => {
           }
           
           console.log("Received analysis from edge function:", data.analysis);
+          
+          // Save analysis to database if user is logged in
+          if (user && data.analysis) {
+            try {
+              const { error: analysisError } = await supabase
+                .from('deep_insight_analyses')
+                .insert({
+                  user_id: user.id,
+                  complete_analysis: data.analysis,
+                  cognitive_patterning: data.analysis.cognitivePatterning,
+                  emotional_architecture: data.analysis.emotionalArchitecture,
+                  interpersonal_dynamics: data.analysis.interpersonalDynamics,
+                  core_traits: data.analysis.coreTraits,
+                  growth_potential: data.analysis.growthPotential,
+                  response_patterns: data.analysis.responsePatterns,
+                  overview: data.analysis.overview,
+                  intelligence_score: data.analysis.intelligenceScore,
+                  emotional_intelligence_score: data.analysis.emotionalIntelligenceScore,
+                  raw_responses: responseData
+                });
+                
+              if (analysisError) {
+                console.error("Error saving analysis to database:", analysisError);
+              } else {
+                console.log("Analysis saved to database successfully");
+              }
+            } catch (dbError) {
+              console.error("Database error when saving analysis:", dbError);
+            }
+          }
+          
           setAnalysis(data.analysis);
-          toast.success("Analysis generated successfully!");
+          toast.success("Analysis generated successfully!", { id: "analysis-toast" });
           
         } catch (apiError) {
           console.error("API error, falling back to local analysis:", apiError);
-          toast.error("AI analysis service unavailable. Falling back to local analysis generation.");
+          toast.error("AI analysis service unavailable. Falling back to local analysis generation.", { id: "analysis-toast" });
           
           // Fallback to local analysis generation
           const generatedAnalysis = generateAnalysisFromResponses(responseData);
@@ -73,12 +134,12 @@ export const useDeepInsightResults = () => {
         console.error("Error generating analysis:", errorMessage);
         setError("Failed to generate your analysis. Please try again later.");
         setLoading(false);
-        toast.error("Something went wrong while generating your analysis.");
+        toast.error("Something went wrong while generating your analysis.", { id: "analysis-toast" });
       }
     };
     
     generateAnalysis();
-  }, [location.state]);
+  }, [location.state, user, navigate]);
   
   // Function to save the analysis
   const saveAnalysis = async () => {

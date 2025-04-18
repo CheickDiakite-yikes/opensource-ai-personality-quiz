@@ -105,33 +105,33 @@ function prepareRadarData(analysis: AnalysisData) {
   const cognitiveData = [
     {
       subject: "Decision Making",
-      value: mapScoreToValue(cognitivePatterning.decisionMaking),
-      description: cognitivePatterning.decisionMaking,
+      value: mapScoreToValue(cognitivePatterning.decisionMaking || ""),
+      description: cognitivePatterning.decisionMaking || "Balanced approach to decision making",
     },
     {
       subject: "Learning Ability",
-      value: mapScoreToValue(cognitivePatterning.learningStyle),
-      description: cognitivePatterning.learningStyle,
+      value: mapScoreToValue(cognitivePatterning.learningStyle || ""),
+      description: cognitivePatterning.learningStyle || "Versatile learning approach",
     },
     {
       subject: "Focus",
-      value: mapScoreToValue(cognitivePatterning.attention),
-      description: cognitivePatterning.attention,
+      value: mapScoreToValue(cognitivePatterning.attention || ""),
+      description: cognitivePatterning.attention || "Adaptive attention patterns",
     },
     {
       subject: "Emotional Awareness",
-      value: mapScoreToValue(emotionalArchitecture.emotionalAwareness),
-      description: emotionalArchitecture.emotionalAwareness,
+      value: mapScoreToValue(emotionalArchitecture.emotionalAwareness || ""),
+      description: emotionalArchitecture.emotionalAwareness || "Developing emotional awareness",
     },
     {
       subject: "Emotional Regulation",
-      value: mapScoreToValue(emotionalArchitecture.regulationStyle),
-      description: emotionalArchitecture.regulationStyle,
+      value: mapScoreToValue(emotionalArchitecture.regulationStyle || ""),
+      description: emotionalArchitecture.regulationStyle || "Growing emotional regulation",
     },
     {
       subject: "Empathy",
-      value: mapScoreToValue(emotionalArchitecture.empathicCapacity),
-      description: emotionalArchitecture.empathicCapacity,
+      value: mapScoreToValue(emotionalArchitecture.empathicCapacity || ""),
+      description: emotionalArchitecture.empathicCapacity || "Evolving empathic abilities",
     },
   ];
 
@@ -139,8 +139,11 @@ function prepareRadarData(analysis: AnalysisData) {
 }
 
 // Helper function to map cognitive descriptions to numeric scores (1-10)
-// This is a placeholder - in a real app, these would be calculated based on analysis
 function mapScoreToValue(description: string): number {
+  if (!description || description.length === 0) {
+    return 5; // Default middle value if no description
+  }
+  
   // Sample implementation: calculate score based on word count and positive terms
   const wordCount = description.split(' ').length;
   

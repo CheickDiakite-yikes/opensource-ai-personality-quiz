@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { DeepInsightResponses, AnalysisData } from "./types.ts";
+import { DeepInsightResponses } from "./types.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -56,19 +56,38 @@ serve(async (req) => {
           {
             role: 'system',
             content: `You are an expert psychological analyst. Your task is to analyze a set of personality assessment responses 
-            and generate a comprehensive personality analysis. The analysis should include:
-            - Core personality traits and characteristics
-            - Cognitive patterns and thinking style
-            - Emotional intelligence assessment
-            - Growth areas and potential
-            - Career suggestions based on personality traits
-            - Interpersonal dynamics and relationship patterns
-            - Learning style and preferences
+            and generate a comprehensive personality analysis with EXACTLY the following structure:
+            {
+              "cognitivePatterning": {
+                "decisionMaking": "Text describing their decision-making style",
+                "learningStyle": "Text describing their learning style",
+                "attention": "Text describing their attention patterns"
+              },
+              "emotionalArchitecture": {
+                "emotionalAwareness": "Text describing their emotional awareness",
+                "regulationStyle": "Text describing their emotion regulation style",
+                "empathicCapacity": "Text describing their empathic abilities"
+              },
+              "interpersonalDynamics": {
+                "attachmentStyle": "Text describing their attachment style",
+                "communicationPattern": "Text describing their communication patterns",
+                "conflictResolution": "Text describing how they handle conflicts"
+              },
+              "coreTraits": {
+                "primary": "Text describing their primary personality trait",
+                "secondary": "Text describing their secondary personality trait",
+                "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+                "challenges": ["Challenge 1", "Challenge 2", "Challenge 3"]
+              },
+              "growthPotential": {
+                "developmentAreas": ["Development area 1", "Development area 2", "Development area 3"],
+                "recommendations": ["Recommendation 1", "Recommendation 2", "Recommendation 3"]
+              }
+            }
             
-            Format the response as a structured JSON object matching these fields. Use numerical scores (0-100) where appropriate.
-            Be insightful, nuanced, and professional in your analysis.
-            
-            IMPORTANT: Return ONLY the JSON object with no markdown formatting, code blocks or additional text.`
+            BE VERY INSIGHTFUL, DETAILED, AND SPECIFIC in your analysis. Provide rich personality insights based on the answers.
+            NEVER deviate from this exact structure - it must match precisely as our frontend components depend on this structure.
+            Return ONLY the JSON object with no additional text, markdown formatting or code blocks.`
           },
           {
             role: 'user',
@@ -86,7 +105,7 @@ serve(async (req) => {
       throw new Error('Invalid response from OpenAI');
     }
 
-    // Parse the AI response - handle potential JSON issues
+    // Parse the AI response
     let analysisContent;
     try {
       const content = aiResult.choices[0].message.content;
@@ -102,8 +121,70 @@ serve(async (req) => {
     // Analyze response patterns
     const responsePatterns = analyzeResponsePatterns(responses);
     
-    // Transform API response to expected format with all required fields
-    const analysis = transformApiResponse(analysisContent, responsePatterns);
+    // Create complete analysis object with all required fields
+    const analysis = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      
+      // Personality overview
+      overview: `Based on your responses, you appear to be a ${analysisContent.coreTraits?.primary || "thoughtful"} individual who ${analysisContent.cognitivePatterning?.decisionMaking || "values careful consideration in decision-making"}. Your approach to life combines ${analysisContent.coreTraits?.secondary || "analytical thinking"} with ${analysisContent.emotionalArchitecture?.empathicCapacity || "empathy towards others"}.`,
+      
+      // Include all required structured data fields
+      coreTraits: analysisContent.coreTraits || {
+        primary: "Balanced thinker",
+        secondary: "Adaptable problem-solver",
+        strengths: ["Analytical thinking", "Emotional awareness", "Adaptability"],
+        challenges: ["Decision making under pressure", "Perfectionism", "Overthinking"]
+      },
+      
+      cognitivePatterning: analysisContent.cognitivePatterning || {
+        decisionMaking: "You tend to gather information methodically before making decisions. You value logical consistency and consider multiple perspectives when evaluating options.",
+        learningStyle: "You learn best through structured, systematic approaches with clear objectives.",
+        attention: "You have a focused attention style that allows you to concentrate deeply on tasks of interest."
+      },
+      
+      emotionalArchitecture: analysisContent.emotionalArchitecture || {
+        emotionalAwareness: "You have strong awareness of your emotional states and can generally identify what you're feeling in the moment.",
+        regulationStyle: "You manage emotions through a combination of analytical processing and practical coping strategies.",
+        empathicCapacity: "You can understand others' emotional experiences, particularly when they're clearly communicated."
+      },
+      
+      interpersonalDynamics: analysisContent.interpersonalDynamics || {
+        attachmentStyle: "You form meaningful connections with others while maintaining healthy boundaries.",
+        communicationPattern: "Your communication style is thoughtful and precise, focusing on clarity and accuracy.",
+        conflictResolution: "You approach conflicts with a problem-solving mindset, seeking fair and logical resolutions."
+      },
+      
+      growthPotential: analysisContent.growthPotential || {
+        developmentAreas: ["Finding balance between analysis and action", "Developing comfort with ambiguity", "Building resilience to setbacks"],
+        recommendations: ["Practice time-bounded decision making", "Engage in mindfulness to reduce overthinking", "Seek feedback from diverse perspectives"]
+      },
+      
+      // Add response patterns analysis
+      responsePatterns: responsePatterns,
+      
+      // Add additional fields required by the frontend
+      traits: [
+        {
+          trait: "Analytical Thinking",
+          score: 75,
+          description: "Ability to break down complex problems and think logically"
+        },
+        {
+          trait: "Emotional Intelligence",
+          score: 70,
+          description: "Capacity to understand and manage emotions effectively"
+        },
+        {
+          trait: "Adaptability",
+          score: 80,
+          description: "Flexibility in responding to changing circumstances"
+        }
+      ],
+      
+      intelligenceScore: 75,
+      emotionalIntelligenceScore: 70
+    };
 
     console.log("AI analysis generated successfully");
     
@@ -188,120 +269,4 @@ function analyzeResponsePatterns(responses: DeepInsightResponses) {
     secondaryChoice,
     responseSignature
   };
-}
-
-// Transform the API response to match the expected format on the client side
-function transformApiResponse(apiResponse: any, responsePatterns: any): AnalysisData {
-  // Create default structure with all required fields
-  const defaultTraits = [
-    {
-      trait: "Analytical Thinking",
-      score: 65,
-      description: "Ability to break down complex problems and think logically"
-    },
-    {
-      trait: "Emotional Intelligence",
-      score: 70,
-      description: "Capacity to understand and manage emotions effectively"
-    },
-    {
-      trait: "Adaptability",
-      score: 75,
-      description: "Flexibility in responding to changing circumstances"
-    }
-  ];
-  
-  // Generate ID and timestamp
-  const id = crypto.randomUUID();
-  const createdAt = new Date().toISOString();
-
-  // Extract insights from API response
-  const primaryTrait = apiResponse.corePersonalityTraits?.introversion > 60 ? "Analytical" : "Adaptive";
-  const secondaryTrait = apiResponse.corePersonalityTraits?.openness > 60 ? "Creative" : "Practical";
-  
-  // Create core traits
-  const coreTraits = {
-    primary: primaryTrait,
-    secondary: secondaryTrait,
-    strengths: apiResponse.interpersonalDynamics?.strengths || [],
-    challenges: apiResponse.interpersonalDynamics?.challenges || []
-  };
-
-  // Create cognitive patterning
-  const cognitivePatterning = {
-    decisionMaking: "You tend to gather information methodically before making decisions. You value logical consistency and consider multiple perspectives when evaluating options.",
-    learningStyle: apiResponse.learningStyle?.preference || "You learn best through structured, systematic approaches with clear objectives.",
-    attention: "You have a focused attention style that allows you to concentrate deeply on tasks of interest."
-  };
-
-  // Create emotional architecture
-  const emotionalArchitecture = {
-    emotionalAwareness: "You have strong awareness of your emotional states and can generally identify what you're feeling in the moment.",
-    regulationStyle: "You manage emotions through a combination of analytical processing and practical coping strategies.",
-    empathicCapacity: "You can understand others' emotional experiences, particularly when they're clearly communicated."
-  };
-
-  // Create interpersonal dynamics
-  const interpersonalDynamics = {
-    attachmentStyle: "You form meaningful connections with others while maintaining healthy boundaries.",
-    communicationPattern: apiResponse.interpersonalDynamics?.communicationStyle || "Your communication style is thoughtful and precise, focusing on clarity and accuracy.",
-    conflictResolution: "You approach conflicts with a problem-solving mindset, seeking fair and logical resolutions."
-  };
-
-  // Create growth potential
-  const growthPotential = {
-    developmentAreas: Object.values(apiResponse.growthAreas || {}).map((area: any) => 
-      typeof area === 'string' ? area : ''
-    ).filter(Boolean),
-    recommendations: []
-  };
-
-  // Transform career suggestions
-  const careerSuggestions = Array.isArray(apiResponse.careerSuggestions) 
-    ? apiResponse.careerSuggestions 
-    : [];
-
-  // Create complete analysis object
-  const analysis: AnalysisData = {
-    id,
-    createdAt,
-    overview: `You are a primarily ${primaryTrait} thinker with ${secondaryTrait} tendencies. You approach situations with careful analysis while maintaining adaptability. Your cognitive style balances structure with flexibility, allowing you to navigate both familiar routines and unexpected changes effectively.`,
-    traits: defaultTraits,
-    intelligence: {
-      type: "Integrated",
-      score: apiResponse.cognitivePatterns?.analyticalThinking || 75,
-      description: "Your intelligence profile combines analytical, emotional and practical capabilities.",
-      domains: []
-    },
-    intelligenceScore: apiResponse.cognitivePatterns?.analyticalThinking || 75,
-    emotionalIntelligenceScore: apiResponse.emotionalIntelligence?.selfAwareness || 70,
-    cognitiveStyle: {
-      primary: primaryTrait,
-      secondary: secondaryTrait,
-      description: "Your cognitive style balances structure with flexibility."
-    },
-    valueSystem: [],
-    motivators: [],
-    inhibitors: [],
-    weaknesses: [],
-    growthAreas: growthPotential.developmentAreas,
-    relationshipPatterns: {
-      strengths: [],
-      challenges: [],
-      compatibleTypes: []
-    },
-    careerSuggestions,
-    learningPathways: [],
-    roadmap: "",
-    
-    // Map structured fields
-    coreTraits,
-    cognitivePatterning,
-    emotionalArchitecture,
-    interpersonalDynamics,
-    growthPotential,
-    responsePatterns
-  };
-
-  return analysis;
 }

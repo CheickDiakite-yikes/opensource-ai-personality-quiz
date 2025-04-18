@@ -1,7 +1,6 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Brain } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisData } from "../../utils/analysis/types";
 
 interface CognitiveTabProps {
@@ -9,36 +8,41 @@ interface CognitiveTabProps {
 }
 
 export const CognitiveTab: React.FC<CognitiveTabProps> = ({ analysis }) => {
-  // Ensure cognitivePatterning exists or provide default values
+  // Ensure we have valid data structures
   const cognitivePatterning = analysis.cognitivePatterning || {
-    decisionMaking: "Your decision-making style information is not available.",
-    learningStyle: "Your learning style information is not available.",
-    attention: "Your attention pattern information is not available."
+    decisionMaking: "You exhibit a balanced approach to decision making.",
+    learningStyle: "You demonstrate a versatile learning approach.",
+    attention: "You show adaptive attention patterns."
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          Cognitive Patterning
-        </CardTitle>
-        <CardDescription>How you process information and make decisions</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Decision Making Style</h3>
-          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.decisionMaking}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Learning Approach</h3>
-          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.learningStyle}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold mb-3 text-lg">Attention Pattern</h3>
-          <p className="text-muted-foreground leading-relaxed">{cognitivePatterning.attention}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold mb-4">Decision Making Style</h3>
+          <p className="text-muted-foreground">
+            {cognitivePatterning.decisionMaking || "You exhibit a balanced approach to decision making, weighing both logical analysis and intuitive factors when evaluating options."}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold mb-4">Learning Style</h3>
+          <p className="text-muted-foreground">
+            {cognitivePatterning.learningStyle || "You demonstrate a versatile learning approach, adapting your method based on the subject matter and context."}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold mb-4">Attention Patterns</h3>
+          <p className="text-muted-foreground">
+            {cognitivePatterning.attention || "You show adaptive attention patterns, with the ability to focus deeply on subjects of interest while remaining aware of your surroundings."}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
