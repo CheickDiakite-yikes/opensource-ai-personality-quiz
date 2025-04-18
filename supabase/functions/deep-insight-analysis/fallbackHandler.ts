@@ -30,8 +30,8 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
     try {
       logDebug("Sending fallback request to OpenAI");
 
-      // Add specific instruction to return only plain JSON without markdown formatting
-      const enhancedSystemPrompt = SYSTEM_PROMPT + "\n\nIMPORTANT: Return ONLY the JSON without any markdown formatting, code blocks, or explanation.";
+      // Add specific instruction to return only plain JSON with strict double quotes
+      const enhancedSystemPrompt = SYSTEM_PROMPT + "\n\nCRITICAL: Return ONLY pure JSON with DOUBLE QUOTES for ALL property names and string values. No single quotes, no unquoted properties, no markdown formatting, no code blocks, no explanation.";
 
       const openAIRes = await createOpenAIRequest(
         openAIApiKey,

@@ -58,7 +58,7 @@ Guidelines for analysis:
 7. Connect different aspects of personality
 8. Ground all observations in response evidence
 
-Output **exactly** this JSON schema:
+Output **exactly** this JSON schema with double quotes for ALL property names and string values:
 
 {
   "cognitivePatterning": {
@@ -124,5 +124,5 @@ Output **exactly** this JSON schema:
   }
 }
 
-Return **only** pure JSON without any markdown formatting. Do not use markdown code blocks. Return only valid JSON that can be parsed directly by JSON.parse().
+Return **only** pure JSON without any markdown formatting. Use DOUBLE QUOTES for ALL property names and string values. Do not use markdown code blocks. Return only valid JSON that can be parsed directly by JSON.parse().
 `;

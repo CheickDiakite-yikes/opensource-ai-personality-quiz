@@ -54,6 +54,8 @@ serve(async (req) => {
           // First, clean any markdown formatting from the raw content
           let cleanedJson = rawContent;
           
+          console.log("Beginning JSON cleaning process");
+          
           // Check if the response is wrapped in markdown code blocks
           if (cleanedJson.includes("```json") || cleanedJson.includes("```")) {
             console.log("Detected markdown in JSON response, cleaning...");
@@ -61,28 +63,46 @@ serve(async (req) => {
             // Remove markdown code block indicators
             cleanedJson = cleanedJson.replace(/```json\s*/g, "");
             cleanedJson = cleanedJson.replace(/```\s*/g, "");
-            
-            // Trim any whitespace
-            cleanedJson = cleanedJson.trim();
-            
-            console.log("Cleaned JSON from markdown formatting");
           }
+          
+          // Trim any whitespace
+          cleanedJson = cleanedJson.trim();
+          
+          // Fix property names that aren't double-quoted (single quotes or no quotes)
+          // This regex finds property names that either:
+          // 1. Start with a letter/underscore followed by word chars and a colon
+          // 2. Have single quotes around property names
+          cleanedJson = cleanedJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+          cleanedJson = cleanedJson.replace(/'([^']+)'\s*:/g, '"$1":');
+          
+          console.log("Cleaned JSON. First 200 chars:", cleanedJson.substring(0, 200));
           
           // Now try to parse the cleaned JSON
           analysisContent = JSON.parse(cleanedJson);
+          console.log("Successfully parsed JSON without errors");
         } catch (jsonError) {
           console.error("JSON parsing error:", jsonError);
           console.log("Attempting to fix malformed JSON...");
           
           // Log the raw content to help with debugging
-          console.log("Raw content snippet (first 100 chars):", rawContent.substring(0, 100));
+          console.log("Raw content snippet (first 200 chars):", rawContent.substring(0, 200));
           
-          // Attempt to fix common JSON errors
+          // More aggressive attempt to fix common JSON errors
           let fixedJson = rawContent;
           
           // Remove markdown code block indicators
           fixedJson = fixedJson.replace(/```json\s*/g, "");
           fixedJson = fixedJson.replace(/```\s*/g, "");
+          
+          // Convert single quotes to double quotes for strings, but be careful with apostrophes
+          // This is a complex operation and might not catch all cases
+          fixedJson = fixedJson.replace(/'([^']*)'(\s*:)/g, '"$1"$2');
+          
+          // Fix unquoted property names 
+          fixedJson = fixedJson.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+          
+          // Fix single quoted property values
+          fixedJson = fixedJson.replace(/:\s*'([^']*)'/g, ': "$1"');
           
           // Fix missing closing brackets/braces
           const openBraces = (fixedJson.match(/{/g) || []).length;
@@ -93,6 +113,8 @@ serve(async (req) => {
           
           // Fix trailing commas
           fixedJson = fixedJson.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+          
+          console.log("Attempted to fix JSON. First 200 chars:", fixedJson.substring(0, 200));
           
           try {
             analysisContent = JSON.parse(fixedJson);
