@@ -103,4 +103,3 @@ serve(async (req) => {
     return createErrorResponse(err, 500, "An unexpected error occurred");
   }
 });
-
