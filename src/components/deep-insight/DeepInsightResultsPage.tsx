@@ -20,6 +20,7 @@ import DeepInsightTabs from "./components/DeepInsightTabs";
 import AnalysisActions from "./components/AnalysisActions";
 import TopTraitsSection from "./results-sections/TopTraitsSection";
 import { AssessmentErrorHandler } from '@/components/assessment/AssessmentErrorHandler';
+import { Json } from "@/utils/types";
 
 const DeepInsightResultsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,10 +53,25 @@ const DeepInsightResultsPage: React.FC = () => {
         
         // Check if analysis is processing or incomplete
         const analysisData = data[0];
-        if (analysisData.complete_analysis && analysisData.complete_analysis.status === 'processing') {
+        
+        // Fix: Check if complete_analysis exists and is an object with a status property
+        const completeAnalysis = analysisData.complete_analysis;
+        const isProcessing = 
+          typeof completeAnalysis === 'object' && 
+          completeAnalysis !== null &&
+          'status' in completeAnalysis && 
+          completeAnalysis.status === 'processing';
+          
+        if (isProcessing) {
           setError("Your analysis is still being processed. Please check back in a few minutes.");
-        } else if (!analysisData.overview || analysisData.overview.includes("processing") || 
-                  !analysisData.core_traits || !analysisData.core_traits.primary) {
+        } else if (
+          !analysisData.overview || 
+          analysisData.overview.includes("processing") || 
+          !analysisData.core_traits || 
+          (typeof analysisData.core_traits === 'object' && 
+           analysisData.core_traits !== null &&
+           (!('primary' in analysisData.core_traits) || !analysisData.core_traits.primary))
+        ) {
           setError("Your analysis is incomplete. We're working to finalize your results.");
         }
       } else {
