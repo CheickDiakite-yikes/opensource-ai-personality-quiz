@@ -4,6 +4,11 @@ import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DeepInsightAnalysis } from "../types/deepInsight";
+import PersonalityOverview from "./PersonalityOverview";
+import AnalysisScores from "./AnalysisScores";
+import TopTraitsSection from "../results-sections/TopTraitsSection";
+import DeepInsightTabs from "./DeepInsightTabs";
+import AnalysisActions from "./AnalysisActions";
 
 interface AnalysisProcessingStateProps {
   error: string;
