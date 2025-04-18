@@ -7,11 +7,23 @@ interface TopTraitsSectionProps {
   coreTraits?: {
     primary?: string;
     secondary?: string;
-    tertiaryTraits?: string[];
+    tertiaryTraits?: (string | Record<string, string>)[];
   };
 }
 
 const TopTraitsSection = ({ coreTraits }: TopTraitsSectionProps) => {
+  // Safely process traits to handle both string and object values
+  const getTraitText = (trait: string | Record<string, string>): string => {
+    if (typeof trait === 'string') {
+      return trait;
+    } else if (trait && typeof trait === 'object') {
+      // If it's an object, convert it to a string by taking the first key/value pair
+      const key = Object.keys(trait)[0];
+      return key ? `${key}: ${trait[key]}` : "Unknown trait";
+    }
+    return "Unknown trait";
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10">
@@ -25,7 +37,7 @@ const TopTraitsSection = ({ coreTraits }: TopTraitsSectionProps) => {
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-2">Primary Trait</h3>
             <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
-              {coreTraits.primary}
+              {typeof coreTraits.primary === 'string' ? coreTraits.primary : getTraitText(coreTraits.primary)}
             </div>
           </div>
         )}
@@ -42,7 +54,7 @@ const TopTraitsSection = ({ coreTraits }: TopTraitsSectionProps) => {
                   <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3">
                     {index + 1}
                   </span>
-                  <span>{trait}</span>
+                  <span>{getTraitText(trait)}</span>
                 </div>
               ))}
             </div>

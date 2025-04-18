@@ -4,11 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Flame, XCircle } from "lucide-react";
 
 interface MotivationSectionProps {
-  motivators?: string[];
-  inhibitors?: string[];
+  motivators?: (string | Record<string, string>)[];
+  inhibitors?: (string | Record<string, string>)[];
 }
 
 const MotivationSection = ({ motivators, inhibitors }: MotivationSectionProps) => {
+  // Helper function to safely get text from string or object
+  const getText = (item: string | Record<string, string>): string => {
+    if (typeof item === 'string') {
+      return item;
+    } else if (item && typeof item === 'object') {
+      const key = Object.keys(item)[0];
+      return key ? `${key}: ${item[key]}` : "Unknown item";
+    }
+    return "Unknown item";
+  };
+  
   return (
     <Card className="mb-6">
       <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10">
@@ -29,7 +40,7 @@ const MotivationSection = ({ motivators, inhibitors }: MotivationSectionProps) =
                   <span className="inline-flex items-center justify-center rounded-full bg-orange-500/10 h-6 w-6 text-sm text-orange-600 mr-3 mt-0.5">
                     {index + 1}
                   </span>
-                  <span>{motivator}</span>
+                  <span>{getText(motivator)}</span>
                 </li>
               ))}
             </ul>
@@ -45,7 +56,7 @@ const MotivationSection = ({ motivators, inhibitors }: MotivationSectionProps) =
                   <span className="inline-flex items-center justify-center rounded-full bg-red-500/10 h-6 w-6 text-sm text-red-600 mr-3 mt-0.5">
                     {index + 1}
                   </span>
-                  <span>{inhibitor}</span>
+                  <span>{getText(inhibitor)}</span>
                 </li>
               ))}
             </ul>

@@ -8,11 +8,23 @@ interface CareerInsightsSectionProps {
     naturalStrengths?: string[];
     workplaceNeeds?: string[];
     leadershipStyle?: string;
-    careerPathways?: string[];
+    careerPathways?: (string | Record<string, string>)[];
   };
 }
 
 const CareerInsightsSection = ({ careerInsights }: CareerInsightsSectionProps) => {
+  // Safely process career pathways to handle both string and object values
+  const getPathwayText = (pathway: string | Record<string, string>): string => {
+    if (typeof pathway === 'string') {
+      return pathway;
+    } else if (pathway && typeof pathway === 'object') {
+      // If it's an object, convert it to a string by taking the first key/value pair
+      const key = Object.keys(pathway)[0];
+      return key ? `${key}: ${pathway[key]}` : "Unknown pathway";
+    }
+    return "Unknown pathway";
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10">
@@ -32,7 +44,7 @@ const CareerInsightsSection = ({ careerInsights }: CareerInsightsSectionProps) =
                     <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5">
                       {index + 1}
                     </span>
-                    <span>{path}</span>
+                    <span>{getPathwayText(path)}</span>
                   </li>
                 ))}
               </ul>
