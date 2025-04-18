@@ -1,3 +1,4 @@
+
 import { SYSTEM_PROMPT } from "./prompts.ts";
 
 const corsHeaders = {
@@ -21,18 +22,18 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: Bearer ${openAIApiKey},
+        Authorization: `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4o", // Using the latest stable model
-        max_tokens: 16000,
+        max_tokens: 4000,
         temperature: 0.4,
         top_p: 0.9,
         frequency_penalty: 0.3,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: Please analyze these assessment responses with detailed rigorous scoring standards:\n${formattedResponses} },
+          { role: "user", content: `Please analyze these assessment responses with rigorous scoring standards:\n${formattedResponses}` },
         ],
         response_format: { type: "json_object" },
       }),
@@ -49,7 +50,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       console.error("OpenAI error →", errorText);
       console.error("OpenAI HTTP status:", openAIRes.status);
       console.error("OpenAI response headers:", Object.fromEntries(openAIRes.headers.entries()));
-      throw new Error(OpenAI API Error: ${errorText});
+      throw new Error(`OpenAI API Error: ${errorText}`);
     }
 
     const response = await openAIRes.json();
@@ -66,21 +67,21 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         const fallbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: Bearer ${openAIApiKey},
+            Authorization: `Bearer ${openAIApiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             model: "gpt-4o-mini", // Fallback to lighter model
-            max_tokens: 16000,
+            max_tokens: 2000,
             temperature: 0.3,
             messages: [
               { 
                 role: "system", 
-                content: "Create a long detailed personality analysis with core traits and scores. Return as JSON." 
+                content: "Create a brief personality analysis with core traits and scores. Return as JSON." 
               },
               { 
                 role: "user", 
-                content: Analyze these responses with detailed insights:\n${formattedResponses.substring(0, 10000)} 
+                content: `Analyze these responses with brief insights:\n${formattedResponses.substring(0, 2000)}` 
               },
             ],
             response_format: { type: "json_object" },
@@ -88,7 +89,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         });
         
         if (!fallbackResponse.ok) {
-          throw new Error(Fallback API call failed: ${fallbackResponse.status});
+          throw new Error(`Fallback API call failed: ${fallbackResponse.status}`);
         }
         
         return await fallbackResponse.json();
