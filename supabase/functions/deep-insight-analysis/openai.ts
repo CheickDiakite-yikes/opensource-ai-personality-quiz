@@ -1,4 +1,5 @@
-// src/utils/openai.ts  — GPT‑4.1 call *without* Web‑Search
+
+// src/utils/openai.ts  — GPT‑4.1 call *without* Web‑Search
 //--------------------------------------------------------------
 
 import { SYSTEM_PROMPT } from "./prompts.ts";
@@ -14,6 +15,7 @@ export async function callOpenAI(
   formattedResponses: string,
 ) {
   if (!openAIApiKey?.trim()) {
+    console.error("OpenAI API key is missing or invalid");
     throw new Error("OpenAI API key is missing or invalid");
   }
 
@@ -54,6 +56,9 @@ export async function callOpenAI(
   const timeoutId = setTimeout(() => controller.abort(), 190_000);
 
   try {
+    console.log("Starting OpenAI API call to gpt-4.1 model");
+    console.time("openai-api-call");
+    
     const res = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -65,23 +70,53 @@ export async function callOpenAI(
     });
 
     clearTimeout(timeoutId);
+    console.timeEnd("openai-api-call");
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error("GPT‑4.1 error →", errText);
+      console.error(`GPT‑4.1 API Error (${res.status}):`, errText);
+      
+      // Log more detailed information about the error
+      if (res.status === 401) {
+        console.error("Authentication error: Check if API key is valid and not expired");
+      } else if (res.status === 429) {
+        console.error("Rate limit exceeded or insufficient quota");
+      } else if (res.status === 500) {
+        console.error("OpenAI server error");
+      }
+      
       throw new Error(`GPT‑4.1 API Error (${res.status}): ${errText}`);
     }
 
     const data = await res.json();
     console.log("GPT‑4.1 total tokens:", data.usage?.total_tokens ?? "N/A");
     console.log("GPT‑4.1 completion tokens:", data.usage?.completion_tokens ?? "N/A");
-
+    
+    // Validate response data structure
+    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error("Invalid response structure from OpenAI:", JSON.stringify(data));
+      throw new Error("Invalid response structure received from OpenAI API");
+    }
+    
     return data;
   } catch (err: any) {
     clearTimeout(timeoutId);
+    
+    // Improved error logging with detailed diagnostic information
+    console.error("📌 OpenAI API call failed:", err.name, err.message);
+    
     if (err.name === "AbortError") {
-      throw new Error("GPT‑4.1 request timed out after 190 s.");
+      console.error("Request timed out after 190 seconds");
+      throw new Error("GPT‑4.1 request timed out after 190 s.");
+    } else if (err.name === "TypeError" && err.message.includes("failed to fetch")) {
+      console.error("Network error: Unable to reach OpenAI API. Check your internet connection or if API endpoint is correct.");
+    } else if (err.name === "SyntaxError") {
+      console.error("Invalid JSON response from OpenAI API");
     }
+    
+    // Log the stack trace for better debugging
+    console.error("Error stack trace:", err.stack);
+    
     throw err;
   }
 }

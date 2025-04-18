@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Brain, ArrowRight, ArrowLeft, Send, Loader2 } from "lucide-react";
+import { Brain, ArrowRight, ArrowLeft, Send, Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +19,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitAttempts, setSubmitAttempts] = useState(0);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   
   // Make sure we're getting all 100 questions
   const questions = getDeepInsightQuestions(100);
@@ -59,6 +61,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
     }
     
     setIsSubmitting(true);
+    setAnalysisError(null);
     
     try {
       // Validate responses
@@ -94,52 +97,65 @@ const DeepInsightAssessmentPage: React.FC = () => {
       }
       
       if (assessmentData && assessmentData[0]) {
-        // Call the deep insight analysis edge function with increased timeout
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('deep-insight-analysis', {
-          body: { 
-            responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
-              acc[questionId] = selectedOption;
-              return acc;
-            }, {} as Record<string, string>) 
-          },
-          // Remove the options property as it's not part of FunctionInvokeOptions type
-          // abortSignal will be handled internally by the Supabase client
+        // Create a timeout promise to handle long-running function calls
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Edge function request timed out after 60 seconds'));
+          }, 60000); // 60 second timeout
         });
         
-        if (analysisError) {
-          console.error("Analysis invocation error:", analysisError);
+        // Call the deep insight analysis edge function with robust error handling
+        toast.loading("Analyzing your responses...", { id: "deep-insight-analysis" });
+        
+        console.log("Calling deep-insight-analysis function...");
+        
+        try {
+          // Race between function call and timeout
+          const result = await Promise.race([
+            supabase.functions.invoke('deep-insight-analysis', {
+              body: { 
+                responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
+                  acc[questionId] = selectedOption;
+                  return acc;
+                }, {} as Record<string, string>) 
+              }
+            }),
+            timeoutPromise
+          ]);
           
-          // If this is the first attempt, try once more
-          if (submitAttempts < 1) {
-            setSubmitAttempts(submitAttempts + 1);
-            toast.info("Retrying analysis...", {
-              description: "Please wait a moment while we process your responses again."
-            });
-            
-            // Save the analysis results anyway to allow viewing later
-            navigate(`/deep-insight/results`);
-            return;
+          console.log("Function call completed. Result status:", result ? "Success" : "Empty result");
+          
+          if (!result) {
+            throw new Error("Empty response from edge function");
           }
           
-          throw new Error(`Analysis failed: ${analysisError.message}`);
-        }
-        
-        if (analysisData && analysisData.analysis) {
+          if (result.error) {
+            console.error("Edge function error:", result.error);
+            throw new Error(`Analysis error: ${result.error}`);
+          }
+          
+          if (!result.data || !result.data.analysis) {
+            console.error("Invalid edge function response structure:", result);
+            throw new Error("Invalid response from analysis function - missing analysis data");
+          }
+          
           // Save the analysis to Supabase
+          console.log("Saving analysis result to database...");
+          
           const { error: saveAnalysisError } = await supabase
             .from('deep_insight_analyses')
             .insert({
               user_id: user.id,
-              complete_analysis: analysisData.analysis,
-              core_traits: analysisData.analysis.coreTraits,
-              cognitive_patterning: analysisData.analysis.cognitivePatterning,
-              emotional_architecture: analysisData.analysis.emotionalArchitecture,
-              interpersonal_dynamics: analysisData.analysis.interpersonalDynamics,
-              growth_potential: analysisData.analysis.growthPotential,
-              intelligence_score: analysisData.analysis.intelligenceScore || 70,
-              emotional_intelligence_score: analysisData.analysis.emotionalIntelligenceScore || 70,
-              overview: analysisData.analysis.overview,
-              response_patterns: analysisData.analysis.responsePatterns,
+              complete_analysis: result.data.analysis,
+              core_traits: result.data.analysis.coreTraits,
+              cognitive_patterning: result.data.analysis.cognitivePatterning,
+              emotional_architecture: result.data.analysis.emotionalArchitecture,
+              interpersonal_dynamics: result.data.analysis.interpersonalDynamics,
+              growth_potential: result.data.analysis.growthPotential,
+              intelligence_score: result.data.analysis.intelligenceScore || 70,
+              emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore || 70,
+              overview: result.data.analysis.overview,
+              response_patterns: result.data.analysis.responsePatterns,
               raw_responses: formattedResponses
             })
             .select('id');
@@ -150,24 +166,65 @@ const DeepInsightAssessmentPage: React.FC = () => {
           }
           
           toast.success("Assessment completed!", {
+            id: "deep-insight-analysis",
             description: "Your deep insight analysis is ready to view."
           });
           
           // Navigate to the results page
           navigate(`/deep-insight/results`);
-        } else {
-          // Even if analysis wasn't complete, navigate to results
-          toast.info("Processing your assessment", {
-            description: "Your results will be available shortly."
-          });
-          navigate(`/deep-insight/results`);
+        } catch (error: any) {
+          console.error("Function invocation error:", error);
+          setAnalysisError(error.message);
+          
+          // Record the failure and attempt a retry if needed
+          if (submitAttempts < 1) {
+            setSubmitAttempts(submitAttempts + 1);
+            toast.error("Analysis failed, will attempt to retry", {
+              id: "deep-insight-analysis",
+              description: "Please wait a moment while we try again."
+            });
+            
+            // Short delay before retry
+            setTimeout(() => {
+              handleSubmit();
+            }, 3000);
+          } else {
+            // If we've already retried, save partial results and navigate anyway
+            toast.error("Analysis processing encountered an error", {
+              id: "deep-insight-analysis",
+              description: "We'll save your responses and show partial results."
+            });
+            
+            // Save a minimal placeholder analysis entry
+            try {
+              await supabase.from('deep_insight_analyses').insert({
+                user_id: user.id,
+                complete_analysis: {
+                  id: crypto.randomUUID(),
+                  createdAt: new Date().toISOString(),
+                  overview: "Your analysis is being processed. Full results will be available soon.",
+                  coreTraits: { primary: "Analysis in progress", tertiaryTraits: ["Pending"] },
+                  intelligenceScore: 70,
+                  emotionalIntelligenceScore: 70
+                },
+                raw_responses: formattedResponses,
+                overview: "Analysis in progress. Check back soon for complete results."
+              });
+            } catch (saveError) {
+              console.error("Error saving placeholder analysis:", saveError);
+            }
+            
+            navigate(`/deep-insight/results`);
+          }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Comprehensive submission error:", error);
+      setAnalysisError(error.message);
       
       // More detailed error toast
       toast.error("Failed to submit assessment", {
+        id: "deep-insight-analysis",
         description: error instanceof Error ? error.message : "Please try again later. An unexpected error occurred.",
         duration: 5000
       });
@@ -191,6 +248,19 @@ const DeepInsightAssessmentPage: React.FC = () => {
             Complete this comprehensive assessment to receive your detailed personality analysis
           </p>
         </div>
+        
+        {analysisError && (
+          <div className="mb-6 bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-destructive">Analysis Error</p>
+              <p className="text-sm text-destructive/90">{analysisError}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Don't worry, your answers have been saved. You can continue and we'll try to generate your results again.
+              </p>
+            </div>
+          </div>
+        )}
         
         <div className="mb-6">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
