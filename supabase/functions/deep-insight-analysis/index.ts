@@ -64,7 +64,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Changed from gpt-4o-128k to gpt-4o which is widely available
+        model: "gpt-4.1", // Changed from gpt-4o-128k to gpt-4o which is widely available
         max_tokens: 16000,
         temperature: 0.55,
         top_p: 1.0,
