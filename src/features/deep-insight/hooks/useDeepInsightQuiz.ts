@@ -52,11 +52,12 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
         [questionId]: selectedOption
       };
       
+      console.log(`Quiz: Saving response for question ${questionId}: ${selectedOption}`);
+      
       // Set responses first to ensure storage
       setResponses(updatedResponses);
       
-      console.log(`Saved response for question ${questionId}: ${selectedOption}`);
-      console.log(`Total responses now: ${Object.keys(updatedResponses).length}`);
+      console.log(`Quiz: Total responses now: ${Object.keys(updatedResponses).length}`);
       
       // Move to the next question if not on the last question
       if (currentQuestionIndex < totalQuestions - 1) {

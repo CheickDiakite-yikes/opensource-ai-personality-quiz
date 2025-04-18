@@ -48,18 +48,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   // Update form value when question or currentResponse changes
   useEffect(() => {
-    if (question) {
+    if (question && question.id) {
       setValue(question.id, currentResponse || "");
       // Force re-render of the form when the question changes
       setFormKey(prevKey => prevKey + 1);
     }
-  }, [question.id, currentResponse, setValue]);
+  }, [question.id, currentResponse, setValue, question]);
 
   // Method to manually submit the current selection
   const processSubmit = (data: Record<string, string>) => {
     const selectedOption = data[question.id];
     console.log(`Submitting form for ${question.id}:`, selectedOption);
-    onSubmit(question.id, selectedOption);
+    
+    if (!selectedOption) {
+      console.error(`No option selected for question ${question.id}`);
+      return;
+    }
+    
+    try {
+      onSubmit(question.id, selectedOption);
+    } catch (error) {
+      console.error(`Error submitting form for ${question.id}:`, error);
+    }
   };
 
   // Only show test button on the first question and when not already testing
@@ -81,7 +91,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             rules={{ required: "Please select an answer" }}
             render={({ field }) => (
               <RadioGroup
-                onValueChange={field.onChange}
+                onValueChange={(value) => {
+                  console.log(`Radio selection: ${value} for question ${question.id}`);
+                  field.onChange(value);
+                }}
                 value={field.value}
                 className="flex flex-col space-y-3"
                 disabled={isAutoTesting}

@@ -22,33 +22,42 @@ export const useAutoTest = (
         // Set current question index first
         setCurrentQuestionIndex(i);
         
-        // Short delay to ensure the UI updates before we select an option
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // More substantial delay to ensure the UI updates before we select an option
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const question = questions[i];
-        console.log(`Processing question ${i+1}/${questions.length-1}: ${question.id}`);
+        console.log(`Auto-test: Processing question ${i+1}/${questions.length-1}: ${question.id}`);
         
         // Skip to next iteration if this question somehow doesn't have options
         if (!question.options || question.options.length === 0) {
-          console.warn(`Question ${question.id} has no options to select from`);
+          console.warn(`Auto-test: Question ${question.id} has no options to select from`);
           continue;
         }
         
         // Randomly select an option
-        const randomOption = question.options[Math.floor(Math.random() * question.options.length)];
+        const randomIndex = Math.floor(Math.random() * question.options.length);
+        const randomOption = question.options[randomIndex];
         
         // Log for debugging
-        console.log(`Auto-selecting option ${randomOption.id} for question ${question.id}`);
+        console.log(`Auto-test: Selected option ${randomOption.id} for question ${question.id}`);
         
-        // Submit answer for the current question
-        onSubmit(question.id, randomOption.id);
-        
-        // Longer delay after submitting to allow for state updates and animations
-        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          // Submit answer for the current question and wait for it to complete
+          onSubmit(question.id, randomOption.id);
+          
+          // Log after submission attempt
+          console.log(`Auto-test: Submitted answer for question ${question.id}`);
+          
+          // Wait for state updates to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (submitError) {
+          console.error(`Auto-test: Error submitting answer for question ${question.id}:`, submitError);
+        }
       }
 
       // Go to the last question after all answers have been submitted
       setCurrentQuestionIndex(questions.length - 1);
+      console.log(`Auto-test: Navigation to final question complete`);
       
       toast.success("Auto-test completed", {
         description: "You're now on the final question. Click Complete to analyze results."

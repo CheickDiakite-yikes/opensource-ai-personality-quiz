@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { DeepInsightResponses } from "../types";
 
@@ -19,9 +19,15 @@ export const useDeepInsightStorage = (
   totalQuestions: number,
   setIsRestoredSession?: (isRestored: boolean) => void
 ) => {
+  // Add a ref to track initialization
+  const isInitialized = useRef(false);
+
   // Load saved progress on initial mount
   useEffect(() => {
     const loadSavedProgress = async () => {
+      if (isInitialized.current) return;
+      isInitialized.current = true;
+
       try {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
@@ -33,22 +39,23 @@ export const useDeepInsightStorage = (
             savedProgress.currentQuestionIndex >= 0 &&
             savedProgress.currentQuestionIndex < totalQuestions
           ) {
-            console.log("Found saved progress:", savedProgress);
+            console.log("Storage: Found saved progress:", savedProgress);
             
             // Set restored session flag first
             if (setIsRestoredSession) {
               setIsRestoredSession(true);
               
               // Wait to ensure flag is set before updating state
-              await new Promise(resolve => setTimeout(resolve, 300));
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            // Update states with saved data
+            // Update responses first
             setResponses(savedProgress.responses);
             
-            // Short delay between state updates
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Add a delay between state updates
+            await new Promise(resolve => setTimeout(resolve, 300));
             
+            // Then update question index
             setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
             
             // Calculate how many questions were answered
@@ -63,23 +70,31 @@ export const useDeepInsightStorage = (
                 `Progress restored (${answeredQuestions} questions answered)`, 
                 { description: `Last active ${timeAgo}` }
               );
-              console.log("Deep Insight quiz progress restored with", 
+              console.log("Storage: Deep Insight quiz progress restored with", 
                 answeredQuestions, "questions answered.");
             }
           }
         }
       } catch (error) {
-        console.error("Error loading saved Deep Insight quiz progress:", error);
+        console.error("Storage: Error loading saved Deep Insight quiz progress:", error);
       }
     };
     
     loadSavedProgress();
   }, [setResponses, setCurrentQuestionIndex, totalQuestions, setIsRestoredSession]);
   
+  // Use a ref for debounced saving
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Save progress whenever responses or currentQuestionIndex changes
   useEffect(() => {
+    // Cancel any pending save operation
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
     // Debounced save to prevent excessive writes
-    const saveTimeout = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       // Only save if there's at least one response
       if (Object.keys(responses).length > 0) {
         try {
@@ -90,15 +105,19 @@ export const useDeepInsightStorage = (
           };
           
           localStorage.setItem(STORAGE_KEY, JSON.stringify(progressToSave));
-          console.log("Deep Insight quiz progress saved. Current responses:", 
+          console.log("Storage: Deep Insight quiz progress saved. Current responses:", 
             Object.keys(responses).length);
         } catch (error) {
-          console.error("Error saving Deep Insight quiz progress:", error);
+          console.error("Storage: Error saving Deep Insight quiz progress:", error);
         }
       }
     }, 300);
     
-    return () => clearTimeout(saveTimeout);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [responses, currentQuestionIndex]);
   
   // Helper function to format time ago
