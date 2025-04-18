@@ -1,4 +1,5 @@
 
+
 export function logRequestConfig(config: any) {
   console.log("OpenAI request configuration:", {
     model: config.model,
