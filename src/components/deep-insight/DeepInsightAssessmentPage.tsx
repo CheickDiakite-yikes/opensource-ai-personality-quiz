@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -103,10 +102,8 @@ const DeepInsightAssessmentPage: React.FC = () => {
               return acc;
             }, {} as Record<string, string>) 
           },
-          options: {
-            // Set a longer timeout to help prevent aborted requests
-            abortSignal: new AbortController().signal,
-          }
+          // Remove the options property as it's not part of FunctionInvokeOptions type
+          // abortSignal will be handled internally by the Supabase client
         });
         
         if (analysisError) {
