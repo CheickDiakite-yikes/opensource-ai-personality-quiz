@@ -1,6 +1,19 @@
 
 import { SYSTEM_PROMPT } from "./prompts.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+export async function callOpenAI(openAIApiKey: string, formattedResponses: string) {
+  if (!openAIApiKey || openAIApiKey.trim() === "") {
+    throw new Error("OpenAI API key is missing or invalid");
+  }
+
+  console.log("Starting OpenAI API call with model: gpt-4o");
+  console.time("openai-api-call");
+
 /**
  * Calls the OpenAI API using GPT-4.1 with advanced config, and falls back to GPT-4o on failure.
  */
