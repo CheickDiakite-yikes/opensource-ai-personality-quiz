@@ -112,6 +112,7 @@ serve(async (req) => {
       // Clean up any potential markdown code blocks or unwanted formatting
       const cleanedContent = content.replace(/```json|```/g, '').trim();
       analysisContent = JSON.parse(cleanedContent);
+      console.log("Successfully parsed AI analysis");
     } catch (jsonError) {
       console.error("Failed to parse OpenAI response:", jsonError);
       console.log("Raw response:", aiResult.choices[0].message.content);

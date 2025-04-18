@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -14,6 +15,8 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
+const DeepInsightAssessmentPage = lazy(() => import("@/components/deep-insight/DeepInsightAssessmentPage"));
+const DeepInsightResultsPage = lazy(() => import("@/components/deep-insight/DeepInsightResultsPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -105,6 +108,22 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <TraitsPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          {/* New Deep Insight Routes */}
+          <Route path="deep-insight" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsightAssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="deep-insight/results/:id?" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsightResultsPage />
               </Suspense>
             </PrivateRoute>
           } />
