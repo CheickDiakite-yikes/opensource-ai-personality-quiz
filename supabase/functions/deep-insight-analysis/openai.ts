@@ -16,25 +16,27 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
   console.time("openai-api-call");
 
   try {
-    // Use AbortController to add a timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.warn("OpenAI API call timeout after 60 seconds");
-      controller.abort();
-    }, 60000); // 60-second timeout
-    
-    // Log the API request details without sensitive data
-    console.log("Sending request to OpenAI API with prompt length:", formattedResponses.length);
-    console.log("Request configuration:", {
+    // Log detailed configuration
+    const config = {
       model: "gpt-4o",
       max_tokens: 4000,
       temperature: 0.4,
-      hasSystemPrompt: !!SYSTEM_PROMPT,
-      systemPromptLength: SYSTEM_PROMPT?.length || 0,
-      userPromptSample: formattedResponses.substring(0, 100) + "..." // Log just a sample
-    });
+      top_p: 0.9,
+      frequency_penalty: 0.3,
+      totalPromptTokens: SYSTEM_PROMPT.length + formattedResponses.length,
+      responsesCount: formattedResponses.split('\n').length
+    };
     
-    const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    console.log("OpenAI request configuration:", config);
+    console.log("System prompt length:", SYSTEM_PROMPT.length);
+    console.log("Total responses to analyze:", formattedResponses.split('\n').length);
+    
+    // Use Promise.race for timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("OpenAI request timed out after 60 seconds")), 60000)
+    );
+    
+    const fetchPromise = fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${openAIApiKey}`,
@@ -52,42 +54,50 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         ],
         response_format: { type: "json_object" },
       }),
-      signal: controller.signal,
     });
     
-    // Clear the timeout since we got a response
-    clearTimeout(timeoutId);
-
+    // Race between timeout and actual request
+    const openAIRes = await Promise.race([fetchPromise, timeoutPromise]);
     console.timeEnd("openai-api-call");
     
     if (!openAIRes.ok) {
       const errorText = await openAIRes.text();
-      console.error("OpenAI error →", errorText);
-      console.error("OpenAI HTTP status:", openAIRes.status);
-      console.error("OpenAI response headers:", Object.fromEntries(openAIRes.headers.entries()));
+      console.error("OpenAI error details:", {
+        status: openAIRes.status,
+        statusText: openAIRes.statusText,
+        headers: Object.fromEntries(openAIRes.headers.entries()),
+        error: errorText
+      });
       
-      // Enhanced error info with status code
       throw new Error(`OpenAI API Error (${openAIRes.status}): ${errorText}`);
     }
 
     const response = await openAIRes.json();
-    console.log("OpenAI response tokens:", response.usage?.total_tokens || "N/A");
-    console.log("OpenAI completion tokens:", response.usage?.completion_tokens || "N/A");
+    
+    // Log completion details
+    console.log("OpenAI response stats:", {
+      totalTokens: response.usage?.total_tokens || "N/A",
+      completionTokens: response.usage?.completion_tokens || "N/A",
+      promptTokens: response.usage?.prompt_tokens || "N/A",
+      model: response.model || config.model,
+      responseLength: response.choices?.[0]?.message?.content?.length || 0
+    });
     
     return response;
   } catch (error) {
-    console.error("OpenAI API call failed:", error);
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
+    console.error("OpenAI API call error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause
+    });
     
-    // Try a fallback with a simpler prompt if we timed out or had another error
-    if (error.name === "AbortError" || error.toString().includes("timeout")) {
-      console.log("API call timed out or aborted, trying fallback with simpler prompt...");
+    // If it's a timeout or network error, try the fallback
+    if (error.name === "AbortError" || error.message.includes("timeout") || error.message.includes("Failed to fetch")) {
+      console.log("Attempting fallback with simpler prompt...");
+      console.time("openai-fallback-call");
+      
       try {
-        // Log the fallback attempt
-        console.time("openai-fallback-call");
-        
         const fallbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -95,18 +105,12 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-4o-mini", // Use a smaller, faster model for fallback
+            model: "gpt-4o-mini",
             max_tokens: 2000,
             temperature: 0.3,
             messages: [
-              { 
-                role: "system", 
-                content: "Create a brief personality analysis with core traits and scores. Return as JSON." 
-              },
-              { 
-                role: "user", 
-                content: `Analyze these responses with brief insights:\n${formattedResponses.substring(0, 2000)}` 
-              },
+              { role: "system", content: "Create a brief personality analysis with core traits and scores. Return as JSON." },
+              { role: "user", content: `Analyze these responses with brief insights:\n${formattedResponses.substring(0, 2000)}` },
             ],
             response_format: { type: "json_object" },
           }),
@@ -116,40 +120,42 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         
         if (!fallbackResponse.ok) {
           const fallbackErrorText = await fallbackResponse.text();
-          console.error("Fallback OpenAI error:", fallbackErrorText);
+          console.error("Fallback attempt failed:", {
+            status: fallbackResponse.status,
+            error: fallbackErrorText
+          });
           throw new Error(`Fallback API call failed (${fallbackResponse.status}): ${fallbackErrorText}`);
         }
         
         const fallbackResult = await fallbackResponse.json();
-        console.log("Fallback response tokens:", fallbackResult.usage?.total_tokens || "N/A");
+        console.log("Fallback completed successfully with tokens:", fallbackResult.usage?.total_tokens || "N/A");
         return fallbackResult;
       } catch (fallbackError) {
-        console.error("Fallback API call failed:", fallbackError);
-        console.error("Fallback error name:", fallbackError.name);
-        console.error("Fallback error message:", fallbackError.message);
+        console.error("Fallback attempt error details:", {
+          name: fallbackError.name,
+          message: fallbackError.message,
+          stack: fallbackError.stack
+        });
         
-        // Return a minimal valid response structure that the frontend can handle
+        // Return a minimal valid response structure
         return {
-          choices: [
-            {
-              message: {
-                content: JSON.stringify({
-                  overview: "Unable to complete analysis due to API timeout. Please try again later.",
-                  coreTraits: {
-                    primary: "Analysis unavailable",
-                    tertiaryTraits: ["Please try again"]
-                  },
-                  intelligenceScore: 50,
-                  emotionalIntelligenceScore: 50
-                })
-              }
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                overview: "Unable to complete analysis due to API timeout. Please try again later.",
+                coreTraits: {
+                  primary: "Analysis unavailable",
+                  tertiaryTraits: ["Please try again"]
+                },
+                intelligenceScore: 50,
+                emotionalIntelligenceScore: 50
+              })
             }
-          ]
+          }]
         };
       }
     }
     
-    // If it wasn't an abort error, re-throw
     throw error;
   }
 }
