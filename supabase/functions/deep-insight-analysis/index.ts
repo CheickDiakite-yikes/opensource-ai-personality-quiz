@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DeepInsightResponses } from "./types.ts";
@@ -179,6 +180,7 @@ serve(async (req) => {
     console.log(`Shortest response: ${Math.min(...responseLengths)}`);
     console.log(`Longest response: ${Math.max(...responseLengths)}`);
 
+    // Important: Increased max_tokens to 4000 to get more detailed output
     const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -187,7 +189,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4o", 
-        max_tokens: 15000, // Further reduced to avoid potential token limit issues
+        max_tokens: 4000, // Increased to get more detailed output
         temperature: 0.4,
         top_p: 0.9,
         frequency_penalty: 0.3,
