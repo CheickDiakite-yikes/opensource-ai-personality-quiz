@@ -108,6 +108,7 @@ export const useDeepInsightQuiz = (totalQuestions: number) => {
     error,
     handleSubmitQuestion,
     handlePrevious,
-    clearSavedProgress
+    clearSavedProgress,
+    setCurrentQuestionIndex // Add this line to export the setCurrentQuestionIndex function
   };
 };
