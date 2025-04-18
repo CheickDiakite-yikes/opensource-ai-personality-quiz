@@ -28,9 +28,9 @@ Output **exactly** this JSON schema, no more, no less, no re‑ordering:
 
 **Analytic standards**
 • Evidence‑based inference (hedge if weak).  
-• Depth over fluff: ~4–6 sentences per string field, concrete daily‑life examples.  
+• Depth over fluff: ~8–10 sentences per string field, concrete daily‑life examples.  
 • Second‑person voice ("You …").  
-• Minimal sugar‑coating; clear on weaknesses.  
+• Minimal sugar‑coating; clear on weaknesses while pushing the user to be better.  
 • Leverage Big‑Five, CBT, attachment theory silently.  
 • Cultural/gender sensitivity.  
 • Exactly 3 items in each array.  
