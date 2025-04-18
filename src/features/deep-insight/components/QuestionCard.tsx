@@ -1,11 +1,12 @@
-
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Wand2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { DeepInsightQuestion } from "../types";
+import { useAutoTest } from "../hooks/useAutoTest";
+import { deepInsightQuestions } from "../data/questions";
 
 interface QuestionCardProps {
   question: DeepInsightQuestion;
@@ -15,6 +16,8 @@ interface QuestionCardProps {
   isFirstQuestion: boolean;
   isLastQuestion: boolean;
   error: string | null;
+  currentQuestionIndex: number;
+  setCurrentQuestionIndex: (index: number) => void;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -25,12 +28,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isFirstQuestion,
   isLastQuestion,
   error,
+  currentQuestionIndex,
+  setCurrentQuestionIndex,
 }) => {
   const { control, handleSubmit, setValue, watch, formState } = useForm<Record<string, string>>({
     defaultValues: {
       [question.id]: currentResponse || ""
     }
   });
+
+  const { isAutoTesting, startAutoTest } = useAutoTest(
+    deepInsightQuestions,
+    onSubmit,
+    setCurrentQuestionIndex
+  );
 
   // For debugging
   const watchedValue = watch(question.id);
@@ -102,18 +113,47 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onPrevious}
-          disabled={isFirstQuestion}
-        >
-          Previous
-        </Button>
-        <Button type="submit" form="quiz-form">
-          {isLastQuestion ? "Complete" : "Next"}
-        </Button>
+      <CardFooter>
+        <div className="flex justify-between w-full items-center">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPrevious}
+              disabled={isFirstQuestion || isAutoTesting}
+            >
+              Previous
+            </Button>
+            
+            {!isLastQuestion && (
+              <Button 
+                type="button"
+                variant="elegant"
+                onClick={startAutoTest}
+                disabled={isAutoTesting || currentQuestionIndex > 0}
+                className="flex items-center gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                Test Mode
+              </Button>
+            )}
+          </div>
+          
+          <Button 
+            type="submit" 
+            form="quiz-form"
+            disabled={isAutoTesting}
+          >
+            {isLastQuestion ? "Complete" : "Next"}
+          </Button>
+        </div>
+        
+        {error && (
+          <div className="bg-destructive/15 text-destructive rounded-md p-3 flex items-center gap-2 mt-4">
+            <AlertCircle className="h-5 w-5" />
+            <p>{error}</p>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

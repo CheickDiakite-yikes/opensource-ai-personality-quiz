@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
@@ -20,7 +19,8 @@ const DeepInsightQuiz: React.FC = () => {
     error,
     handleSubmitQuestion,
     handlePrevious,
-    clearSavedProgress
+    clearSavedProgress,
+    setCurrentQuestionIndex
   } = useDeepInsightQuiz(totalQuestions);
   
   const currentQuestion = deepInsightQuestions[currentQuestionIndex];
@@ -88,6 +88,8 @@ const DeepInsightQuiz: React.FC = () => {
             isFirstQuestion={isFirstQuestion}
             isLastQuestion={isLastQuestion}
             error={error}
+            currentQuestionIndex={currentQuestionIndex}
+            setCurrentQuestionIndex={setCurrentQuestionIndex}
           />
         )}
       </div>
