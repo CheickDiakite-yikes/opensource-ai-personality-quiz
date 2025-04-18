@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -171,7 +170,7 @@ const DeepInsightResultsPage: React.FC = () => {
             <TopTraitsSection coreTraits={analysis.core_traits} />
             
             <Tabs defaultValue="traits" className="mb-8">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 overflow-x-auto">
+              <TabsList className="grid grid-cols-4 gap-2 mb-6">
                 <TabsTrigger value="traits" className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   Core Traits
