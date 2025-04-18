@@ -7,7 +7,7 @@ import { DeepInsightResponses } from "../types";
 import { generateAnalysisFromResponses } from "../utils/analysis/analysisGenerator";
 import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
-import { saveAnalysisToHistory } from "@/hooks/analysis/useLocalStorage";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 // Fix the re-export using "export type" for TypeScript's isolatedModules
 export type { AnalysisData };
@@ -19,6 +19,7 @@ export const useDeepInsightResults = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const [savedAnalyses, setSavedAnalyses] = useLocalStorage<AnalysisData[]>("deep_insight_analyses", []);
   
   // Effect to handle generating analysis from responses
   useEffect(() => {
@@ -37,6 +38,7 @@ export const useDeepInsightResults = () => {
         
         console.log("Generating analysis for responses:", responseData);
         setLoading(true);
+        toast.loading("Analyzing your responses...", { id: "analysis-toast", duration: 60000 });
         
         try {
           // First, save responses to the database if the user is logged in
@@ -66,7 +68,6 @@ export const useDeepInsightResults = () => {
           
           // Call the Edge Function for analysis
           console.log("Calling deep-insight-analysis edge function");
-          toast.loading("Analyzing your responses...", { id: "analysis-toast", duration: 60000 });
           
           const { data, error } = await supabase.functions.invoke('deep-insight-analysis', {
             method: 'POST',
@@ -146,19 +147,15 @@ export const useDeepInsightResults = () => {
     try {
       if (!analysis) return;
       
-      // Save to local storage regardless of user login status
-      const savedAnalysis = saveAnalysisToHistory(analysis);
+      // Save to local storage
+      const newSavedAnalyses = [...savedAnalyses, analysis];
+      setSavedAnalyses(newSavedAnalyses);
       
-      if (!user) {
-        // If not logged in, just save to local storage
-        toast.success("Your analysis has been saved locally!");
-        console.log("Analysis saved to local storage");
-        return;
+      if (user) {
+        console.log("Analysis saved for user:", user.id);
       }
       
-      // For logged in users, we already save to Supabase in ResultsActions component
-      // This function is called by ResultsActions after saving to Supabase
-      console.log("Analysis saved for user:", user.id);
+      toast.success("Your analysis has been saved!");
       
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";

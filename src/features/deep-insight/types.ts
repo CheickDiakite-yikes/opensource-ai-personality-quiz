@@ -1,13 +1,12 @@
 
 export interface DeepInsightQuestion {
   id: string;
+  category: string;
   question: string;
   description?: string;
-  category: string;
   options: {
     id: string;
     text: string;
-    value: number;
   }[];
 }
 
@@ -31,22 +30,32 @@ export interface ResponsePatternAnalysis {
   responseSignature: string;
 }
 
-export interface StrengthsChallengesResult {
+export interface CoreTraits {
+  primary: string;
+  secondary: string;
   strengths: string[];
   challenges: string[];
-  growthAreas: string[];
+}
+
+export interface GrowthPotential {
+  developmentAreas: string[];
   recommendations: string[];
 }
 
-export const DeepInsightCategories = [
-  { id: "personality", name: "Personality Core" },
-  { id: "emotional", name: "Emotional Intelligence" },
-  { id: "cognitive", name: "Cognitive Patterns" },
-  { id: "social", name: "Social Dynamics" },
-  { id: "motivation", name: "Motivation & Drive" },
-  { id: "values", name: "Value Systems" },
-  { id: "resilience", name: "Resilience & Growth" },
-  { id: "creativity", name: "Creativity & Innovation" },
-  { id: "leadership", name: "Leadership Style" },
-  { id: "mindfulness", name: "Self-Awareness" }
-];
+export interface CognitivePatterning {
+  decisionMaking: string;
+  learningStyle: string;
+  attention: string;
+}
+
+export interface EmotionalArchitecture {
+  emotionalAwareness: string;
+  regulationStyle: string;
+  empathicCapacity: string;
+}
+
+export interface InterpersonalDynamics {
+  attachmentStyle: string;
+  communicationPattern: string;
+  conflictResolution: string;
+}
