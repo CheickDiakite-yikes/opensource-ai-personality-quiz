@@ -1,6 +1,7 @@
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { logError, logDebug } from "./logging.ts";
+import { withRetry } from "./retryUtils.ts";
 
 export async function createOpenAIRequest(openAIApiKey: string, messages: any[], maxTokens: number, signal: AbortSignal) {
   const headers = {
@@ -10,7 +11,7 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
   };
 
   const payload = {
-    model: "gpt-4o",
+    model: API_CONFIG.DEFAULT_MODEL,
     messages: messages,
     max_tokens: maxTokens,
     temperature: API_CONFIG.TEMPERATURE,
@@ -21,25 +22,31 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
 
   logDebug("createOpenAIRequest payload:", payload);
 
-  try {
-    const response = await fetch(API_CONFIG.BASE_URL, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(payload),
-      signal: signal,
-    });
+  return withRetry(
+    async () => {
+      const response = await fetch(API_CONFIG.BASE_URL, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload),
+        signal: signal,
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      logError(`OpenAI API Error: ${response.status} - ${errorBody}`);
-      throw new Error(`OpenAI API Error: ${response.status} - ${errorBody}`);
-    }
+      if (!response.ok) {
+        const errorBody = await response.text();
+        logError(`OpenAI API Error: ${response.status} - ${errorBody}`);
+        throw new Error(`OpenAI API Error: ${response.status} - ${errorBody}`);
+      }
 
-    return response;
-  } catch (error) {
-    logError("Error in createOpenAIRequest:", error);
-    throw error;
-  }
+      return response;
+    },
+    {
+      maxAttempts: API_CONFIG.RETRY_COUNT,
+      initialDelay: 2000,
+      maxDelay: 10000,
+      backoffFactor: 2
+    },
+    "OpenAI API request"
+  );
 }
 
 export async function handleOpenAIResponse(response: Response) {

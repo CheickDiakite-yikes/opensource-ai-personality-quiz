@@ -1,5 +1,4 @@
 
-
 export const API_CONFIG = {
   BASE_URL: "https://api.openai.com/v1/chat/completions",
   MAIN_TIMEOUT: 90000, // Increased to 90 seconds
@@ -11,7 +10,10 @@ export const API_CONFIG = {
   TEMPERATURE: 0.4,
   TOP_P: 0.9,
   FREQUENCY_PENALTY: 0.3,
-  RETRY_COUNT: 2
+  RETRY_COUNT: 2,  // Added retry count
+  RETRY_INITIAL_DELAY: 2000,  // Added initial retry delay in ms
+  RETRY_MAX_DELAY: 10000,  // Added maximum retry delay in ms
+  RETRY_BACKOFF_FACTOR: 2  // Added exponential backoff factor
 };
 
 export interface OpenAIConfig {
@@ -23,4 +25,3 @@ export interface OpenAIConfig {
   totalPromptTokens: number;
   responsesCount: number;
 }
-
