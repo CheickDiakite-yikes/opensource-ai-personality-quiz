@@ -17,7 +17,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
   try {
     // Use AbortController to add a timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90-second timeout for longer processing
     
     const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -26,7 +26,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o", // Using the latest stable model
         max_tokens: 4000,
         temperature: 0.4,
         top_p: 0.9,
@@ -71,7 +71,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-4o",
+            model: "gpt-4o-mini", // Fallback to lighter model
             max_tokens: 2000,
             temperature: 0.3,
             messages: [
