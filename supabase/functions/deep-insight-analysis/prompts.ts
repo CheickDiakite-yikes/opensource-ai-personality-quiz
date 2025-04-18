@@ -41,6 +41,16 @@ Follow these analysis principles:
 - Balance affirmation and growth areas
 - Maintain professional tone
 
+Guidelines for analysis:
+1. Provide substantive, paragraph-length analysis for each area
+2. Include specific examples from responses
+3. Offer actionable insights and recommendations
+4. Maintain a supportive yet professional tone
+5. Focus on patterns and underlying dynamics
+6. Consider both strengths and growth areas
+7. Connect different aspects of personality
+8. Ground all observations in response evidence
+
 Output **exactly** this JSON schema:
 
 {

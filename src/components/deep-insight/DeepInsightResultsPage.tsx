@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,7 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/ui/PageTransition";
-import { ArrowLeft, Download, Brain, Share2, Briefcase, Heart, Star, FlameIcon } from "lucide-react";
+import { 
+  ArrowLeft, Download, Brain, Share2, Briefcase, Heart, 
+  Star, FlameIcon, Lightbulb, Flower, Users, Sparkles 
+} from "lucide-react";
 
 import CoreTraitsSection from "./results-sections/CoreTraitsSection";
 import CognitivePatterningSection from "./results-sections/CognitivePatterningSection";
@@ -165,17 +169,28 @@ const DeepInsightResultsPage: React.FC = () => {
             </div>
             
             <TopTraitsSection coreTraits={analysis.core_traits} />
-            <CareerInsightsSection careerInsights={analysis.complete_analysis?.careerInsights || {}} />
-            <MotivationSection 
-              motivators={analysis.complete_analysis?.motivationalProfile?.primaryDrivers} 
-              inhibitors={analysis.complete_analysis?.motivationalProfile?.inhibitors}
-            />
             
             <Tabs defaultValue="traits" className="mb-8">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 overflow-x-auto">
                 <TabsTrigger value="traits" className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   Core Traits
+                </TabsTrigger>
+                <TabsTrigger value="cognitive" className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4" />
+                  Cognitive
+                </TabsTrigger>
+                <TabsTrigger value="emotional" className="flex items-center gap-2">
+                  <Flower className="h-4 w-4" />
+                  Emotional
+                </TabsTrigger>
+                <TabsTrigger value="interpersonal" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Interpersonal
+                </TabsTrigger>
+                <TabsTrigger value="growth" className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Growth
                 </TabsTrigger>
                 <TabsTrigger value="career" className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4" />
@@ -193,6 +208,22 @@ const DeepInsightResultsPage: React.FC = () => {
 
               <TabsContent value="traits">
                 <CoreTraitsSection data={analysis.core_traits} />
+              </TabsContent>
+              
+              <TabsContent value="cognitive">
+                <CognitivePatterningSection data={analysis.cognitive_patterning} />
+              </TabsContent>
+              
+              <TabsContent value="emotional">
+                <EmotionalArchitectureSection data={analysis.emotional_architecture} />
+              </TabsContent>
+              
+              <TabsContent value="interpersonal">
+                <InterpersonalDynamicsSection data={analysis.interpersonal_dynamics} />
+              </TabsContent>
+              
+              <TabsContent value="growth">
+                <GrowthPotentialSection data={analysis.growth_potential} />
               </TabsContent>
               
               <TabsContent value="career">
