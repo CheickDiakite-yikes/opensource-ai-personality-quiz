@@ -74,3 +74,4 @@ export const personalityTraitsQuestions: AssessmentQuestion[] = [
     weight: 0.9
   }
 ];
+

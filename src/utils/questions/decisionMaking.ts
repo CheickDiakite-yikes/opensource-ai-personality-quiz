@@ -74,3 +74,4 @@ export const decisionMakingQuestions: AssessmentQuestion[] = [
     weight: 0.8
   }
 ];
+
