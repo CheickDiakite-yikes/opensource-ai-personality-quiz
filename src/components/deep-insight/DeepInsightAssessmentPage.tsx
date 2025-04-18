@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Brain, ArrowRight, ArrowLeft, Send, Loader2 } from "lucide-react";
+import { Brain, ArrowRight, ArrowLeft, Send, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +19,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitAttempts, setSubmitAttempts] = useState(0);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   
   // Make sure we're getting all 100 questions
   const questions = getDeepInsightQuestions(100);
@@ -59,6 +61,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
     }
     
     setIsSubmitting(true);
+    setSubmissionError(null);
     
     try {
       // Validate responses
@@ -93,74 +96,117 @@ const DeepInsightAssessmentPage: React.FC = () => {
         throw new Error(`Failed to save assessment: ${assessmentError.message}`);
       }
       
-      if (assessmentData && assessmentData[0]) {
-        // Call the deep insight analysis edge function with increased timeout
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('deep-insight-analysis', {
-          body: { 
-            responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
-              acc[questionId] = selectedOption;
-              return acc;
-            }, {} as Record<string, string>) 
+      // First save a placeholder analysis to ensure we have something to show
+      const placeholderId = crypto.randomUUID();
+      const { error: placeholderError } = await supabase
+        .from('deep_insight_analyses')
+        .insert({
+          id: placeholderId,
+          user_id: user.id,
+          title: 'Deep Insight Analysis (Processing)',
+          overview: 'Your analysis is currently being processed. Please check back shortly for your complete results.',
+          complete_analysis: { status: 'processing' },
+          intelligence_score: 70,
+          emotional_intelligence_score: 70,
+          core_traits: {
+            primary: "Processing...",
+            tertiaryTraits: ["Analysis in progress"]
           },
-          // Remove the options property as it's not part of FunctionInvokeOptions type
-          // abortSignal will be handled internally by the Supabase client
+          created_at: new Date().toISOString()
         });
+      
+      if (placeholderError) {
+        console.error("Error saving placeholder analysis:", placeholderError);
+      }
+      
+      if (assessmentData && assessmentData[0]) {
+        // Set a timeout for the API call to prevent UI freezing
+        const abortController = new AbortController();
         
-        if (analysisError) {
-          console.error("Analysis invocation error:", analysisError);
+        try {
+          // Call the deep insight analysis edge function with increased timeout
+          const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
+            'deep-insight-analysis', 
+            {
+              body: { 
+                responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
+                  acc[questionId] = selectedOption;
+                  return acc;
+                }, {} as Record<string, string>) 
+              },
+              abortSignal: abortController.signal
+            }
+          );
           
-          // If this is the first attempt, try once more
-          if (submitAttempts < 1) {
-            setSubmitAttempts(submitAttempts + 1);
-            toast.info("Retrying analysis...", {
-              description: "Please wait a moment while we process your responses again."
+          if (analysisError) {
+            console.error("Analysis invocation error:", analysisError);
+            setSubmissionError(`Analysis error: ${analysisError.message || "Unknown error"}`);
+            
+            // If this is the first attempt, try once more
+            if (submitAttempts < 1) {
+              setSubmitAttempts(submitAttempts + 1);
+              toast.info("Retrying analysis...", {
+                description: "Please wait a moment while we process your responses again."
+              });
+              
+              // Save the analysis results anyway to allow viewing later
+              navigate(`/deep-insight/results`);
+              return;
+            }
+            
+            throw new Error(`Analysis failed: ${analysisError.message}`);
+          }
+          
+          if (analysisData && analysisData.analysis) {
+            // Save the analysis to Supabase
+            const { error: saveAnalysisError } = await supabase
+              .from('deep_insight_analyses')
+              .insert({
+                user_id: user.id,
+                complete_analysis: analysisData.analysis,
+                core_traits: analysisData.analysis.coreTraits,
+                cognitive_patterning: analysisData.analysis.cognitivePatterning,
+                emotional_architecture: analysisData.analysis.emotionalArchitecture,
+                interpersonal_dynamics: analysisData.analysis.interpersonalDynamics,
+                growth_potential: analysisData.analysis.growthPotential,
+                intelligence_score: analysisData.analysis.intelligenceScore || 70,
+                emotional_intelligence_score: analysisData.analysis.emotionalIntelligenceScore || 70,
+                overview: analysisData.analysis.overview,
+                response_patterns: analysisData.analysis.responsePatterns,
+                raw_responses: formattedResponses
+              })
+              .select('id');
+            
+            if (saveAnalysisError) {
+              console.error("Error saving analysis:", saveAnalysisError);
+              throw new Error(`Failed to save analysis: ${saveAnalysisError.message}`);
+            }
+            
+            // Delete the placeholder if it was created
+            if (!placeholderError) {
+              await supabase
+                .from('deep_insight_analyses')
+                .delete()
+                .eq('id', placeholderId);
+            }
+            
+            toast.success("Assessment completed!", {
+              description: "Your deep insight analysis is ready to view."
             });
             
-            // Save the analysis results anyway to allow viewing later
+            // Navigate to the results page
             navigate(`/deep-insight/results`);
-            return;
+          } else {
+            // Even if analysis wasn't complete, navigate to results
+            toast.info("Processing your assessment", {
+              description: "Your results will be available shortly."
+            });
+            navigate(`/deep-insight/results`);
           }
-          
-          throw new Error(`Analysis failed: ${analysisError.message}`);
-        }
-        
-        if (analysisData && analysisData.analysis) {
-          // Save the analysis to Supabase
-          const { error: saveAnalysisError } = await supabase
-            .from('deep_insight_analyses')
-            .insert({
-              user_id: user.id,
-              complete_analysis: analysisData.analysis,
-              core_traits: analysisData.analysis.coreTraits,
-              cognitive_patterning: analysisData.analysis.cognitivePatterning,
-              emotional_architecture: analysisData.analysis.emotionalArchitecture,
-              interpersonal_dynamics: analysisData.analysis.interpersonalDynamics,
-              growth_potential: analysisData.analysis.growthPotential,
-              intelligence_score: analysisData.analysis.intelligenceScore || 70,
-              emotional_intelligence_score: analysisData.analysis.emotionalIntelligenceScore || 70,
-              overview: analysisData.analysis.overview,
-              response_patterns: analysisData.analysis.responsePatterns,
-              raw_responses: formattedResponses
-            })
-            .select('id');
-          
-          if (saveAnalysisError) {
-            console.error("Error saving analysis:", saveAnalysisError);
-            throw new Error(`Failed to save analysis: ${saveAnalysisError.message}`);
-          }
-          
-          toast.success("Assessment completed!", {
-            description: "Your deep insight analysis is ready to view."
-          });
-          
-          // Navigate to the results page
-          navigate(`/deep-insight/results`);
-        } else {
-          // Even if analysis wasn't complete, navigate to results
-          toast.info("Processing your assessment", {
-            description: "Your results will be available shortly."
-          });
-          navigate(`/deep-insight/results`);
+        } catch (error) {
+          // Ensure we set the submission error for display
+          setSubmissionError(error instanceof Error ? error.message : "Unknown error occurred");
+          throw error;
         }
       }
     } catch (error) {
@@ -205,6 +251,21 @@ const DeepInsightAssessmentPage: React.FC = () => {
             </span>
           </div>
         </div>
+        
+        {submissionError && (
+          <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+            <CardContent className="p-4 flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-red-700 dark:text-red-400">Error processing your assessment</p>
+                <p className="text-sm text-red-600/80 dark:text-red-300/80 mt-1">
+                  Your responses have been saved. Please try viewing your results again in a few minutes.
+                </p>
+                <p className="text-xs text-red-600/70 dark:text-red-300/70 mt-1">{submissionError}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <DeepInsightQuestionCard
           question={currentQuestion}
