@@ -1,4 +1,5 @@
-// src/utils/openai.ts  — GPT‑4.1 call *without* Web‑Search
+
+// src/utils/openai.ts  — GPT‑4.1 call *without* Web‑Search
 //--------------------------------------------------------------
 
 import { SYSTEM_PROMPT } from "./prompts.ts";
@@ -80,8 +81,11 @@ export async function callOpenAI(
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      throw new Error("GPT‑4.1 request timed out after 90 s.");
+      throw new Error("GPT‑4.1 request timed out after 90 s.");
     }
     throw err;
   }
 }
+
+// Make sure we're exporting the function properly
+export default { callOpenAI };
