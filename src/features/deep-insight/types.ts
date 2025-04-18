@@ -1,12 +1,13 @@
 
 export interface DeepInsightQuestion {
   id: string;
-  category: string;
   question: string;
   description?: string;
+  category: string;
   options: {
     id: string;
     text: string;
+    value: number;
   }[];
 }
 
@@ -30,46 +31,22 @@ export interface ResponsePatternAnalysis {
   responseSignature: string;
 }
 
-export interface CoreTraits {
-  primary: string;
-  secondary: string;
+export interface StrengthsChallengesResult {
   strengths: string[];
   challenges: string[];
-}
-
-export interface GrowthPotential {
-  developmentAreas: string[];
+  growthAreas: string[];
   recommendations: string[];
 }
 
-export interface CognitivePatterning {
-  decisionMaking: string;
-  learningStyle: string;
-  attention: string;
-}
-
-export interface EmotionalArchitecture {
-  emotionalAwareness: string;
-  regulationStyle: string;
-  empathicCapacity: string;
-}
-
-export interface InterpersonalDynamics {
-  attachmentStyle: string;
-  communicationPattern: string;
-  conflictResolution: string;
-}
-
-// Add the missing DeepInsightCategories export
 export const DeepInsightCategories = [
-  { id: 'personality', name: 'Personality Traits' },
-  { id: 'emotional', name: 'Emotional Intelligence' },
-  { id: 'cognitive', name: 'Cognitive Patterns' },
-  { id: 'social', name: 'Social Interaction' },
-  { id: 'motivation', name: 'Motivation' },
-  { id: 'values', name: 'Value Systems' },
-  { id: 'resilience', name: 'Resilience' },
-  { id: 'creativity', name: 'Creativity' },
-  { id: 'leadership', name: 'Leadership' },
-  { id: 'mindfulness', name: 'Mindfulness' }
+  { id: "personality", name: "Personality Core" },
+  { id: "emotional", name: "Emotional Intelligence" },
+  { id: "cognitive", name: "Cognitive Patterns" },
+  { id: "social", name: "Social Dynamics" },
+  { id: "motivation", name: "Motivation & Drive" },
+  { id: "values", name: "Value Systems" },
+  { id: "resilience", name: "Resilience & Growth" },
+  { id: "creativity", name: "Creativity & Innovation" },
+  { id: "leadership", name: "Leadership Style" },
+  { id: "mindfulness", name: "Self-Awareness" }
 ];

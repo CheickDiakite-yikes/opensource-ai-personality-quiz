@@ -82,19 +82,6 @@ serve(async (req) => {
               "growthPotential": {
                 "developmentAreas": ["Development area 1", "Development area 2", "Development area 3"],
                 "recommendations": ["Recommendation 1", "Recommendation 2", "Recommendation 3"]
-              },
-              "responsePatterns": {
-                "percentages": {
-                  "a": 25,
-                  "b": 30,
-                  "c": 20,
-                  "d": 15,
-                  "e": 5,
-                  "f": 5
-                },
-                "primaryChoice": "b",
-                "secondaryChoice": "a",
-                "responseSignature": "25-30-20-15-5-5"
               }
             }
             
@@ -131,17 +118,52 @@ serve(async (req) => {
       throw new Error('Could not parse AI analysis results');
     }
     
+    // Analyze response patterns
+    const responsePatterns = analyzeResponsePatterns(responses);
+    
     // Create complete analysis object with all required fields
     const analysis = {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       
-      // Include all content from the AI analysis
-      ...analysisContent,
-      
-      // Add additional fields required by the frontend
+      // Personality overview
       overview: `Based on your responses, you appear to be a ${analysisContent.coreTraits?.primary || "thoughtful"} individual who ${analysisContent.cognitivePatterning?.decisionMaking || "values careful consideration in decision-making"}. Your approach to life combines ${analysisContent.coreTraits?.secondary || "analytical thinking"} with ${analysisContent.emotionalArchitecture?.empathicCapacity || "empathy towards others"}.`,
       
+      // Include all required structured data fields
+      coreTraits: analysisContent.coreTraits || {
+        primary: "Balanced thinker",
+        secondary: "Adaptable problem-solver",
+        strengths: ["Analytical thinking", "Emotional awareness", "Adaptability"],
+        challenges: ["Decision making under pressure", "Perfectionism", "Overthinking"]
+      },
+      
+      cognitivePatterning: analysisContent.cognitivePatterning || {
+        decisionMaking: "You tend to gather information methodically before making decisions. You value logical consistency and consider multiple perspectives when evaluating options.",
+        learningStyle: "You learn best through structured, systematic approaches with clear objectives.",
+        attention: "You have a focused attention style that allows you to concentrate deeply on tasks of interest."
+      },
+      
+      emotionalArchitecture: analysisContent.emotionalArchitecture || {
+        emotionalAwareness: "You have strong awareness of your emotional states and can generally identify what you're feeling in the moment.",
+        regulationStyle: "You manage emotions through a combination of analytical processing and practical coping strategies.",
+        empathicCapacity: "You can understand others' emotional experiences, particularly when they're clearly communicated."
+      },
+      
+      interpersonalDynamics: analysisContent.interpersonalDynamics || {
+        attachmentStyle: "You form meaningful connections with others while maintaining healthy boundaries.",
+        communicationPattern: "Your communication style is thoughtful and precise, focusing on clarity and accuracy.",
+        conflictResolution: "You approach conflicts with a problem-solving mindset, seeking fair and logical resolutions."
+      },
+      
+      growthPotential: analysisContent.growthPotential || {
+        developmentAreas: ["Finding balance between analysis and action", "Developing comfort with ambiguity", "Building resilience to setbacks"],
+        recommendations: ["Practice time-bounded decision making", "Engage in mindfulness to reduce overthinking", "Seek feedback from diverse perspectives"]
+      },
+      
+      // Add response patterns analysis
+      responsePatterns: responsePatterns,
+      
+      // Add additional fields required by the frontend
       traits: [
         {
           trait: "Analytical Thinking",
@@ -192,3 +214,59 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to analyze response patterns
+function analyzeResponsePatterns(responses: DeepInsightResponses) {
+  console.log("Analyzing response patterns");
+  
+  // Extract key insights to personalize the analysis
+  const responsesArray = Object.entries(responses);
+  
+  // Count different answer choices to detect patterns
+  const answerCounts = {
+    a: 0,
+    b: 0, 
+    c: 0,
+    d: 0,
+    e: 0,
+    f: 0
+  };
+  
+  responsesArray.forEach(([_, answer]) => {
+    const lastChar = answer.charAt(answer.length - 1);
+    if (lastChar === 'a') answerCounts.a++;
+    if (lastChar === 'b') answerCounts.b++;
+    if (lastChar === 'c') answerCounts.c++;
+    if (lastChar === 'd') answerCounts.d++;
+    if (lastChar === 'e') answerCounts.e++;
+    if (lastChar === 'f') answerCounts.f++;
+  });
+  
+  const totalResponses = responsesArray.length;
+  const percentages = {
+    a: Math.round((answerCounts.a / totalResponses) * 100),
+    b: Math.round((answerCounts.b / totalResponses) * 100),
+    c: Math.round((answerCounts.c / totalResponses) * 100),
+    d: Math.round((answerCounts.d / totalResponses) * 100),
+    e: Math.round((answerCounts.e / totalResponses) * 100),
+    f: Math.round((answerCounts.f / totalResponses) * 100)
+  };
+  
+  // Generate a unique response signature
+  const responseSignature = `${percentages.a}-${percentages.b}-${percentages.c}-${percentages.d}-${percentages.e}-${percentages.f}`;
+  
+  // Determine primary tendencies based on highest percentages
+  const sortedChoices = Object.entries(percentages)
+    .sort(([, a], [, b]) => b - a)
+    .map(([choice]) => choice);
+  
+  const primaryChoice = sortedChoices[0];
+  const secondaryChoice = sortedChoices[1];
+  
+  return {
+    percentages,
+    primaryChoice,
+    secondaryChoice,
+    responseSignature
+  };
+}
