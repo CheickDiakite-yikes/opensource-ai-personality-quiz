@@ -1,4 +1,3 @@
-
 import { SYSTEM_PROMPT } from "./prompts.ts";
 
 const corsHeaders = {
@@ -19,7 +18,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     // Log detailed configuration
     const config = {
       model: "gpt-4o",
-      max_tokens: 4000,
+      max_tokens: 16000, // Increased to get more detailed responses
       temperature: 0.4,
       top_p: 0.9,
       frequency_penalty: 0.3,
@@ -48,7 +47,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           },
           body: JSON.stringify({
             model: "gpt-4o",
-            max_tokens: 4000,
+            max_tokens: 16000, // Increased for more detailed analysis
             temperature: 0.4,
             top_p: 0.9,
             frequency_penalty: 0.3,
@@ -119,11 +118,10 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         error.message.includes("Failed to fetch") ||
         error.name === "TypeError") {
       
-      console.log("Main API call failed. Attempting fallback with simpler prompt and smaller model...");
+      console.log("Main API call failed. Attempting fallback with simpler prompt...");
       console.time("openai-fallback-call");
       
       try {
-        // Use all responses in the fallback, no limiting
         console.log("Using fallback with full responses. Length:", formattedResponses.length);
         
         const fallbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -133,8 +131,8 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-4o-mini",  // Smaller, faster model
-            max_tokens: 2000,
+            model: "gpt-4o",  // Using same model but with simplified prompt
+            max_tokens: 8000, // Still substantial but reduced for fallback
             temperature: 0.3,
             messages: [
               { 
@@ -173,37 +171,9 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           message: fallbackError.message,
           stack: fallbackError.stack
         });
-        
-        // Return a minimal valid response structure with a clear error message
-        return {
-          choices: [{
-            message: {
-              content: JSON.stringify({
-                overview: "We encountered an issue completing your full analysis due to high system demand. This simplified analysis provides core insights, but you may want to try again later for a more comprehensive result.",
-                coreTraits: {
-                  primary: "Analysis partially available",
-                  secondary: "Our system identified some key traits but couldn't complete the full analysis",
-                  tertiaryTraits: [
-                    "Analytical thinker", 
-                    "Detail-oriented",
-                    "Thoughtful communicator"
-                  ]
-                },
-                intelligenceScore: 72,
-                emotionalIntelligenceScore: 68,
-                cognitivePatterning: {
-                  decisionMaking: "You tend to approach decisions with careful consideration of multiple factors."
-                },
-                emotionalArchitecture: {
-                  emotionalAwareness: "You show good awareness of your emotional states and their impact."
-                }
-              })
-            }
-          }]
-        };
+        throw fallbackError;
       }
     }
-    
     throw error;
   }
 }
