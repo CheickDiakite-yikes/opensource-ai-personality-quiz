@@ -1,10 +1,9 @@
 
-// supabase/functions/deep-insight-analysis/index.ts
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve }    from "https://deno.land/std@0.168.0/http/server.ts";
 import { DeepInsightResponses } from "./types.ts";
 
-const openAIApiKey = Deno.env.get("OPENAI_API_KEY")!;
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":  "*",
@@ -44,9 +43,20 @@ Return **only** the JSON object, no markdown.
 
 /* ---------- 2.  MAIN HANDLER  ---------- */
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate API key presence
+    if (!openAIApiKey || openAIApiKey.trim() === "") {
+      console.error("OpenAI API key is missing or invalid");
+      return json({ 
+        error: "OpenAI API key is not configured or invalid", 
+        success: false,
+        message: "Server configuration error (API key missing)" 
+      }, 500);
+    }
+
     const { responses } = await req.json();
     if (!responses || Object.keys(responses).length === 0) {
       return json({ error: "No responses provided", success: false }, 400);
@@ -57,6 +67,8 @@ serve(async (req) => {
       .join("\n");
 
     /* ---------- 2a.  CALL OPENAI  ---------- */
+    console.log(`Calling OpenAI API with ${Object.keys(responses).length} responses`);
+    
     const openAIRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -79,40 +91,64 @@ serve(async (req) => {
     });
 
     if (!openAIRes.ok) {
-      const err = await openAIRes.text();
-      console.error("OpenAI error →", err);
-      throw new Error(`OpenAI API ${openAIRes.status}: ${err}`);
+      const errorText = await openAIRes.text();
+      console.error("OpenAI error →", errorText);
+      
+      // Specific error for API key issues
+      if (errorText.includes("invalid_api_key") || errorText.includes("Incorrect API key")) {
+        return json({ 
+          error: "Invalid OpenAI API key", 
+          success: false,
+          message: "The OpenAI API key is invalid or has expired. Please update it in the Supabase dashboard." 
+        }, 401);
+      }
+      
+      throw new Error(`OpenAI API ${openAIRes.status}: ${errorText}`);
     }
 
     const { choices } = await openAIRes.json();
     const rawContent = choices?.[0]?.message?.content ?? "";
     const cleanJSON  = rawContent.replace(/```json|```/g, "").trim();
-    const analysisContent = JSON.parse(cleanJSON);
+    
+    try {
+      const analysisContent = JSON.parse(cleanJSON);
 
-    /* ---------- 3.  AUGMENT + RETURN  ---------- */
-    const analysis = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      overview:
-        `Based on your responses, you appear to be a ${analysisContent.coreTraits.primary} ` +
-        `individual who ${analysisContent.cognitivePatterning.decisionMaking}. ` +
-        `You combine ${analysisContent.coreTraits.secondary} with ` +
-        `${analysisContent.emotionalArchitecture.empathicCapacity}.`,
-      ...analysisContent,
-      responsePatterns: analyzeResponsePatterns(responses),
-      traits: [
-        { trait: "Analytical Thinking",   score: 75, description: "Breaks down complex problems logically." },
-        { trait: "Emotional Intelligence",score: 70, description: "Understands and regulates emotions well." },
-        { trait: "Adaptability",          score: 80, description: "Adjusts swiftly to new situations." },
-      ],
-      intelligenceScore: 75,
-      emotionalIntelligenceScore: 70,
-    };
+      /* ---------- 3.  AUGMENT + RETURN  ---------- */
+      const analysis = {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        overview:
+          `Based on your responses, you appear to be a ${analysisContent.coreTraits.primary} ` +
+          `individual who ${analysisContent.cognitivePatterning.decisionMaking}. ` +
+          `You combine ${analysisContent.coreTraits.secondary} with ` +
+          `${analysisContent.emotionalArchitecture.empathicCapacity}.`,
+        ...analysisContent,
+        responsePatterns: analyzeResponsePatterns(responses),
+        traits: [
+          { trait: "Analytical Thinking",   score: 75, description: "Breaks down complex problems logically." },
+          { trait: "Emotional Intelligence",score: 70, description: "Understands and regulates emotions well." },
+          { trait: "Adaptability",          score: 80, description: "Adjusts swiftly to new situations." },
+        ],
+        intelligenceScore: 75,
+        emotionalIntelligenceScore: 70,
+      };
 
-    return json({ analysis, success: true, message: "Analysis generated successfully" });
+      return json({ analysis, success: true, message: "Analysis generated successfully" });
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError, "Raw content:", rawContent);
+      return json({ 
+        error: "Failed to parse AI response", 
+        success: false,
+        message: "The AI generated an invalid response format. Please try again."
+      }, 500);
+    }
   } catch (err) {
     console.error("Deep‑insight‑analysis error:", err);
-    return json({ error: err.message, success: false, message: "Failed to generate analysis" }, 500);
+    return json({ 
+      error: err.message, 
+      success: false, 
+      message: "Failed to generate analysis. Please check Supabase logs for details."
+    }, 500);
   }
 });
 
