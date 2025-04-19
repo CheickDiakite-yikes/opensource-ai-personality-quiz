@@ -58,14 +58,14 @@ Guidelines for analysis:
 7. Connect different aspects of personality
 8. Ground all observations in response evidence
 
-TECHNICAL REQUIREMENTS - CRITICAL:
-- You MUST output ONLY valid JSON data.
-- ALL property names MUST be surrounded by double quotes, never single quotes.
-- ALL string values MUST be surrounded by double quotes, never single quotes.
-- NEVER use unquoted property names.
-- DO NOT include markdown formatting, especially no \`\`\` blocks.
-- DO NOT include any explanatory text before or after the JSON.
-- Ensure the JSON can be directly parsed with JSON.parse() without any modifications.
+**TECHNICAL REQUIREMENTS - CRITICAL:**
+- **You MUST output ONLY valid JSON data.**
+- **ALL property names MUST be surrounded by double quotes, never single quotes.**
+- **ALL string values MUST be surrounded by double quotes, never single quotes.**
+- **NEVER use unquoted property names.**
+- **DO NOT include markdown formatting, especially no \`\`\` blocks.**
+- **DO NOT include any explanatory text before or after the JSON.**
+- **Ensure the JSON can be directly parsed with JSON.parse() without any modifications.**
 
 Output with this exact JSON schema:
 

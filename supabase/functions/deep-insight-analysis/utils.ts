@@ -1,71 +1,132 @@
 
-export function getStringSafely(obj: any, path: string, defaultValue: string = ''): string {
-  try {
-    const parts = path.split('.');
-    let current = obj;
-    
-    for (const part of parts) {
-      if (current === null || current === undefined) {
-        return defaultValue;
-      }
-      current = current[part];
-    }
-    
-    return typeof current === 'string' ? current : defaultValue;
-  } catch (e) {
-    return defaultValue;
-  }
-}
+import { logDebug, logError } from "./logging.ts";
 
-export function getArraySafely(obj: any, path: string, minLength: number = 0): string[] {
-  try {
-    const parts = path.split('.');
-    let current = obj;
-    
-    for (const part of parts) {
-      if (current === null || current === undefined) {
-        return minLength > 0 ? Array(minLength).fill('') : [];
-      }
-      current = current[part];
-    }
-    
-    if (!Array.isArray(current)) {
-      return minLength > 0 ? Array(minLength).fill('') : [];
-    }
-    
-    // Filter out non-string values
-    const filteredArray = current.filter(item => typeof item === 'string');
-    
-    // If we don't have enough items, pad the array
-    if (minLength > 0 && filteredArray.length < minLength) {
-      return [...filteredArray, ...Array(minLength - filteredArray.length).fill('')];
-    }
-    
-    return filteredArray;
-  } catch (e) {
-    return minLength > 0 ? Array(minLength).fill('') : [];
-  }
-}
-
-export function generateOverview(analysisContent: any): string {
-  // Default overview if we can't generate a proper one
-  const defaultOverview = "Your Deep Insight Analysis reveals a unique cognitive and emotional profile shaped by your individual experiences and perspectives. The analysis provides a comprehensive view of your personality traits, thinking patterns, emotional architecture, and interpersonal dynamics.";
+/**
+ * A robust function to clean and parse JSON from OpenAI responses
+ * Handles various edge cases including markdown code blocks, single quotes,
+ * unquoted property names, and other common JSON formatting issues
+ */
+export async function cleanAndParseJSON(rawContent: string): Promise<any> {
+  logDebug("Starting advanced JSON cleaning and parsing process");
+  
+  // Remove any markdown code block formatting
+  let jsonString = rawContent.trim();
   
   try {
-    // Attempt to extract key components from various sections
-    const primaryTrait = getStringSafely(analysisContent, 'coreTraits.primary');
-    const cognitiveStyle = getStringSafely(analysisContent, 'cognitivePatterning.decisionMaking');
-    const emotionalStyle = getStringSafely(analysisContent, 'emotionalArchitecture.emotionalAwareness');
-    const interpersonalStyle = getStringSafely(analysisContent, 'interpersonalDynamics.communicationPattern');
-    const primaryMotivators = getArraySafely(analysisContent, 'motivationalProfile.primaryDrivers', 1)[0];
-    
-    // Only generate a custom overview if we have enough data
-    if (primaryTrait && cognitiveStyle && emotionalStyle) {
-      return `Your personality analysis reveals you as primarily a ${primaryTrait}. ${cognitiveStyle} When it comes to emotions, ${emotionalStyle.toLowerCase()} In interpersonal dynamics, ${interpersonalStyle.toLowerCase()} ${primaryMotivators ? `You're primarily motivated by ${primaryMotivators.toLowerCase()}.` : ''}`;
+    // First try direct parsing - maybe it's already valid JSON
+    try {
+      return JSON.parse(jsonString);
+    } catch (directError) {
+      logDebug("Direct JSON parse failed, attempting cleanup");
     }
     
-    return defaultOverview;
-  } catch (e) {
-    return defaultOverview;
+    // Extract JSON from code blocks if present
+    if (jsonString.includes("```")) {
+      logDebug("Detected code blocks in response");
+      const jsonBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonBlockMatch && jsonBlockMatch[1]) {
+        jsonString = jsonBlockMatch[1].trim();
+        logDebug("Extracted content from code block");
+      }
+    }
+    
+    // Attempt to parse at this stage
+    try {
+      return JSON.parse(jsonString);
+    } catch (blockError) {
+      logDebug("Code block JSON parse failed, attempting more aggressive cleanup");
+    }
+    
+    // Apply comprehensive JSON cleaning
+    logDebug("Starting comprehensive JSON sanitization");
+    
+    // 1. Normalize string by replacing any unusual quotes or whitespace
+    jsonString = jsonString.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+    
+    // 2. Replace single-quoted property names with double quotes
+    jsonString = jsonString.replace(/'([^']+?)'\s*:/g, '"$1":');
+    
+    // 3. Replace unquoted property names with double quotes (handles alphanumeric and underscores)
+    jsonString = jsonString.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":');
+    
+    // 4. Replace single-quoted string values with double quotes (avoiding apostrophes in words)
+    jsonString = jsonString.replace(/:\s*'([^']*)'/g, ': "$1"');
+    
+    // 5. Fix trailing commas before closing braces and brackets
+    jsonString = jsonString.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+    
+    // 6. Fix missing commas between properties
+    jsonString = jsonString.replace(/}(\s*)"([^"]+)":/g, '},$1"$2":');
+    jsonString = jsonString.replace(/](\s*)"([^"]+)":/g, '],$1"$2":');
+    
+    // 7. Fix JavaScript values not valid in JSON
+    jsonString = jsonString
+      .replace(/:\s*undefined/g, ': null')
+      .replace(/:\s*NaN/g, ': null')
+      .replace(/:\s*Infinity/g, ': null');
+    
+    // 8. Balance brackets if needed
+    const openBraces = (jsonString.match(/{/g) || []).length;
+    const closeBraces = (jsonString.match(/}/g) || []).length;
+    if (openBraces > closeBraces) {
+      jsonString += '}';
+      logDebug(`Balanced missing closing braces (${openBraces - closeBraces})`);
+    }
+    
+    // 9. Ensure the string starts with a proper JSON object
+    if (!jsonString.trim().startsWith('{')) {
+      const objectStart = jsonString.indexOf('{');
+      if (objectStart > -1) {
+        jsonString = jsonString.substring(objectStart);
+        logDebug("Trimmed content before first {");
+      }
+    }
+
+    // 10. Ensure it ends with a proper JSON object close
+    const lastBrace = jsonString.lastIndexOf('}');
+    if (lastBrace > -1 && lastBrace < jsonString.length - 1) {
+      jsonString = jsonString.substring(0, lastBrace + 1);
+      logDebug("Trimmed content after last }");
+    }
+    
+    // Try parsing again after cleaning
+    try {
+      return JSON.parse(jsonString);
+    } catch (cleanError) {
+      logDebug("Comprehensive cleaning still produced invalid JSON, attempting JSON5 fallback parsing");
+      throw cleanError;
+    }
+  } catch (error) {
+    // Last resort: try to extract any valid JSON object
+    logError(error, "JSON parsing process");
+    logDebug("Attempting last-resort JSON extraction");
+    
+    try {
+      // Try to find anything that looks like a JSON object
+      const objMatch = rawContent.match(/{[\s\S]*}/);
+      if (objMatch) {
+        const extractedJson = objMatch[0];
+        
+        // Apply the same cleanups as before to this extracted content
+        let finalJson = extractedJson
+          .replace(/'([^']+?)'\s*:/g, '"$1":')
+          .replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '"$1":')
+          .replace(/:\s*'([^']*)'/g, ': "$1"')
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']');
+        
+        try {
+          return JSON.parse(finalJson);
+        } catch (finalError) {
+          logError(finalError, "All JSON parsing attempts failed");
+          throw finalError;
+        }
+      } else {
+        throw new Error("Could not find a valid JSON object in the response");
+      }
+    } catch (extractError) {
+      logError(extractError, "All JSON parsing attempts failed");
+      throw extractError;
+    }
   }
 }
