@@ -23,6 +23,76 @@ interface DatabaseBigMeAnalysis {
   created_at: string;
 }
 
+// Default empty analysis with all required arrays initialized
+const defaultAnalysis: BigMeAnalysisResult = {
+  cognitivePatterning: {
+    decisionMaking: "Not yet analyzed",
+    learningStyle: "Not yet analyzed",
+    attention: "Not yet analyzed",
+    problemSolvingApproach: "Not yet analyzed",
+    informationProcessing: "Not yet analyzed",
+    analyticalTendencies: "Not yet analyzed"
+  },
+  emotionalArchitecture: {
+    emotionalAwareness: "Not yet analyzed",
+    regulationStyle: "Not yet analyzed",
+    empathicCapacity: "Not yet analyzed",
+    emotionalComplexity: "Not yet analyzed",
+    stressResponse: "Not yet analyzed",
+    emotionalResilience: "Not yet analyzed"
+  },
+  interpersonalDynamics: {
+    attachmentStyle: "Not yet analyzed",
+    communicationPattern: "Not yet analyzed",
+    conflictResolution: "Not yet analyzed",
+    relationshipNeeds: "Not yet analyzed",
+    socialBoundaries: "Not yet analyzed",
+    groupDynamics: "Not yet analyzed",
+    compatibilityProfile: "Not yet analyzed",
+    compatibleTypes: ["Not yet analyzed"],
+    challengingRelationships: ["Not yet analyzed"]
+  },
+  coreTraits: {
+    primary: "Not yet analyzed",
+    secondary: "Not yet analyzed",
+    tertiaryTraits: ["Not yet analyzed"],
+    strengths: ["Not yet analyzed"],
+    challenges: ["Not yet analyzed"],
+    adaptivePatterns: ["Not yet analyzed"],
+    potentialBlindSpots: ["Not yet analyzed"]
+  },
+  careerInsights: {
+    naturalStrengths: ["Not yet analyzed"],
+    workplaceNeeds: ["Not yet analyzed"],
+    leadershipStyle: "Not yet analyzed",
+    idealWorkEnvironment: "Not yet analyzed",
+    careerPathways: ["Not yet analyzed"],
+    professionalChallenges: ["Not yet analyzed"],
+    potentialRoles: ["Not yet analyzed"]
+  },
+  motivationalProfile: {
+    primaryDrivers: ["Not yet analyzed"],
+    secondaryDrivers: ["Not yet analyzed"],
+    inhibitors: ["Not yet analyzed"],
+    values: ["Not yet analyzed"],
+    aspirations: "Not yet analyzed",
+    fearPatterns: "Not yet analyzed"
+  },
+  growthPotential: {
+    developmentAreas: ["Not yet analyzed"],
+    recommendations: ["Not yet analyzed"],
+    specificActionItems: ["Not yet analyzed"],
+    longTermTrajectory: "Not yet analyzed",
+    potentialPitfalls: ["Not yet analyzed"],
+    growthMindsetIndicators: "Not yet analyzed"
+  }
+};
+
+// Helper function to ensure arrays exist
+const ensureArray = (arr: any[] | undefined, defaultValue: string[] = ["Not available"]): string[] => {
+  return Array.isArray(arr) && arr.length > 0 ? arr : defaultValue;
+};
+
 const BigMeResultsPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const { user } = useAuth();
@@ -69,7 +139,49 @@ const BigMeResultsPage: React.FC = () => {
         if (error) throw error;
         if (!data) throw new Error("Analysis not found");
         
-        setAnalysis(data.analysis_result);
+        // Normalize the analysis data to ensure all required fields exist
+        const normalizedAnalysis = {
+          ...defaultAnalysis,
+          ...data.analysis_result
+        };
+        
+        // Ensure all arrays exist
+        if (normalizedAnalysis.coreTraits) {
+          normalizedAnalysis.coreTraits.tertiaryTraits = ensureArray(normalizedAnalysis.coreTraits.tertiaryTraits);
+          normalizedAnalysis.coreTraits.strengths = ensureArray(normalizedAnalysis.coreTraits.strengths);
+          normalizedAnalysis.coreTraits.challenges = ensureArray(normalizedAnalysis.coreTraits.challenges);
+          normalizedAnalysis.coreTraits.adaptivePatterns = ensureArray(normalizedAnalysis.coreTraits.adaptivePatterns);
+          normalizedAnalysis.coreTraits.potentialBlindSpots = ensureArray(normalizedAnalysis.coreTraits.potentialBlindSpots);
+        }
+        
+        if (normalizedAnalysis.careerInsights) {
+          normalizedAnalysis.careerInsights.naturalStrengths = ensureArray(normalizedAnalysis.careerInsights.naturalStrengths);
+          normalizedAnalysis.careerInsights.workplaceNeeds = ensureArray(normalizedAnalysis.careerInsights.workplaceNeeds);
+          normalizedAnalysis.careerInsights.careerPathways = ensureArray(normalizedAnalysis.careerInsights.careerPathways);
+          normalizedAnalysis.careerInsights.professionalChallenges = ensureArray(normalizedAnalysis.careerInsights.professionalChallenges);
+          normalizedAnalysis.careerInsights.potentialRoles = ensureArray(normalizedAnalysis.careerInsights.potentialRoles);
+        }
+        
+        if (normalizedAnalysis.motivationalProfile) {
+          normalizedAnalysis.motivationalProfile.primaryDrivers = ensureArray(normalizedAnalysis.motivationalProfile.primaryDrivers);
+          normalizedAnalysis.motivationalProfile.secondaryDrivers = ensureArray(normalizedAnalysis.motivationalProfile.secondaryDrivers);
+          normalizedAnalysis.motivationalProfile.inhibitors = ensureArray(normalizedAnalysis.motivationalProfile.inhibitors);
+          normalizedAnalysis.motivationalProfile.values = ensureArray(normalizedAnalysis.motivationalProfile.values);
+        }
+        
+        if (normalizedAnalysis.growthPotential) {
+          normalizedAnalysis.growthPotential.developmentAreas = ensureArray(normalizedAnalysis.growthPotential.developmentAreas);
+          normalizedAnalysis.growthPotential.recommendations = ensureArray(normalizedAnalysis.growthPotential.recommendations);
+          normalizedAnalysis.growthPotential.specificActionItems = ensureArray(normalizedAnalysis.growthPotential.specificActionItems);
+          normalizedAnalysis.growthPotential.potentialPitfalls = ensureArray(normalizedAnalysis.growthPotential.potentialPitfalls);
+        }
+        
+        if (normalizedAnalysis.interpersonalDynamics) {
+          normalizedAnalysis.interpersonalDynamics.compatibleTypes = ensureArray(normalizedAnalysis.interpersonalDynamics.compatibleTypes);
+          normalizedAnalysis.interpersonalDynamics.challengingRelationships = ensureArray(normalizedAnalysis.interpersonalDynamics.challengingRelationships);
+        }
+        
+        setAnalysis(normalizedAnalysis);
       } catch (error) {
         console.error("Error fetching analysis:", error);
         setError(error instanceof Error ? error.message : "An error occurred");
