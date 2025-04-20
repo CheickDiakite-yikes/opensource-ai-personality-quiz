@@ -11,8 +11,20 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
   const defaultData = {
     primary: "Analytical Thinker",
     secondary: "Balanced Communicator",
-    strengths: ["Logical reasoning", "Detail orientation", "Structured approach", "Problem solving", "Critical thinking"],
-    challenges: ["Perfectionism", "Overthinking", "Difficulty with ambiguity", "Balancing details with big picture", "Stress management"]
+    strengths: [
+      "Logical reasoning", 
+      "Detail orientation", 
+      "Structured approach", 
+      "Problem solving", 
+      "Critical thinking"
+    ],
+    challenges: [
+      "Perfectionism", 
+      "Overthinking", 
+      "Difficulty with ambiguity", 
+      "Balancing details with big picture", 
+      "Stress management"
+    ]
   };
   
   // Use default data if data is null
@@ -22,9 +34,9 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
   const processArrayItems = (items: any[] | undefined, defaultItems: string[]): string[] => {
     if (!items || !Array.isArray(items) || items.length === 0) return defaultItems;
     
-    // If we have fewer than 3 items, add some defaults
-    if (items.length < 3) {
-      return [...items.map(item => processItem(item)), ...defaultItems.slice(0, 3 - items.length)];
+    // If we have fewer than 5 items, add some defaults
+    if (items.length < 5) {
+      return [...items.map(item => processItem(item)), ...defaultItems.slice(0, 5 - items.length)];
     }
     
     return items.map(item => processItem(item));
@@ -39,12 +51,14 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
       if ('description' in item) return item.description;
       if ('trait' in item) return item.trait;
       if ('name' in item) return item.name;
+      if ('text' in item) return item.text;
+      if ('value' in item) return item.value;
       
       // Get the first key-value pair
       const key = Object.keys(item)[0];
       if (key) return `${key}: ${item[key]}`;
     }
-    return String(item).replace(/[{}]/g, '');
+    return String(item || '').replace(/[{}]/g, '');
   };
   
   // Ensure strengths and challenges are always arrays of strings with minimum content
