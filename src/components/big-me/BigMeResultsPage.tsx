@@ -14,6 +14,7 @@ import BigMeCareerSection from "./results-sections/BigMeCareerSection";
 import BigMeMotivationSection from "./results-sections/BigMeMotivationSection";
 import BigMeGrowthSection from "./results-sections/BigMeGrowthSection";
 import BigMeResultsHeader from "./results-sections/BigMeResultsHeader";
+import { toast } from "sonner";
 
 interface DatabaseBigMeAnalysis {
   id: string;
@@ -144,16 +145,20 @@ const BigMeResultsPage: React.FC = () => {
         console.log("Raw analysis data:", data);
         setRawResponse(data);
         
-        // Check if analysis_result exists
+        // Check if analysis_result exists and directly use it
         if (!data.analysis_result) {
           console.error("Analysis result is missing or empty");
           throw new Error("Analysis data is incomplete");
         }
         
+        // Extract the analysis result directly
+        const analysisResult = data.analysis_result;
+        console.log("Direct analysis_result content:", analysisResult);
+        
         // Normalize the analysis data to ensure all required fields exist
         const normalizedAnalysis = {
           ...defaultAnalysis,
-          ...data.analysis_result
+          ...analysisResult
         };
         
         // More thorough checking of each section
@@ -205,10 +210,12 @@ const BigMeResultsPage: React.FC = () => {
         // Add debug logging
         console.log("Normalized analysis prepared:", normalizedAnalysis);
         
+        toast.success("Analysis data loaded successfully");
         setAnalysis(normalizedAnalysis);
       } catch (error) {
         console.error("Error fetching analysis:", error);
         setError(error instanceof Error ? error.message : "An error occurred");
+        toast.error("Failed to load analysis");
       } finally {
         setLoading(false);
       }
