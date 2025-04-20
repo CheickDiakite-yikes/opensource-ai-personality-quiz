@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getDeepInsightQuestions } from "@/utils/deep-insight/questionBank";
 import { useDeepInsightState } from "../hooks/useDeepInsightState";
+import { toast } from "sonner";
 
 interface AnalysisErrorStateProps {
   error: string;
@@ -23,6 +24,7 @@ const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({
 
   const handleStartOver = () => {
     resetResponses();
+    toast.info("Starting a fresh assessment");
     navigate("/deep-insight");
   };
 

@@ -17,15 +17,30 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
   
   // Use default data if data is null
   const traitData = data || defaultData;
+
+  // Process strengths and challenges to handle various formats
+  const processArrayItems = (items: any[] | undefined): string[] => {
+    if (!items || !Array.isArray(items)) return [];
+    
+    return items.map(item => {
+      if (typeof item === 'string') {
+        return item;
+      } else if (typeof item === 'object' && item !== null) {
+        // If it's an object, try to extract meaningful information
+        if ('description' in item) return item.description;
+        if ('trait' in item) return item.trait;
+        
+        // Get the first key-value pair
+        const key = Object.keys(item)[0];
+        if (key) return `${key}: ${item[key]}`;
+      }
+      return String(item).replace(/[{}]/g, '');
+    });
+  };
   
   // Ensure strengths and challenges are always arrays of strings
-  const safeStrengths = Array.isArray(traitData.strengths) 
-    ? traitData.strengths.filter(item => typeof item === 'string')
-    : [];
-    
-  const safeChallenges = Array.isArray(traitData.challenges)
-    ? traitData.challenges.filter(item => typeof item === 'string')
-    : [];
+  const safeStrengths = processArrayItems(traitData.strengths);
+  const safeChallenges = processArrayItems(traitData.challenges);
   
   return (
     <div className="space-y-6">
@@ -37,12 +52,12 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-medium mb-2">Primary Trait</h3>
-              <p className="text-muted-foreground">{String(traitData.primary)}</p>
+              <p className="text-muted-foreground">{String(traitData.primary || "")}</p>
             </div>
             
             <div>
               <h3 className="text-xl font-medium mb-2">Secondary Trait</h3>
-              <p className="text-muted-foreground">{String(traitData.secondary)}</p>
+              <p className="text-muted-foreground">{String(traitData.secondary || "")}</p>
             </div>
           </div>
         </CardContent>
@@ -54,11 +69,15 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
             <CardTitle className="text-green-700 dark:text-green-400">Strengths</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <ul className="list-disc ml-6 space-y-2">
-              {safeStrengths.map((strength, index) => (
-                <li key={index} className="text-muted-foreground">{strength}</li>
-              ))}
-            </ul>
+            {safeStrengths.length > 0 ? (
+              <ul className="list-disc ml-6 space-y-2">
+                {safeStrengths.map((strength, index) => (
+                  <li key={index} className="text-muted-foreground">{strength}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground italic">No strengths data available</p>
+            )}
           </CardContent>
         </Card>
         
@@ -67,11 +86,15 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
             <CardTitle className="text-red-700 dark:text-red-400">Challenges</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <ul className="list-disc ml-6 space-y-2">
-              {safeChallenges.map((challenge, index) => (
-                <li key={index} className="text-muted-foreground">{challenge}</li>
-              ))}
-            </ul>
+            {safeChallenges.length > 0 ? (
+              <ul className="list-disc ml-6 space-y-2">
+                {safeChallenges.map((challenge, index) => (
+                  <li key={index} className="text-muted-foreground">{challenge}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground italic">No challenges data available</p>
+            )}
           </CardContent>
         </Card>
       </div>

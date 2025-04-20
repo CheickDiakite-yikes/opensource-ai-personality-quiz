@@ -66,6 +66,8 @@ Guidelines for analysis:
 - **DO NOT include markdown formatting, especially no \`\`\` blocks.**
 - **DO NOT include any explanatory text before or after the JSON.**
 - **Ensure the JSON can be directly parsed with JSON.parse() without any modifications.**
+- **If a field is marked as an array, ALWAYS populate it with values, NEVER leave it empty.**
+- **ALWAYS include strengths and challenges arrays with at least 3 items each.**
 
 Output with this exact JSON schema:
 

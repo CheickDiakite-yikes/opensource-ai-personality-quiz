@@ -120,9 +120,10 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             samplingStrategy
           });
           
-          // Enhanced system prompt with strict formatting instructions
+          // Enhanced system prompt with strict formatting instructions and emphasis on completeness
           const enhancedSystemPrompt = SYSTEM_PROMPT + 
             "\n\nCRITICAL: Return ONLY valid JSON with DOUBLE QUOTES for ALL property names and string values." + 
+            "\n\nYou MUST populate ALL arrays, especially strengths and challenges with AT LEAST 3 items in each array." + 
             "\n\nIf in doubt about data, provide REASONABLE DEFAULTS rather than leaving fields empty." + 
             "\n\nEnsure to generate a COMPLETE analysis with ALL required fields even if working with limited data.";
           
@@ -156,12 +157,38 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             // Attempt to parse JSON with enhanced error handling
             const parsedContent = JSON.parse(rawContent);
             
-            // Validate that we have critical minimum content
+            // Validate that we have critical minimum content and ensure arrays are populated
             if (!parsedContent.coreTraits || !parsedContent.cognitivePatterning) {
               throw new Error("Missing critical sections in response");
             }
             
-            return responseData;
+            // Validate and populate empty arrays with defaults
+            if (!parsedContent.coreTraits.strengths || !Array.isArray(parsedContent.coreTraits.strengths) || parsedContent.coreTraits.strengths.length === 0) {
+              parsedContent.coreTraits.strengths = [
+                "Adaptability in changing situations",
+                "Analytical approach to problems",
+                "Creative thinking and innovation"
+              ];
+            }
+            
+            if (!parsedContent.coreTraits.challenges || !Array.isArray(parsedContent.coreTraits.challenges) || parsedContent.coreTraits.challenges.length === 0) {
+              parsedContent.coreTraits.challenges = [
+                "Tendency toward perfectionism",
+                "Occasional difficulty with time management",
+                "Balancing analytical thinking with intuition"
+              ];
+            }
+            
+            return {
+              ...responseData,
+              choices: [{
+                ...responseData.choices[0],
+                message: {
+                  ...responseData.choices[0].message,
+                  content: JSON.stringify(parsedContent)
+                }
+              }]
+            };
           } catch (jsonError) {
             logError(jsonError, "JSON parsing error in OpenAI response");
             
@@ -169,6 +196,23 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             const cleanedJson = await cleanAndParseJSON(rawContent);
             if (cleanedJson) {
               logDebug("Successfully recovered JSON after cleaning");
+              
+              // Fix any missing arrays with defaults
+              if (!cleanedJson.coreTraits.strengths || !Array.isArray(cleanedJson.coreTraits.strengths) || cleanedJson.coreTraits.strengths.length === 0) {
+                cleanedJson.coreTraits.strengths = [
+                  "Adaptability in changing situations",
+                  "Analytical approach to problems",
+                  "Creative thinking and innovation"
+                ];
+              }
+              
+              if (!cleanedJson.coreTraits.challenges || !Array.isArray(cleanedJson.coreTraits.challenges) || cleanedJson.coreTraits.challenges.length === 0) {
+                cleanedJson.coreTraits.challenges = [
+                  "Tendency toward perfectionism",
+                  "Occasional difficulty with time management",
+                  "Balancing analytical thinking with intuition"
+                ];
+              }
               
               // Create a new response object with the cleaned content
               return {

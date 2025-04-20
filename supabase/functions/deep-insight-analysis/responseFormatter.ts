@@ -31,6 +31,28 @@ export function formatAnalysisResponse(analysisContent: any) {
   const overview = contentWarning ? 
     `${contentWarning} ${generateOverview(analysisContent)}` : 
     generateOverview(analysisContent);
+    
+  // Ensure coreTraits are properly populated even if missing
+  if (!analysisContent.coreTraits || typeof analysisContent.coreTraits !== 'object') {
+    analysisContent.coreTraits = {};
+  }
+  
+  // Ensure strengths and challenges are always arrays with content
+  if (!analysisContent.coreTraits.strengths || !Array.isArray(analysisContent.coreTraits.strengths) || analysisContent.coreTraits.strengths.length === 0) {
+    analysisContent.coreTraits.strengths = [
+      "Adaptability in changing situations",
+      "Analytical approach to problems",
+      "Creative thinking and innovation"
+    ];
+  }
+  
+  if (!analysisContent.coreTraits.challenges || !Array.isArray(analysisContent.coreTraits.challenges) || analysisContent.coreTraits.challenges.length === 0) {
+    analysisContent.coreTraits.challenges = [
+      "Tendency toward perfectionism",
+      "Occasional difficulty with time management",
+      "Balancing analytical thinking with intuition"
+    ];
+  }
 
   const analysis = {
     id: crypto.randomUUID(),
