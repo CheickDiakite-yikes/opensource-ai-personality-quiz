@@ -19,7 +19,7 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
     top_p: API_CONFIG.TOP_P,
     frequency_penalty: API_CONFIG.FREQUENCY_PENALTY,
     stream: false,
-    response_format: { type: "json_object" }, // Enable strict JSON mode
+    response_format: { type: "json_object" }, // Ensure JSON format is enforced
   };
 
   logDebug("createOpenAIRequest payload:", payload);

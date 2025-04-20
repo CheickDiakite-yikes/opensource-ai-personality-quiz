@@ -108,6 +108,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           logDebug(`Successfully received OpenAI response on attempt ${attemptCount + 1}`);
           console.timeEnd("openai-api-call");
           
+          // Ensure strict JSON format in the response
           return await handleOpenAIResponse(openAIRes);
         } catch (error) {
           clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
