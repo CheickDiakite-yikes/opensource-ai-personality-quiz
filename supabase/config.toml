@@ -5,3 +5,7 @@ project_id = "fhmvdprcmhkolyzuecrr"
 verify_jwt = true
 timeout_seconds = 180
 
+[functions.big-me-analysis]
+verify_jwt = true
+timeout_seconds = 300
+

@@ -18,6 +18,10 @@ const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 const DeepInsightAssessmentPage = lazy(() => import("@/components/deep-insight/DeepInsightAssessmentPage"));
 const DeepInsightResultsPage = lazy(() => import("@/components/deep-insight/DeepInsightResultsPage"));
 
+// New Big Me components
+const BigMeAssessmentPage = lazy(() => import("@/components/big-me/BigMeAssessmentPage"));
+const BigMeResultsPage = lazy(() => import("@/components/big-me/BigMeResultsPage"));
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -112,7 +116,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* New Deep Insight Routes */}
+          {/* Deep Insight Routes */}
           <Route path="deep-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
@@ -124,6 +128,22 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <DeepInsightResultsPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          {/* New Big Me Routes */}
+          <Route path="big-me" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <BigMeAssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="big-me/results/:id?" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <BigMeResultsPage />
               </Suspense>
             </PrivateRoute>
           } />
