@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -18,8 +18,47 @@ const DeepInsightResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { analysis, loading, error, fetchAnalysis } = useAnalysisFetching();
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const [retryInterval, setRetryInterval] = useState<number | null>(null);
+  
+  // Auto-retry mechanism for in-progress analyses
+  useEffect(() => {
+    // If analysis is processing and we haven't exceeded retry limits
+    if (analysis && error && error.includes("processing") && retryCount < 5) {
+      const interval = window.setTimeout(() => {
+        console.log(`Auto-retrying analysis fetch (attempt ${retryCount + 1})...`);
+        fetchAnalysis()
+          .then(() => {
+            console.log("Auto-retry completed");
+          })
+          .catch(err => {
+            console.error("Auto-retry failed:", err);
+          })
+          .finally(() => {
+            setRetryCount(prev => prev + 1);
+          });
+      }, 10000); // Wait 10 seconds between retries
+      
+      setRetryInterval(interval);
+      
+      return () => {
+        if (retryInterval) {
+          window.clearTimeout(retryInterval);
+        }
+      };
+    }
+    
+    // Clear interval if processing completes or we hit retry limit
+    return () => {
+      if (retryInterval) {
+        window.clearTimeout(retryInterval);
+      }
+    };
+  }, [analysis, error, retryCount, fetchAnalysis]);
   
   const handleRetry = async () => {
+    if (isRetrying) return;
+    
     setIsRetrying(true);
     try {
       toast.info("Retrying analysis fetch...");
@@ -27,6 +66,7 @@ const DeepInsightResultsPage: React.FC = () => {
       toast.success("Analysis refreshed!");
     } catch (err) {
       toast.error("Failed to refresh analysis");
+      console.error("Manual retry failed:", err);
     } finally {
       setIsRetrying(false);
     }
@@ -37,7 +77,7 @@ const DeepInsightResultsPage: React.FC = () => {
   }
 
   if (error && !analysis) {
-    return <AnalysisErrorState error={error} />;
+    return <AnalysisErrorState error={error} onRetry={handleRetry} isRetrying={isRetrying} />;
   }
   
   // Show partial analysis with an error message
@@ -72,7 +112,9 @@ const DeepInsightResultsPage: React.FC = () => {
               responsePatterns={analysis.response_patterns}
             />
             
-            <TopTraitsSection coreTraits={analysis.core_traits} />
+            {analysis.core_traits && (
+              <TopTraitsSection coreTraits={analysis.core_traits} />
+            )}
             
             <DeepInsightTabs analysis={analysis} />
             

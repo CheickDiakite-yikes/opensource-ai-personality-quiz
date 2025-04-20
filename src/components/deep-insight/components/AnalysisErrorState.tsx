@@ -1,28 +1,82 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import PageTransition from "@/components/ui/PageTransition";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getDeepInsightQuestions } from "@/utils/deep-insight/questionBank";
+import { useDeepInsightState } from "../hooks/useDeepInsightState";
 
 interface AnalysisErrorStateProps {
   error: string;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
-const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error }) => {
+const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ 
+  error,
+  onRetry,
+  isRetrying = false
+}) => {
   const navigate = useNavigate();
-  
+  const { resetResponses } = useDeepInsightState(getDeepInsightQuestions(100));
+
+  const handleStartOver = () => {
+    resetResponses();
+    navigate("/deep-insight");
+  };
+
   return (
-    <PageTransition>
-      <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6 flex flex-col items-center">
-        <Brain className="h-16 w-16 text-muted mb-4" />
-        <h1 className="text-2xl font-bold mb-4 text-center">Analysis Unavailable</h1>
-        <p className="text-muted-foreground text-center mb-6">{error}</p>
-        <Button onClick={() => navigate("/deep-insight")}>
-          Take the Assessment
-        </Button>
+    <div className="container max-w-3xl py-8 md:py-12 px-4 md:px-6">
+      <div className="mb-8 text-center space-y-2">
+        <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h1 className="text-2xl md:text-3xl font-bold">Analysis Error</h1>
+        <p className="text-muted-foreground">
+          We encountered an issue while processing your analysis.
+        </p>
       </div>
-    </PageTransition>
+
+      <Alert variant="destructive" className="mb-6">
+        <AlertTitle>Error Details</AlertTitle>
+        <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
+      </Alert>
+
+      <div className="bg-card p-6 rounded-lg border mb-6">
+        <h2 className="font-semibold mb-3">Suggested Solutions:</h2>
+        <ul className="list-disc pl-4 space-y-2 mb-6">
+          <li>Click the "Try Again" button to attempt to retrieve your analysis</li>
+          <li>Our AI model may be experiencing high demand, try again in a few minutes</li>
+          <li>Start fresh with a new assessment for best results</li>
+          <li>If problems persist, try using a different browser or device</li>
+        </ul>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          {onRetry && (
+            <Button 
+              onClick={onRetry}
+              disabled={isRetrying}
+              variant="default"
+              className="flex-1 flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
+              {isRetrying ? 'Trying...' : 'Try Again'}
+            </Button>
+          )}
+          <Button 
+            onClick={handleStartOver}
+            variant="outline"
+            className="flex-1"
+          >
+            Start Fresh Assessment
+          </Button>
+        </div>
+      </div>
+      
+      <p className="text-sm text-muted-foreground text-center">
+        Our team is automatically notified of analysis errors and is working to resolve them.
+        If this issue persists, please try again later.
+      </p>
+    </div>
   );
 };
 

@@ -19,21 +19,25 @@ serve(async (req) => {
     console.log("Deep Insight Analysis function started");
     console.time("total-processing-time");
     
-    if (!openAIApiKey) {
-      console.error("OpenAI API key not configured");
+    // Enhanced API key validation with better error message
+    if (!openAIApiKey || openAIApiKey.trim() === "") {
+      const errorMsg = "OpenAI API key not configured or invalid";
+      console.error(errorMsg);
       return createErrorResponse(
-        new Error("OpenAI API key not configured"),
+        new Error(errorMsg),
         500,
-        "The AI service is not properly configured"
+        "The AI service is not properly configured (API key issue)"
       );
     }
 
+    // Process the request and get formatted responses
     const formatted = await processRequest(req);
     if (formatted instanceof Response) return formatted;
     
-    console.log("Calling OpenAI API with proper error handling...");
+    console.log("Request processed successfully, calling OpenAI API...");
     
     try {
+      // Try the OpenAI call with improved error handling
       const openAIData = await callOpenAI(openAIApiKey, formatted);
       
       if (!openAIData || !openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {

@@ -3,15 +3,24 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 export function createErrorResponse(error: any, status: number = 500, message?: string) {
   console.error("Error details:", error);
-  console.error("Error message:", error.message);
-  console.error("Error name:", error.name);
-  console.error("Error stack:", error.stack);
+  
+  // Extract more information for debugging
+  let errorDetails = {
+    message: error.message || "Unknown error",
+    name: error.name || "Error",
+    stack: error.stack || "No stack trace",
+    cause: error.cause || "No cause information"
+  };
+  
+  console.error("Detailed error information:", JSON.stringify(errorDetails));
   
   return new Response(
     JSON.stringify({ 
       error: message || "An error occurred", 
-      details: error.message,
-      success: false 
+      details: errorDetails.message,
+      errorType: errorDetails.name,
+      success: false,
+      timestamp: new Date().toISOString()
     }), 
     { 
       status, 
@@ -26,4 +35,3 @@ export function handleRequestValidation(responses: any) {
     throw new Error("No responses provided");
   }
 }
-
