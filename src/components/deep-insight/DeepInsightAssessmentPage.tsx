@@ -147,7 +147,22 @@ const DeepInsightAssessmentPage: React.FC = () => {
         );
         
         try {
-          // Call the deep insight analysis edge function with signal from our AbortController
+          // Setup manual abort handling for the function invocation
+          const abortController = abortControllerRef.current;
+          let functionAborted = false;
+          
+          // Create a manual abort handler
+          const checkForAbort = () => {
+            if (abortController && abortController.signal.aborted) {
+              functionAborted = true;
+              throw new Error("Request was aborted");
+            }
+          };
+          
+          // Setup an interval to check for abort signals during function execution
+          const abortCheckInterval = setInterval(checkForAbort, 1000);
+          
+          // Call the deep insight analysis edge function without the signal parameter
           const analysisPromise = supabase.functions.invoke(
             'deep-insight-analysis', 
             {
@@ -157,8 +172,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
                   return acc;
                 }, {} as Record<string, string>),
                 timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
-              },
-              signal: abortControllerRef.current.signal // Pass signal to the request
+              }
             }
           );
           
@@ -172,6 +186,14 @@ const DeepInsightAssessmentPage: React.FC = () => {
               throw new Error("Analysis request timed out after 90 seconds");
             })
           ]);
+          
+          // Clear the abort check interval
+          clearInterval(abortCheckInterval);
+          
+          // Check if the request was aborted during processing
+          if (functionAborted) {
+            throw new Error("Request was aborted");
+          }
           
           if (analysisError) {
             console.error("Analysis invocation error:", analysisError);
