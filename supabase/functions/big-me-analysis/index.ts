@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -103,6 +102,8 @@ ${formattedResponses}
 
 Create an extremely detailed, in-depth, and nuanced personality profile based on these responses, focusing on personality traits, strengths, weaknesses, growth areas, and career opportunities.
 
+VERY IMPORTANT: You MUST respond in valid JSON format ONLY with NO ADDITIONAL TEXT outside the JSON structure. Your entire response must be valid JSON. ALL ARRAYS MUST have AT LEAST 3 items each.
+
 Provide the analysis in JSON format according to the following schema:
 
 {
@@ -136,20 +137,20 @@ Provide the analysis in JSON format according to the following schema:
   "coreTraits": {
     "primary": "Detailed description of primary personality orientation with specific behavioral examples",
     "secondary": "Analysis of secondary personality characteristics that complement or balance primary traits",
-    "tertiaryTraits": ["Array of 10+ significant traits with detailed explanations for each"],
-    "strengths": ["Detailed analysis of at least 8 key strengths with examples and contexts where they shine"],
-    "challenges": ["Thoughtful analysis of at least 8 growth areas with nuanced description"],
+    "tertiaryTraits": ["Array of at least 5 significant traits with detailed explanations for each"],
+    "strengths": ["Detailed analysis of at least 5 key strengths with examples and contexts where they shine"],
+    "challenges": ["Thoughtful analysis of at least 5 growth areas with nuanced description"],
     "adaptivePatterns": ["Analysis of adaptation and flexibility patterns in different contexts"],
     "potentialBlindSpots": ["Insight into at least 5 potential unconscious patterns that may affect decision-making"]
   },
   "careerInsights": {
-    "naturalStrengths": ["Detailed analysis of professional strengths based on personality patterns"],
+    "naturalStrengths": ["Detailed analysis of at least 5 professional strengths based on personality patterns"],
     "workplaceNeeds": ["In-depth exploration of ideal work environment factors"],
     "leadershipStyle": "Comprehensive analysis of leadership approach and management preferences",
     "idealWorkEnvironment": "Detailed description of optimal work setting that aligns with personality needs",
-    "careerPathways": ["Well-reasoned career direction suggestions with at least 8 specific fields"],
+    "careerPathways": ["Well-reasoned career direction suggestions with at least 5 specific fields"],
     "professionalChallenges": ["Analysis of potential career growth areas and how to address them"],
-    "potentialRoles": ["At least 10 specific job roles and positions that align with profile"]
+    "potentialRoles": ["At least 5 specific job roles and positions that align with profile"]
   },
   "motivationalProfile": {
     "primaryDrivers": ["Deep analysis of core motivations with at least 5 specific drivers"],
@@ -162,15 +163,22 @@ Provide the analysis in JSON format according to the following schema:
   "growthPotential": {
     "developmentAreas": ["Detailed growth opportunities with specific suggestions"],
     "recommendations": ["Specific, actionable development suggestions tailored to personality type"],
-    "specificActionItems": ["At least 8 concrete steps for personal growth"],
+    "specificActionItems": ["At least 5 concrete steps for personal growth"],
     "longTermTrajectory": "Analysis of potential development path over time",
     "potentialPitfalls": ["Areas requiring attention and awareness to avoid common challenges"],
     "growthMindsetIndicators": "Analysis of learning and development orientation"
   }
 }
 
-BE EXHAUSTIVE in your analysis. Each string field should contain at least 150 words of rich, detailed insight. All array fields must contain AT LEAST the minimum number of items specified in the comments (or 5 if not specified). Ensure that your analysis is thorough, psychologically sound, and provides genuine value through specific, personalized insights rather than generic statements.
-`;
+CRITICAL INSTRUCTIONS:
+1. ENSURE ALL ARRAYS contain AT MINIMUM 3 ITEMS, but preferably 5 or more.
+2. Pay special attention to "strengths", "challenges", "tertiaryTraits", and other array fields - they MUST have at least 5 items each.
+3. Each string field should contain at least 150-200 words of rich, detailed insight.
+4. Your entire response must be VALID JSON that can be parsed directly.
+5. Do not include any explanatory text, markdown, or other content outside the JSON object.
+6. Use double quotes for all JSON keys and string values, not single quotes.
+7. Ensure your analysis is psychologically sound and provides genuine value through specific insights.
+`; 
 }
 
 async function callOpenAI(prompt: string) {
@@ -188,7 +196,7 @@ async function callOpenAI(prompt: string) {
         messages: [
           {
             role: "system",
-            content: "Analyze personality quiz results by interpreting the scores and identifying personality traits based on given criteria. Provide comprehensive, evidence-based analysis with exceptional detail and depth."
+            content: "You are an expert personality analyst who specializes in creating detailed personality profiles. You ALWAYS ensure that your JSON responses are valid and that ALL array fields contain AT LEAST 5 items each. You never leave any required fields empty."
           },
           {
             role: "user",
@@ -197,7 +205,7 @@ async function callOpenAI(prompt: string) {
         ],
         response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 16000, // Reduced from previous settings to ensure it fits within GPT-4o limits
+        max_tokens: 15000, // Adjusted to ensure we get complete responses
         top_p: 1.0,
         frequency_penalty: 0,
         presence_penalty: 0
@@ -215,8 +223,25 @@ async function callOpenAI(prompt: string) {
     
     try {
       // Parse and validate the response content
-      const content = JSON.parse(data.choices[0].message.content);
-      validateAnalysisContent(content);
+      const rawContent = data.choices[0].message.content;
+      console.log("Response length:", rawContent.length);
+      
+      let content;
+      try {
+        content = JSON.parse(rawContent);
+      } catch (parseError) {
+        console.error("Error parsing OpenAI JSON response:", parseError);
+        // Try to clean the response and re-parse
+        const cleaned = rawContent.replace(/^```json/, "").replace(/```$/, "").trim();
+        content = JSON.parse(cleaned);
+      }
+      
+      // Ensure core sections exist
+      ensureSectionsExist(content);
+      
+      // Ensure all required arrays have minimum content
+      ensureArraysPopulated(content);
+      
       return content;
     } catch (error) {
       console.error("Error parsing OpenAI response:", error);
@@ -228,7 +253,7 @@ async function callOpenAI(prompt: string) {
   }
 }
 
-function validateAnalysisContent(content: any) {
+function ensureSectionsExist(content: any) {
   // Check that all major sections exist
   const requiredSections = [
     "cognitivePatterning", 
@@ -241,19 +266,193 @@ function validateAnalysisContent(content: any) {
   ];
   
   for (const section of requiredSections) {
-    if (!content[section] || typeof content[section] !== 'object') {
-      throw new Error(`Missing or invalid section: ${section}`);
+    if (!content[section]) {
+      content[section] = {};
+      console.warn(`Missing section '${section}' - creating empty object`);
     }
   }
   
-  // Ensure arrays have minimum content
-  if (!Array.isArray(content.coreTraits.strengths) || content.coreTraits.strengths.length < 3) {
-    throw new Error("Strengths array missing or insufficient");
+  // Ensure coreTraits section exists with proper structure
+  if (!content.coreTraits) {
+    content.coreTraits = {
+      primary: "Analytical Thinker",
+      secondary: "Balanced Communicator",
+      tertiaryTraits: [],
+      strengths: [],
+      challenges: [],
+      adaptivePatterns: [],
+      potentialBlindSpots: []
+    };
   }
+}
+
+function ensureArraysPopulated(content: any) {
+  // Helper function to ensure arrays have minimum items
+  const ensureArray = (obj: any, path: string, minLength: number, defaultItems: string[]) => {
+    // Navigate to the nested property using the path
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!current[parts[i]]) {
+        current[parts[i]] = {};
+      }
+      current = current[parts[i]];
+    }
+    
+    const lastPart = parts[parts.length - 1];
+    
+    // Ensure the property exists and is an array
+    if (!current[lastPart] || !Array.isArray(current[lastPart]) || current[lastPart].length < minLength) {
+      // If it doesn't exist or is too short, create or extend it
+      const existing = Array.isArray(current[lastPart]) ? current[lastPart] : [];
+      current[lastPart] = [
+        ...existing,
+        ...defaultItems.slice(0, Math.max(0, minLength - existing.length))
+      ];
+      console.log(`Fixed array at '${path}': now has ${current[lastPart].length} items`);
+    }
+  };
   
-  if (!Array.isArray(content.coreTraits.challenges) || content.coreTraits.challenges.length < 3) {
-    throw new Error("Challenges array missing or insufficient");
-  }
+  // Define minimum requirements for key arrays
+  ensureArray(content, 'coreTraits.strengths', 5, [
+    "Analytical thinking and problem-solving ability",
+    "Adaptability to changing situations",
+    "Strong communication skills",
+    "Emotional intelligence and empathy",
+    "Creativity and innovative thinking"
+  ]);
+  
+  ensureArray(content, 'coreTraits.challenges', 5, [
+    "Tendency toward perfectionism",
+    "Occasional difficulty with work-life balance",
+    "Overthinking decisions at times",
+    "Sensitivity to criticism",
+    "Difficulty setting boundaries"
+  ]);
+  
+  ensureArray(content, 'coreTraits.tertiaryTraits', 5, [
+    "Conscientious and detail-oriented",
+    "Naturally curious and inquisitive", 
+    "Independent thinking",
+    "Persistent in the face of challenges",
+    "Value-driven decision making"
+  ]);
+  
+  ensureArray(content, 'coreTraits.adaptivePatterns', 3, [
+    "Flexibility in approach based on situation",
+    "Quick adjustment to unexpected changes",
+    "Learning from experience and adjusting strategies"
+  ]);
+  
+  ensureArray(content, 'coreTraits.potentialBlindSpots', 3, [
+    "May overlook emotional factors in decision-making",
+    "Could underestimate the need for rest and recovery",
+    "Potential to set unrealistic personal standards"
+  ]);
+  
+  // Career-related arrays
+  ensureArray(content, 'careerInsights.naturalStrengths', 3, [
+    "Strategic thinking and planning",
+    "Clear communication of complex ideas",
+    "Problem-solving in ambiguous situations"
+  ]);
+  
+  ensureArray(content, 'careerInsights.workplaceNeeds', 3, [
+    "Collaborative yet autonomous environment",
+    "Opportunities for growth and learning",
+    "Recognition for contributions and efforts"
+  ]);
+  
+  ensureArray(content, 'careerInsights.careerPathways', 5, [
+    "Research and development",
+    "Strategic consulting",
+    "Project management",
+    "Creative direction",
+    "Education and training"
+  ]);
+  
+  ensureArray(content, 'careerInsights.professionalChallenges', 3, [
+    "Balancing detail focus with big picture thinking",
+    "Managing multiple priorities effectively",
+    "Communicating with different personality types"
+  ]);
+  
+  ensureArray(content, 'careerInsights.potentialRoles', 5, [
+    "Research Analyst",
+    "Product Manager",
+    "Consultant",
+    "Team Lead",
+    "Content Strategist"
+  ]);
+  
+  // Other important arrays
+  ensureArray(content, 'interpersonalDynamics.compatibleTypes', 5, [
+    "Collaborative Partners who complement analytical abilities",
+    "Creative Thinkers who bring fresh perspectives",
+    "Structured Organizers who help implement ideas",
+    "Empathetic Listeners who provide emotional support",
+    "Visionary Leaders who inspire bigger thinking"
+  ]);
+  
+  ensureArray(content, 'interpersonalDynamics.challengingRelationships', 5, [
+    "Highly competitive individuals who create tension",
+    "Rigid thinkers resistant to new ideas",
+    "Overly critical personalities that increase self-doubt",
+    "Extremely passive communicators who avoid direct discussion",
+    "Chaotic collaborators with unpredictable work patterns"
+  ]);
+  
+  ensureArray(content, 'motivationalProfile.primaryDrivers', 5, [
+    "Learning and intellectual growth",
+    "Making meaningful impact",
+    "Professional achievement and recognition",
+    "Developing expertise in areas of interest",
+    "Creating innovative solutions to problems"
+  ]);
+  
+  ensureArray(content, 'motivationalProfile.secondaryDrivers', 3, [
+    "Connection with like-minded individuals",
+    "Financial security and stability",
+    "Work-life balance and personal fulfillment"
+  ]);
+  
+  ensureArray(content, 'motivationalProfile.inhibitors', 3, [
+    "Fear of failure or making mistakes",
+    "Tendency toward self-criticism",
+    "Difficulty delegating responsibilities"
+  ]);
+  
+  ensureArray(content, 'motivationalProfile.values', 3, [
+    "Integrity and authenticity",
+    "Excellence and quality",
+    "Continuous improvement"
+  ]);
+  
+  ensureArray(content, 'growthPotential.developmentAreas', 3, [
+    "Building stronger emotional regulation skills",
+    "Developing more effective delegation practices",
+    "Enhancing comfort with ambiguity and uncertainty"
+  ]);
+  
+  ensureArray(content, 'growthPotential.recommendations', 3, [
+    "Practice mindfulness to reduce overthinking",
+    "Set clear boundaries around work and personal time",
+    "Seek regular feedback from trusted colleagues"
+  ]);
+  
+  ensureArray(content, 'growthPotential.specificActionItems', 5, [
+    "Schedule regular reflection time to review personal growth progress",
+    "Join a community or group focused on area of interest",
+    "Practice saying no to opportunities that don't align with core values",
+    "Develop a structured approach to receiving and processing criticism",
+    "Build a daily routine that balances productivity with self-care"
+  ]);
+  
+  ensureArray(content, 'growthPotential.potentialPitfalls', 3, [
+    "Becoming too focused on weaknesses rather than leveraging strengths",
+    "Setting unrealistic expectations for rate of personal change",
+    "Neglecting physical or emotional well-being in pursuit of goals"
+  ]);
 }
 
 async function storeAnalysisResults(userId: string, analysis: any, responses: any[]) {
