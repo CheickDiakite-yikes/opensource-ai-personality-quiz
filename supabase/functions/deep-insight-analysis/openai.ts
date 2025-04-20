@@ -1,4 +1,5 @@
 
+// This file is getting too long and should be refactored after this fix
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -95,7 +96,10 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       try {
         if (attemptCount > 0) {
           // Exponential backoff - wait longer for each retry
-          const backoffDelay = Math.pow(2, attemptCount) * 1000; // 2s, 4s, 8s, etc.
+          const backoffDelay = Math.min(
+            API_CONFIG.RETRY_INITIAL_DELAY * Math.pow(API_CONFIG.RETRY_BACKOFF_FACTOR, attemptCount - 1),
+            API_CONFIG.RETRY_MAX_DELAY
+          );
           logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT} after ${backoffDelay}ms delay`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
@@ -122,6 +126,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             "\n\nIf in doubt about data, provide REASONABLE DEFAULTS rather than leaving fields empty." + 
             "\n\nEnsure to generate a COMPLETE analysis with ALL required fields even if working with limited data.";
           
+          // Use main model (gpt-4o)
           const fetchPromise = createOpenAIRequest(
             openAIApiKey, 
             [

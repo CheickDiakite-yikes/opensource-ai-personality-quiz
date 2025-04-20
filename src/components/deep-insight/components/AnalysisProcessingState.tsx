@@ -1,4 +1,3 @@
-
 import React from "react";
 import { AlertTriangle, RefreshCcw, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,13 +33,37 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
     navigate("/deep-insight");
   };
 
+  // Format error message to be more user-friendly
+  const formatErrorMessage = (error: string): string => {
+    if (!error) return "Still generating your analysis...";
+    
+    let message = error;
+    
+    // Check for timeout-related errors
+    if (message.includes("timeout") || message.includes("too long") || message.includes("taking longer")) {
+      return "Your analysis is complex and taking longer than expected. We're working on it! You can see the partial results below while waiting.";
+    }
+    
+    // Check for model-related errors
+    if (message.includes("model")) {
+      return "We're optimizing your analysis with an alternative AI model. This may take a few moments longer.";
+    }
+    
+    // Keep the message short and user-friendly
+    if (message.length > 120) {
+      message = message.substring(0, 120) + "...";
+    }
+    
+    return message;
+  };
+
   return (
     <>
       <Alert variant="warning" className="mb-6">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Processing Status</AlertTitle>
         <AlertDescription>
-          {error}
+          {formatErrorMessage(error)}
           <div className="mt-2 space-x-2">
             <Button 
               variant="outline" 

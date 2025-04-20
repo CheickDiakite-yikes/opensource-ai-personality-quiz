@@ -26,6 +26,37 @@ const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({
     navigate("/deep-insight");
   };
 
+  // Cleanse error message to be more user-friendly
+  const sanitizeErrorMessage = (error: string): string => {
+    // Hide technical details and API keys
+    if (!error) return "Unknown error occurred";
+    
+    let cleanedError = error;
+    
+    // Remove any potential API keys or tokens
+    cleanedError = cleanedError.replace(/Bearer [a-zA-Z0-9._-]+/g, 'Bearer [HIDDEN]');
+    cleanedError = cleanedError.replace(/sk-[a-zA-Z0-9]{10,}/g, 'sk-[HIDDEN]');
+    
+    // Replace technical errors with user-friendly messages
+    if (cleanedError.includes("timeout") || cleanedError.includes("ECONN")) {
+      return "The analysis is taking longer than expected. Please try again.";
+    }
+    
+    if (cleanedError.includes("rate limit") || cleanedError.includes("429")) {
+      return "Our analysis service is experiencing high demand. Please try again in a few minutes.";
+    }
+    
+    if (cleanedError.includes("ENOTFOUND") || cleanedError.includes("ENOENT")) {
+      return "There was a network connection issue. Please check your internet connection and try again.";
+    }
+    
+    if (cleanedError.length > 150) {
+      return cleanedError.substring(0, 150) + "...";
+    }
+    
+    return cleanedError;
+  };
+
   return (
     <div className="container max-w-3xl py-8 md:py-12 px-4 md:px-6">
       <div className="mb-8 text-center space-y-2">
@@ -38,7 +69,7 @@ const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({
 
       <Alert variant="destructive" className="mb-6">
         <AlertTitle>Error Details</AlertTitle>
-        <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
+        <AlertDescription className="whitespace-pre-wrap">{sanitizeErrorMessage(error)}</AlertDescription>
       </Alert>
 
       <div className="bg-card p-6 rounded-lg border mb-6">

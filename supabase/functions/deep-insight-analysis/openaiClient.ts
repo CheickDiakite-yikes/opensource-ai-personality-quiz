@@ -11,6 +11,12 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
     ...corsHeaders,
   };
 
+  // Add additional headers to potentially improve reliability
+  const enhancedHeaders = {
+    ...headers,
+    "OpenAI-Beta": "responsiveness=high" // Request higher responsiveness
+  };
+
   const payload = {
     model: API_CONFIG.DEFAULT_MODEL,
     messages: messages,
@@ -24,13 +30,16 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
 
   logDebug("OpenAI request payload model:", payload.model);
   logDebug("OpenAI request max tokens:", maxTokens);
+  
+  // Log more details about the request for diagnostics
+  logDebug(`OpenAI request payload size: ${JSON.stringify(payload).length} bytes`);
 
   return withRetry(
     async () => {
       try {
         const response = await fetch(API_CONFIG.BASE_URL, {
           method: "POST",
-          headers: headers,
+          headers: enhancedHeaders,
           body: JSON.stringify(payload),
           signal: signal,
         });
@@ -47,7 +56,11 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
             headers: Object.fromEntries([...response.headers.entries()].filter(h => !h[0].toLowerCase().includes('auth')))
           }, "OpenAI API Error Response");
           
-          throw new Error(errorMessage);
+          // Enhanced error with more context
+          const error = new Error(errorMessage);
+          (error as any).statusCode = statusCode;
+          (error as any).responseHeaders = Object.fromEntries([...response.headers.entries()].filter(h => !h[0].toLowerCase().includes('auth')));
+          throw error;
         }
 
         return response;
@@ -57,8 +70,13 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
           message: error.message || "Unknown fetch error",
           name: error.name || "FetchError",
           cause: error.cause ? (error.cause.message || String(error.cause)) : "No cause provided",
-          stack: error.stack
+          stack: error.stack,
+          aborted: error.name === 'AbortError' ? true : false
         };
+        
+        if (error.name === 'AbortError') {
+          logDebug("Request aborted due to timeout or manual abort");
+        }
         
         logError(errorDetail, "OpenAI API Request Failed");
         throw error; // Re-throw for retry mechanism
@@ -66,11 +84,11 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
     },
     {
       maxAttempts: API_CONFIG.RETRY_COUNT,
-      initialDelay: 2000,
-      maxDelay: 10000,
-      backoffFactor: 2
+      initialDelay: API_CONFIG.RETRY_INITIAL_DELAY,
+      maxDelay: API_CONFIG.RETRY_MAX_DELAY,
+      backoffFactor: API_CONFIG.RETRY_BACKOFF_FACTOR
     },
-    "OpenAI API request"
+    `OpenAI API request (${API_CONFIG.DEFAULT_MODEL})`
   );
 }
 
@@ -79,21 +97,33 @@ export async function handleOpenAIResponse(response: Response) {
     const data = await response.json();
     logDebug("OpenAI Response received successfully");
     
-    // Validate response structure
+    // Enhanced validation and logging
     if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-      logError({
+      const errorDetails = {
         message: "Invalid OpenAI response structure - missing choices array",
-        response: data
-      }, "OpenAI Response Structure Error");
+        response: JSON.stringify(data).substring(0, 1000) // Log first 1000 chars to avoid huge logs
+      };
+      logError(errorDetails, "OpenAI Response Structure Error");
       throw new Error("Invalid OpenAI response structure: missing choices");
     }
     
     if (!data.choices[0].message) {
-      logError({
+      const errorDetails = {
         message: "Invalid OpenAI response structure - missing message in first choice",
-        firstChoice: data.choices[0]
-      }, "OpenAI Response Structure Error");
+        firstChoice: JSON.stringify(data.choices[0]).substring(0, 500)
+      };
+      logError(errorDetails, "OpenAI Response Structure Error");
       throw new Error("Invalid OpenAI response structure: missing message");
+    }
+    
+    // Log usage info for monitoring
+    if (data.usage) {
+      logDebug("OpenAI usage stats:", {
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens,
+        model: data.model
+      });
     }
     
     return data;

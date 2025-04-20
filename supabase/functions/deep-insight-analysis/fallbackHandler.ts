@@ -8,7 +8,7 @@ import { cleanAndParseJSON } from "./utils.ts";
 import { generateDefaultAnalysis } from "./defaultAnalysis.ts";
 
 export async function handleFallback(openAIApiKey: string, formattedResponses: string) {
-  logDebug("Attempting fallback analysis...");
+  logDebug("Attempting fallback analysis with model: " + API_CONFIG.FALLBACK_MODEL);
 
   try {
     const config = {
@@ -40,7 +40,7 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
     }, API_CONFIG.FALLBACK_TIMEOUT);
 
     try {
-      logDebug("Sending fallback request to OpenAI");
+      logDebug("Sending fallback request to OpenAI using model: " + API_CONFIG.FALLBACK_MODEL);
 
       // Add specific instruction to return only plain JSON with strict double quotes
       const enhancedSystemPrompt = SYSTEM_PROMPT + 
@@ -58,7 +58,7 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
       );
 
       clearTimeout(timeoutId);
-      logDebug("Successfully received fallback OpenAI response");
+      logDebug("Successfully received fallback OpenAI response using model: " + API_CONFIG.FALLBACK_MODEL);
       const rawData = await handleOpenAIResponse(openAIRes);
       
       // If there's no content, throw error
