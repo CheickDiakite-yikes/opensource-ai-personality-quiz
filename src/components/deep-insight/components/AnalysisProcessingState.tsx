@@ -10,6 +10,7 @@ import TopTraitsSection from "../results-sections/TopTraitsSection";
 import DeepInsightTabs from "./DeepInsightTabs";
 import AnalysisActions from "./AnalysisActions";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 interface AnalysisProcessingStateProps {
   error: string;
@@ -25,6 +26,7 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
   analysis,
 }) => {
   const [autoRetryCount, setAutoRetryCount] = useState(0);
+  const [progressValue, setProgressValue] = useState(20);
   
   // Auto-retry up to 3 times, every 30 seconds
   useEffect(() => {
@@ -33,6 +35,8 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
         console.log(`Auto-retrying analysis fetch (attempt ${autoRetryCount + 1}/3)`);
         onRetry();
         setAutoRetryCount(prev => prev + 1);
+        // Increment progress to show activity
+        setProgressValue(prev => Math.min(prev + 20, 90));
       }, 30000); // 30 seconds
       
       return () => clearTimeout(timer);
@@ -46,15 +50,32 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
       });
     }
   }, [autoRetryCount, isRetrying, onRetry]);
+  
+  // Simulate progress to provide visual feedback
+  useEffect(() => {
+    // Small progress increments to show activity
+    const interval = setInterval(() => {
+      setProgressValue(prev => {
+        // Only increment if below threshold
+        if (prev < 90) {
+          return prev + 0.5;
+        }
+        return prev;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
       <Alert variant="warning" className="mb-6">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Processing Status</AlertTitle>
-        <AlertDescription>
+        <AlertDescription className="space-y-2">
           {error}
           <div className="mt-2">
+            <Progress value={progressValue} className="h-2 mb-2" />
             <Button 
               variant="outline" 
               size="sm" 

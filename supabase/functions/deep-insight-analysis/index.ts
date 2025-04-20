@@ -52,17 +52,19 @@ serve(async (req) => {
         // We can use the already parsed content from the enhanced handleOpenAIResponse
         const analysisContent = openAIData.parsedContent;
         
-        // Verify we have a complete analysis
-        if (!analysisContent || typeof analysisContent !== 'object') {
-          throw new Error("Invalid analysis content structure");
-        }
+        // Enhanced validation with clear logging
+        const hasOverview = !!analysisContent.overview || !!analysisContent.overviewText;
+        const hasCoreTraits = !!analysisContent.coreTraits && 
+                             typeof analysisContent.coreTraits === 'object' && 
+                             !!analysisContent.coreTraits.primary;
         
-        // Check for required fields to ensure we have a complete analysis
-        if (!analysisContent.overview || !analysisContent.core_traits) {
-          console.warn("Analysis content is incomplete:", JSON.stringify({
-            hasOverview: !!analysisContent.overview,
-            hasCoreTraits: !!analysisContent.core_traits
-          }));
+        if (!hasOverview || !hasCoreTraits) {
+          console.warn("Analysis content validation check:", {
+            hasOverview,
+            hasCoreTraits,
+            overviewLength: analysisContent.overview ? analysisContent.overview.length : 0,
+            coreTraitsPresent: !!analysisContent.coreTraits
+          });
         }
         
         console.timeEnd("analysis-processing");

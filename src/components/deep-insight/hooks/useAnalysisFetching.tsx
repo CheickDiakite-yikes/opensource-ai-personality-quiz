@@ -1,17 +1,17 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DeepInsightAnalysis } from "../types/deepInsight";
-import { Json } from "@/utils/types";
 
 export const useAnalysisFetching = () => {
   const { user } = useAuth();
   const [analysis, setAnalysis] = useState<DeepInsightAnalysis | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -28,9 +28,8 @@ export const useAnalysisFetching = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setAnalysis(data[0] as unknown as DeepInsightAnalysis);
-        
-        const analysisData = data[0];
+        const analysisData = data[0] as unknown as DeepInsightAnalysis;
+        setAnalysis(analysisData);
         
         // Check if the analysis is still processing or incomplete
         const isProcessing = 
@@ -49,18 +48,19 @@ export const useAnalysisFetching = () => {
           'primary' in analysisData.core_traits && 
           analysisData.core_traits.primary;
           
+        console.log("Analysis status:", { 
+          isProcessing, 
+          hasValidCoreTraits: hasValidCoreTraits || "Processing...",
+          hasOverview: !!analysisData.overview,
+          overview: analysisData.overview?.substring(0, 50) + "..."
+        });
+        
         if (isProcessing || !hasValidCoreTraits) {
           const errorMessage = isProcessing 
             ? "Your analysis is still being processed. Please check back in a few minutes." 
             : "Your analysis is incomplete. We're working to finalize your results.";
           
           setError(errorMessage);
-          console.log("Analysis status:", { 
-            isProcessing, 
-            hasValidCoreTraits,
-            hasOverview: !!analysisData.overview,
-            overview: analysisData.overview?.substring(0, 50) + "..."
-          });
         }
       } else {
         setError("No analysis found. Please complete the assessment first.");
@@ -71,11 +71,41 @@ export const useAnalysisFetching = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
+  // Initial fetch
   useEffect(() => {
     fetchAnalysis();
-  }, [user]);
+  }, [user, fetchAnalysis]);
+  
+  // Auto-retry logic for processing analyses
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    
+    // Only set up auto-retry if:
+    // 1. We have an analysis
+    // 2. There's an error indicating "processing"
+    // 3. We haven't exceeded 5 retries
+    if (analysis && 
+        error && 
+        error.includes("processing") && 
+        retryCount < 5) {
+      
+      const retryDelay = Math.min(10000 + (retryCount * 5000), 30000); // Progressive backoff
+      
+      console.log(`Setting up auto-retry #${retryCount + 1} in ${retryDelay/1000} seconds`);
+      
+      timeoutId = setTimeout(() => {
+        console.log(`Executing auto-retry #${retryCount + 1}`);
+        fetchAnalysis();
+        setRetryCount(prev => prev + 1);
+      }, retryDelay);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [analysis, error, retryCount, fetchAnalysis]);
 
   return { analysis, loading, error, fetchAnalysis };
 };

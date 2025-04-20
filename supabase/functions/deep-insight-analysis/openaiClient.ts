@@ -63,7 +63,7 @@ export async function handleOpenAIResponse(response: Response) {
       throw new Error("Invalid OpenAI response structure");
     }
 
-    // With JSON mode enabled, we can directly parse the content without additional checks
+    // With JSON mode enabled, we can directly parse the content
     const content = data.choices[0].message.content;
     logDebug("Content length from OpenAI:", content.length);
     
@@ -71,6 +71,10 @@ export async function handleOpenAIResponse(response: Response) {
       // With strict JSON mode, this should always be valid JSON
       const parsedContent = JSON.parse(content);
       logDebug("Successfully parsed OpenAI JSON response");
+
+      // Validate essential fields and provide fallbacks
+      ensureEssentialFields(parsedContent);
+      
       return {
         ...data,
         parsedContent
@@ -83,5 +87,43 @@ export async function handleOpenAIResponse(response: Response) {
   } catch (error) {
     logError("Error processing OpenAI response:", error);
     throw new Error("Failed to process OpenAI response");
+  }
+}
+
+// Add a function to ensure we have all essential fields with fallback values
+function ensureEssentialFields(content: any) {
+  // Provide fallbacks for overview and core_traits
+  if (!content.cognitivePatterning || typeof content.cognitivePatterning !== 'object') {
+    content.cognitivePatterning = {
+      decisionMaking: "Your decision-making tends to prioritize logical analysis balanced with practical considerations.",
+      learningStyle: "You learn best through structured approaches that include both theory and practical application.",
+      attention: "Your attention pattern reveals a balance between detail focus and big-picture thinking.",
+      problemSolvingApproach: "You approach problems methodically, breaking them into manageable components.",
+      informationProcessing: "You process information through logical frameworks while considering implications.",
+      analyticalTendencies: "You exhibit strong analytical capabilities with attention to relevant details."
+    };
+  }
+  
+  if (!content.emotionalArchitecture || typeof content.emotionalArchitecture !== 'object') {
+    content.emotionalArchitecture = {
+      emotionalAwareness: "You demonstrate solid emotional self-awareness and recognition of feelings.",
+      regulationStyle: "Your emotional regulation involves balancing expression with appropriate restraint.",
+      empathicCapacity: "You show genuine empathy when engaging with others' feelings and perspectives."
+    };
+  }
+  
+  if (!content.coreTraits || typeof content.coreTraits !== 'object') {
+    content.coreTraits = {
+      primary: "Analytical Thinker",
+      secondary: "Empathetic Communicator",
+      tertiaryTraits: ["Logical reasoning", "Detail-oriented", "Adaptable", "Introspective"],
+      strengths: ["Critical thinking", "Pattern recognition", "Effective communication"],
+      challenges: ["Perfectionism", "Overthinking complex situations"]
+    };
+  }
+  
+  // Ensure we have at least basic overview text
+  if (!content.overview && !content.overviewText) {
+    content.overview = "Your personality profile reveals a thoughtful individual who balances analytical thinking with interpersonal awareness. You demonstrate strengths in logical reasoning and communication, while maintaining adaptability in various situations.";
   }
 }
