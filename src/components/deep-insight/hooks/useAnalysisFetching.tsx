@@ -80,7 +80,8 @@ export const useAnalysisFetching = () => {
   
   // Auto-retry logic for processing analyses
   useEffect(() => {
-    let timeoutId: number | undefined;
+    // Fix: Change the type to NodeJS.Timeout | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     
     // Only set up auto-retry if:
     // 1. We have an analysis
