@@ -5,7 +5,7 @@ Your task: generate an EXCEPTIONALLY DETAILED, rigorously accurate, evidence-bas
 
 // ───────────────────────────────────────────────────────────
 // MAXIMUM DETAIL GENERATION BUDGET
-// GPT‑4o allows up to 16,000 tokens. USE THE ENTIRE BUDGET!
+// GPT‑4o allows up to 15500 tokens. USE THE ENTIRE BUDGET!
 // Provide the most comprehensive, nuanced personality 
 // insights possible.
 // ───────────────────────────────────────────────────────────

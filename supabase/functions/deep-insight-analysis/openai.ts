@@ -1,4 +1,4 @@
-
+// openai.ts
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";

@@ -1,4 +1,4 @@
-
+// openaiClient.ts
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { logError, logDebug } from "./logging.ts";
