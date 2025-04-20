@@ -22,6 +22,7 @@ export const useNavigationItems = () => {
     { name: "Report", path: "/report", icon: BarChart, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
     { name: "Deep Insight", path: "/deep-insight", icon: Brain, requiresAuth: true },
+    { name: "Big Me", path: "/big-me", icon: Brain, requiresAuth: true },
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
   ];
 

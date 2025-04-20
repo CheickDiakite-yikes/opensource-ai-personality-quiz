@@ -193,7 +193,7 @@ async function callOpenAI(prompt: string) {
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
-      max_tokens: 32768,
+      max_tokens: 16000, // Fixed: reduced from 32768 to 16000, within GPT-4o's limit
       top_p: 1.0,
       frequency_penalty: 0,
       presence_penalty: 0
