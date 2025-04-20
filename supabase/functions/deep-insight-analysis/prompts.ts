@@ -38,7 +38,7 @@ Follow these analysis principles:
 - Identify key motivators and potential inhibitors
 - List top 10 most prominent personality traits with detailed explanations
 - Include relationship compatibility analysis with different personality types
-- Provide detailed career insights including strengths and potential roles to persue
+- Provide detailed career insights including strengths and potential roles to pursue
 
 4. Holistic Integration:
 - Connect different personality aspects
@@ -132,6 +132,4 @@ Output with this exact JSON schema:
     "growthMindsetIndicators": "Analysis of learning and development orientation"
   }
 }
-
-I REPEAT: Return ONLY pure JSON with DOUBLE QUOTES for ALL property names and string values. No single quotes, no unquoted properties, no markdown formatting, no code blocks, no explanation.
 `;

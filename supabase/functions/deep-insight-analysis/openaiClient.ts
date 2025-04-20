@@ -1,3 +1,4 @@
+
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { logError, logDebug } from "./logging.ts";
@@ -18,6 +19,7 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
     top_p: API_CONFIG.TOP_P,
     frequency_penalty: API_CONFIG.FREQUENCY_PENALTY,
     stream: false,
+    response_format: { type: "json_object" }, // Enable strict JSON mode
   };
 
   logDebug("createOpenAIRequest payload:", payload);

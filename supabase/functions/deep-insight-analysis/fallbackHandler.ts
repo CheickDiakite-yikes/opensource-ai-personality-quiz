@@ -32,7 +32,7 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
       logDebug("Sending fallback request to OpenAI");
 
       // Add specific instruction to return only plain JSON with strict double quotes
-      const enhancedSystemPrompt = SYSTEM_PROMPT + "\n\nCRITICAL: Return ONLY pure JSON with DOUBLE QUOTES for ALL property names and string values. No single quotes, no unquoted properties, no markdown formatting, no code blocks, no explanation.";
+      const enhancedSystemPrompt = SYSTEM_PROMPT + "\n\nCRITICAL: Return ONLY pure JSON with DOUBLE QUOTES for ALL property names and string values.";
 
       const openAIRes = await createOpenAIRequest(
         openAIApiKey,
@@ -56,9 +56,9 @@ export async function handleFallback(openAIApiKey: string, formattedResponses: s
       const rawContent = rawData.choices[0].message.content || "";
       logDebug(`Fallback response length: ${rawContent.length} chars`);
       
+      // With JSON mode enabled, we can directly parse the content
       try {
-        // Use the centralized JSON cleaning and parsing function
-        return await cleanAndParseJSON(rawContent);
+        return JSON.parse(rawContent);
       } catch (jsonError) {
         logError(jsonError, "Fallback JSON parsing");
         

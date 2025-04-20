@@ -86,7 +86,7 @@ export async function cleanAndParseJSON(rawContent: string): Promise<any> {
     const lastBrace = jsonString.lastIndexOf('}');
     if (lastBrace > -1 && lastBrace < jsonString.length - 1) {
       jsonString = jsonString.substring(0, lastBrace + 1);
-      logDebug("Trimmed content before first {");
+      logDebug("Trimmed content after last }");
     }
     
     // Try parsing again after cleaning

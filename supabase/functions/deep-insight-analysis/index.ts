@@ -6,7 +6,6 @@ import { processRequest } from "./requestHandler.ts";
 import { formatAnalysisResponse } from "./responseFormatter.ts";
 import { createErrorResponse } from "./errorHandler.ts";
 import { callOpenAI } from "./openai.ts";
-import { cleanAndParseJSON } from "./utils.ts";
 import { logDebug, logError } from "./logging.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
@@ -51,9 +50,8 @@ serve(async (req) => {
       try {
         console.time("analysis-processing");
         
-        // Use the centralized JSON cleaning and parsing function
-        console.log("Extracting and processing JSON from OpenAI response...");
-        const analysisContent = await cleanAndParseJSON(rawContent);
+        // With JSON mode enabled, we can directly parse the content
+        const analysisContent = JSON.parse(rawContent);
         
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
