@@ -46,7 +46,8 @@ export const useAnalysisFetching = () => {
           typeof analysisData.core_traits === 'object' && 
           analysisData.core_traits !== null &&
           'primary' in analysisData.core_traits && 
-          analysisData.core_traits.primary;
+          analysisData.core_traits.primary &&
+          !analysisData.core_traits.primary.includes("Processing");
           
         console.log("Analysis status:", { 
           isProcessing, 
@@ -80,7 +81,7 @@ export const useAnalysisFetching = () => {
   
   // Auto-retry logic for processing analyses
   useEffect(() => {
-    // Fix: Change the type to NodeJS.Timeout | undefined
+    // Fix: Change the type to ReturnType<typeof setTimeout> | undefined
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     
     // Only set up auto-retry if:
