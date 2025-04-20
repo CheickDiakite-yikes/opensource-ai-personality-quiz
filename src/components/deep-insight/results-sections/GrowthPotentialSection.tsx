@@ -22,7 +22,7 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
     if (!Array.isArray(data.developmentAreas)) {
       // If it's an object but not an array, try to extract values
       if (typeof data.developmentAreas === 'object' && data.developmentAreas !== null) {
-        return Object.values(data.developmentAreas).filter(item => item);
+        return Object.values(data.developmentAreas).filter(Boolean);
       }
       // If it's a string, split by periods or commas
       if (typeof data.developmentAreas === 'string') {
@@ -39,12 +39,13 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
       if (typeof item === 'string') return item;
       if (typeof item === 'object' && item !== null) {
         // Try to extract value from object (could be {area: "text"} format)
-        if ('area' in item) return item.area;
-        if ('description' in item) return item.description;
-        if ('text' in item) return item.text;
+        const itemAsRecord = item as Record<string, unknown>;
+        if ('area' in itemAsRecord) return String(itemAsRecord.area);
+        if ('description' in itemAsRecord) return String(itemAsRecord.description);
+        if ('text' in itemAsRecord) return String(itemAsRecord.text);
         // Get first property if possible
-        const firstKey = Object.keys(item)[0];
-        if (firstKey) return `${firstKey}: ${item[firstKey]}`;
+        const firstKey = Object.keys(itemAsRecord)[0];
+        if (firstKey) return `${firstKey}: ${String(itemAsRecord[firstKey])}`;
       }
       return String(item || '');
     }).filter(item => item.trim().length > 0);
@@ -56,7 +57,7 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
     
     if (!Array.isArray(data.recommendations)) {
       if (typeof data.recommendations === 'object' && data.recommendations !== null) {
-        return Object.values(data.recommendations).filter(item => item);
+        return Object.values(data.recommendations).filter(Boolean);
       }
       if (typeof data.recommendations === 'string') {
         return data.recommendations
@@ -70,12 +71,13 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
     return data.recommendations.map(item => {
       if (typeof item === 'string') return item;
       if (typeof item === 'object' && item !== null) {
-        if ('recommendation' in item) return item.recommendation;
-        if ('description' in item) return item.description;
-        if ('text' in item) return item.text;
-        if ('action' in item) return item.action;
-        const firstKey = Object.keys(item)[0];
-        if (firstKey) return `${firstKey}: ${item[firstKey]}`;
+        const itemAsRecord = item as Record<string, unknown>;
+        if ('recommendation' in itemAsRecord) return String(itemAsRecord.recommendation);
+        if ('description' in itemAsRecord) return String(itemAsRecord.description);
+        if ('text' in itemAsRecord) return String(itemAsRecord.text);
+        if ('action' in itemAsRecord) return String(itemAsRecord.action);
+        const firstKey = Object.keys(itemAsRecord)[0];
+        if (firstKey) return `${firstKey}: ${String(itemAsRecord[firstKey])}`;
       }
       return String(item || '');
     }).filter(item => item.trim().length > 0);
