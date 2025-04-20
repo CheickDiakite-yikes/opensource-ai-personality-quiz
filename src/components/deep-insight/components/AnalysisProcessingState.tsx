@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,6 @@ import AnalysisScores from "./AnalysisScores";
 import TopTraitsSection from "../results-sections/TopTraitsSection";
 import DeepInsightTabs from "./DeepInsightTabs";
 import AnalysisActions from "./AnalysisActions";
-import { toast } from "sonner";
-import { Progress } from "@/components/ui/progress";
 
 interface AnalysisProcessingStateProps {
   error: string;
@@ -25,57 +23,14 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
   onRetry,
   analysis,
 }) => {
-  const [autoRetryCount, setAutoRetryCount] = useState(0);
-  const [progressValue, setProgressValue] = useState(20);
-  
-  // Auto-retry up to 3 times, every 30 seconds
-  useEffect(() => {
-    if (autoRetryCount < 3 && !isRetrying) {
-      const timer = setTimeout(() => {
-        console.log(`Auto-retrying analysis fetch (attempt ${autoRetryCount + 1}/3)`);
-        onRetry();
-        setAutoRetryCount(prev => prev + 1);
-        // Increment progress to show activity
-        setProgressValue(prev => Math.min(prev + 20, 90));
-      }, 30000); // 30 seconds
-      
-      return () => clearTimeout(timer);
-    }
-    
-    // If we've reached max auto-retries, show a notification
-    if (autoRetryCount === 3) {
-      toast.info("We're still processing your analysis", {
-        description: "It's taking longer than expected. You can manually check for updates.",
-        duration: 8000
-      });
-    }
-  }, [autoRetryCount, isRetrying, onRetry]);
-  
-  // Simulate progress to provide visual feedback
-  useEffect(() => {
-    // Small progress increments to show activity
-    const interval = setInterval(() => {
-      setProgressValue(prev => {
-        // Only increment if below threshold
-        if (prev < 90) {
-          return prev + 0.5;
-        }
-        return prev;
-      });
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <>
       <Alert variant="warning" className="mb-6">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Processing Status</AlertTitle>
-        <AlertDescription className="space-y-2">
+        <AlertDescription>
           {error}
           <div className="mt-2">
-            <Progress value={progressValue} className="h-2 mb-2" />
             <Button 
               variant="outline" 
               size="sm" 
@@ -86,11 +41,6 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
               {isRetrying ? "Checking..." : "Check Again"}
               <RefreshCcw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
             </Button>
-            {autoRetryCount > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Auto-checking {autoRetryCount}/3 completed. {autoRetryCount === 3 ? 'You can continue to check manually.' : 'Checking again soon...'}
-              </p>
-            )}
           </div>
         </AlertDescription>
       </Alert>

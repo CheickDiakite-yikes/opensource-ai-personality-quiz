@@ -35,7 +35,7 @@ serve(async (req) => {
     try {
       const openAIData = await callOpenAI(openAIApiKey, formatted);
       
-      if (!openAIData || !openAIData.parsedContent) {
+      if (!openAIData || !openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
         console.error("Invalid OpenAI response structure:", JSON.stringify(openAIData));
         return createErrorResponse(
           new Error("Invalid response from OpenAI API"),
@@ -44,48 +44,21 @@ serve(async (req) => {
         );
       }
       
-      console.log("OpenAI response received with valid content");
+      const rawContent = openAIData.choices[0].message.content || "";
+      console.log("OpenAI response received with length:", rawContent.length);
       
       try {
         console.time("analysis-processing");
         
-        // We can use the already parsed content from the enhanced handleOpenAIResponse
-        const analysisContent = openAIData.parsedContent;
-        
-        // Enhanced validation with clear logging
-        const hasOverview = !!analysisContent.overview || !!analysisContent.overviewText;
-        const hasCoreTraits = !!analysisContent.coreTraits && 
-                             typeof analysisContent.coreTraits === 'object' && 
-                             !!analysisContent.coreTraits.primary;
-        
-        console.log("Analysis content validation check:", {
-          hasOverview,
-          hasCoreTraits,
-          overviewLength: analysisContent.overview ? analysisContent.overview.length : 0,
-          coreTraitsPresent: !!analysisContent.coreTraits,
-          coreTraitsPrimary: analysisContent.coreTraits ? !!analysisContent.coreTraits.primary : false,
-          responseKeys: Object.keys(analysisContent)
-        });
-        
-        // If some key content is missing, enhance the response with fallback data
-        if (!hasOverview) {
-          analysisContent.overview = "Your personality analysis is being finalized. We've captured your response patterns and are generating detailed insights.";
-        }
-        
-        if (!hasCoreTraits) {
-          analysisContent.coreTraits = {
-            primary: "Analysis in Progress",
-            secondary: "Personality Traits Processing", 
-            tertiaryTraits: ["Processing your response patterns", "Analyzing cognitive style", "Evaluating emotional intelligence"]
-          };
-        }
+        // With JSON mode enabled, we can directly parse the content
+        const analysisContent = JSON.parse(rawContent);
         
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
         
         return formatAnalysisResponse(analysisContent);
       } catch (parseError) {
-        logError(parseError, "Error processing analysis content");
+        logError(parseError, "Error parsing OpenAI response");
         return createErrorResponse(parseError, 500, "Error processing analysis results");
       }
     } catch (openAIError) {
