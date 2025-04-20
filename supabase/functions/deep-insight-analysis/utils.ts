@@ -86,7 +86,7 @@ export async function cleanAndParseJSON(rawContent: string): Promise<any> {
     const lastBrace = jsonString.lastIndexOf('}');
     if (lastBrace > -1 && lastBrace < jsonString.length - 1) {
       jsonString = jsonString.substring(0, lastBrace + 1);
-      logDebug("Trimmed content after last }");
+      logDebug("Trimmed content before first {");
     }
     
     // Try parsing again after cleaning
@@ -128,5 +128,87 @@ export async function cleanAndParseJSON(rawContent: string): Promise<any> {
       logError(extractError, "All JSON parsing attempts failed");
       throw extractError;
     }
+  }
+}
+
+/**
+ * Helper function to safely get a string from a potentially complex object
+ * using dot notation path, with a fallback value if not found
+ */
+export function getStringSafely(obj: any, path: string, fallback: string = ""): string {
+  try {
+    const value = path.split('.').reduce((o, key) => o?.[key], obj);
+    return typeof value === 'string' ? value : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+/**
+ * Helper function to safely get an array from a potentially complex object
+ * using dot notation path, with a fallback empty array if not found
+ */
+export function getArraySafely(obj: any, path: string, minLength: number = 0): string[] {
+  try {
+    const value = path.split('.').reduce((o, key) => o?.[key], obj);
+    if (Array.isArray(value) && value.length >= minLength) {
+      return value;
+    }
+    // Return a fallback array if the original doesn't meet length requirements
+    return Array.isArray(value) ? value : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Generates an overview summary from the analysis content
+ * Creates a concise yet comprehensive summary of key personality traits
+ */
+export function generateOverview(analysisContent: any): string {
+  try {
+    // Get core traits if available
+    const primaryTrait = getStringSafely(analysisContent, 'coreTraits.primary');
+    const secondaryTraits = getArraySafely(analysisContent, 'coreTraits.secondaryTraits', 1);
+    
+    // Get cognitive information
+    const cognitiveTrait = getStringSafely(
+      analysisContent, 
+      'cognitivePatterning.decisionMaking',
+      'analytic thinking'
+    );
+    
+    // Get emotional information
+    const emotionalTraits = getArraySafely(
+      analysisContent,
+      'emotionalArchitecture.emotionalStrengths',
+      1
+    );
+    
+    // Get motivational information
+    const motivators = getArraySafely(analysisContent, 'motivationalProfile.primaryDrivers', 1);
+    
+    // Construct the overview
+    let overview = `You demonstrate a personality profile anchored in ${primaryTrait.toLowerCase() || 'adaptability'}`;
+    
+    if (secondaryTraits.length > 0) {
+      overview += `, with notable strengths in ${secondaryTraits.slice(0, 2).join(' and ').toLowerCase()}`;
+    }
+    
+    overview += `. Your cognitive style leans toward ${cognitiveTrait.toLowerCase()}`;
+    
+    if (emotionalTraits.length > 0) {
+      overview += ` while emotionally exhibiting ${emotionalTraits[0].toLowerCase()}`;
+    }
+    
+    if (motivators.length > 0) {
+      overview += `. You appear primarily motivated by ${motivators[0].toLowerCase()}`;
+    }
+    
+    overview += `. This distinctive combination shapes your unique approach to challenges and relationships.`;
+    
+    return overview;
+  } catch (error) {
+    return "Your analysis reveals a multifaceted personality with unique strengths and potential growth areas. Your cognitive patterns and emotional responses create a distinctive approach to life's challenges.";
   }
 }
