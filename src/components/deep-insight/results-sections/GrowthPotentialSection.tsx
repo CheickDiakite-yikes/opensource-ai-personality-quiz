@@ -2,43 +2,102 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GrowthPotential } from "../types/deepInsight";
-import { Lightbulb, Target } from "lucide-react";
+import { Lightbulb, Target, AlertTriangle } from "lucide-react";
 
 interface GrowthPotentialProps {
   data: GrowthPotential | null;
 }
 
 const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
-  const defaultData = {
-    developmentAreas: [
-      "Finding balance between analysis and action", 
-      "Developing comfort with ambiguity", 
-      "Building resilience to setbacks",
-      "Enhancing adaptability in changing environments",
-      "Cultivating proactive learning mindset"
-    ],
-    recommendations: [
-      "Practice time-bounded decision making",
-      "Engage in mindfulness to reduce overthinking", 
-      "Seek diverse perspectives through mentorship",
-      "Develop systematic approach to personal growth",
-      "Create iterative learning and feedback loops"
-    ]
+  // We'll only use defaults if absolutely necessary as a last resort
+  const isUsingFallbackData = !data || 
+    !data.developmentAreas || 
+    !Array.isArray(data.developmentAreas) || 
+    data.developmentAreas.length === 0;
+  
+  // Process the development areas to handle various formats from the API
+  const processDevelopmentAreas = () => {
+    if (!data || !data.developmentAreas) return [];
+    
+    if (!Array.isArray(data.developmentAreas)) {
+      // If it's an object but not an array, try to extract values
+      if (typeof data.developmentAreas === 'object' && data.developmentAreas !== null) {
+        return Object.values(data.developmentAreas).filter(item => item);
+      }
+      // If it's a string, split by periods or commas
+      if (typeof data.developmentAreas === 'string') {
+        return data.developmentAreas
+          .split(/[.,;]/)
+          .map(item => item.trim())
+          .filter(item => item.length > 0);
+      }
+      return [];
+    }
+    
+    // Map each item to ensure we have strings
+    return data.developmentAreas.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        // Try to extract value from object (could be {area: "text"} format)
+        if ('area' in item) return item.area;
+        if ('description' in item) return item.description;
+        if ('text' in item) return item.text;
+        // Get first property if possible
+        const firstKey = Object.keys(item)[0];
+        if (firstKey) return `${firstKey}: ${item[firstKey]}`;
+      }
+      return String(item || '');
+    }).filter(item => item.trim().length > 0);
   };
   
-  const growthData = data || defaultData;
-  
-  // Ensure arrays are properly handled with robust fallback
-  const safeDevelopmentAreas = Array.isArray(growthData.developmentAreas)
-    ? growthData.developmentAreas.filter(item => typeof item === 'string')
-    : defaultData.developmentAreas;
+  // Similarly process recommendations
+  const processRecommendations = () => {
+    if (!data || !data.recommendations) return [];
     
-  const safeRecommendations = Array.isArray(growthData.recommendations)
-    ? growthData.recommendations.filter(item => typeof item === 'string')
-    : defaultData.recommendations;
+    if (!Array.isArray(data.recommendations)) {
+      if (typeof data.recommendations === 'object' && data.recommendations !== null) {
+        return Object.values(data.recommendations).filter(item => item);
+      }
+      if (typeof data.recommendations === 'string') {
+        return data.recommendations
+          .split(/[.,;]/)
+          .map(item => item.trim())
+          .filter(item => item.length > 0);
+      }
+      return [];
+    }
+    
+    return data.recommendations.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        if ('recommendation' in item) return item.recommendation;
+        if ('description' in item) return item.description;
+        if ('text' in item) return item.text;
+        if ('action' in item) return item.action;
+        const firstKey = Object.keys(item)[0];
+        if (firstKey) return `${firstKey}: ${item[firstKey]}`;
+      }
+      return String(item || '');
+    }).filter(item => item.trim().length > 0);
+  };
+
+  // Get the actual data to display
+  const developmentAreas = processDevelopmentAreas();
+  const recommendations = processRecommendations();
   
   return (
     <div className="space-y-6">
+      {isUsingFallbackData && (
+        <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-4 border border-amber-200 dark:border-amber-800 mb-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 mr-2" />
+            <p className="text-sm text-amber-800 dark:text-amber-400">
+              Waiting for AI to generate your personalized growth insights...
+            </p>
+          </div>
+        </div>
+      )}
+      
       <Card className="border-violet-200 dark:border-violet-900">
         <CardHeader className="bg-violet-50 dark:bg-violet-900/20">
           <CardTitle className="text-violet-700 dark:text-violet-400 flex items-center">
@@ -46,17 +105,19 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <ul className="list-disc ml-6 space-y-3">
-            {safeDevelopmentAreas.slice(0, 5).map((area, index) => (
-              <li key={index} className="text-muted-foreground">
-                {area}
-              </li>
-            ))}
-          </ul>
-          {safeDevelopmentAreas.length === 0 && (
-            <p className="text-muted-foreground italic text-center">
-              No specific development areas identified
-            </p>
+          {developmentAreas.length > 0 ? (
+            <ul className="list-disc ml-6 space-y-3">
+              {developmentAreas.map((area, index) => (
+                <li key={index} className="text-muted-foreground">{area}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="py-6 text-center">
+              <Target className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-muted-foreground italic">
+                Development areas will appear once your analysis is complete
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -68,17 +129,19 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <ul className="list-disc ml-6 space-y-3">
-            {safeRecommendations.slice(0, 5).map((recommendation, index) => (
-              <li key={index} className="text-muted-foreground">
-                {recommendation}
-              </li>
-            ))}
-          </ul>
-          {safeRecommendations.length === 0 && (
-            <p className="text-muted-foreground italic text-center">
-              No specific recommendations available
-            </p>
+          {recommendations.length > 0 ? (
+            <ul className="list-disc ml-6 space-y-3">
+              {recommendations.map((recommendation, index) => (
+                <li key={index} className="text-muted-foreground">{recommendation}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="py-6 text-center">
+              <Lightbulb className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-muted-foreground italic">
+                Personalized recommendations will appear once your analysis is complete
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
