@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AssessmentQuestion } from '@/utils/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { toast } from 'sonner';
 
 type DeepInsightResponses = Record<string, string>;
 
@@ -10,15 +11,15 @@ export const useDeepInsightState = (questions: AssessmentQuestion[]) => {
   const [responses, setResponses] = useLocalStorage<DeepInsightResponses>('deep_insight_responses', {});
   const [progress, setProgress] = useState(0);
 
-  // Current question is the one at the current index
-  const currentQuestion = questions[currentQuestionIndex];
-
   // Calculate progress whenever responses or questions change
   useEffect(() => {
     const responseCount = Object.keys(responses).length;
     const completionPercentage = (responseCount / questions.length) * 100;
     setProgress(completionPercentage);
   }, [responses, questions.length]);
+
+  // Current question is the one at the current index
+  const currentQuestion = questions[currentQuestionIndex];
 
   // Check if there's a response for a given question ID
   const hasResponse = (questionId: string) => {
@@ -27,7 +28,6 @@ export const useDeepInsightState = (questions: AssessmentQuestion[]) => {
 
   // Update a response for a specific question
   const updateResponse = (questionId: string, selectedOption: string) => {
-    // Using direct object assignment which matches the DeepInsightResponses type
     const updatedResponses = {
       ...responses,
       [questionId]: selectedOption
@@ -39,6 +39,9 @@ export const useDeepInsightState = (questions: AssessmentQuestion[]) => {
   const resetResponses = () => {
     setResponses({});
     setCurrentQuestionIndex(0);
+    toast.success("Assessment has been reset", {
+      description: "You can now retake the questionnaire"
+    });
   };
 
   return {
