@@ -1,3 +1,4 @@
+
 // openaiClient.ts
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -55,9 +56,32 @@ export async function handleOpenAIResponse(response: Response) {
   try {
     const data = await response.json();
     logDebug("OpenAI Response Data:", data);
-    return data;
+    
+    // Ensure we have the expected response structure
+    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      logError("Invalid OpenAI response structure:", data);
+      throw new Error("Invalid OpenAI response structure");
+    }
+
+    // With JSON mode enabled, we can directly parse the content without additional checks
+    const content = data.choices[0].message.content;
+    logDebug("Content length from OpenAI:", content.length);
+    
+    try {
+      // With strict JSON mode, this should always be valid JSON
+      const parsedContent = JSON.parse(content);
+      logDebug("Successfully parsed OpenAI JSON response");
+      return {
+        ...data,
+        parsedContent
+      };
+    } catch (parseError) {
+      logError("Error parsing OpenAI JSON content:", parseError);
+      logError("Content that failed to parse:", content.substring(0, 500) + "...");
+      throw new Error("Failed to parse OpenAI JSON content");
+    }
   } catch (error) {
-    logError("Error parsing OpenAI response:", error);
-    throw new Error("Failed to parse OpenAI response");
+    logError("Error processing OpenAI response:", error);
+    throw new Error("Failed to process OpenAI response");
   }
 }

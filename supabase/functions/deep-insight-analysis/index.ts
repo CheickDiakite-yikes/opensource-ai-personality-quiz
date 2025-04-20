@@ -35,7 +35,7 @@ serve(async (req) => {
     try {
       const openAIData = await callOpenAI(openAIApiKey, formatted);
       
-      if (!openAIData || !openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
+      if (!openAIData || !openAIData.parsedContent) {
         console.error("Invalid OpenAI response structure:", JSON.stringify(openAIData));
         return createErrorResponse(
           new Error("Invalid response from OpenAI API"),
@@ -44,21 +44,33 @@ serve(async (req) => {
         );
       }
       
-      const rawContent = openAIData.choices[0].message.content || "";
-      console.log("OpenAI response received with length:", rawContent.length);
+      console.log("OpenAI response received with valid content");
       
       try {
         console.time("analysis-processing");
         
-        // With JSON mode enabled, we can directly parse the content
-        const analysisContent = JSON.parse(rawContent);
+        // We can use the already parsed content from the enhanced handleOpenAIResponse
+        const analysisContent = openAIData.parsedContent;
+        
+        // Verify we have a complete analysis
+        if (!analysisContent || typeof analysisContent !== 'object') {
+          throw new Error("Invalid analysis content structure");
+        }
+        
+        // Check for required fields to ensure we have a complete analysis
+        if (!analysisContent.overview || !analysisContent.core_traits) {
+          console.warn("Analysis content is incomplete:", JSON.stringify({
+            hasOverview: !!analysisContent.overview,
+            hasCoreTraits: !!analysisContent.core_traits
+          }));
+        }
         
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
         
         return formatAnalysisResponse(analysisContent);
       } catch (parseError) {
-        logError(parseError, "Error parsing OpenAI response");
+        logError(parseError, "Error processing analysis content");
         return createErrorResponse(parseError, 500, "Error processing analysis results");
       }
     } catch (openAIError) {

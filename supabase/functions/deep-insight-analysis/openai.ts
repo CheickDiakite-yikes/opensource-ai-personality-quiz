@@ -1,3 +1,4 @@
+
 // openai.ts
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { API_CONFIG } from "./openaiConfig.ts";
@@ -106,9 +107,12 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           clearTimeout(timeoutId); // Clear the timeout if request completes
           
           logDebug(`Successfully received OpenAI response on attempt ${attemptCount + 1}`);
+          
+          // Use our enhanced response handler that directly parses the JSON
+          const processedResponse = await handleOpenAIResponse(openAIRes);
           console.timeEnd("openai-api-call");
           
-          return await handleOpenAIResponse(openAIRes);
+          return processedResponse;
         } catch (error) {
           clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
           

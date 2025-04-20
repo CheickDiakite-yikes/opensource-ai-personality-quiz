@@ -31,24 +31,36 @@ export const useAnalysisFetching = () => {
         setAnalysis(data[0] as unknown as DeepInsightAnalysis);
         
         const analysisData = data[0];
-        const completeAnalysis = analysisData.complete_analysis;
+        
+        // Check if the analysis is still processing or incomplete
         const isProcessing = 
-          typeof completeAnalysis === 'object' && 
-          completeAnalysis !== null &&
-          'status' in completeAnalysis && 
-          completeAnalysis.status === 'processing';
-          
-        if (isProcessing) {
-          setError("Your analysis is still being processed. Please check back in a few minutes.");
-        } else if (
+          (typeof analysisData.complete_analysis === 'object' && 
+          analysisData.complete_analysis !== null &&
+          'status' in analysisData.complete_analysis && 
+          analysisData.complete_analysis.status === 'processing') ||
           !analysisData.overview || 
-          analysisData.overview.includes("processing") || 
-          !analysisData.core_traits || 
-          (typeof analysisData.core_traits === 'object' && 
-           analysisData.core_traits !== null &&
-           (!('primary' in analysisData.core_traits) || !analysisData.core_traits.primary))
-        ) {
-          setError("Your analysis is incomplete. We're working to finalize your results.");
+          analysisData.overview.includes("processing");
+          
+        // Check for core traits availability
+        const hasValidCoreTraits = 
+          analysisData.core_traits && 
+          typeof analysisData.core_traits === 'object' && 
+          analysisData.core_traits !== null &&
+          'primary' in analysisData.core_traits && 
+          analysisData.core_traits.primary;
+          
+        if (isProcessing || !hasValidCoreTraits) {
+          const errorMessage = isProcessing 
+            ? "Your analysis is still being processed. Please check back in a few minutes." 
+            : "Your analysis is incomplete. We're working to finalize your results.";
+          
+          setError(errorMessage);
+          console.log("Analysis status:", { 
+            isProcessing, 
+            hasValidCoreTraits,
+            hasOverview: !!analysisData.overview,
+            overview: analysisData.overview?.substring(0, 50) + "..."
+          });
         }
       } else {
         setError("No analysis found. Please complete the assessment first.");
