@@ -3,10 +3,10 @@ export const API_CONFIG = {
   BASE_URL: "https://api.openai.com/v1/chat/completions",
   MAIN_TIMEOUT: 120000, // Increased to 120 seconds
   FALLBACK_TIMEOUT: 90000, // Increased fallback timeout
-  DEFAULT_MODEL: "gpt-4o",
-  FALLBACK_MODEL: "gpt-4o-mini", 
-  MAIN_MAX_TOKENS: 16000, // Maximum allowed for GPT-4o
-  FALLBACK_MAX_TOKENS: 10000, // Reduced fallback tokens
+  DEFAULT_MODEL: "gpt-4.1",
+  FALLBACK_MODEL: "gpt-4o", 
+  MAIN_MAX_TOKENS: 25000, // Maximum allowed for GPT-4o
+  FALLBACK_MAX_TOKENS: 15000, // Reduced fallback tokens
   TEMPERATURE: 0.4,
   TOP_P: 0.9,
   FREQUENCY_PENALTY: 0.3,
