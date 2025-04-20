@@ -15,6 +15,14 @@ import BigMeMotivationSection from "./results-sections/BigMeMotivationSection";
 import BigMeGrowthSection from "./results-sections/BigMeGrowthSection";
 import BigMeResultsHeader from "./results-sections/BigMeResultsHeader";
 
+interface DatabaseBigMeAnalysis {
+  id: string;
+  user_id: string;
+  analysis_result: BigMeAnalysisResult;
+  responses?: unknown;
+  created_at: string;
+}
+
 const BigMeResultsPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const { user } = useAuth();
@@ -33,16 +41,17 @@ const BigMeResultsPage: React.FC = () => {
         
         // If no specific ID is provided, fetch the most recent analysis for the user
         if (!analysisId && user) {
-          const { data, error } = await supabase
-            .from("big_me_analyses")
-            .select("id")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
+          const { data: recentAnalysis, error: recentError } = await supabase
+            .from('big_me_analyses')
+            .select('id')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
             
-          if (error) throw error;
-          if (data && data.length > 0) {
-            analysisId = data[0].id;
+          if (recentError) throw recentError;
+          if (recentAnalysis) {
+            analysisId = recentAnalysis.id;
           }
         }
         
@@ -52,17 +61,18 @@ const BigMeResultsPage: React.FC = () => {
         
         // Fetch the analysis data
         const { data, error } = await supabase
-          .from("big_me_analyses")
-          .select("*")
-          .eq("id", analysisId)
-          .single();
+          .from('big_me_analyses')
+          .select('*')
+          .eq('id', analysisId)
+          .maybeSingle() as { data: DatabaseBigMeAnalysis | null, error: Error | null };
           
         if (error) throw error;
+        if (!data) throw new Error("Analysis not found");
         
         setAnalysis(data.analysis_result);
       } catch (error) {
         console.error("Error fetching analysis:", error);
-        setError(error.message);
+        setError(error instanceof Error ? error.message : "An error occurred");
       } finally {
         setLoading(false);
       }
