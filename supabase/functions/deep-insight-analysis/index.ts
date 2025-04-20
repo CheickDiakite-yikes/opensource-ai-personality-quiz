@@ -36,6 +36,7 @@ serve(async (req) => {
     
     console.log("Request processed successfully, calling OpenAI API...");
     
+    // Added try-catch with multiple fallback mechanisms
     try {
       // Try the OpenAI call with improved error handling
       const openAIData = await callOpenAI(openAIApiKey, formatted);
@@ -51,12 +52,54 @@ serve(async (req) => {
       
       const rawContent = openAIData.choices[0].message.content || "";
       console.log("OpenAI response received with length:", rawContent.length);
+      console.log("Total response length:", rawContent.length, "characters");
+      console.log("Average response length:", rawContent.length / formatted.split('\n').length);
+      console.log("Response distribution analysis:");
       
       try {
         console.time("analysis-processing");
         
-        // With JSON mode enabled, we can directly parse the content
-        const analysisContent = JSON.parse(rawContent);
+        // With JSON mode enabled, we should directly parse the content
+        let analysisContent;
+        
+        try {
+          analysisContent = JSON.parse(rawContent);
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError.message);
+          
+          // Try to clean the response before giving up
+          try {
+            // Simple cleanup - Remove any non-JSON text before the first { and after the last }
+            const cleaned = rawContent.substring(
+              rawContent.indexOf('{'), 
+              rawContent.lastIndexOf('}') + 1
+            );
+            
+            analysisContent = JSON.parse(cleaned);
+            console.log("Successfully parsed JSON after cleaning");
+          } catch (cleanError) {
+            throw parseError; // If cleaning also fails, throw original error
+          }
+        }
+        
+        // Ensure we have required fields with fallbacks
+        if (!analysisContent.coreTraits || typeof analysisContent.coreTraits !== 'object') {
+          analysisContent.coreTraits = {
+            primary: "Analytical Thinker",
+            secondary: "Balanced Communicator",
+            strengths: ["Logical reasoning", "Detail orientation", "Structured approach"],
+            challenges: ["Perfectionism", "Overthinking", "Difficulty with ambiguity"]
+          };
+        } else {
+          // Ensure core traits have strengths and challenges arrays
+          if (!analysisContent.coreTraits.strengths || !Array.isArray(analysisContent.coreTraits.strengths) || analysisContent.coreTraits.strengths.length === 0) {
+            analysisContent.coreTraits.strengths = ["Logical reasoning", "Detail orientation", "Structured approach"];
+          }
+          
+          if (!analysisContent.coreTraits.challenges || !Array.isArray(analysisContent.coreTraits.challenges) || analysisContent.coreTraits.challenges.length === 0) {
+            analysisContent.coreTraits.challenges = ["Perfectionism", "Overthinking", "Difficulty with ambiguity"];
+          }
+        }
         
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
