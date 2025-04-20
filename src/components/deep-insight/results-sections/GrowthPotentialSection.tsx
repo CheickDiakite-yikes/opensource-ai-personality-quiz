@@ -26,7 +26,8 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
       }
       // If it's a string, split by periods or commas
       if (typeof data.developmentAreas === 'string') {
-        return data.developmentAreas
+        const devAreasString = data.developmentAreas as string;
+        return devAreasString
           .split(/[.,;]/)
           .map(item => item.trim())
           .filter(item => item.length > 0);
@@ -60,7 +61,8 @@ const GrowthPotentialSection: React.FC<GrowthPotentialProps> = ({ data }) => {
         return Object.values(data.recommendations).filter(Boolean);
       }
       if (typeof data.recommendations === 'string') {
-        return data.recommendations
+        const recommendationsString = data.recommendations as string;
+        return recommendationsString
           .split(/[.,;]/)
           .map(item => item.trim())
           .filter(item => item.length > 0);
