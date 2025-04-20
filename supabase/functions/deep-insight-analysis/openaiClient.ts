@@ -15,10 +15,9 @@ export async function createOpenAIRequest(openAIApiKey: string, messages: any[],
     model: API_CONFIG.DEFAULT_MODEL,
     messages: messages,
     max_tokens: maxTokens,
-    temperature: 0.7, // Slightly increased for more varied responses
-    top_p: 0.9, // Adjusted for more nuanced output
-    presence_penalty: 0.1, // Added to encourage more diverse content
-    frequency_penalty: 0.2, // Increased to reduce repetition
+    temperature: API_CONFIG.TEMPERATURE,
+    top_p: API_CONFIG.TOP_P,
+    frequency_penalty: API_CONFIG.FREQUENCY_PENALTY,
     stream: false,
     response_format: { type: "json_object" }, // Enable strict JSON mode
   };
