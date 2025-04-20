@@ -99,6 +99,7 @@ const BigMeResultsPage: React.FC = () => {
   const [analysis, setAnalysis] = useState<BigMeAnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -139,11 +140,31 @@ const BigMeResultsPage: React.FC = () => {
         if (error) throw error;
         if (!data) throw new Error("Analysis not found");
         
+        // Store raw response for debugging
+        console.log("Raw analysis data:", data);
+        setRawResponse(data);
+        
+        // Check if analysis_result exists
+        if (!data.analysis_result) {
+          console.error("Analysis result is missing or empty");
+          throw new Error("Analysis data is incomplete");
+        }
+        
         // Normalize the analysis data to ensure all required fields exist
         const normalizedAnalysis = {
           ...defaultAnalysis,
           ...data.analysis_result
         };
+        
+        // More thorough checking of each section
+        // Check core sections existence
+        if (!normalizedAnalysis.coreTraits) normalizedAnalysis.coreTraits = defaultAnalysis.coreTraits;
+        if (!normalizedAnalysis.careerInsights) normalizedAnalysis.careerInsights = defaultAnalysis.careerInsights;
+        if (!normalizedAnalysis.motivationalProfile) normalizedAnalysis.motivationalProfile = defaultAnalysis.motivationalProfile;
+        if (!normalizedAnalysis.growthPotential) normalizedAnalysis.growthPotential = defaultAnalysis.growthPotential;
+        if (!normalizedAnalysis.interpersonalDynamics) normalizedAnalysis.interpersonalDynamics = defaultAnalysis.interpersonalDynamics;
+        if (!normalizedAnalysis.cognitivePatterning) normalizedAnalysis.cognitivePatterning = defaultAnalysis.cognitivePatterning;
+        if (!normalizedAnalysis.emotionalArchitecture) normalizedAnalysis.emotionalArchitecture = defaultAnalysis.emotionalArchitecture;
         
         // Ensure all arrays exist
         if (normalizedAnalysis.coreTraits) {
@@ -181,6 +202,9 @@ const BigMeResultsPage: React.FC = () => {
           normalizedAnalysis.interpersonalDynamics.challengingRelationships = ensureArray(normalizedAnalysis.interpersonalDynamics.challengingRelationships);
         }
         
+        // Add debug logging
+        console.log("Normalized analysis prepared:", normalizedAnalysis);
+        
         setAnalysis(normalizedAnalysis);
       } catch (error) {
         console.error("Error fetching analysis:", error);
@@ -210,6 +234,18 @@ const BigMeResultsPage: React.FC = () => {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
           <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">Error Loading Analysis</h2>
           <p className="text-red-600 dark:text-red-300">{error}</p>
+          {rawResponse && (
+            <div className="mt-4 text-left">
+              <details>
+                <summary className="cursor-pointer text-sm text-red-500 hover:text-red-700">
+                  Show debug information
+                </summary>
+                <pre className="mt-2 p-4 bg-red-50 dark:bg-red-900/30 rounded text-xs overflow-auto max-h-60">
+                  {JSON.stringify(rawResponse, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
           <Button variant="outline" className="mt-4" asChild>
             <a href="/big-me">Start New Assessment</a>
           </Button>
