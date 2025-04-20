@@ -28,30 +28,51 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // More conservative prompt size limit
-    const MAX_PROMPT_SIZE = 10000; // Reduced from 14000 to leave more space for processing
+    // More conservative prompt size limit with better sampling
+    const MAX_PROMPT_SIZE = 12000; // Adjusted from 10000 for better context
   
     let optimizedPrompt = formattedResponses;
+    let samplingStrategy = "none";
   
     if (formattedResponses.length > MAX_PROMPT_SIZE) {
       logDebug(`Large input detected (${formattedResponses.length} chars), optimizing prompt size`);
+      samplingStrategy = "smart-sampling";
     
       const responses = formattedResponses.split('\n');
       const keptResponses = [];
       let totalLength = 0;
-    
-      // Enhanced sampling strategy for better response selection
-      for (const response of responses) {
-        // Prioritize detailed responses but with stricter length criteria
-        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000 && response.length > 150) {
+      
+      // First pass: Select high-value responses that provide more insight
+      // Prioritize responses with more content as they often contain more signal
+      const sortedByLength = [...responses].sort((a, b) => b.length - a.length);
+      const topResponses = sortedByLength.slice(0, Math.min(30, responses.length / 3));
+      
+      for (const response of topResponses) {
+        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1500) {
           keptResponses.push(response);
           totalLength += response.length + 1;
         }
       }
-    
-      // If we haven't collected enough detailed responses, add some shorter ones
-      if (keptResponses.length < 12) { // Increased minimum responses
-        for (const response of responses) {
+      
+      // Second pass: Add some shorter responses for breadth of coverage
+      // Make sure we're sampling from different question IDs
+      const seenIds = new Set(keptResponses.map(r => r.split(":")[0]));
+      
+      for (const response of responses) {
+        const id = response.split(":")[0];
+        if (!seenIds.has(id) && totalLength + response.length <= MAX_PROMPT_SIZE - 1200) {
+          keptResponses.push(response);
+          seenIds.add(id);
+          totalLength += response.length + 1;
+        }
+      }
+      
+      // Third pass: Fill in with random samples to maximize coverage if we have space
+      if (keptResponses.length < responses.length * 0.75) {
+        const remainingResponses = responses.filter(r => !keptResponses.includes(r));
+        const shuffled = remainingResponses.sort(() => 0.5 - Math.random());
+        
+        for (const response of shuffled) {
           if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000) {
             keptResponses.push(response);
             totalLength += response.length + 1;
@@ -60,9 +81,10 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       }
     
       optimizedPrompt = keptResponses.join('\n');
-      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Focus on key patterns and detailed insights.]";
+      optimizedPrompt += "\n\n[Content strategically sampled to ensure comprehensive analysis. Focus on identifying key personality patterns and detailed insights across cognitive, emotional, and interpersonal dimensions.]";
     
-      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
+      logDebug(`Optimized prompt: from ${formattedResponses.length} to ${optimizedPrompt.length} characters using ${samplingStrategy}`);
+      logDebug(`Kept ${keptResponses.length} of ${responses.length} responses (${Math.round(keptResponses.length/responses.length*100)}%)`);
     }
     
     // Implement retry loop with exponential backoff
@@ -89,13 +111,17 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           // Add attempt information to logs
           logDebug(`Sending request to OpenAI (attempt ${attemptCount + 1}/${API_CONFIG.RETRY_COUNT + 1})`, { 
             timeout: extendedTimeout,
-            promptLength: optimizedPrompt.length 
+            promptLength: optimizedPrompt.length,
+            samplingStrategy
           });
           
           const fetchPromise = createOpenAIRequest(
             openAIApiKey, 
             [
-              { role: "system", content: SYSTEM_PROMPT },
+              { 
+                role: "system", 
+                content: SYSTEM_PROMPT + "\n\nIMPORTANT: Always generate COMPLETE analysis with ALL required fields even if working with limited data. Never leave sections empty."
+              },
               { role: "user", content: `Please analyze these assessment responses:\n${optimizedPrompt}` }
             ],
             API_CONFIG.MAIN_MAX_TOKENS,

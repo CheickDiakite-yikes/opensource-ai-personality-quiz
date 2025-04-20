@@ -4,11 +4,41 @@ import { generateDefaultScore, calculateSafeDomainScore } from "./scoring.ts";
 import { getStringSafely, getArraySafely, generateOverview } from "./utils.ts";
 
 export function formatAnalysisResponse(analysisContent: any) {
+  // Validate analysis content structure and ensure we have what we need
+  const hasContent = analysisContent && 
+    typeof analysisContent === 'object' && 
+    Object.keys(analysisContent).length > 0;
+    
+  // If we don't have proper content, add a warning
+  let contentWarning = null;
+  if (!hasContent) {
+    contentWarning = "The analysis system encountered issues with your data. We've provided a generalized profile that may be less personalized than usual.";
+  } else {
+    // Check for minimum content in core sections
+    const requiredSections = ['coreTraits', 'cognitivePatterning', 'emotionalArchitecture', 'interpersonalDynamics'];
+    const missingSections = requiredSections.filter(section => 
+      !analysisContent[section] || 
+      typeof analysisContent[section] !== 'object' || 
+      Object.keys(analysisContent[section]).length === 0
+    );
+    
+    if (missingSections.length > 0) {
+      contentWarning = `Some analysis sections had limited data (${missingSections.join(', ')}). We've filled in these areas with general insights.`;
+    }
+  }
+  
+  // Generate an appropriate overview
+  const overview = contentWarning ? 
+    `${contentWarning} ${generateOverview(analysisContent)}` : 
+    generateOverview(analysisContent);
+
   const analysis = {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
-    overview: generateOverview(analysisContent),
+    overview: overview,
     ...analysisContent,
+    
+    // Ensure we always have these summaries populated
     careerSummary: {
       dominantStrengths: getArraySafely(analysisContent, "careerInsights.naturalStrengths", 3),
       recommendedPaths: getArraySafely(analysisContent, "careerInsights.careerPathways", 3),
@@ -31,7 +61,12 @@ export function formatAnalysisResponse(analysisContent: any) {
   };
 
   return new Response(
-    JSON.stringify({ analysis, success: true, message: "Enhanced analysis generated successfully" }), 
+    JSON.stringify({ 
+      analysis, 
+      success: true, 
+      message: contentWarning || "Enhanced analysis generated successfully",
+      quality: contentWarning ? "partial" : "complete" 
+    }), 
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
