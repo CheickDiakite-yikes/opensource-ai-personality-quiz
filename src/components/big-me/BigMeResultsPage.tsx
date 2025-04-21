@@ -16,6 +16,7 @@ import BigMeGrowthSection from "./results-sections/BigMeGrowthSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 const BigMeResultsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,22 +60,26 @@ const BigMeResultsPage: React.FC = () => {
 
         console.log("Fetched analysis data:", data[0]);
 
-        // Validate the structure of the analysis result
-        const analysisResult = data[0].analysis_result as BigMeAnalysisResult;
+        // Fix the type conversion issue here
+        const analysisResult = data[0].analysis_result as unknown;
         
-        if (!analysisResult) {
-          throw new Error("Analysis result is missing or incomplete");
+        // Validate the structure is what we expect before casting to our type
+        if (!analysisResult || typeof analysisResult !== 'object') {
+          throw new Error("Analysis result is missing or has an invalid format");
         }
-
+        
+        // Cast to our expected type after validation
+        const typedResult = analysisResult as BigMeAnalysisResult;
+        
         // Check core sections
-        if (!analysisResult.coreTraits || 
-            !analysisResult.cognitivePatterning || 
-            !analysisResult.emotionalArchitecture || 
-            !analysisResult.interpersonalDynamics) {
+        if (!typedResult.coreTraits || 
+            !typedResult.cognitivePatterning || 
+            !typedResult.emotionalArchitecture || 
+            !typedResult.interpersonalDynamics) {
           throw new Error("Analysis data is incomplete or corrupted");
         }
 
-        setAnalysis(analysisResult);
+        setAnalysis(typedResult);
       } catch (err) {
         console.error("Error fetching analysis:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
