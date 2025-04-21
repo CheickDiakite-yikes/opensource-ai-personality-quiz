@@ -6,7 +6,7 @@ import PageTransition from "@/components/ui/PageTransition";
 import { toast } from "sonner";
 
 const Auth: React.FC = () => {
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, isLoading } = useAuth();
   
   const handleAuth = (
     type: "login" | "register", 
@@ -48,7 +48,7 @@ const Auth: React.FC = () => {
   return (
     <PageTransition>
       <div className="container mx-auto py-12 px-4 min-h-screen flex flex-col justify-center">
-        <AuthForm onAuth={handleAuth} isLoading={loading} />
+        <AuthForm onAuth={handleAuth} isLoading={isLoading} />
       </div>
     </PageTransition>
   );

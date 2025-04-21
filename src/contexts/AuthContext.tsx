@@ -16,7 +16,7 @@ type UserMetadata = {
 type AuthContextType = {
   user: User | null;
   session: Session | null;
-  loading: boolean; // Added this property to fix the error
+  isLoading: boolean;
   signUp: (
     email: string, 
     password: string, 
@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   // Track initial session check to avoid race conditions
   const [initialSessionChecked, setInitialSessionChecked] = useState(false);
   const navigate = useNavigate();
@@ -77,14 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         setInitialSessionChecked(true);
-        setLoading(false);
+        setIsLoading(false);
         
         return () => {
           subscription.unsubscribe();
         };
       } catch (error) {
         console.error("Error initializing auth:", error);
-        setLoading(false);
+        setIsLoading(false);
         setInitialSessionChecked(true);
       }
     };
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     avatarFile?: File | null
   ) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       
       // Prepare user metadata
       const userData = {
@@ -143,13 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error creating account");
       console.error("Sign up error:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       
       // Clear any existing session first to prevent token conflicts
       const currentSession = await supabase.auth.getSession();
@@ -172,13 +172,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error logging in");
       console.error("Sign in error:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -191,14 +191,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error logging out");
       console.error("Sign out error:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const value = {
     user,
     session,
-    loading, // Make sure to expose the loading state
+    isLoading,
     signUp,
     signIn,
     signOut,

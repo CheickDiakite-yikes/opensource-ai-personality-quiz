@@ -17,135 +17,145 @@ const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 const DeepInsightAssessmentPage = lazy(() => import("@/components/deep-insight/DeepInsightAssessmentPage"));
 const DeepInsightResultsPage = lazy(() => import("@/components/deep-insight/DeepInsightResultsPage"));
+
+// New Big Me components
 const BigMeAssessmentPage = lazy(() => import("@/components/big-me/BigMeAssessmentPage"));
 const BigMeResultsPage = lazy(() => import("@/components/big-me/BigMeResultsPage"));
 
 // Loading fallback component
-const LoadingFallback = () => (
+const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+    <div className="animate-pulse flex space-x-2">
+      <div className="h-3 w-3 bg-primary rounded-full"></div>
+      <div className="h-3 w-3 bg-primary rounded-full"></div>
+      <div className="h-3 w-3 bg-primary rounded-full"></div>
+    </div>
   </div>
 );
 
-// Auth guard for protected routes
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingFallback />;
+// Private route component
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <PageLoader />;
   }
-
+  
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-
+  
   return <>{children}</>;
 };
 
 function App() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <PageLoader />;
+  }
+  
   return (
     <>
       <Routes>
+        {/* Publicly accessible shared profile route outside of Layout to avoid auth problems */}
+        <Route path="/shared/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <SharedProfile />
+          </Suspense>
+        } />
+        
         <Route path="/" element={<Layout />}>
           <Route index element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<PageLoader />}>
               <HomePage />
             </Suspense>
           } />
-          
           <Route path="auth" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Auth />
-            </Suspense>
+            user ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Suspense fallback={<PageLoader />}>
+                <Auth />
+              </Suspense>
+            )
           } />
-          
           <Route path="assessment" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <AssessmentPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
           <Route path="report/:id?" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <ReportPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
           <Route path="tracker" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <TrackerPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
           <Route path="profile" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
-          <Route path="traits" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+          <Route path="traits/:id?" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <TraitsPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
           
-          <Route path="shared/:userId" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <SharedProfile />
-            </Suspense>
-          } />
-          
+          {/* Deep Insight Routes */}
           <Route path="deep-insight" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <DeepInsightAssessmentPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
           <Route path="deep-insight/results/:id?" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <DeepInsightResultsPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
           
+          {/* New Big Me Routes */}
           <Route path="big-me" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <BigMeAssessmentPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
-          
           <Route path="big-me/results/:id?" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LoadingFallback />}>
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <BigMeResultsPage />
               </Suspense>
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
           
           <Route path="*" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<PageLoader />}>
               <NotFound />
             </Suspense>
           } />
         </Route>
       </Routes>
-      
-      <Toaster position="top-right" />
+      <Toaster />
     </>
   );
 }
