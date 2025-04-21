@@ -70,7 +70,8 @@ const BigMeAssessmentPage: React.FC = () => {
       // Format responses for submission
       const formattedResponses = Object.values(responses).map(response => ({
         questionId: response.questionId,
-        question: response.question,
+        // Fix: Get the question text from currentQuestion or the question bank
+        question: currentQuestion?.question || "",
         selectedOption: response.selectedOption,
         customResponse: response.customResponse,
         category: response.category
