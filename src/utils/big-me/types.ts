@@ -1,26 +1,4 @@
 
-import { QuestionCategory } from "../types";
-
-// Big Me question types
-export interface BigMeQuestion {
-  id: string;
-  category: QuestionCategory;
-  question: string;
-  options: string[];
-  allowCustomResponse?: boolean;
-  weight?: number;
-}
-
-// Response type for Big Me assessment
-export interface BigMeResponse {
-  questionId: string;
-  selectedOption?: string;
-  customResponse?: string;
-  category: QuestionCategory;
-  timestamp: Date;
-}
-
-// Analysis result interfaces
 export interface CognitivePatterning {
   decisionMaking: string;
   learningStyle: string;
@@ -28,6 +6,7 @@ export interface CognitivePatterning {
   problemSolvingApproach: string;
   informationProcessing: string;
   analyticalTendencies: string;
+  notableExamples?: string[];
 }
 
 export interface EmotionalArchitecture {
@@ -37,6 +16,7 @@ export interface EmotionalArchitecture {
   emotionalComplexity: string;
   stressResponse: string;
   emotionalResilience: string;
+  notableExamples?: string[];
 }
 
 export interface InterpersonalDynamics {
@@ -49,16 +29,23 @@ export interface InterpersonalDynamics {
   compatibilityProfile: string;
   compatibleTypes: string[];
   challengingRelationships: string[];
+  notableExamples?: string[];
+}
+
+export interface CoreTraitItem {
+  label?: string;
+  explanation?: string;
 }
 
 export interface CoreTraits {
   primary: string;
   secondary: string;
-  tertiaryTraits: string[];
+  tertiaryTraits: (string | CoreTraitItem)[];
   strengths: string[];
   challenges: string[];
   adaptivePatterns: string[];
   potentialBlindSpots: string[];
+  notableExamples?: string[];
 }
 
 export interface CareerInsights {
@@ -69,6 +56,7 @@ export interface CareerInsights {
   careerPathways: string[];
   professionalChallenges: string[];
   potentialRoles: string[];
+  notableExamples?: string[];
 }
 
 export interface MotivationalProfile {
@@ -78,6 +66,7 @@ export interface MotivationalProfile {
   values: string[];
   aspirations: string;
   fearPatterns: string;
+  notableExamples?: string[];
 }
 
 export interface GrowthPotential {
@@ -87,13 +76,30 @@ export interface GrowthPotential {
   longTermTrajectory: string;
   potentialPitfalls: string[];
   growthMindsetIndicators: string;
+  notableExamples?: string[];
 }
 
-// The full analysis result structure
+export interface PsychologicalProfile {
+  values?: {
+    coreValues: string[];
+    motivationalDrivers: string[];
+  };
+  strengths?: string[];
+  challenges?: string[];
+  coreTraits?: {
+    dominantTraits: string[];
+    tertiaryTraits: CoreTraitItem[];
+  };
+  socialDynamics?: {
+    interpersonalStyle: string[];
+    leadershipApproach: string[];
+  };
+  cognitivePatterns?: {
+    thinkingStyle: string[];
+  };
+}
+
 export interface BigMeAnalysisResult {
-  id?: string;
-  createdAt?: string;
-  userId?: string;
   cognitivePatterning: CognitivePatterning;
   emotionalArchitecture: EmotionalArchitecture;
   interpersonalDynamics: InterpersonalDynamics;
@@ -101,4 +107,12 @@ export interface BigMeAnalysisResult {
   careerInsights: CareerInsights;
   motivationalProfile: MotivationalProfile;
   growthPotential: GrowthPotential;
+  psychologicalProfile?: PsychologicalProfile;
+}
+
+export interface BigMeResponse {
+  questionId: string;
+  selectedOption?: string;
+  customResponse?: string;
+  category?: string;
 }

@@ -94,6 +94,79 @@ const ensureArray = (arr: any[] | undefined, defaultValue: string[] = ["Not avai
   return Array.isArray(arr) && arr.length > 0 ? arr : defaultValue;
 };
 
+// Helper to merge any psychological profile data into the core traits
+const mergePsychologicalProfile = (analysis: BigMeAnalysisResult): BigMeAnalysisResult => {
+  const result = { ...analysis };
+
+  // If we have psychological profile data, use it to enhance the analysis
+  if (analysis.psychologicalProfile) {
+    const psychProfile = analysis.psychologicalProfile;
+    
+    // Update core traits if available
+    if (psychProfile.coreTraits) {
+      // If primary/secondary are empty, set from dominant traits
+      if (result.coreTraits.primary === "Not yet analyzed" && psychProfile.coreTraits.dominantTraits?.length > 0) {
+        result.coreTraits.primary = psychProfile.coreTraits.dominantTraits[0];
+      }
+      
+      if (result.coreTraits.secondary === "Not yet analyzed" && psychProfile.coreTraits.dominantTraits?.length > 1) {
+        result.coreTraits.secondary = psychProfile.coreTraits.dominantTraits[1];
+      }
+      
+      // If tertiary traits are empty, use the ones from psych profile
+      if (result.coreTraits.tertiaryTraits.length === 1 && 
+          result.coreTraits.tertiaryTraits[0] === "Not yet analyzed" && 
+          psychProfile.coreTraits.tertiaryTraits?.length > 0) {
+        result.coreTraits.tertiaryTraits = psychProfile.coreTraits.tertiaryTraits.map(
+          trait => typeof trait === 'string' ? trait : trait.label || ''
+        );
+      }
+    }
+    
+    // Update strengths and challenges
+    if (result.coreTraits.strengths.length === 1 && 
+        result.coreTraits.strengths[0] === "Not yet analyzed" && 
+        psychProfile.strengths?.length > 0) {
+      result.coreTraits.strengths = psychProfile.strengths;
+    }
+    
+    if (result.coreTraits.challenges.length === 1 && 
+        result.coreTraits.challenges[0] === "Not yet analyzed" && 
+        psychProfile.challenges?.length > 0) {
+      result.coreTraits.challenges = psychProfile.challenges;
+    }
+    
+    // Update values in motivational profile
+    if (psychProfile.values?.coreValues && 
+        result.motivationalProfile.values.length === 1 && 
+        result.motivationalProfile.values[0] === "Not yet analyzed") {
+      result.motivationalProfile.values = psychProfile.values.coreValues;
+    }
+    
+    // Update cognitive patterning
+    if (psychProfile.cognitivePatterns?.thinkingStyle && 
+        result.cognitivePatterning.decisionMaking === "Not yet analyzed") {
+      // Use the thinking style for decision making if it's empty
+      result.cognitivePatterning.decisionMaking = psychProfile.cognitivePatterns.thinkingStyle.join(" ");
+    }
+    
+    // Update interpersonal dynamics
+    if (psychProfile.socialDynamics?.interpersonalStyle && 
+        result.interpersonalDynamics.communicationPattern === "Not yet analyzed") {
+      result.interpersonalDynamics.communicationPattern = 
+        psychProfile.socialDynamics.interpersonalStyle.join(" ");
+    }
+    
+    if (psychProfile.socialDynamics?.leadershipApproach && 
+        result.careerInsights.leadershipStyle === "Not yet analyzed") {
+      result.careerInsights.leadershipStyle = 
+        psychProfile.socialDynamics.leadershipApproach.join(" ");
+    }
+  }
+  
+  return result;
+};
+
 const BigMeResultsPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const { user } = useAuth();
@@ -207,11 +280,14 @@ const BigMeResultsPage: React.FC = () => {
           normalizedAnalysis.interpersonalDynamics.challengingRelationships = ensureArray(normalizedAnalysis.interpersonalDynamics.challengingRelationships);
         }
         
+        // Merge any psychological profile data with the main analysis
+        const enhancedAnalysis = mergePsychologicalProfile(normalizedAnalysis);
+        
         // Add debug logging
-        console.log("Normalized analysis prepared:", normalizedAnalysis);
+        console.log("Enhanced analysis prepared:", enhancedAnalysis);
         
         toast.success("Analysis data loaded successfully");
-        setAnalysis(normalizedAnalysis);
+        setAnalysis(enhancedAnalysis);
       } catch (error) {
         console.error("Error fetching analysis:", error);
         setError(error instanceof Error ? error.message : "An error occurred");
