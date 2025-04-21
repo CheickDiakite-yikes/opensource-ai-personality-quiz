@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     avatarFile?: File | null
   ) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       
       // Prepare user metadata
       const userData = {
@@ -143,13 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error creating account");
       console.error("Sign up error:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       
       // Clear any existing session first to prevent token conflicts
       const currentSession = await supabase.auth.getSession();
@@ -172,13 +172,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error logging in");
       console.error("Sign in error:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -191,7 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || "Error logging out");
       console.error("Sign out error:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 

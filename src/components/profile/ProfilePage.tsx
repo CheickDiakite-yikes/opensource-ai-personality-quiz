@@ -21,7 +21,7 @@ import { FixAnalysisButton } from "../analysis/FixAnalysisButton";
 // ShareProfile import has been removed
 
 const ProfilePage: React.FC = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { 
     analysis, 
     getAnalysisHistory, 
