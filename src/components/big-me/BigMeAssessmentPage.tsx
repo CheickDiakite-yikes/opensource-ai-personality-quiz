@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ const BigMeAssessmentPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Add abort controller to handle timeouts and cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   const { 
     currentQuestion,
@@ -48,40 +50,92 @@ const BigMeAssessmentPage: React.FC = () => {
       return;
     }
 
+    // Clean up any existing controller
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create a new abort controller for this submission
+    abortControllerRef.current = new AbortController();
+    
     setIsSubmitting(true);
+    
+    // Show initial toast
+    toast.loading("Analyzing your responses...", {
+      id: "big-me-analysis",
+      duration: 60000 // 1 minute loading toast
+    });
 
     try {
       // Format responses for submission
       const formattedResponses = Object.values(responses).map(response => ({
         questionId: response.questionId,
+        question: response.question,
         selectedOption: response.selectedOption,
         customResponse: response.customResponse,
         category: response.category
       }));
 
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke("big-me-analysis", {
+      // Add a timeout for the edge function call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Analysis request timed out")), 120000); // 2 minute timeout
+      });
+
+      // Call the Supabase Edge Function with a race against the timeout
+      const resultPromise = supabase.functions.invoke("big-me-analysis", {
         body: {
           responses: formattedResponses,
-          userId: user.id
+          userId: user.id,
+          timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
         }
       });
 
+      // Race between function call and timeout
+      const { data, error } = await Promise.race([
+        resultPromise,
+        timeoutPromise.then(() => {
+          throw new Error("Analysis request timed out after 2 minutes");
+        })
+      ]);
+
       if (error) {
-        throw new Error(error.message);
+        console.error("Error details:", error);
+        throw new Error(error.message || "Unknown error during analysis");
       }
 
-      toast.success("Assessment submitted successfully!");
+      if (!data || !data.analysisId) {
+        throw new Error("Invalid response from analysis function");
+      }
+
+      toast.success("Assessment submitted successfully!", {
+        id: "big-me-analysis"
+      });
       
       // Redirect to results page
       navigate("/big-me/results");
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      toast.error(`Error submitting assessment: ${error.message}`);
+      
+      // Show more descriptive error message
+      toast.error(`Error submitting assessment: ${error instanceof Error ? error.message : "Unknown error"}`, {
+        id: "big-me-analysis",
+        description: "Please try again in a moment",
+        duration: 8000
+      });
     } finally {
       setIsSubmitting(false);
+      // Don't clear the abort controller here as we might need it for cleanup
     }
   };
+  
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
   
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
