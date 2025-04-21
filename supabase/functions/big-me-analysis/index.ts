@@ -53,38 +53,6 @@ const cleanAndParseJSON = (content: string): any => {
   }
 };
 
-// Helper function to ensure all required arrays exist
-const ensureArraysExist = (obj: any, path: string = ""): any => {
-  if (!obj || typeof obj !== 'object') return obj;
-  
-  if (Array.isArray(obj)) {
-    return obj.length > 0 ? obj : ["Not yet analyzed"];
-  }
-  
-  const result: any = {};
-  for (const key in obj) {
-    const currentPath = path ? `${path}.${key}` : key;
-    if (typeof obj[key] === 'object') {
-      result[key] = ensureArraysExist(obj[key], currentPath);
-    } else {
-      result[key] = obj[key];
-    }
-    
-    // Check expected array properties based on path
-    if (currentPath.includes('traits') && key === 'strengths' && (!obj[key] || !Array.isArray(obj[key]) || obj[key].length === 0)) {
-      console.warn(`Property at '${currentPath}' is missing. Creating default array.`);
-      result[key] = ["Analytical thinking", "Adaptability", "Communication"];
-    }
-    
-    if (currentPath.includes('traits') && key === 'challenges' && (!obj[key] || !Array.isArray(obj[key]) || obj[key].length === 0)) {
-      console.warn(`Property at '${currentPath}' is missing. Creating default array.`);
-      result[key] = ["Perfectionism", "Overthinking", "Impatience"];
-    }
-  }
-  
-  return result;
-};
-
 // Create a comprehensive default analysis when the AI fails
 const createDefaultAnalysis = () => {
   return {
@@ -129,9 +97,7 @@ const createDefaultAnalysis = () => {
         { label: "Responsible", explanation: "Takes ownership of actions and commitments" },
         { label: "Creative", explanation: "Approaches problems with innovative thinking" },
         { label: "Diligent", explanation: "Shows persistence and thoroughness in tasks" },
-        { label: "Authentic", explanation: "Presents true self and values genuineness" },
-        { label: "Conscientious", explanation: "Attentive to details and quality of work" },
-        { label: "Insightful", explanation: "Perceives underlying patterns and meanings" }
+        { label: "Authentic", explanation: "Presents true self and values genuineness" }
       ],
       strengths: ["Critical thinking", "Emotional intelligence", "Adaptability", "Problem-solving", "Attentive listening", "Analytical skills", "Empathy"],
       challenges: ["Perfectionism", "Overthinking", "Balancing logic and emotion", "Setting boundaries", "Managing stress during uncertainty"],
@@ -255,6 +221,7 @@ serve(async (req) => {
       - All arrays must contain multiple items - NEVER leave arrays empty
       - DO NOT include markdown formatting or code blocks
       - Your output must be parseable by JSON.parse()
+      - NEVER use placeholders or default content - analyze with high detail based on responses
     `;
 
     try {
@@ -265,13 +232,6 @@ serve(async (req) => {
       }, 45000);
 
       console.log("[BigMe] Calling OpenAI API with optimized prompt");
-      
-      // Optimize the payload size by limiting question details
-      const compactResponses = responses.map(response => ({
-        questionId: response.questionId,
-        answer: response.selectedOption || response.customResponse || "No answer",
-        category: response.category,
-      }));
       
       // Implement a retry mechanism for better reliability
       let retryCount = 0;
@@ -287,8 +247,8 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "gpt-4o-mini", // Using gpt-4o-mini for faster response times
-              max_tokens: 4000, // Reduced from 8000 for faster response
+              model: "gpt-4o-mini",
+              max_tokens: 4000,
               messages: [
                 {
                   role: "system",
@@ -296,11 +256,11 @@ serve(async (req) => {
                 },
                 {
                   role: "user",
-                  content: `Please analyze these assessment responses thoroughly and provide a complete personality profile with all required sections:\n${JSON.stringify(compactResponses)}`,
+                  content: `Please analyze these assessment responses thoroughly and provide a complete personality profile with all required sections:\n${JSON.stringify(questionsAndAnswers)}`,
                 },
               ],
               temperature: 0.7,
-              response_format: { type: "json_object" }, // Request JSON mode output
+              response_format: { type: "json_object" },
             }),
           });
 
@@ -333,9 +293,7 @@ serve(async (req) => {
               retryCount++;
               // Continue to next iteration for retry
             } else {
-              // Use default analysis if all retries failed
-              console.log("[BigMe] All parsing attempts failed, using default analysis");
-              analysisJson = createDefaultAnalysis();
+              throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
             }
           }
         } catch (apiError) {
@@ -346,15 +304,11 @@ serve(async (req) => {
             retryCount++;
             // Continue to next iteration for retry
           } else {
-            // Use default analysis if all retries failed
-            console.log("[BigMe] All API attempts failed, using default analysis");
-            analysisJson = createDefaultAnalysis();
+            throw new Error(`OpenAI API failed after retries: ${apiError.message}`);
           }
         }
       }
       
-      // Process the analysis to ensure all required fields exist
-      const processedAnalysis = ensureArraysExist(analysisJson);
       console.log("[BigMe] Final processed analysis ready for DB");
 
       try {
@@ -363,8 +317,8 @@ serve(async (req) => {
           .from("big_me_analyses")
           .insert({
             user_id: userId,
-            analysis_result: processedAnalysis,
-            responses: compactResponses
+            analysis_result: analysisJson,
+            responses: questionsAndAnswers
           })
           .select("id, created_at")
           .single();
@@ -384,7 +338,7 @@ serve(async (req) => {
             message: "Analysis completed successfully",
             analysisId: data.id,
             createdAt: data.created_at,
-            analysis: processedAnalysis,
+            analysis: analysisJson,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -397,59 +351,7 @@ serve(async (req) => {
       }
     } catch (openaiError) {
       console.error("[BigMe] OpenAI API error:", openaiError);
-      
-      // Create a default analysis instead of failing completely
-      console.log("[BigMe] Using default analysis due to OpenAI error");
-      const defaultAnalysis = createDefaultAnalysis();
-      
-      try {
-        // Store default analysis in database
-        const { data: storageData, error: storageError } = await supabase
-          .from("big_me_analyses")
-          .insert({
-            user_id: userId,
-            analysis_result: defaultAnalysis,
-            responses: questionsAndAnswers
-          })
-          .select("id, created_at")
-          .single();
-          
-        if (storageError) {
-          throw new Error(`Failed to store default analysis: ${storageError.message}`);
-        }
-        
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Analysis completed with default results",
-            analysisId: storageData.id,
-            createdAt: storageData.created_at,
-            analysis: defaultAnalysis,
-            isDefault: true
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
-      } catch (fallbackError) {
-        console.error("[BigMe] Fallback storage error:", fallbackError);
-        
-        // Return at least the default analysis even if storage fails
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Analysis generated but not stored",
-            analysis: defaultAnalysis,
-            isDefault: true,
-            error: fallbackError.message
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
-      }
+      throw new Error(`OpenAI API error: ${openaiError.message}`);
     }
   } catch (error) {
     console.error("[BigMe] Error in big-me-analysis function:", error);

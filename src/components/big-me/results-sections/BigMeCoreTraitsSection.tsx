@@ -8,14 +8,13 @@ interface BigMeCoreTraitsSectionProps {
 }
 
 const BigMeCoreTraitsSection: React.FC<BigMeCoreTraitsSectionProps> = ({ data }) => {
-  // Helper function to render tertiary trait items that can be either strings or CoreTraitItem objects
   const renderTertiaryTrait = (trait: string | CoreTraitItem, index: number) => {
     if (typeof trait === 'string') {
       return <li key={index} className="text-muted-foreground">{trait}</li>;
     } else {
       return (
         <li key={index} className="text-muted-foreground">
-          <span className="font-semibold">{trait.label || 'Unnamed trait'}</span>
+          <span className="font-semibold">{trait.label}</span>
           {trait.explanation && <span className="block text-sm mt-1 opacity-80">{trait.explanation}</span>}
         </li>
       );

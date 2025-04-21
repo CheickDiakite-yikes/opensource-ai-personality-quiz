@@ -33,8 +33,8 @@ export interface InterpersonalDynamics {
 }
 
 export interface CoreTraitItem {
-  label?: string;
-  explanation?: string;
+  label: string;
+  explanation: string;
 }
 
 export interface CoreTraits {
@@ -117,7 +117,6 @@ export interface BigMeResponse {
   category?: string;
 }
 
-// Adding the BigMeQuestion interface that was missing
 export interface BigMeQuestion {
   id: string;
   category: string;
