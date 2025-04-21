@@ -200,115 +200,113 @@ serve(async (req) => {
       You are a world-leading expert in personality psychology and advanced psychometric assessment.
       **Your ONE GOAL:** Generate the most comprehensive, multi-layered, unique, and insightful psychological profile possible for the user based on their questionnaire answers.
 
-      EXPANDED OUTPUT REQUIREMENTS:
-        - Write 2-3 deep, multi-paragraph, evidence-based analyses for each schema category (not a single summary or one-liner!).
-        - Every insight must use at least one *direct or indirect reference* to the user's answers: draw from patterns, contradictions, and behavioral cues.
-        - Identify BOTH unique, atypical strengths *and* potential blind spots (with specific, real-life behavioral examples).
-        - For ANY array (strengths, challenges, values, career options, etc), generate 7-10 unique, deeply specific, non-cliché items reflecting the user's style, cited with user-specific evidence.
-        - Use highly nuanced language—never general terms. Avoid "good communicator", "team player", etc.
-        - For "coreTraits.tertiaryTraits", provide *exactly* 12 rare, interconnected labels, *each* with explanations and lived implications.
-        - Make every section dense with actionable, research-backed, and/or novel observations about the user's personality, powers, and potential pitfalls.
-        - Cross-reference all areas (e.g., show how emotional coping affects learning, how core values reappear in their relationship style, etc).
-        - Add a "Notable Response Examples" array per section, highlighting the top 3–5 direct quotes or paraphrases from their answers, matched to insight.
-        - NEVER output any generic filler, disclaimers, or short arrays—make every list long, specific, and custom.
-        - Length: The JSON content should be at least 2,000 words total (not just property count), so generate extensive content.
-        - *Output must be only valid JSON*, no markdown or wrapper.
+      CONDENSED OUTPUT REQUIREMENTS:
+        - Focus on key insights rather than exhaustive explanations
+        - Generate 5-7 specific, evidence-based items for strengths, challenges, and other arrays
+        - Use concise but meaningful language that captures important personality dynamics
+        - For "coreTraits.tertiaryTraits", provide 8-10 labels with brief explanations
+        - Keep cross-referencing focused on the most important connections between areas
+        - Ensure all required JSON fields are present but prioritize quality over quantity
+        - The JSON must be valid and should meet a target of around 1,000 words total 
+        - Output only valid JSON with proper double quotes - no markdown or wrapper text
     `;
 
     try {
-      // Set reasonable timeout (no more than 25 seconds to allow for response processing)
+      // Increased timeout to 45 seconds (still safe for edge functions that have 60s limit)
       const analysisTimeout = setTimeout(() => {
-        console.error("[BigMe] Analysis timed out after 25 seconds");
+        console.error("[BigMe] Analysis timed out after 45 seconds");
         throw new Error("Analysis timed out");
-      }, 25000);
+      }, 45000);
 
-      console.log("[BigMe] Calling OpenAI API");
+      console.log("[BigMe] Calling OpenAI API with optimized prompt");
       
-      const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${openAIApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          max_tokens: 8000, // More output for richer analysis
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            {
-              role: "user",
-              content: JSON.stringify(questionsAndAnswers),
-            },
-          ],
-          temperature: 0.7,
-          response_format: { type: "json_object" }, // Request JSON mode output
-        }),
-      });
-
-      // Clear timeout as we got a response
-      clearTimeout(analysisTimeout);
-
-      if (!analysisResponse.ok) {
-        const errorData = await analysisResponse.json();
-        console.error("[BigMe] OpenAI API error:", errorData);
-        
-        // Create a default analysis instead of failing
-        console.log("[BigMe] Using default analysis due to OpenAI error");
-        const defaultAnalysis = createDefaultAnalysis();
-        
-        // Store default analysis in database
-        const { data: storageData, error: storageError } = await supabase
-          .from("big_me_analyses")
-          .insert({
-            user_id: userId,
-            analysis_result: defaultAnalysis,
-            responses: responses
-          })
-          .select("id, created_at")
-          .single();
-          
-        if (storageError) {
-          throw new Error(`Failed to store default analysis: ${storageError.message}`);
-        }
-        
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Analysis completed with default results due to OpenAI error",
-            analysisId: storageData.id,
-            createdAt: storageData.created_at,
-            analysis: defaultAnalysis,
-            isDefault: true
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
-      }
-
-      console.log("[BigMe] OpenAI response received, processing...");
-      const openAiResult = await analysisResponse.json();
-      const analysisContent = openAiResult.choices[0].message.content;
+      // Optimize the payload size by limiting question details
+      const compactResponses = responses.map(response => ({
+        questionId: response.questionId,
+        answer: response.selectedOption || response.customResponse || "No answer",
+        category: response.category,
+      }));
       
-      console.log("[BigMe] Analysis generated, parsing JSON...");
-
-      // Parse the JSON response with better error handling
+      // Implement a retry mechanism for better reliability
+      let retryCount = 0;
+      const maxRetries = 1;
       let analysisJson;
-      try {
-        analysisJson = cleanAndParseJSON(analysisContent);
-        console.log("[BigMe] Successfully parsed deep JSON");
-      } catch (e) {
-        console.error("[BigMe] Failed to parse JSON:", e);
-        
-        // Create a standardized fallback JSON structure
-        console.log("[BigMe] Using fallback JSON structure");
-        analysisJson = createDefaultAnalysis();
-      }
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${openAIApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini", // Using gpt-4o-mini for faster response times
+              max_tokens: 4000, // Reduced from 8000 for faster response
+              messages: [
+                {
+                  role: "system",
+                  content: systemPrompt
+                },
+                {
+                  role: "user",
+                  content: JSON.stringify(compactResponses),
+                },
+              ],
+              temperature: 0.7,
+              response_format: { type: "json_object" }, // Request JSON mode output
+            }),
+          });
 
+          // Clear timeout as we got a response
+          clearTimeout(analysisTimeout);
+
+          if (!analysisResponse.ok) {
+            const errorData = await analysisResponse.json();
+            console.error("[BigMe] OpenAI API error:", errorData);
+            throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
+          }
+
+          console.log("[BigMe] OpenAI response received, processing...");
+          const openAiResult = await analysisResponse.json();
+          const analysisContent = openAiResult.choices[0].message.content;
+          
+          console.log("[BigMe] Analysis generated, parsing JSON...");
+          
+          // Parse the JSON response with better error handling
+          try {
+            analysisJson = cleanAndParseJSON(analysisContent);
+            console.log("[BigMe] Successfully parsed JSON");
+            // If we reach here, parsing was successful, break out of retry loop
+            break;
+          } catch (parseError) {
+            console.error("[BigMe] Failed to parse JSON:", parseError);
+            
+            if (retryCount < maxRetries) {
+              console.log(`[BigMe] Retry ${retryCount + 1} of ${maxRetries}`);
+              retryCount++;
+              // Continue to next iteration for retry
+            } else {
+              // Use default analysis if all retries failed
+              console.log("[BigMe] All parsing attempts failed, using default analysis");
+              analysisJson = createDefaultAnalysis();
+            }
+          }
+        } catch (apiError) {
+          console.error("[BigMe] Error calling OpenAI:", apiError);
+          
+          if (retryCount < maxRetries) {
+            console.log(`[BigMe] Retry ${retryCount + 1} of ${maxRetries}`);
+            retryCount++;
+            // Continue to next iteration for retry
+          } else {
+            // Use default analysis if all retries failed
+            console.log("[BigMe] All API attempts failed, using default analysis");
+            analysisJson = createDefaultAnalysis();
+          }
+        }
+      }
+      
       // Process the analysis to ensure all required fields exist
       const processedAnalysis = ensureArraysExist(analysisJson);
       console.log("[BigMe] Final processed analysis ready for DB");
@@ -320,7 +318,7 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             analysis_result: processedAnalysis,
-            responses: responses
+            responses: compactResponses
           })
           .select("id, created_at")
           .single();
@@ -354,17 +352,58 @@ serve(async (req) => {
     } catch (openaiError) {
       console.error("[BigMe] OpenAI API error:", openaiError);
       
-      // Return an informative error response
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `OpenAI API error: ${openaiError.message || "Unknown error"}`,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
+      // Create a default analysis instead of failing completely
+      console.log("[BigMe] Using default analysis due to OpenAI error");
+      const defaultAnalysis = createDefaultAnalysis();
+      
+      try {
+        // Store default analysis in database
+        const { data: storageData, error: storageError } = await supabase
+          .from("big_me_analyses")
+          .insert({
+            user_id: userId,
+            analysis_result: defaultAnalysis,
+            responses: questionsAndAnswers
+          })
+          .select("id, created_at")
+          .single();
+          
+        if (storageError) {
+          throw new Error(`Failed to store default analysis: ${storageError.message}`);
         }
-      );
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Analysis completed with default results",
+            analysisId: storageData.id,
+            createdAt: storageData.created_at,
+            analysis: defaultAnalysis,
+            isDefault: true
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      } catch (fallbackError) {
+        console.error("[BigMe] Fallback storage error:", fallbackError);
+        
+        // Return at least the default analysis even if storage fails
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Analysis generated but not stored",
+            analysis: defaultAnalysis,
+            isDefault: true,
+            error: fallbackError.message
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
     }
   } catch (error) {
     console.error("[BigMe] Error in big-me-analysis function:", error);

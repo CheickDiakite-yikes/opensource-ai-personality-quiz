@@ -61,17 +61,17 @@ const BigMeAssessmentPage: React.FC = () => {
     setIsSubmitting(true);
     
     // Show initial toast
+    const toastId = "big-me-analysis";
     toast.loading("Analyzing your responses...", {
-      id: "big-me-analysis",
+      id: toastId,
       duration: 60000 // 1 minute loading toast
     });
 
     try {
       // Format responses for submission
-      const formattedResponses = Object.values(responses).map(response => ({
-        questionId: response.questionId,
-        // Get the question text from the question bank
-        question: currentQuestion?.question || "",
+      const formattedResponses = Object.entries(responses).map(([questionId, response]) => ({
+        questionId,
+        question: currentQuestion?.question || "", // Use optional chaining to handle null/undefined
         selectedOption: response.selectedOption,
         customResponse: response.customResponse,
         category: response.category
@@ -79,22 +79,18 @@ const BigMeAssessmentPage: React.FC = () => {
 
       // Add a timeout for the edge function call
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Analysis request timed out")), 120000); // 2 minute timeout
+        setTimeout(() => reject(new Error("Analysis request timed out")), 90000); // 1.5 minute timeout, longer than the edge function timeout
       });
 
       // Use a more efficient approach with fewer properties to reduce payload size
       const payload = {
-        responses: formattedResponses.map(r => ({
-          questionId: r.questionId,
-          question: r.question,
-          selectedOption: r.selectedOption || null,
-          customResponse: r.customResponse || null,
-          category: r.category
-        })),
+        responses: formattedResponses,
         userId: user.id,
         timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
       };
 
+      console.log("Sending analysis request to edge function");
+      
       // Call the Supabase Edge Function with a race against the timeout
       const resultPromise = supabase.functions.invoke("big-me-analysis", {
         body: payload
@@ -104,7 +100,7 @@ const BigMeAssessmentPage: React.FC = () => {
       const { data, error } = await Promise.race([
         resultPromise,
         timeoutPromise.then(() => {
-          throw new Error("Analysis request timed out after 2 minutes");
+          throw new Error("Analysis request timed out after 90 seconds");
         })
       ]);
 
@@ -118,7 +114,7 @@ const BigMeAssessmentPage: React.FC = () => {
       }
 
       toast.success("Assessment submitted successfully!", {
-        id: "big-me-analysis"
+        id: toastId
       });
       
       // Redirect to results page
@@ -128,7 +124,7 @@ const BigMeAssessmentPage: React.FC = () => {
       
       // Show more descriptive error message
       toast.error(`Error submitting assessment: ${error instanceof Error ? error.message : "Unknown error"}`, {
-        id: "big-me-analysis",
+        id: toastId,
         description: "Please try again in a moment",
         duration: 8000
       });
