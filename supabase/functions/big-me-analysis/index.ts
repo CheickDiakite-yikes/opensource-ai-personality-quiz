@@ -112,87 +112,94 @@ serve(async (req) => {
 
     console.log(`[BigMe] Processing DEEP analysis for user ${userId} with ${responses.length} responses`);
 
-    // Generate analysis using OpenAI with MAX DETAIL
+    // Enhanced Deep Analysis systemPrompt for much richer personality feedback
     const systemPrompt = `
-      You are a world-class expert in psychometrics and personalized psychological profiling.
-      Your mission: create the deepest, most comprehensive, insightful profile *possible* based on the given responses.
+      You are a world-leading expert in personality psychology and advanced psychometric assessment.
+      **Your ONE GOAL:** Generate the most comprehensive, multi-layered, unique, and insightful psychological profile possible for the user based on their questionnaire answers.
 
-      CRITICALLY IMPORTANT REQUIREMENTS:
-      - Use maximum rich detail for each and every field. NEVER use short/generic phrases.
-      - Every section (cognitivePatterning, emotionalArchitecture, etc) must contain FULL paragraph-length, nuanced, evidence-based analysis with specific behavioral examples and interconnections.
-      - Identify both unique strengths and potential blind spots, always using specific examples from the user's answers.
-      - For arrays (strengths, challenges, values, career suggestions, etc): provide *at least 5-7 deeply specific items*, NEVER generic (“good communication skills”)—each item should reflect a unique aspect of the user's personality and style.
-      - "coreTraits.tertiaryTraits" must contain at least 10 significant, distinct, and interconnected trait labels, and elaborate on their real-life implications.
-      - Interlink insights between all areas (for example, show how emotional complexity influences problem solving, etc).
-      - Avoid ALL “Barnum statements.” Every description must be so individualized that it could NOT apply to everyone. Cite and reference answer patterns.
-      - In “growthPotential”, provide at least 5–7 actionable recommendations and specific action items, grounded in the user's pattern, with behavioral evidence and relevant context.
-      - “careerInsights” must offer concrete, realistic career directions WITH custom explanation for why each fits their answers.
-      - DO NOT skip any required property in the JSON schema—fill EVERYTHING with fully formed analysis (strings or arrays), no placeholders, no "[insert here]" tags.
-      - FINAL CHECK: Your JSON must contain at least 1000 words of actual content (it’s ok if most is in analysis fields/arrays), and EVERY array must be fully populated as described.
-      - OUTPUT ONLY raw, valid JSON using strict double quotes. DO NOT include any code blocks, markdown, or explanation text before or after. It must be directly parseable.
+      EXPANDED OUTPUT REQUIREMENTS:
+        - Write 2-3 deep, multi-paragraph, evidence-based analyses for each schema category (not a single summary or one-liner!).
+        - Every insight must use at least one *direct or indirect reference* to the user's answers: draw from patterns, contradictions, and behavioral cues.
+        - Identify BOTH unique, atypical strengths *and* potential blind spots (with specific, real-life behavioral examples).
+        - For ANY array (strengths, challenges, values, career options, etc), generate 7-10 unique, deeply specific, non-cliché items reflecting the user's style, cited with user-specific evidence.
+        - Use highly nuanced language—never general terms. Avoid “good communicator”, “team player”, etc.
+        - For “coreTraits.tertiaryTraits”, provide *exactly* 12 rare, interconnected labels, *each* with explanations and lived implications.
+        - Make every section dense with actionable, research-backed, and/or novel observations about the user's personality, powers, and potential pitfalls.
+        - Cross-reference all areas (e.g., show how emotional coping affects learning, how core values reappear in their relationship style, etc).
+        - Add a “Notable Response Examples” array per section, highlighting the top 3–5 direct quotes or paraphrases from their answers, matched to insight.
+        - NEVER output any generic filler, disclaimers, or short arrays—make every list long, specific, and custom.
+        - Length: The JSON content should be at least 2,000 words total (not just property count), so generate extensive content.
+        - *Output must be only valid JSON*, no markdown or wrapper.
 
-      // SCHEMA TO FOLLOW EXACTLY:
+      // SCHEMA TO FOLLOW (ALL SECTIONS REQUIRED):
       {
         "cognitivePatterning": {
-          "decisionMaking": "string",
-          "learningStyle": "string",
-          "attention": "string", 
-          "problemSolvingApproach": "string",
-          "informationProcessing": "string",
-          "analyticalTendencies": "string"
+          "decisionMaking": "string (2+ deep paragraphs)",
+          "learningStyle": "string (2+ deep paragraphs)",
+          "attention": "string (2+ deep paragraphs)",
+          "problemSolvingApproach": "string (2+ deep paragraphs)",
+          "informationProcessing": "string (2+ deep paragraphs)",
+          "analyticalTendencies": "string (2+ deep paragraphs)",
+          "notableExamples": ["string (3+ direct/indirect user response quotes or patterns)"]
         },
         "emotionalArchitecture": {
-          "emotionalAwareness": "string",
-          "regulationStyle": "string",
-          "empathicCapacity": "string",
-          "emotionalComplexity": "string",
-          "stressResponse": "string", 
-          "emotionalResilience": "string"
+          "emotionalAwareness": "string (2+ deep paragraphs)",
+          "regulationStyle": "string (2+ deep paragraphs)",
+          "empathicCapacity": "string (2+ deep paragraphs)",
+          "emotionalComplexity": "string (2+ deep paragraphs)",
+          "stressResponse": "string (2+ deep paragraphs)",
+          "emotionalResilience": "string (2+ deep paragraphs)",
+          "notableExamples": ["string"]
         },
         "interpersonalDynamics": {
-          "attachmentStyle": "string",
-          "communicationPattern": "string",
-          "conflictResolution": "string",
-          "relationshipNeeds": "string",
-          "socialBoundaries": "string",
-          "groupDynamics": "string",
-          "compatibilityProfile": "string",
-          "compatibleTypes": ["string"],
-          "challengingRelationships": ["string"]
+          "attachmentStyle": "string (2+ deep paragraphs)",
+          "communicationPattern": "string (2+ deep paragraphs)",
+          "conflictResolution": "string (2+ deep paragraphs)",
+          "relationshipNeeds": "string (2+ deep paragraphs)",
+          "socialBoundaries": "string (2+ deep paragraphs)",
+          "groupDynamics": "string (2+ deep paragraphs)",
+          "compatibilityProfile": "string (detailed)",
+          "compatibleTypes": ["string (7-10 unique, user-evidence)"],
+          "challengingRelationships": ["string (7-10 unique, user-evidence)"],
+          "notableExamples": ["string"]
         },
         "coreTraits": {
-          "primary": "string",
-          "secondary": "string",
-          "tertiaryTraits": ["string"],
-          "strengths": ["string"],
-          "challenges": ["string"],
-          "adaptivePatterns": ["string"],
-          "potentialBlindSpots": ["string"]
+          "primary": "string (distinct, explained)",
+          "secondary": "string (distinct, explained)",
+          "tertiaryTraits": ["string (12 specified, each explained and interconnected)"],
+          "strengths": ["string (7-10 highly specific, referenced strengths)"],
+          "challenges": ["string (7-10 highly specific, referenced challenges)"],
+          "adaptivePatterns": ["string (7-10, each grounded in user experience)"],
+          "potentialBlindSpots": ["string (7-10, with real-life effects)"],
+          "notableExamples": ["string"]
         },
         "careerInsights": {
-          "naturalStrengths": ["string"],
-          "workplaceNeeds": ["string"],
-          "leadershipStyle": "string",
-          "idealWorkEnvironment": "string",
-          "careerPathways": ["string"],
-          "professionalChallenges": ["string"],
-          "potentialRoles": ["string"]
+          "naturalStrengths": ["string (7-10, deeply tailored to user, cite evidence)"],
+          "workplaceNeeds": ["string (7-10, tailored, cite evidence)"],
+          "leadershipStyle": "string (2+ deep paragraphs)",
+          "idealWorkEnvironment": "string (2+ deep paragraphs)",
+          "careerPathways": ["string (7-10 unique paths, each with rationale)"],
+          "professionalChallenges": ["string (7-10, user-specific)"],
+          "potentialRoles": ["string (7-10, mapped to evidence)"],
+          "notableExamples": ["string"]
         },
         "motivationalProfile": {
-          "primaryDrivers": ["string"],
-          "secondaryDrivers": ["string"],
-          "inhibitors": ["string"],
-          "values": ["string"],
-          "aspirations": "string",
-          "fearPatterns": "string"
+          "primaryDrivers": ["string (7-10 unique drivers, all evidenced by responses)"],
+          "secondaryDrivers": ["string (7-10, all user-tied)"],
+          "inhibitors": ["string (7-10, deeply personalized)"],
+          "values": ["string (7-10 unique values, never generic)"],
+          "aspirations": "string (2+ deep paragraphs)",
+          "fearPatterns": "string (2+ deep paragraphs)",
+          "notableExamples": ["string"]
         },
         "growthPotential": {
-          "developmentAreas": ["string"],
-          "recommendations": ["string"],
-          "specificActionItems": ["string"],
-          "longTermTrajectory": "string",
-          "potentialPitfalls": ["string"],
-          "growthMindsetIndicators": "string"
+          "developmentAreas": ["string (7-10, actionable, tied to answers)"],
+          "recommendations": ["string (7-10, actionable, evidence-backed)"],
+          "specificActionItems": ["string (7-10, stepwise, relevant)"],
+          "longTermTrajectory": "string (2+ deep paragraphs)",
+          "potentialPitfalls": ["string (7-10, with evidence/examples)"],
+          "growthMindsetIndicators": "string (2+ deep paragraphs)",
+          "notableExamples": ["string"]
         }
       }
       // END OF SCHEMA
