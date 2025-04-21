@@ -117,7 +117,7 @@ export interface BigMeResponse {
   category?: string;
 }
 
-// Add the missing BigMeQuestion interface
+// Add the BigMeQuestion interface that was missing
 export interface BigMeQuestion {
   id: string;
   category: string;

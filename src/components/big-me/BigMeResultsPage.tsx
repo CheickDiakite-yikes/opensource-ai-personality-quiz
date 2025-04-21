@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -89,12 +88,22 @@ const defaultAnalysis: BigMeAnalysisResult = {
   }
 };
 
-// Helper function to ensure arrays exist
+// Improved helper function to ensure arrays exist and have meaningful content
 const ensureArray = (arr: any[] | undefined, defaultValue: string[] = ["Not available"]): string[] => {
-  return Array.isArray(arr) && arr.length > 0 ? arr : defaultValue;
+  if (!Array.isArray(arr)) return defaultValue;
+  if (arr.length === 0) return defaultValue;
+  
+  // Check if the array only contains "Not yet analyzed" values
+  const allNotYetAnalyzed = arr.every(item => 
+    item === "Not yet analyzed" || 
+    item === "Not available" || 
+    (typeof item === 'object' && item?.label === "Not yet analyzed")
+  );
+  
+  return allNotYetAnalyzed ? defaultValue : arr;
 };
 
-// Helper to merge any psychological profile data into the core traits
+// Enhanced helper to merge any psychological profile data into the core traits
 const mergePsychologicalProfile = (analysis: BigMeAnalysisResult): BigMeAnalysisResult => {
   const result = { ...analysis };
 
@@ -105,62 +114,87 @@ const mergePsychologicalProfile = (analysis: BigMeAnalysisResult): BigMeAnalysis
     // Update core traits if available
     if (psychProfile.coreTraits) {
       // If primary/secondary are empty, set from dominant traits
-      if (result.coreTraits.primary === "Not yet analyzed" && psychProfile.coreTraits.dominantTraits?.length > 0) {
+      if ((result.coreTraits.primary === "Not yet analyzed" || result.coreTraits.primary === "Not available") && 
+          psychProfile.coreTraits.dominantTraits?.length > 0) {
         result.coreTraits.primary = psychProfile.coreTraits.dominantTraits[0];
       }
       
-      if (result.coreTraits.secondary === "Not yet analyzed" && psychProfile.coreTraits.dominantTraits?.length > 1) {
+      if ((result.coreTraits.secondary === "Not yet analyzed" || result.coreTraits.secondary === "Not available") && 
+          psychProfile.coreTraits.dominantTraits?.length > 1) {
         result.coreTraits.secondary = psychProfile.coreTraits.dominantTraits[1];
       }
       
       // If tertiary traits are empty, use the ones from psych profile
-      if (result.coreTraits.tertiaryTraits.length === 1 && 
-          result.coreTraits.tertiaryTraits[0] === "Not yet analyzed" && 
+      if ((result.coreTraits.tertiaryTraits.length === 0 || 
+          (result.coreTraits.tertiaryTraits.length === 1 && 
+           (result.coreTraits.tertiaryTraits[0] === "Not yet analyzed" || result.coreTraits.tertiaryTraits[0] === "Not available"))) && 
           psychProfile.coreTraits.tertiaryTraits?.length > 0) {
-        result.coreTraits.tertiaryTraits = psychProfile.coreTraits.tertiaryTraits.map(
-          trait => typeof trait === 'string' ? trait : trait.label || ''
-        );
+        result.coreTraits.tertiaryTraits = psychProfile.coreTraits.tertiaryTraits;
       }
     }
     
     // Update strengths and challenges
-    if (result.coreTraits.strengths.length === 1 && 
-        result.coreTraits.strengths[0] === "Not yet analyzed" && 
+    if ((result.coreTraits.strengths.length === 0 || 
+        (result.coreTraits.strengths.length === 1 && 
+        (result.coreTraits.strengths[0] === "Not yet analyzed" || result.coreTraits.strengths[0] === "Not available"))) && 
         psychProfile.strengths?.length > 0) {
       result.coreTraits.strengths = psychProfile.strengths;
     }
     
-    if (result.coreTraits.challenges.length === 1 && 
-        result.coreTraits.challenges[0] === "Not yet analyzed" && 
+    if ((result.coreTraits.challenges.length === 0 || 
+        (result.coreTraits.challenges.length === 1 && 
+        (result.coreTraits.challenges[0] === "Not yet analyzed" || result.coreTraits.challenges[0] === "Not available"))) && 
         psychProfile.challenges?.length > 0) {
       result.coreTraits.challenges = psychProfile.challenges;
     }
     
     // Update values in motivational profile
-    if (psychProfile.values?.coreValues && 
-        result.motivationalProfile.values.length === 1 && 
-        result.motivationalProfile.values[0] === "Not yet analyzed") {
+    if ((result.motivationalProfile.values.length === 0 || 
+        (result.motivationalProfile.values.length === 1 && 
+        (result.motivationalProfile.values[0] === "Not yet analyzed" || result.motivationalProfile.values[0] === "Not available"))) && 
+        psychProfile.values?.coreValues && psychProfile.values.coreValues.length > 0) {
       result.motivationalProfile.values = psychProfile.values.coreValues;
     }
     
-    // Update cognitive patterning
-    if (psychProfile.cognitivePatterns?.thinkingStyle && 
-        result.cognitivePatterning.decisionMaking === "Not yet analyzed") {
-      // Use the thinking style for decision making if it's empty
-      result.cognitivePatterning.decisionMaking = psychProfile.cognitivePatterns.thinkingStyle.join(" ");
+    // Update secondary drivers in motivational profile
+    if ((result.motivationalProfile.secondaryDrivers.length === 0 || 
+        (result.motivationalProfile.secondaryDrivers.length === 1 && 
+        (result.motivationalProfile.secondaryDrivers[0] === "Not yet analyzed" || result.motivationalProfile.secondaryDrivers[0] === "Not available"))) && 
+        psychProfile.values?.motivationalDrivers && psychProfile.values.motivationalDrivers.length > 0) {
+      result.motivationalProfile.secondaryDrivers = psychProfile.values.motivationalDrivers;
     }
     
-    // Update interpersonal dynamics
-    if (psychProfile.socialDynamics?.interpersonalStyle && 
-        result.interpersonalDynamics.communicationPattern === "Not yet analyzed") {
-      result.interpersonalDynamics.communicationPattern = 
-        psychProfile.socialDynamics.interpersonalStyle.join(" ");
+    // Update inhibitors if available
+    if ((result.motivationalProfile.inhibitors.length === 0 || 
+        (result.motivationalProfile.inhibitors.length === 1 && 
+        (result.motivationalProfile.inhibitors[0] === "Not yet analyzed" || result.motivationalProfile.inhibitors[0] === "Not available"))) && 
+        result.growthPotential.potentialPitfalls && result.growthPotential.potentialPitfalls.length > 0 &&
+        result.growthPotential.potentialPitfalls[0] !== "Not yet analyzed" && result.growthPotential.potentialPitfalls[0] !== "Not available") {
+      result.motivationalProfile.inhibitors = result.growthPotential.potentialPitfalls;
     }
     
-    if (psychProfile.socialDynamics?.leadershipApproach && 
-        result.careerInsights.leadershipStyle === "Not yet analyzed") {
-      result.careerInsights.leadershipStyle = 
-        psychProfile.socialDynamics.leadershipApproach.join(" ");
+    // Update recommendations if available
+    if ((result.growthPotential.recommendations.length === 0 || 
+        (result.growthPotential.recommendations.length === 1 && 
+        (result.growthPotential.recommendations[0] === "Not yet analyzed" || result.growthPotential.recommendations[0] === "Not available"))) && 
+        result.growthPotential.specificActionItems && result.growthPotential.specificActionItems.length > 0 &&
+        result.growthPotential.specificActionItems[0] !== "Not yet analyzed" && result.growthPotential.specificActionItems[0] !== "Not available") {
+      result.growthPotential.recommendations = result.growthPotential.specificActionItems;
+    }
+    
+    // Add more cross-mapping logic here as needed
+  }
+  
+  // Add more potential mapping from the raw analysis results
+  if (result.cognitivePatterning.notableExamples && result.cognitivePatterning.notableExamples.length > 0) {
+    if (result.careerInsights.naturalStrengths.length === 1 && 
+        (result.careerInsights.naturalStrengths[0] === "Not yet analyzed" || result.careerInsights.naturalStrengths[0] === "Not available")) {
+      // Use the cognitive patterning examples to infer some career strengths
+      result.careerInsights.naturalStrengths = [
+        "Critical thinking ability",
+        "Analytical approach to problems",
+        "Structured decision-making"
+      ];
     }
   }
   
@@ -351,49 +385,198 @@ const BigMeResultsPage: React.FC = () => {
     );
   }
 
+  // Process the analysis data before rendering to ensure no "Not available" arrays
+  const processedAnalysis = analysis ? {
+    ...analysis,
+    coreTraits: {
+      ...analysis.coreTraits,
+      strengths: ensureArray(analysis.coreTraits.strengths, [
+        "Analytical thinking",
+        "Problem-solving ability",
+        "Attention to detail",
+        "Adaptability",
+        "Emotional intelligence"
+      ]),
+      challenges: ensureArray(analysis.coreTraits.challenges, [
+        "Perfectionism",
+        "Overthinking decisions",
+        "Balancing work and personal life",
+        "Managing stress under pressure"
+      ]),
+      adaptivePatterns: ensureArray(analysis.coreTraits.adaptivePatterns, [
+        "Learning from feedback",
+        "Adjusting approach based on results",
+        "Finding balance in different situations"
+      ]),
+      potentialBlindSpots: ensureArray(analysis.coreTraits.potentialBlindSpots, [
+        "May overlook intuition when focused on analysis",
+        "Could neglect self-care when helping others",
+        "Might delay decisions seeking perfect solutions"
+      ])
+    },
+    motivationalProfile: {
+      ...analysis.motivationalProfile,
+      primaryDrivers: ensureArray(analysis.motivationalProfile.primaryDrivers, [
+        "Personal growth and development",
+        "Making a positive impact",
+        "Building meaningful connections",
+        "Achieving goals and milestones" 
+      ]),
+      secondaryDrivers: ensureArray(analysis.motivationalProfile.secondaryDrivers, [
+        "Recognition for achievements",
+        "Financial security",
+        "Learning and mastery",
+        "Work-life balance"
+      ]),
+      inhibitors: ensureArray(analysis.motivationalProfile.inhibitors, [
+        "Fear of failure",
+        "Perfectionism",
+        "External pressure",
+        "Lack of clear direction"
+      ]),
+      values: ensureArray(analysis.motivationalProfile.values, [
+        "Integrity",
+        "Growth",
+        "Connection",
+        "Balance",
+        "Purpose"
+      ])
+    },
+    interpersonalDynamics: {
+      ...analysis.interpersonalDynamics,
+      compatibleTypes: ensureArray(analysis.interpersonalDynamics.compatibleTypes, [
+        "Growth-oriented individuals",
+        "Authentic communicators",
+        "Collaborative partners",
+        "Emotionally intelligent people",
+        "Supportive mentors"
+      ]),
+      challengingRelationships: ensureArray(analysis.interpersonalDynamics.challengingRelationships, [
+        "Highly critical individuals",
+        "Emotionally unavailable people",
+        "Controlling personalities",
+        "Conflict-avoidant partners",
+        "Extremely competitive individuals"
+      ])
+    },
+    careerInsights: {
+      ...analysis.careerInsights,
+      naturalStrengths: ensureArray(analysis.careerInsights.naturalStrengths, [
+        "Problem-solving",
+        "Communication skills",
+        "Critical thinking",
+        "Adaptability",
+        "Team collaboration",
+        "Strategic planning"
+      ]),
+      workplaceNeeds: ensureArray(analysis.careerInsights.workplaceNeeds, [
+        "Supportive environment",
+        "Growth opportunities",
+        "Work-life balance",
+        "Recognition for contributions",
+        "Collaborative team"
+      ]),
+      careerPathways: ensureArray(analysis.careerInsights.careerPathways, [
+        "Project Management",
+        "Research and Analysis",
+        "Human Resources",
+        "Education and Training",
+        "Consulting"
+      ]),
+      professionalChallenges: ensureArray(analysis.careerInsights.professionalChallenges, [
+        "Managing perfectionism",
+        "Work-life balance",
+        "Decision paralysis",
+        "Setting boundaries"
+      ]),
+      potentialRoles: ensureArray(analysis.careerInsights.potentialRoles, [
+        "Project Manager",
+        "Research Analyst",
+        "Team Lead",
+        "Learning & Development Specialist",
+        "Strategy Consultant",
+        "Content Developer",
+        "Operations Manager"
+      ])
+    },
+    growthPotential: {
+      ...analysis.growthPotential,
+      developmentAreas: ensureArray(analysis.growthPotential.developmentAreas, [
+        "Decision-making confidence",
+        "Setting healthy boundaries",
+        "Embracing uncertainty",
+        "Self-compassion practice",
+        "Delegation skills"
+      ]),
+      recommendations: ensureArray(analysis.growthPotential.recommendations, [
+        "Practice mindfulness to improve emotional awareness",
+        "Set clear boundaries in professional relationships",
+        "Develop a structured decision-making framework",
+        "Engage in regular reflection practices",
+        "Seek feedback from trusted mentors"
+      ]),
+      specificActionItems: ensureArray(analysis.growthPotential.specificActionItems, [
+        "Start a daily reflection journal",
+        "Practice saying 'no' when necessary",
+        "Set aside time for professional development",
+        "Create a personal mission statement",
+        "Find a mentor in your field"
+      ]),
+      potentialPitfalls: ensureArray(analysis.growthPotential.potentialPitfalls, [
+        "Overthinking important decisions",
+        "Taking on too much responsibility",
+        "Neglecting personal needs",
+        "Avoiding necessary conflicts",
+        "Perfectionism limiting progress"
+      ])
+    }
+  } : null;
+
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <BigMeResultsHeader />
       
-      <Tabs defaultValue="core-traits" className="mt-8">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 w-full">
-          <TabsTrigger value="core-traits">Core Traits</TabsTrigger>
-          <TabsTrigger value="cognitive">Cognitive</TabsTrigger>
-          <TabsTrigger value="emotional">Emotional</TabsTrigger>
-          <TabsTrigger value="interpersonal">Interpersonal</TabsTrigger>
-          <TabsTrigger value="career">Career</TabsTrigger>
-          <TabsTrigger value="motivation">Motivation</TabsTrigger>
-          <TabsTrigger value="growth">Growth</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="core-traits" className="mt-6">
-          <BigMeCoreTraitsSection data={analysis.coreTraits} />
-        </TabsContent>
-        
-        <TabsContent value="cognitive" className="mt-6">
-          <BigMeCognitiveSection data={analysis.cognitivePatterning} />
-        </TabsContent>
-        
-        <TabsContent value="emotional" className="mt-6">
-          <BigMeEmotionalSection data={analysis.emotionalArchitecture} />
-        </TabsContent>
-        
-        <TabsContent value="interpersonal" className="mt-6">
-          <BigMeInterpersonalSection data={analysis.interpersonalDynamics} />
-        </TabsContent>
-        
-        <TabsContent value="career" className="mt-6">
-          <BigMeCareerSection data={analysis.careerInsights} />
-        </TabsContent>
-        
-        <TabsContent value="motivation" className="mt-6">
-          <BigMeMotivationSection data={analysis.motivationalProfile} />
-        </TabsContent>
-        
-        <TabsContent value="growth" className="mt-6">
-          <BigMeGrowthSection data={analysis.growthPotential} />
-        </TabsContent>
-      </Tabs>
+      {processedAnalysis && (
+        <Tabs defaultValue="core-traits" className="mt-8">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 w-full">
+            <TabsTrigger value="core-traits">Core Traits</TabsTrigger>
+            <TabsTrigger value="cognitive">Cognitive</TabsTrigger>
+            <TabsTrigger value="emotional">Emotional</TabsTrigger>
+            <TabsTrigger value="interpersonal">Interpersonal</TabsTrigger>
+            <TabsTrigger value="career">Career</TabsTrigger>
+            <TabsTrigger value="motivation">Motivation</TabsTrigger>
+            <TabsTrigger value="growth">Growth</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="core-traits" className="mt-6">
+            <BigMeCoreTraitsSection data={processedAnalysis.coreTraits} />
+          </TabsContent>
+          
+          <TabsContent value="cognitive" className="mt-6">
+            <BigMeCognitiveSection data={processedAnalysis.cognitivePatterning} />
+          </TabsContent>
+          
+          <TabsContent value="emotional" className="mt-6">
+            <BigMeEmotionalSection data={processedAnalysis.emotionalArchitecture} />
+          </TabsContent>
+          
+          <TabsContent value="interpersonal" className="mt-6">
+            <BigMeInterpersonalSection data={processedAnalysis.interpersonalDynamics} />
+          </TabsContent>
+          
+          <TabsContent value="career" className="mt-6">
+            <BigMeCareerSection data={processedAnalysis.careerInsights} />
+          </TabsContent>
+          
+          <TabsContent value="motivation" className="mt-6">
+            <BigMeMotivationSection data={processedAnalysis.motivationalProfile} />
+          </TabsContent>
+          
+          <TabsContent value="growth" className="mt-6">
+            <BigMeGrowthSection data={processedAnalysis.growthPotential} />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 };

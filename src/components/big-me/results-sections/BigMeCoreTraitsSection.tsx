@@ -15,7 +15,7 @@ const BigMeCoreTraitsSection: React.FC<BigMeCoreTraitsSectionProps> = ({ data })
     } else {
       return (
         <li key={index} className="text-muted-foreground">
-          {trait.label || 'Unnamed trait'}
+          <span className="font-semibold">{trait.label || 'Unnamed trait'}</span>
           {trait.explanation && <span className="block text-sm mt-1 opacity-80">{trait.explanation}</span>}
         </li>
       );
