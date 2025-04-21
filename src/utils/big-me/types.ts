@@ -116,3 +116,13 @@ export interface BigMeResponse {
   customResponse?: string;
   category?: string;
 }
+
+// Add the missing BigMeQuestion interface
+export interface BigMeQuestion {
+  id: string;
+  category: string;
+  question: string;
+  options: string[];
+  allowCustomResponse?: boolean;
+  weight?: number;
+}

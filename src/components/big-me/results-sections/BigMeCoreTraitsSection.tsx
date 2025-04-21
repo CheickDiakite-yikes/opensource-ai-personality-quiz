@@ -1,13 +1,27 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CoreTraits } from "@/utils/big-me/types";
+import { CoreTraits, CoreTraitItem } from "@/utils/big-me/types";
 
 interface BigMeCoreTraitsSectionProps {
   data: CoreTraits;
 }
 
 const BigMeCoreTraitsSection: React.FC<BigMeCoreTraitsSectionProps> = ({ data }) => {
+  // Helper function to render tertiary trait items that can be either strings or CoreTraitItem objects
+  const renderTertiaryTrait = (trait: string | CoreTraitItem, index: number) => {
+    if (typeof trait === 'string') {
+      return <li key={index} className="text-muted-foreground">{trait}</li>;
+    } else {
+      return (
+        <li key={index} className="text-muted-foreground">
+          {trait.label || 'Unnamed trait'}
+          {trait.explanation && <span className="block text-sm mt-1 opacity-80">{trait.explanation}</span>}
+        </li>
+      );
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Core Personality Traits</h2>
@@ -36,9 +50,7 @@ const BigMeCoreTraitsSection: React.FC<BigMeCoreTraitsSectionProps> = ({ data })
         </CardHeader>
         <CardContent className="pt-6">
           <ul className="list-disc ml-6 space-y-3">
-            {data.tertiaryTraits.map((trait, index) => (
-              <li key={index} className="text-muted-foreground">{trait}</li>
-            ))}
+            {data.tertiaryTraits.map((trait, index) => renderTertiaryTrait(trait, index))}
           </ul>
         </CardContent>
       </Card>
