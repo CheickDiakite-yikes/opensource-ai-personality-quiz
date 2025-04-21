@@ -70,7 +70,7 @@ const BigMeAssessmentPage: React.FC = () => {
       // Format responses for submission
       const formattedResponses = Object.values(responses).map(response => ({
         questionId: response.questionId,
-        // Fix: Get the question text from currentQuestion or the question bank
+        // Get the question text from the question bank
         question: currentQuestion?.question || "",
         selectedOption: response.selectedOption,
         customResponse: response.customResponse,
@@ -82,13 +82,22 @@ const BigMeAssessmentPage: React.FC = () => {
         setTimeout(() => reject(new Error("Analysis request timed out")), 120000); // 2 minute timeout
       });
 
+      // Use a more efficient approach with fewer properties to reduce payload size
+      const payload = {
+        responses: formattedResponses.map(r => ({
+          questionId: r.questionId,
+          question: r.question,
+          selectedOption: r.selectedOption || null,
+          customResponse: r.customResponse || null,
+          category: r.category
+        })),
+        userId: user.id,
+        timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
+      };
+
       // Call the Supabase Edge Function with a race against the timeout
       const resultPromise = supabase.functions.invoke("big-me-analysis", {
-        body: {
-          responses: formattedResponses,
-          userId: user.id,
-          timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
-        }
+        body: payload
       });
 
       // Race between function call and timeout

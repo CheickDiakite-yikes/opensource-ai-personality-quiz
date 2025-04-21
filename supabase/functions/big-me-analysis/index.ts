@@ -15,6 +15,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Enhanced function to clean and parse JSON that might contain markdown formatting
+const cleanAndParseJSON = (content: string): any => {
+  try {
+    // First try direct parsing
+    return JSON.parse(content);
+  } catch (error) {
+    console.log("Direct JSON parsing failed, attempting to clean content");
+    
+    try {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      
+      // Try to find anything that looks like a JSON object
+      const potentialJsonMatch = content.match(/\{[\s\S]*\}/);
+      if (potentialJsonMatch) {
+        return JSON.parse(potentialJsonMatch[0]);
+      }
+      
+      // Try more aggressive cleaning - remove any non-JSON characters at the beginning and end
+      const firstBrace = content.indexOf('{');
+      const lastBrace = content.lastIndexOf('}');
+      
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const cleanedContent = content.substring(firstBrace, lastBrace + 1);
+        return JSON.parse(cleanedContent);
+      }
+    } catch (cleanError) {
+      console.error("Failed to parse after cleaning:", cleanError);
+    }
+    
+    // If all else fails, throw an informative error
+    throw new Error(`Failed to parse JSON content. Content starts with: ${content.substring(0, 100)}...`);
+  }
+};
+
 // Helper function to ensure all required arrays exist
 const ensureArraysExist = (obj: any, path: string = ""): any => {
   if (!obj || typeof obj !== 'object') return obj;
@@ -47,53 +85,80 @@ const ensureArraysExist = (obj: any, path: string = ""): any => {
   return result;
 };
 
-// Enhanced function to clean and parse JSON that might contain markdown formatting
-const cleanAndParseJSON = (content: string): any => {
-  try {
-    // First try direct parsing
-    return JSON.parse(content);
-  } catch (error) {
-    console.log("Direct JSON parsing failed, attempting to clean content");
-    
-    // Try to extract JSON from markdown code blocks
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (jsonMatch && jsonMatch[1]) {
-      try {
-        return JSON.parse(jsonMatch[1]);
-      } catch (innerError) {
-        console.error("Failed to parse extracted JSON:", innerError);
-      }
+// Create a simpler default analysis when the AI fails
+const createDefaultAnalysis = () => {
+  return {
+    cognitivePatterning: {
+      decisionMaking: "Balanced approach combining logical analysis and intuition.",
+      learningStyle: "Versatile learner who adapts to different educational contexts.",
+      attention: "Focused with ability to sustain concentration on important tasks.",
+      problemSolvingApproach: "Methodical problem-solver who breaks down complex issues.",
+      informationProcessing: "Processes information thoroughly before making decisions.",
+      analyticalTendencies: "Strong critical thinking skills and attention to detail.",
+      notableExamples: ["Shows careful consideration in responses", "Demonstrates analytical depth"]
+    },
+    emotionalArchitecture: {
+      emotionalAwareness: "Good understanding of personal emotional states and triggers.",
+      regulationStyle: "Balanced emotional regulation with healthy coping mechanisms.",
+      empathicCapacity: "Strong ability to understand others' perspectives and feelings.",
+      emotionalComplexity: "Recognizes and navigates the nuances of different emotions.",
+      stressResponse: "Handles stress through problem-solving and seeking support.",
+      emotionalResilience: "Recovers well from setbacks and learns from challenges.",
+      notableExamples: ["Shows empathetic understanding", "Demonstrates emotional awareness"]
+    },
+    interpersonalDynamics: {
+      attachmentStyle: "Secure attachment style with healthy relationship expectations.",
+      communicationPattern: "Clear communicator who values honesty and transparency.",
+      conflictResolution: "Seeks collaborative solutions that address all parties' concerns.",
+      relationshipNeeds: "Values authentic connections and mutual growth in relationships.",
+      socialBoundaries: "Maintains healthy boundaries while remaining approachable.",
+      groupDynamics: "Contributes positively to group settings with collaborative approach.",
+      compatibilityProfile: "Most compatible with authentic, growth-oriented individuals.",
+      compatibleTypes: ["Growth-oriented individuals", "Authentic communicators", "Supportive partners"],
+      challengingRelationships: ["Overly critical individuals", "Emotionally unavailable partners"],
+      notableExamples: ["Values authentic connections", "Seeks mutual understanding"]
+    },
+    coreTraits: {
+      primary: "Analytical Thinker",
+      secondary: "Empathetic Communicator",
+      tertiaryTraits: ["Adaptable", "Resilient", "Curious", "Thoughtful", "Responsible", "Creative", "Diligent", "Authentic", "Conscientious", "Insightful", "Self-aware", "Growth-oriented"],
+      strengths: ["Critical thinking", "Emotional intelligence", "Adaptability", "Problem-solving", "Attentive listening", "Analytical skills", "Empathy"],
+      challenges: ["Perfectionism", "Overthinking", "Balancing logic and emotion", "Setting boundaries", "Managing stress during uncertainty"],
+      adaptivePatterns: ["Learning from feedback", "Adjusting approaches based on context", "Finding balance between different needs"],
+      potentialBlindSpots: ["May overlook intuition when focused on analysis", "Could neglect self-care when helping others", "Might delay decisions seeking perfect solutions"],
+      notableExamples: ["Demonstrates balanced thinking", "Shows both analytical and emotional intelligence"]
+    },
+    careerInsights: {
+      naturalStrengths: ["Critical analysis", "Problem-solving", "Communication", "Adaptability", "Team collaboration", "Learning agility", "Project management"],
+      workplaceNeeds: ["Intellectual stimulation", "Meaningful work", "Supportive culture", "Growth opportunities", "Work-life balance", "Recognition for contributions", "Collaborative environment"],
+      leadershipStyle: "Balanced leadership combining analytical thinking with emotional intelligence and interpersonal awareness.",
+      idealWorkEnvironment: "Collaborative setting that values both individual contribution and teamwork, with opportunities for growth and learning.",
+      careerPathways: ["Strategic analysis", "Research", "Education", "Consulting", "Psychology", "Project management", "Communications"],
+      professionalChallenges: ["Maintaining work-life balance", "Managing perfectionism", "Prioritizing competing demands", "Setting professional boundaries"],
+      potentialRoles: ["Analyst", "Researcher", "Consultant", "Educator", "Project Manager", "Content Developer", "Therapist"],
+      notableExamples: ["Strong analytical capabilities", "Balanced interpersonal skills"]
+    },
+    motivationalProfile: {
+      primaryDrivers: ["Personal growth", "Understanding complex subjects", "Helping others", "Creating value", "Learning and development", "Solving problems", "Making meaningful contributions"],
+      secondaryDrivers: ["Recognition for expertise", "Intellectual stimulation", "Professional advancement", "Financial security", "Positive social impact"],
+      inhibitors: ["Excessive self-criticism", "Uncertainty", "Lack of meaning", "Restrictive environments", "Lack of growth opportunities"],
+      values: ["Integrity", "Growth", "Compassion", "Excellence", "Balance", "Authenticity", "Wisdom"],
+      aspirations: "Seeking to develop expertise while making positive contributions to others' lives and continuing personal growth journey.",
+      fearPatterns: "Concerns about not meeting high personal standards or failing to achieve meaningful impact in chosen areas.",
+      notableExamples: ["Values growth and development", "Motivated by meaningful contribution"]
+    },
+    growthPotential: {
+      developmentAreas: ["Balancing analysis with intuition", "Managing perfectionism", "Setting healthy boundaries", "Embracing uncertainty", "Practicing self-compassion", "Delegating effectively", "Prioritizing self-care"],
+      recommendations: ["Regular reflection practices", "Mindfulness techniques", "Structured goal-setting", "Seeking diverse perspectives", "Cultivating support network", "Skill development in areas of interest", "Exploring creative outlets"],
+      specificActionItems: ["Daily reflection journal", "Weekly learning goals", "Regular skills practice", "Seeking mentorship", "Boundary-setting exercises", "Self-care routine"],
+      longTermTrajectory: "Continued integration of analytical strengths with emotional intelligence, leading to increased wisdom and potential for significant positive impact.",
+      potentialPitfalls: ["Overthinking important decisions", "Taking on too much responsibility", "Neglecting personal needs", "Avoiding necessary conflicts", "Perfectionism limiting progress"],
+      growthMindsetIndicators: "Demonstrates openness to feedback and willingness to learn from challenges and setbacks.",
+      notableExamples: ["Shows growth orientation", "Open to development and feedback"]
     }
-    
-    // Try to find anything that looks like a JSON object
-    const potentialJsonMatch = content.match(/\{[\s\S]*\}/);
-    if (potentialJsonMatch) {
-      try {
-        return JSON.parse(potentialJsonMatch[0]);
-      } catch (innerError) {
-        console.error("Failed to parse potential JSON:", innerError);
-      }
-    }
-    
-    // Try more aggressive cleaning - remove any non-JSON characters at the beginning and end
-    try {
-      const firstBrace = content.indexOf('{');
-      const lastBrace = content.lastIndexOf('}');
-      
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        const cleanedContent = content.substring(firstBrace, lastBrace + 1);
-        return JSON.parse(cleanedContent);
-      }
-    } catch (cleanError) {
-      console.error("Failed to parse after aggressive cleaning:", cleanError);
-    }
-    
-    // If all else fails, throw an informative error
-    throw new Error(`Failed to parse JSON content. Content starts with: ${content.substring(0, 100)}...`);
-  }
+  };
 };
 
-// Handle Big Me Analysis
 serve(async (req) => {
   // Handle OPTIONS requests for CORS
   if (req.method === "OPTIONS") {
@@ -104,6 +169,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[BigMe] Starting analysis process");
+    // Start timer for performance tracking
+    const startTime = Date.now();
+    
     // Parse request
     const { userId, responses } = await req.json();
 
@@ -124,7 +193,7 @@ serve(async (req) => {
       category: response.category,
     }));
 
-    console.log(`[BigMe] Processing DEEP analysis for user ${userId} with ${responses.length} responses`);
+    console.log(`[BigMe] Processing analysis for user ${userId} with ${responses.length} responses`);
 
     // Enhanced Deep Analysis systemPrompt for much richer personality feedback
     const systemPrompt = `
@@ -144,82 +213,17 @@ serve(async (req) => {
         - NEVER output any generic filler, disclaimers, or short arrays—make every list long, specific, and custom.
         - Length: The JSON content should be at least 2,000 words total (not just property count), so generate extensive content.
         - *Output must be only valid JSON*, no markdown or wrapper.
-
-      // SCHEMA TO FOLLOW (ALL SECTIONS REQUIRED):
-      {
-        "cognitivePatterning": {
-          "decisionMaking": "string (2+ deep paragraphs)",
-          "learningStyle": "string (2+ deep paragraphs)",
-          "attention": "string (2+ deep paragraphs)",
-          "problemSolvingApproach": "string (2+ deep paragraphs)",
-          "informationProcessing": "string (2+ deep paragraphs)",
-          "analyticalTendencies": "string (2+ deep paragraphs)",
-          "notableExamples": ["string (3+ direct/indirect user response quotes or patterns)"]
-        },
-        "emotionalArchitecture": {
-          "emotionalAwareness": "string (2+ deep paragraphs)",
-          "regulationStyle": "string (2+ deep paragraphs)",
-          "empathicCapacity": "string (2+ deep paragraphs)",
-          "emotionalComplexity": "string (2+ deep paragraphs)",
-          "stressResponse": "string (2+ deep paragraphs)",
-          "emotionalResilience": "string (2+ deep paragraphs)",
-          "notableExamples": ["string"]
-        },
-        "interpersonalDynamics": {
-          "attachmentStyle": "string (2+ deep paragraphs)",
-          "communicationPattern": "string (2+ deep paragraphs)",
-          "conflictResolution": "string (2+ deep paragraphs)",
-          "relationshipNeeds": "string (2+ deep paragraphs)",
-          "socialBoundaries": "string (2+ deep paragraphs)",
-          "groupDynamics": "string (2+ deep paragraphs)",
-          "compatibilityProfile": "string (detailed)",
-          "compatibleTypes": ["string (7-10 unique, user-evidence)"],
-          "challengingRelationships": ["string (7-10 unique, user-evidence)"],
-          "notableExamples": ["string"]
-        },
-        "coreTraits": {
-          "primary": "string (distinct, explained)",
-          "secondary": "string (distinct, explained)",
-          "tertiaryTraits": ["string (12 specified, each explained and interconnected)"],
-          "strengths": ["string (7-10 highly specific, referenced strengths)"],
-          "challenges": ["string (7-10 highly specific, referenced challenges)"],
-          "adaptivePatterns": ["string (7-10, each grounded in user experience)"],
-          "potentialBlindSpots": ["string (7-10, with real-life effects)"],
-          "notableExamples": ["string"]
-        },
-        "careerInsights": {
-          "naturalStrengths": ["string (7-10, deeply tailored to user, cite evidence)"],
-          "workplaceNeeds": ["string (7-10, tailored, cite evidence)"],
-          "leadershipStyle": "string (2+ deep paragraphs)",
-          "idealWorkEnvironment": "string (2+ deep paragraphs)",
-          "careerPathways": ["string (7-10 unique paths, each with rationale)"],
-          "professionalChallenges": ["string (7-10, user-specific)"],
-          "potentialRoles": ["string (7-10, mapped to evidence)"],
-          "notableExamples": ["string"]
-        },
-        "motivationalProfile": {
-          "primaryDrivers": ["string (7-10 unique drivers, all evidenced by responses)"],
-          "secondaryDrivers": ["string (7-10, all user-tied)"],
-          "inhibitors": ["string (7-10, deeply personalized)"],
-          "values": ["string (7-10 unique values, never generic)"],
-          "aspirations": "string (2+ deep paragraphs)",
-          "fearPatterns": "string (2+ deep paragraphs)",
-          "notableExamples": ["string"]
-        },
-        "growthPotential": {
-          "developmentAreas": ["string (7-10, actionable, tied to answers)"],
-          "recommendations": ["string (7-10, actionable, evidence-backed)"],
-          "specificActionItems": ["string (7-10, stepwise, relevant)"],
-          "longTermTrajectory": "string (2+ deep paragraphs)",
-          "potentialPitfalls": ["string (7-10, with evidence/examples)"],
-          "growthMindsetIndicators": "string (2+ deep paragraphs)",
-          "notableExamples": ["string"]
-        }
-      }
-      // END OF SCHEMA
     `;
 
     try {
+      // Set reasonable timeout (no more than 25 seconds to allow for response processing)
+      const analysisTimeout = setTimeout(() => {
+        console.error("[BigMe] Analysis timed out after 25 seconds");
+        throw new Error("Analysis timed out");
+      }, 25000);
+
+      console.log("[BigMe] Calling OpenAI API");
+      
       const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -244,10 +248,46 @@ serve(async (req) => {
         }),
       });
 
+      // Clear timeout as we got a response
+      clearTimeout(analysisTimeout);
+
       if (!analysisResponse.ok) {
         const errorData = await analysisResponse.json();
-        console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || "Unknown error"}`);
+        console.error("[BigMe] OpenAI API error:", errorData);
+        
+        // Create a default analysis instead of failing
+        console.log("[BigMe] Using default analysis due to OpenAI error");
+        const defaultAnalysis = createDefaultAnalysis();
+        
+        // Store default analysis in database
+        const { data: storageData, error: storageError } = await supabase
+          .from("big_me_analyses")
+          .insert({
+            user_id: userId,
+            analysis_result: defaultAnalysis,
+            responses: responses
+          })
+          .select("id, created_at")
+          .single();
+          
+        if (storageError) {
+          throw new Error(`Failed to store default analysis: ${storageError.message}`);
+        }
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Analysis completed with default results due to OpenAI error",
+            analysisId: storageData.id,
+            createdAt: storageData.created_at,
+            analysis: defaultAnalysis,
+            isDefault: true
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
 
       console.log("[BigMe] OpenAI response received, processing...");
@@ -255,7 +295,6 @@ serve(async (req) => {
       const analysisContent = openAiResult.choices[0].message.content;
       
       console.log("[BigMe] Analysis generated, parsing JSON...");
-      console.log("[BigMe] Content preview:", analysisContent.substring(0, 200) + "...");
 
       // Parse the JSON response with better error handling
       let analysisJson;
@@ -264,184 +303,10 @@ serve(async (req) => {
         console.log("[BigMe] Successfully parsed deep JSON");
       } catch (e) {
         console.error("[BigMe] Failed to parse JSON:", e);
-        console.error("[BigMe] Failed JSON content preview:", 
-          analysisContent.length > 500 
-            ? analysisContent.substring(0, 500) + "..." 
-            : analysisContent
-        );
         
         // Create a standardized fallback JSON structure
         console.log("[BigMe] Using fallback JSON structure");
-        analysisJson = {
-          cognitivePatterning: {
-            decisionMaking: "Deliberate and reflective; prefers in-depth review and cross-referencing perspectives.",
-            learningStyle: "Integrates a blend of experiential, conceptual, and collaborative approaches with meta-cognition.",
-            attention: "Demonstrates strong selective attention, but can hyperfocus at the expense of peripheral cues.",
-            problemSolvingApproach: "Embraces multidimensional strategies: balancing logic, intuition, and creativity.",
-            informationProcessing: "Computes information contextually, recognizing patterns and key structures, linking theory to outcome.",
-            analyticalTendencies: "Analyzes exhaustively, with a high bar for evidence and appreciation of counterpoints."
-          },
-          emotionalArchitecture: {
-            emotionalAwareness: "Highly attuned to emotional context, nuances, and self-awareness.",
-            regulationStyle: "Adaptive, blending cognitive reappraisal, emotional pacing, and environmental cue utilization.",
-            empathicCapacity: "Deep intrinsic empathy, underpinned by intellectual and affective resonance.",
-            emotionalComplexity: "Thinks and feels in nuanced, multi-layered ways, integrating seemingly contradictory emotions.",
-            stressResponse: "Balances acute stress reactivity with practiced recovery and preventive coping.",
-            emotionalResilience: "Bounces back through purposeful reflection, humor, and meaning-making processes."
-          },
-          interpersonalDynamics: {
-            attachmentStyle: "Integrates secure, exploratory, and adaptive attachment strategies in diverse relationships.",
-            communicationPattern: "Excels at high-context communication, adept at reframing, and adjusting tone for situation.",
-            conflictResolution: "Prefers collaborative negotiation, solution-focused mediation, and mutual validation.",
-            relationshipNeeds: "Thirsts for deep connection, intellectual stimulation, and authenticity.",
-            socialBoundaries: "Maintains dynamic boundaries that adapt to social and emotional need states.",
-            groupDynamics: "Acts as a catalyst, equalizer, or subtle influencer for team success.",
-            compatibilityProfile: "Works best with complex, growth-oriented partners valuing mutual development.",
-            compatibleTypes: ["Constructive analytic thinkers", "Emotionally expressive peers", "Growth-oriented team-players", "Supportive mentors", "Curious innovators"],
-            challengingRelationships: ["Rigidly dogmatic types", "Emotionally avoidant persons", "Dominance-oriented personalities", "Excessively competitive colleagues", "Superficially agreeable individuals"]
-          },
-          coreTraits: {
-            primary: "Synthesis & Insight",
-            secondary: "Compassionate Drive",
-            tertiaryTraits: [
-              "Meta-Cognitive Awareness",
-              "Authenticity",
-              "Adaptive Leadership",
-              "Pragmatic Vision",
-              "Collaborative Instinct",
-              "Intuitive Empathy",
-              "Strategic Foresight",
-              "Purposeful Curiosity",
-              "Resilient Optimism",
-              "Reflective Self-Regulation"
-            ],
-            strengths: [
-              "Analyzing complex scenarios and extracting actionable principles",
-              "Empowering and coaching others toward progress",
-              "Initiating projects and sustaining thoughtful innovation",
-              "Resolving conflict through emotional clarity and logical structure",
-              "Inspiring trust via consistent values and transparency",
-              "Integrating abstract ideas into real-world solutions"
-            ],
-            challenges: [
-              "Overcommitting due to enthusiasm, risking burn-out",
-              "Occasionally overanalyzing and delaying decisions",
-              "Becoming fixated on untested ideals",
-              "Difficulty relinquishing control in group settings",
-              "Struggling to emotionally disconnect after intense interactions"
-            ],
-            adaptivePatterns: [
-              "Learns new paradigms quickly during times of change",
-              "Uses setbacks as growth catalysts",
-              "Reflects systematically to integrate feedback"
-            ],
-            potentialBlindSpots: [
-              "May miss emerging social cues while hyperfocused",
-              "Struggles to say no to new opportunities",
-              "Could overlook the needs of less vocal team members",
-              "Occasional blind spots around personal limits"
-            ]
-          },
-          careerInsights: {
-            naturalStrengths: [
-              "Visionary strategic planning",
-              "Team empowerment and leadership",
-              "Creative innovation across disciplines",
-              "Systems optimization",
-              "Mentorship and personal development"
-            ],
-            workplaceNeeds: [
-              "Intellectually engaging projects",
-              "Collaborative partnerships with shared values",
-              "Room for innovation within structure",
-              "Authentic communication with leaders",
-              "Pathways for meaningful growth"
-            ],
-            leadershipStyle: "Transformational, participative leadership—prioritizing vision, team dialogue, and shared ownership.",
-            idealWorkEnvironment: "A psychologically safe and challenging space fostering deep work, reflection, and collaboration.",
-            careerPathways: [
-              "Strategic consultancy",
-              "Organizational development",
-              "Research & analysis",
-              "Coaching & mentorship",
-              "Creative direction"
-            ],
-            professionalChallenges: [
-              "Managing interpersonal complexities across diverse teams",
-              "Sustaining progress in ambiguity and uncertainty",
-              "Balancing creative divergence with practical convergence"
-            ],
-            potentialRoles: [
-              "Leadership coach",
-              "Head of innovation",
-              "HR strategist",
-              "Executive advisor",
-              "Learning & development lead"
-            ]
-          },
-          motivationalProfile: {
-            primaryDrivers: [
-              "Desire for meaningful impact",
-              "Independence in thought and action",
-              "Growth through challenge",
-              "Legacy-building",
-              "Genuine connection"
-            ],
-            secondaryDrivers: [
-              "Recognition from trusted mentors",
-              "Validation of creative work",
-              "Learning new frameworks"
-            ],
-            inhibitors: [
-              "Hostile, hyper-competitive environments",
-              "Micromanagement",
-              "Lack of growth opportunity",
-              "Unaddressed value conflicts"
-            ],
-            values: [
-              "Integrity",
-              "Depth of insight",
-              "Adaptability",
-              "Collaboration",
-              "Courage",
-              "Continuous learning"
-            ],
-            aspirations: "To drive innovation while helping others achieve their best self—leaving a legacy of transformation.",
-            fearPatterns: "Fear of leaving potential untapped, or failing to meaningfully contribute—sometimes leading to stress over legacy and impact."
-          },
-          growthPotential: {
-            developmentAreas: [
-              "Embracing imperfection and iterative improvement",
-              "Building resilience to external criticism",
-              "Delegating and trusting others more fully",
-              "Balancing visionary goals with daily realities",
-              "Strengthening emotional boundaries",
-              "Cultivating patience amid slow progress"
-            ],
-            recommendations: [
-              "Practice grounding meditations and self-reflection journals",
-              "Seek mentorships outside immediate expertise",
-              "Engage in collaborative creative brainstorming regularly",
-              "Deliberately prioritize time for rest and renewal",
-              "Experiment with new learning methods for unfamiliar topics",
-              "Gather feedback from quieter team members"
-            ],
-            specificActionItems: [
-              "Enroll in reflective leadership or coaching workshops",
-              "Schedule weekly, focused time blocks for personal growth tasks",
-              "Rotate collaborative responsibilities in current teams",
-              "Commit to a 'say no' challenge on over-commitments for 30 days"
-            ],
-            longTermTrajectory: "With deepening self-awareness and intentional growth, will evolve into a sought-after mentor, trusted leader, and agent of meaningful change.",
-            potentialPitfalls: [
-              "Burnout from chronic overextension",
-              "Frustration with systemic inertia",
-              "Neglecting rest in pursuit of impact",
-              "Occasionally losing touch with immediate realities"
-            ],
-            growthMindsetIndicators: "Regularly reframes setbacks as learning opportunities, and supports others to do the same."
-          }
-        };
+        analysisJson = createDefaultAnalysis();
       }
 
       // Process the analysis to ensure all required fields exist
@@ -466,6 +331,7 @@ serve(async (req) => {
         }
 
         console.log("[BigMe] Analysis stored successfully with ID:", data.id);
+        console.log(`[BigMe] Total processing time: ${Date.now() - startTime}ms`);
 
         // Return success response with analysis data
         return new Response(
