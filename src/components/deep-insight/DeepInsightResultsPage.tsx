@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -18,33 +18,6 @@ const DeepInsightResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { analysis, loading, error, fetchAnalysis } = useAnalysisFetching();
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
-  
-  // Add an effect to check if we need to retry automatically on first load
-  useEffect(() => {
-    const checkAnalysisStatus = async () => {
-      if (analysis && 
-          (!analysis.overview || 
-           analysis.overview.includes("processing") || 
-           !analysis.core_traits)) {
-        
-        console.log("Analysis appears incomplete, will retry in 5 seconds");
-        
-        // Wait 5 seconds before trying again to avoid hammering the API
-        setTimeout(async () => {
-          try {
-            console.log("Auto-retrying analysis fetch...");
-            await fetchAnalysis();
-          } catch (err) {
-            console.error("Auto-retry failed:", err);
-          }
-        }, 5000);
-      }
-    };
-    
-    if (analysis && !loading && !error) {
-      checkAnalysisStatus();
-    }
-  }, [analysis, loading, error]);
 
   const handleRetry = async () => {
     setIsRetrying(true);

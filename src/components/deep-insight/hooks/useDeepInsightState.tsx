@@ -5,6 +5,8 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from 'sonner';
 import { deepInsightQuestions } from '@/utils/questionBank';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from '@/contexts/AuthContext';
 
 type DeepInsightResponses = Record<string, string>;
 
@@ -17,6 +19,7 @@ export const useDeepInsightState = () => {
   const [progress, setProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const { user } = useAuth();
   
   const navigate = useNavigate();
 
@@ -24,9 +27,8 @@ export const useDeepInsightState = () => {
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
 
-  // Calculate progress based on current question index, not response count
+  // Calculate progress based on current question index
   useEffect(() => {
-    // We add 1 to currentQuestionIndex because it's zero-based but we want to show progress starting from 1
     const progressValue = ((currentQuestionIndex + 1) / totalQuestions) * 100;
     setProgress(progressValue);
   }, [currentQuestionIndex, totalQuestions]);
@@ -36,7 +38,6 @@ export const useDeepInsightState = () => {
 
   // Update a response for a specific question
   const handleOptionSelect = (option: string) => {
-    // Using direct object assignment which matches the DeepInsightResponses type
     const updatedResponses = {
       ...responses,
       [currentQuestion.id]: option
@@ -80,22 +81,93 @@ export const useDeepInsightState = () => {
     setSubmissionError(null);
 
     try {
-      toast.info("Analyzing your responses...");
+      // Create a loading toast that will be updated later
+      toast.loading("Analyzing your responses...", { id: "analysis-toast" });
       
-      // Here you would implement the API call to analyze responses
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // First save the responses to the database
+      if (user) {
+        try {
+          const assessmentId = `deep-insight-${Date.now()}`;
+          
+          const { error: assessmentError } = await supabase
+            .from('deep_insight_assessments')
+            .insert({
+              id: assessmentId,
+              user_id: user.id,
+              responses: responses
+            });
+            
+          if (assessmentError) {
+            console.error("Error saving assessment to database:", assessmentError);
+          } else {
+            console.log("Assessment saved successfully with ID:", assessmentId);
+          }
+        } catch (err) {
+          console.error("Error saving assessment:", err);
+        }
+      }
+      
+      // Call our edge function to analyze the responses
+      console.log("Sending responses to deep-insight-analysis function", responses);
+      
+      const { data, error } = await supabase.functions.invoke("deep-insight-analysis", {
+        body: { responses }
+      });
+      
+      if (error) {
+        throw new Error(`Analysis failed: ${error.message}`);
+      }
+      
+      if (!data || !data.analysis) {
+        throw new Error("Invalid response from analysis function");
+      }
+      
+      console.log("Analysis result:", data.analysis);
+      
+      // Save the analysis to the database
+      if (user && data.analysis) {
+        try {
+          const { error: analysisError } = await supabase
+            .from('deep_insight_analyses')
+            .insert({
+              user_id: user.id,
+              complete_analysis: data.analysis,
+              overview: data.analysis.overview || "Your analysis is being processed",
+              core_traits: data.analysis.coreTraits || null,
+              cognitive_patterning: data.analysis.cognitivePatterning || null,
+              emotional_architecture: data.analysis.emotionalArchitecture || null,
+              interpersonal_dynamics: data.analysis.interpersonalDynamics || null,
+              growth_potential: data.analysis.growthPotential || null,
+              intelligence_score: data.analysis.intelligenceScore || 0,
+              emotional_intelligence_score: data.analysis.emotionalIntelligenceScore || 0
+            });
+            
+          if (analysisError) {
+            console.error("Error saving analysis to database:", analysisError);
+          } else {
+            console.log("Analysis saved successfully to database");
+          }
+        } catch (err) {
+          console.error("Error saving analysis:", err);
+        }
+      }
       
       // Reset responses after successful submission
       setResponses({});
       setCurrentQuestionIndex(0);
       
-      // Navigate to results page (you'll need to create this route)
+      // Update the toast to show success
+      toast.success("Analysis completed successfully!", { id: "analysis-toast" });
+      
+      // Navigate to results page
       navigate('/deep-insight/results');
     } catch (error) {
       console.error('Error submitting assessment:', error);
       setSubmissionError(error instanceof Error ? error.message : "An unexpected error occurred");
-      toast.error("Failed to submit assessment");
+      toast.error("Failed to analyze responses", { 
+        id: "analysis-toast",
+        description: error instanceof Error ? error.message : "Please try again"
+      });
     } finally {
       setIsSubmitting(false);
     }

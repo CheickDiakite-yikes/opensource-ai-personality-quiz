@@ -1,7 +1,7 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
-import { callOpenAI } from "./openai.ts";
-import { handleRequestValidation, createErrorResponse } from "./errorHandler.ts";
+import { createErrorResponse } from "./errorHandler.ts";
+import { logInfo, logError } from "./logging.ts";
 
 export async function processRequest(req: Request) {
   // Parse request body early to quickly return errors if needed
@@ -9,27 +9,28 @@ export async function processRequest(req: Request) {
   try {
     const body = await req.json();
     responses = body.responses;
-    console.log(`Request body parsed successfully, contains responses: ${!!responses}`);
+    logInfo(`Request body parsed successfully, contains responses: ${!!responses}`);
   } catch (parseError) {
-    console.error("Error parsing request JSON:", parseError);
+    logError("Error parsing request JSON:", parseError);
     return createErrorResponse(parseError, 400, "Invalid JSON in request body");
   }
 
   try {
-    handleRequestValidation(responses);
+    if (!responses || typeof responses !== 'object' || Object.keys(responses).length === 0) {
+      throw new Error("Invalid or empty responses object");
+    }
     
     const formatted = Object.entries(responses)
       .map(([id, answer]) => `Q${id}: ${answer}`)
       .join("\n");
 
-    console.log(`Processing ${Object.keys(responses).length} responses`);
+    logInfo(`Processing ${Object.keys(responses).length} responses`);
     
     // Enhanced logging of response patterns
-    console.log("Response distribution analysis:");
     const responseLengths = Object.values(responses).map(r => String(r).length);
-    const avgLength = responseLengths.reduce((a, b) => a + b, 0) / responseLengths.length;
-    console.log(`Average response length: ${avgLength}`);
-    console.log(`Total response length: ${formatted.length} characters`);
+    const avgLength = responseLengths.reduce((a: number, b: number) => a + b, 0) / responseLengths.length;
+    logInfo(`Average response length: ${avgLength}`);
+    logInfo(`Total response length: ${formatted.length} characters`);
     
     return formatted;
   } catch (error) {

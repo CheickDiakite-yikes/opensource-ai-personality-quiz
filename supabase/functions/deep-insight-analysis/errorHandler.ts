@@ -21,13 +21,3 @@ export function createErrorResponse(
     }
   );
 }
-
-export function handleRequestValidation(responses: any) {
-  if (!responses || typeof responses !== 'object') {
-    throw new Error("Invalid responses format");
-  }
-  
-  if (Object.keys(responses).length === 0) {
-    throw new Error("No responses provided");
-  }
-}

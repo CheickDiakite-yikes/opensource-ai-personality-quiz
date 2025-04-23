@@ -15,7 +15,10 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
     }
   ];
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  logDebug("Sending request to OpenAI API");
+  logDebug(`Request payload size: ${JSON.stringify(messages).length} characters`);
+  
+  const response = await fetch(API_CONFIG.BASE_URL, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
@@ -23,19 +26,23 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
       ...corsHeaders
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: API_CONFIG.DEFAULT_MODEL,
       messages: messages,
-      temperature: 0.7,
-      response_format: { type: "json_object" },
+      temperature: API_CONFIG.TEMPERATURE,
+      top_p: API_CONFIG.TOP_P,
+      frequency_penalty: API_CONFIG.FREQUENCY_PENALTY, 
+      presence_penalty: API_CONFIG.PRESENCE_PENALTY,
+      response_format: API_CONFIG.RESPONSE_FORMAT,
       max_tokens: 4000
     })
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    logError("OpenAI API error:", error);
-    throw new Error(`OpenAI API error: ${response.status}`);
+    logError(`OpenAI API error: ${response.status}`, error);
+    throw new Error(`OpenAI API error: ${response.status} - ${error?.error?.message || 'Unknown error'}`);
   }
 
+  logDebug("Received successful response from OpenAI API");
   return response.json();
 }
