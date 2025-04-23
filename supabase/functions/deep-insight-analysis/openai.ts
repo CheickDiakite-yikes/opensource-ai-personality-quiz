@@ -3,8 +3,9 @@ import { SYSTEM_PROMPT } from "./prompts.ts";
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
-import { logRequestConfig, logError, logDebug } from "./logging.ts";
+import { logRequestConfig, logError, logDebug, logInfo, createPerformanceTracker } from "./logging.ts";
 import { handleFallback } from "./fallbackHandler.ts";
+import { analyzeResponses } from "./utils.ts";
 
 export async function callOpenAI(openAIApiKey: string, formattedResponses: string) {
   if (!openAIApiKey || openAIApiKey.trim() === "") {
@@ -12,10 +13,23 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     throw new Error("OpenAI API key is missing or invalid");
   }
 
-  logDebug(`Starting OpenAI API call with model: ${API_CONFIG.DEFAULT_MODEL}`);
-  console.time("openai-api-call");
+  logInfo(`Starting OpenAI API call with model: ${API_CONFIG.DEFAULT_MODEL}`);
+  const totalTimer = createPerformanceTracker("Total OpenAI processing time");
 
   try {
+    // Analyze responses to determine complexity
+    const responseMetrics = analyzeResponses(
+      formattedResponses.split('\n').reduce((acc, line) => {
+        const match = line.match(/^Q(\d+): (.+)$/);
+        if (match) {
+          acc[match[1]] = match[2];
+        }
+        return acc;
+      }, {} as Record<string, string>)
+    );
+    
+    logInfo("Response metrics analysis", responseMetrics);
+    
     const config = {
       model: API_CONFIG.DEFAULT_MODEL,
       max_tokens: API_CONFIG.MAIN_MAX_TOKENS,
@@ -28,71 +42,51 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // More conservative prompt size limit
-    const MAX_PROMPT_SIZE = 10000; // Reduced from 14000 to leave more space for processing
-  
+    // More conservative prompt size limit with smart reduction
+    const MAX_PROMPT_SIZE = 12000;
     let optimizedPrompt = formattedResponses;
   
     if (formattedResponses.length > MAX_PROMPT_SIZE) {
       logDebug(`Large input detected (${formattedResponses.length} chars), optimizing prompt size`);
     
+      // Split by newline to get individual responses
       const responses = formattedResponses.split('\n');
-      const keptResponses = [];
-      let totalLength = 0;
-    
-      // Enhanced sampling strategy for better response selection
-      for (const response of responses) {
-        // Prioritize detailed responses but with stricter length criteria
-        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000 && response.length > 150) {
-          keptResponses.push(response);
-          totalLength += response.length + 1;
-        }
-      }
-    
-      // If we haven't collected enough detailed responses, add some shorter ones
-      if (keptResponses.length < 12) { // Increased minimum responses
-        for (const response of responses) {
-          if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000) {
-            keptResponses.push(response);
-            totalLength += response.length + 1;
-          }
-        }
-      }
-    
-      optimizedPrompt = keptResponses.join('\n');
-      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Focus on key patterns and detailed insights.]";
-    
+      
+      // Intelligent sampling based on response quality
+      optimizedPrompt = intelligentlySampleResponses(responses, MAX_PROMPT_SIZE, responseMetrics);
+      
       logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
+      logDebug(`Kept ${optimizedPrompt.split('\n').length} out of ${responses.length} responses`);
     }
     
-    // Implement retry loop with exponential backoff
-    let lastError = null;
-    
+    // Enhanced retry system with exponential backoff
     for (let attemptCount = 0; attemptCount <= API_CONFIG.RETRY_COUNT; attemptCount++) {
       try {
         if (attemptCount > 0) {
-          // Exponential backoff - wait longer for each retry
-          const backoffDelay = Math.pow(2, attemptCount) * 1000; // 2s, 4s, 8s, etc.
+          const backoffDelay = Math.min(
+            API_CONFIG.RETRY_MAX_DELAY,
+            API_CONFIG.RETRY_INITIAL_DELAY * Math.pow(API_CONFIG.RETRY_BACKOFF_FACTOR, attemptCount - 1)
+          );
           logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT} after ${backoffDelay}ms delay`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
         
-        // Create an AbortController with a more generous timeout
+        // Create an AbortController for timeout management
         const controller = new AbortController();
-        const extendedTimeout = API_CONFIG.MAIN_TIMEOUT * (attemptCount + 1); // Increase timeout for each retry
         const timeoutId = setTimeout(() => {
           controller.abort("Request timeout exceeded");
-          logDebug("Manually aborting request after timeout", { timeout: extendedTimeout });
-        }, extendedTimeout);
+          logDebug("Manually aborting request after timeout", { timeout: API_CONFIG.MAIN_TIMEOUT });
+        }, API_CONFIG.MAIN_TIMEOUT);
         
         try {
-          // Add attempt information to logs
           logDebug(`Sending request to OpenAI (attempt ${attemptCount + 1}/${API_CONFIG.RETRY_COUNT + 1})`, { 
-            timeout: extendedTimeout,
+            timeout: API_CONFIG.MAIN_TIMEOUT,
             promptLength: optimizedPrompt.length 
           });
           
-          const fetchPromise = createOpenAIRequest(
+          const apiCallTimer = createPerformanceTracker("OpenAI API call");
+          
+          const openAIRes = await createOpenAIRequest(
             openAIApiKey, 
             [
               { role: "system", content: SYSTEM_PROMPT },
@@ -102,56 +96,122 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
             controller.signal
           );
           
-          const openAIRes = await fetchPromise;
+          apiCallTimer.end();
           clearTimeout(timeoutId); // Clear the timeout if request completes
           
           logDebug(`Successfully received OpenAI response on attempt ${attemptCount + 1}`);
-          console.timeEnd("openai-api-call");
           
-          return await handleOpenAIResponse(openAIRes);
+          const parsingTimer = createPerformanceTracker("OpenAI response parsing");
+          const openAIData = await handleOpenAIResponse(openAIRes);
+          parsingTimer.end();
+          
+          totalTimer.end();
+          
+          return openAIData;
         } catch (error) {
-          clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
+          clearTimeout(timeoutId);
           
-          // Add more context to the error
-          const enhancedError = error instanceof Error 
-            ? new Error(`API call attempt ${attemptCount + 1} failed: ${error.message}`)
-            : new Error(`API call attempt ${attemptCount + 1} failed with unknown error`);
-            
-          logError(enhancedError, `API call attempt ${attemptCount + 1}`);
-          lastError = enhancedError;
+          logError(error, `API call attempt ${attemptCount + 1} failed`);
           
-          // If this is the last retry, don't continue to the next attempt
           if (attemptCount >= API_CONFIG.RETRY_COUNT) {
-            throw lastError;
+            throw error;
           }
-          // Otherwise, continue to next retry attempt
         }
       } catch (retryError) {
         logError(retryError, `Retry wrapper error attempt ${attemptCount + 1}`);
-        lastError = retryError;
         
-        // If this is the last retry, don't continue to the next attempt
         if (attemptCount >= API_CONFIG.RETRY_COUNT) {
-          throw lastError;
+          throw retryError;
         }
-        // Otherwise, continue to next retry attempt
       }
     }
     
-    // All retry attempts failed, throw the last error to trigger the fallback
-    logDebug("All retry attempts failed, using fallback");
-    throw lastError || new Error("All OpenAI API attempts failed");
+    throw new Error("All OpenAI API attempts failed");
   } catch (error) {
-    logError(error, "OpenAI API call");
+    logError(error, "OpenAI API call failed");
     
-    // Now we'll try the fallback
-    logDebug("Main API call failed. Attempting fallback...");
+    // Now try the fallback
+    logInfo("Main API call failed. Attempting fallback...");
     try {
-      return await handleFallback(openAIApiKey, formattedResponses);
+      const fallbackTimer = createPerformanceTracker("Fallback processing");
+      const fallbackResult = await handleFallback(openAIApiKey, formattedResponses);
+      fallbackTimer.end();
+      
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify(fallbackResult)
+          },
+          finish_reason: "fallback"
+        }],
+        model: API_CONFIG.FALLBACK_MODEL,
+        usage: { total_tokens: 0 }, // We don't have accurate usage data from fallback
+        _meta: {
+          fallback: true,
+          reason: error.message
+        }
+      };
     } catch (fallbackError) {
       logError(fallbackError, "Both main and fallback approaches failed");
       throw new Error("Analysis processing failed after multiple attempts: " + 
         (fallbackError instanceof Error ? fallbackError.message : "Unknown error"));
+    } finally {
+      totalTimer.end();
     }
   }
+}
+
+/**
+ * Intelligently samples responses based on quality metrics
+ */
+function intelligentlySampleResponses(
+  responses: string[], 
+  maxSize: number,
+  metrics: Record<string, any>
+): string {
+  const keptResponses: string[] = [];
+  let totalLength = 0;
+  
+  // Always include first 5 responses for context
+  for (let i = 0; i < Math.min(5, responses.length); i++) {
+    keptResponses.push(responses[i]);
+    totalLength += responses[i].length + 1;
+  }
+  
+  // Different sampling strategy based on estimated quality
+  const samplingRate = metrics.estimatedQuality === "high" ? 0.7 : 
+                      metrics.estimatedQuality === "moderate" ? 0.5 : 0.3;
+  
+  // Sort remaining responses by length (proxy for detail)
+  const remainingResponses = responses.slice(5)
+    .sort((a, b) => b.length - a.length); // Sort by length, longest first
+  
+  // Take the top X% of responses by length
+  const topResponses = remainingResponses.slice(
+    0, 
+    Math.ceil(remainingResponses.length * samplingRate)
+  );
+  
+  // Add as many as will fit in our budget
+  for (const response of topResponses) {
+    if (totalLength + response.length <= maxSize - 1000) {
+      keptResponses.push(response);
+      totalLength += response.length + 1;
+    }
+  }
+  
+  // Add final note about sampling
+  const samplingNote = "\n\n[Note: Responses have been intelligently sampled for optimal analysis. Focus on deep patterns and insights.]";
+  
+  // Sort responses back to original order (by question number) for better context
+  keptResponses.sort((a, b) => {
+    const aMatch = a.match(/^Q(\d+):/);
+    const bMatch = b.match(/^Q(\d+):/);
+    if (aMatch && bMatch) {
+      return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+    }
+    return 0;
+  });
+  
+  return keptResponses.join('\n') + samplingNote;
 }

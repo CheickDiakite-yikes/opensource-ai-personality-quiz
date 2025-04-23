@@ -93,7 +93,7 @@ export async function cleanAndParseJSON(rawContent: string): Promise<any> {
     try {
       return JSON.parse(jsonString);
     } catch (cleanError) {
-      logDebug("Comprehensive cleaning still produced invalid JSON, attempting JSON5 fallback parsing");
+      logDebug("Comprehensive cleaning still produced invalid JSON, attempting last resort parsing");
       throw cleanError;
     }
   } catch (error) {
@@ -119,7 +119,14 @@ export async function cleanAndParseJSON(rawContent: string): Promise<any> {
           return JSON.parse(finalJson);
         } catch (finalError) {
           logError(finalError, "All JSON parsing attempts failed");
-          throw finalError;
+          
+          // Create minimal valid JSON as last resort
+          return {
+            error: "Parsing failed",
+            coreTraits: {
+              primary: "Analysis could not be generated due to formatting issues."
+            }
+          };
         }
       } else {
         throw new Error("Could not find a valid JSON object in the response");
@@ -166,6 +173,32 @@ export function getArraySafely(obj: any, path: string, minLength: number = 0): s
 }
 
 /**
+ * Validates the structure of the API response against expected schema
+ * 
+ * @param data The API response data
+ * @returns True if valid, false if not
+ */
+export function validateResponseStructure(data: any): boolean {
+  if (!data || typeof data !== 'object') return false;
+  
+  // Check for required top-level sections
+  const requiredSections = [
+    'cognitivePatterning', 
+    'emotionalArchitecture', 
+    'coreTraits',
+    'interpersonalDynamics'
+  ];
+  
+  const hasSections = requiredSections.every(section => 
+    data.hasOwnProperty(section) && 
+    typeof data[section] === 'object' &&
+    Object.keys(data[section]).length > 0
+  );
+  
+  return hasSections;
+}
+
+/**
  * Generates an overview summary from the analysis content
  * Creates a concise yet comprehensive summary of key personality traits
  */
@@ -173,46 +206,117 @@ export function generateOverview(analysisContent: any): string {
   try {
     // Get core traits if available
     const primaryTrait = getStringSafely(analysisContent, 'coreTraits.primary');
-    const secondaryTraits = getArraySafely(analysisContent, 'coreTraits.secondaryTraits', 1);
     
     // Get cognitive information
     const cognitiveTrait = getStringSafely(
       analysisContent, 
       'cognitivePatterning.decisionMaking',
-      'analytic thinking'
+      'analytical thinking'
     );
     
     // Get emotional information
-    const emotionalTraits = getArraySafely(
+    const emotionalTrait = getStringSafely(
       analysisContent,
-      'emotionalArchitecture.emotionalStrengths',
-      1
+      'emotionalArchitecture.emotionalAwareness',
+      'emotional awareness'
     );
     
-    // Get motivational information
+    // Get strengths
+    const strengths = getArraySafely(analysisContent, 'coreTraits.strengths', 2);
+    
+    // Get motivations
     const motivators = getArraySafely(analysisContent, 'motivationalProfile.primaryDrivers', 1);
     
     // Construct the overview
-    let overview = `You demonstrate a personality profile anchored in ${primaryTrait.toLowerCase() || 'adaptability'}`;
+    let overview = `Your personality profile reveals ${primaryTrait.toLowerCase() || 'a multifaceted individual'} `;
     
-    if (secondaryTraits.length > 0) {
-      overview += `, with notable strengths in ${secondaryTraits.slice(0, 2).join(' and ').toLowerCase()}`;
+    if (strengths.length > 0) {
+      overview += `with notable strengths in ${strengths.slice(0, 2).join(' and ').toLowerCase()}. `;
+    } else {
+      overview += `with a unique combination of traits. `;
     }
     
-    overview += `. Your cognitive style leans toward ${cognitiveTrait.toLowerCase()}`;
-    
-    if (emotionalTraits.length > 0) {
-      overview += ` while emotionally exhibiting ${emotionalTraits[0].toLowerCase()}`;
-    }
+    overview += `Your cognitive approach tends toward ${cognitiveTrait.toLowerCase()}, `;
+    overview += `while your emotional landscape is characterized by ${emotionalTrait.toLowerCase()}. `;
     
     if (motivators.length > 0) {
-      overview += `. You appear primarily motivated by ${motivators[0].toLowerCase()}`;
+      overview += `You appear to be primarily motivated by ${motivators[0].toLowerCase()}, `;
     }
     
-    overview += `. This distinctive combination shapes your unique approach to challenges and relationships.`;
+    overview += `creating a distinctive personality pattern that influences how you approach life's challenges and relationships.`;
     
     return overview;
   } catch (error) {
     return "Your analysis reveals a multifaceted personality with unique strengths and potential growth areas. Your cognitive patterns and emotional responses create a distinctive approach to life's challenges.";
+  }
+}
+
+/**
+ * Function to extract and structure response metrics for improved diagnostics
+ * 
+ * @param responses The user responses
+ * @returns Metrics about the responses
+ */
+export function analyzeResponses(responses: Record<string, string>): Record<string, any> {
+  try {
+    const responseLengths = Object.values(responses).map(r => String(r).length);
+    const totalResponses = responseLengths.length;
+    const totalLength = responseLengths.reduce((sum, len) => sum + len, 0);
+    const averageLength = totalResponses ? Math.round(totalLength / totalResponses) : 0;
+    
+    // Count detailed vs. brief responses
+    const detailedResponses = responseLengths.filter(len => len > 100).length;
+    const briefResponses = responseLengths.filter(len => len < 30).length;
+    
+    // Estimate response quality based on length distribution
+    let responseQuality = "moderate";
+    if (averageLength > 120 && detailedResponses > totalResponses * 0.6) {
+      responseQuality = "high";
+    } else if (averageLength < 40 || briefResponses > totalResponses * 0.5) {
+      responseQuality = "low";
+    }
+    
+    // Find keywords that might indicate response quality
+    const allText = Object.values(responses).join(" ").toLowerCase();
+    const introspectionKeywords = ["feel", "think", "believe", "because", "however", "although", "reflect"];
+    const introspectionScore = introspectionKeywords.reduce(
+      (score, word) => score + (allText.split(word).length - 1), 
+      0
+    );
+    
+    return {
+      responseCount: totalResponses,
+      averageLength,
+      detailedResponses,
+      briefResponses,
+      totalLength,
+      estimatedQuality: responseQuality,
+      introspectionScore,
+      analysisComplexity: determineAnalysisComplexity(totalResponses, averageLength, introspectionScore)
+    };
+  } catch (error) {
+    return {
+      responseCount: Object.keys(responses).length,
+      estimatedQuality: "unknown",
+      analysisComplexity: "standard"
+    };
+  }
+}
+
+/**
+ * Determine the appropriate complexity level for the analysis
+ * based on response characteristics
+ */
+function determineAnalysisComplexity(
+  responseCount: number, 
+  averageLength: number, 
+  introspectionScore: number
+): string {
+  if (responseCount >= 40 && averageLength > 100 && introspectionScore > 50) {
+    return "high";
+  } else if (responseCount < 30 || averageLength < 40 || introspectionScore < 20) {
+    return "low";
+  } else {
+    return "standard";
   }
 }
