@@ -36,4 +36,3 @@ export async function processRequest(req: Request) {
     return createErrorResponse(error, 400, error.message);
   }
 }
-
