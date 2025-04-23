@@ -27,7 +27,7 @@ export const useDeepInsightState = () => {
   // Calculate progress whenever responses or questions change
   useEffect(() => {
     const responseCount = Object.keys(responses).length;
-    const completionPercentage = (responseCount / questions.length) * 100;
+    const completionPercentage = Math.min((responseCount / questions.length) * 100, 100);
     setProgress(completionPercentage);
   }, [responses, questions.length]);
 

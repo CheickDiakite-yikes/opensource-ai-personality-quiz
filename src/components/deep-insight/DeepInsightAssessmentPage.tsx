@@ -16,7 +16,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
     responses,
     totalQuestions,
     progress,
-    hasResponse,
     isSubmitting,
     submissionError,
     handleOptionSelect,
