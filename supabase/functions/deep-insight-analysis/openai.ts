@@ -1,12 +1,10 @@
 
-// This file is getting too long and should be refactored after this fix
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createOpenAIRequest, handleOpenAIResponse } from "./openaiClient.ts";
 import { logRequestConfig, logError, logDebug } from "./logging.ts";
 import { handleFallback } from "./fallbackHandler.ts";
-import { cleanAndParseJSON } from "./utils.ts";
 
 export async function callOpenAI(openAIApiKey: string, formattedResponses: string) {
   if (!openAIApiKey || openAIApiKey.trim() === "") {
@@ -30,51 +28,30 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
     
     logRequestConfig(config);
     
-    // More conservative prompt size limit with better sampling
-    const MAX_PROMPT_SIZE = 12000; // Adjusted for better context
+    // More conservative prompt size limit
+    const MAX_PROMPT_SIZE = 10000; // Reduced from 14000 to leave more space for processing
   
     let optimizedPrompt = formattedResponses;
-    let samplingStrategy = "none";
   
     if (formattedResponses.length > MAX_PROMPT_SIZE) {
       logDebug(`Large input detected (${formattedResponses.length} chars), optimizing prompt size`);
-      samplingStrategy = "smart-sampling";
     
       const responses = formattedResponses.split('\n');
       const keptResponses = [];
       let totalLength = 0;
-      
-      // First pass: Select high-value responses that provide more insight
-      // Prioritize responses with more content as they often contain more signal
-      const sortedByLength = [...responses].sort((a, b) => b.length - a.length);
-      const topResponses = sortedByLength.slice(0, Math.min(30, responses.length / 3));
-      
-      for (const response of topResponses) {
-        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1500) {
-          keptResponses.push(response);
-          totalLength += response.length + 1;
-        }
-      }
-      
-      // Second pass: Add some shorter responses for breadth of coverage
-      // Make sure we're sampling from different question IDs
-      const seenIds = new Set(keptResponses.map(r => r.split(":")[0]));
-      
+    
+      // Enhanced sampling strategy for better response selection
       for (const response of responses) {
-        const id = response.split(":")[0];
-        if (!seenIds.has(id) && totalLength + response.length <= MAX_PROMPT_SIZE - 1200) {
+        // Prioritize detailed responses but with stricter length criteria
+        if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000 && response.length > 150) {
           keptResponses.push(response);
-          seenIds.add(id);
           totalLength += response.length + 1;
         }
       }
-      
-      // Third pass: Fill in with random samples to maximize coverage if we have space
-      if (keptResponses.length < responses.length * 0.75) {
-        const remainingResponses = responses.filter(r => !keptResponses.includes(r));
-        const shuffled = remainingResponses.sort(() => 0.5 - Math.random());
-        
-        for (const response of shuffled) {
+    
+      // If we haven't collected enough detailed responses, add some shorter ones
+      if (keptResponses.length < 12) { // Increased minimum responses
+        for (const response of responses) {
           if (totalLength + response.length <= MAX_PROMPT_SIZE - 1000) {
             keptResponses.push(response);
             totalLength += response.length + 1;
@@ -83,10 +60,9 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       }
     
       optimizedPrompt = keptResponses.join('\n');
-      optimizedPrompt += "\n\n[Content strategically sampled to ensure comprehensive analysis. Focus on providing a COMPLETE analysis for ALL sections with quality content, even if more generalized.]";
+      optimizedPrompt += "\n\n[Content intelligently sampled for comprehensive analysis. Focus on key patterns and detailed insights.]";
     
-      logDebug(`Optimized prompt: from ${formattedResponses.length} to ${optimizedPrompt.length} characters using ${samplingStrategy}`);
-      logDebug(`Kept ${keptResponses.length} of ${responses.length} responses (${Math.round(keptResponses.length/responses.length*100)}%)`);
+      logDebug(`Reduced prompt from ${formattedResponses.length} to ${optimizedPrompt.length} characters`);
     }
     
     // Implement retry loop with exponential backoff
@@ -96,10 +72,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
       try {
         if (attemptCount > 0) {
           // Exponential backoff - wait longer for each retry
-          const backoffDelay = Math.min(
-            API_CONFIG.RETRY_INITIAL_DELAY * Math.pow(API_CONFIG.RETRY_BACKOFF_FACTOR, attemptCount - 1),
-            API_CONFIG.RETRY_MAX_DELAY
-          );
+          const backoffDelay = Math.pow(2, attemptCount) * 1000; // 2s, 4s, 8s, etc.
           logDebug(`Retry attempt ${attemptCount}/${API_CONFIG.RETRY_COUNT} after ${backoffDelay}ms delay`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
@@ -108,7 +81,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
         const controller = new AbortController();
         const extendedTimeout = API_CONFIG.MAIN_TIMEOUT * (attemptCount + 1); // Increase timeout for each retry
         const timeoutId = setTimeout(() => {
-          controller.abort(new Error(`Request timeout exceeded (${extendedTimeout}ms)`));
+          controller.abort("Request timeout exceeded");
           logDebug("Manually aborting request after timeout", { timeout: extendedTimeout });
         }, extendedTimeout);
         
@@ -116,22 +89,13 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           // Add attempt information to logs
           logDebug(`Sending request to OpenAI (attempt ${attemptCount + 1}/${API_CONFIG.RETRY_COUNT + 1})`, { 
             timeout: extendedTimeout,
-            promptLength: optimizedPrompt.length,
-            samplingStrategy
+            promptLength: optimizedPrompt.length 
           });
           
-          // Enhanced system prompt with strict formatting instructions and emphasis on completeness
-          const enhancedSystemPrompt = SYSTEM_PROMPT + 
-            "\n\nCRITICAL: Return ONLY valid JSON with DOUBLE QUOTES for ALL property names and string values." + 
-            "\n\nYou MUST populate ALL arrays, especially strengths and challenges with AT LEAST 3 items in each array." + 
-            "\n\nIf in doubt about data, provide REASONABLE DEFAULTS rather than leaving fields empty." + 
-            "\n\nEnsure to generate a COMPLETE analysis with ALL required fields even if working with limited data.";
-          
-          // Use main model (gpt-4o)
           const fetchPromise = createOpenAIRequest(
             openAIApiKey, 
             [
-              { role: "system", content: enhancedSystemPrompt },
+              { role: "system", content: SYSTEM_PROMPT },
               { role: "user", content: `Please analyze these assessment responses:\n${optimizedPrompt}` }
             ],
             API_CONFIG.MAIN_MAX_TOKENS,
@@ -144,92 +108,7 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           logDebug(`Successfully received OpenAI response on attempt ${attemptCount + 1}`);
           console.timeEnd("openai-api-call");
           
-          const responseData = await handleOpenAIResponse(openAIRes);
-          
-          // Additional validation for content response 
-          const rawContent = responseData.choices[0].message.content || "";
-          
-          if (!rawContent || rawContent.trim().length < 100) {
-            throw new Error(`OpenAI returned empty or too short response (${rawContent.length} chars)`);
-          }
-          
-          try {
-            // Attempt to parse JSON with enhanced error handling
-            const parsedContent = JSON.parse(rawContent);
-            
-            // Validate that we have critical minimum content and ensure arrays are populated
-            if (!parsedContent.coreTraits || !parsedContent.cognitivePatterning) {
-              throw new Error("Missing critical sections in response");
-            }
-            
-            // Validate and populate empty arrays with defaults
-            if (!parsedContent.coreTraits.strengths || !Array.isArray(parsedContent.coreTraits.strengths) || parsedContent.coreTraits.strengths.length === 0) {
-              parsedContent.coreTraits.strengths = [
-                "Adaptability in changing situations",
-                "Analytical approach to problems",
-                "Creative thinking and innovation"
-              ];
-            }
-            
-            if (!parsedContent.coreTraits.challenges || !Array.isArray(parsedContent.coreTraits.challenges) || parsedContent.coreTraits.challenges.length === 0) {
-              parsedContent.coreTraits.challenges = [
-                "Tendency toward perfectionism",
-                "Occasional difficulty with time management",
-                "Balancing analytical thinking with intuition"
-              ];
-            }
-            
-            return {
-              ...responseData,
-              choices: [{
-                ...responseData.choices[0],
-                message: {
-                  ...responseData.choices[0].message,
-                  content: JSON.stringify(parsedContent)
-                }
-              }]
-            };
-          } catch (jsonError) {
-            logError(jsonError, "JSON parsing error in OpenAI response");
-            
-            // Try to recover with JSON cleaning operation
-            const cleanedJson = await cleanAndParseJSON(rawContent);
-            if (cleanedJson) {
-              logDebug("Successfully recovered JSON after cleaning");
-              
-              // Fix any missing arrays with defaults
-              if (!cleanedJson.coreTraits.strengths || !Array.isArray(cleanedJson.coreTraits.strengths) || cleanedJson.coreTraits.strengths.length === 0) {
-                cleanedJson.coreTraits.strengths = [
-                  "Adaptability in changing situations",
-                  "Analytical approach to problems",
-                  "Creative thinking and innovation"
-                ];
-              }
-              
-              if (!cleanedJson.coreTraits.challenges || !Array.isArray(cleanedJson.coreTraits.challenges) || cleanedJson.coreTraits.challenges.length === 0) {
-                cleanedJson.coreTraits.challenges = [
-                  "Tendency toward perfectionism",
-                  "Occasional difficulty with time management",
-                  "Balancing analytical thinking with intuition"
-                ];
-              }
-              
-              // Create a new response object with the cleaned content
-              return {
-                ...responseData,
-                choices: [{
-                  ...responseData.choices[0],
-                  message: {
-                    ...responseData.choices[0].message,
-                    content: JSON.stringify(cleanedJson)
-                  }
-                }]
-              };
-            }
-            
-            // Re-throw if we couldn't recover
-            throw jsonError;
-          }
+          return await handleOpenAIResponse(openAIRes);
         } catch (error) {
           clearTimeout(timeoutId); // Ensure we clear the timeout to prevent memory leaks
           
@@ -237,16 +116,6 @@ export async function callOpenAI(openAIApiKey: string, formattedResponses: strin
           const enhancedError = error instanceof Error 
             ? new Error(`API call attempt ${attemptCount + 1} failed: ${error.message}`)
             : new Error(`API call attempt ${attemptCount + 1} failed with unknown error`);
-            
-          // Preserve the original error details for debugging
-          if (error instanceof Error) {
-            (enhancedError as any).originalError = {
-              message: error.message,
-              name: error.name,
-              stack: error.stack,
-              cause: error.cause
-            };
-          }
             
           logError(enhancedError, `API call attempt ${attemptCount + 1}`);
           lastError = enhancedError;

@@ -1,12 +1,9 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Share2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { DeepInsightAnalysis } from "../types/deepInsight";
-import { useDeepInsightState } from "../hooks/useDeepInsightState";
-import { getDeepInsightQuestions } from "@/utils/deep-insight/questionBank";
 
 interface AnalysisActionsProps {
   analysis: DeepInsightAnalysis;
@@ -14,21 +11,15 @@ interface AnalysisActionsProps {
 
 const AnalysisActions: React.FC<AnalysisActionsProps> = ({ analysis }) => {
   const navigate = useNavigate();
-  const { resetResponses } = useDeepInsightState(getDeepInsightQuestions(100));
-
-  const handleReset = () => {
-    resetResponses();
-    navigate("/deep-insight");
-  };
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-center">
       <Button 
         variant="outline" 
-        onClick={handleReset}
+        onClick={() => navigate("/deep-insight")}
         className="flex items-center"
       >
-        <RefreshCw className="mr-2 h-4 w-4" />
+        <ArrowLeft className="mr-2 h-4 w-4" />
         Retake Assessment
       </Button>
       

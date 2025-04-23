@@ -11,61 +11,21 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
   const defaultData = {
     primary: "Analytical Thinker",
     secondary: "Balanced Communicator",
-    strengths: [
-      "Logical reasoning", 
-      "Detail orientation", 
-      "Structured approach", 
-      "Problem solving", 
-      "Critical thinking"
-    ],
-    challenges: [
-      "Perfectionism", 
-      "Overthinking", 
-      "Difficulty with ambiguity", 
-      "Balancing details with big picture", 
-      "Stress management"
-    ]
+    strengths: ["Logical reasoning", "Detail orientation", "Structured approach"],
+    challenges: ["Perfectionism", "Overthinking", "Difficulty with ambiguity"]
   };
   
   // Use default data if data is null
   const traitData = data || defaultData;
-
-  // Process strengths and challenges to handle various formats and ensure minimum items
-  const processArrayItems = (items: any[] | undefined, defaultItems: string[]): string[] => {
-    if (!items || !Array.isArray(items) || items.length === 0) return defaultItems;
-    
-    // If we have fewer than 5 items, add some defaults
-    if (items.length < 5) {
-      return [...items.map(item => processItem(item)), ...defaultItems.slice(0, 5 - items.length)];
-    }
-    
-    return items.map(item => processItem(item));
-  };
   
-  // Process individual item which may be string or object
-  const processItem = (item: any): string => {
-    if (typeof item === 'string') {
-      return item;
-    } else if (typeof item === 'object' && item !== null) {
-      // If it's an object, try to extract meaningful information
-      if ('description' in item) return item.description;
-      if ('trait' in item) return item.trait;
-      if ('name' in item) return item.name;
-      if ('text' in item) return item.text;
-      if ('value' in item) return item.value;
-      
-      // Get the first key-value pair
-      const key = Object.keys(item)[0];
-      if (key) return `${key}: ${item[key]}`;
-    }
-    return String(item || '').replace(/[{}]/g, '');
-  };
-  
-  // Ensure strengths and challenges are always arrays of strings with minimum content
-  const defaultStrengths = defaultData.strengths;
-  const defaultChallenges = defaultData.challenges;
-  const safeStrengths = processArrayItems(traitData.strengths, defaultStrengths);
-  const safeChallenges = processArrayItems(traitData.challenges, defaultChallenges);
+  // Ensure strengths and challenges are always arrays of strings
+  const safeStrengths = Array.isArray(traitData.strengths) 
+    ? traitData.strengths.filter(item => typeof item === 'string')
+    : [];
+    
+  const safeChallenges = Array.isArray(traitData.challenges)
+    ? traitData.challenges.filter(item => typeof item === 'string')
+    : [];
   
   return (
     <div className="space-y-6">
@@ -77,12 +37,12 @@ const CoreTraitsSection: React.FC<CoreTraitsProps> = ({ data }) => {
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-medium mb-2">Primary Trait</h3>
-              <p className="text-muted-foreground">{String(traitData.primary || defaultData.primary)}</p>
+              <p className="text-muted-foreground">{String(traitData.primary)}</p>
             </div>
             
             <div>
               <h3 className="text-xl font-medium mb-2">Secondary Trait</h3>
-              <p className="text-muted-foreground">{String(traitData.secondary || defaultData.secondary)}</p>
+              <p className="text-muted-foreground">{String(traitData.secondary)}</p>
             </div>
           </div>
         </CardContent>

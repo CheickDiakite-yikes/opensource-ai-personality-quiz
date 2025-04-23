@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Brain, ArrowRight, ArrowLeft, Send, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Brain, ArrowRight, ArrowLeft, Send, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -21,18 +21,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
   const [submitAttempts, setSubmitAttempts] = useState(0);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   
-  // Add abort controller reference for cleanup
-  const abortControllerRef = useRef<AbortController | null>(null);
-  
-  // Clean up any pending requests on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-  
   // Make sure we're getting all 100 questions
   const questions = getDeepInsightQuestions(100);
   
@@ -41,7 +29,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
     setCurrentQuestionIndex,
     responses,
     updateResponse,
-    resetResponses,
     currentQuestion,
     hasResponse,
     progress
@@ -72,14 +59,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
       });
       return;
     }
-    
-    // Clean up any existing controller
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create a new controller for this submission
-    abortControllerRef.current = new AbortController();
     
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -143,26 +122,11 @@ const DeepInsightAssessmentPage: React.FC = () => {
       if (assessmentData && assessmentData[0]) {
         // Create a timeout mechanism to prevent UI freezing
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Analysis request timed out")), 90000) // Increased timeout to 90s
+          setTimeout(() => reject(new Error("Analysis request timed out")), 60000)
         );
         
         try {
-          // Setup manual abort handling for the function invocation
-          const abortController = abortControllerRef.current;
-          let functionAborted = false;
-          
-          // Create a manual abort handler
-          const checkForAbort = () => {
-            if (abortController && abortController.signal.aborted) {
-              functionAborted = true;
-              throw new Error("Request was aborted");
-            }
-          };
-          
-          // Setup an interval to check for abort signals during function execution
-          const abortCheckInterval = setInterval(checkForAbort, 1000);
-          
-          // Call the deep insight analysis edge function without the signal parameter
+          // Call the deep insight analysis edge function with options but without using abortSignal
           const analysisPromise = supabase.functions.invoke(
             'deep-insight-analysis', 
             {
@@ -170,8 +134,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
                 responses: Object.entries(responses).reduce((acc, [questionId, selectedOption]) => {
                   acc[questionId] = selectedOption;
                   return acc;
-                }, {} as Record<string, string>),
-                timestamp: new Date().toISOString() // Add timestamp to reduce caching issues
+                }, {} as Record<string, string>) 
               }
             }
           );
@@ -180,20 +143,9 @@ const DeepInsightAssessmentPage: React.FC = () => {
           const { data: analysisData, error: analysisError } = await Promise.race([
             analysisPromise,
             timeoutPromise.then(() => {
-              if (abortControllerRef.current) {
-                abortControllerRef.current.abort("Timeout exceeded");
-              }
-              throw new Error("Analysis request timed out after 90 seconds");
+              throw new Error("Analysis request timed out after 60 seconds");
             })
           ]);
-          
-          // Clear the abort check interval
-          clearInterval(abortCheckInterval);
-          
-          // Check if the request was aborted during processing
-          if (functionAborted) {
-            throw new Error("Request was aborted");
-          }
           
           if (analysisError) {
             console.error("Analysis invocation error:", analysisError);
@@ -261,9 +213,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
             navigate(`/deep-insight/results`);
           }
         } catch (error) {
-          // Clean up the abort controller reference
-          abortControllerRef.current = null;
-          
           // Ensure we set the submission error for display
           setSubmissionError(error instanceof Error ? error.message : "Unknown error occurred");
           throw error;
@@ -282,19 +231,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
       navigate(`/deep-insight/results`);
     } finally {
       setIsSubmitting(false);
-      // Don't clear abortControllerRef here as we need it for potential cleanup on unmount
     }
-  };
-  
-  // Option to restart assessment
-  const handleRestart = () => {
-    if (isSubmitting) return;
-    
-    resetResponses();
-    setCurrentQuestionIndex(0);
-    toast.success("Assessment reset", {
-      description: "You can now start the assessment from the beginning."
-    });
   };
   
   return (
@@ -308,19 +245,6 @@ const DeepInsightAssessmentPage: React.FC = () => {
           <p className="text-muted-foreground mt-2">
             Complete this comprehensive assessment to receive your detailed personality analysis
           </p>
-          
-          {/* Add reset button if there are saved responses */}
-          {Object.keys(responses).length > 0 && (
-            <Button 
-              variant="outline" 
-              onClick={handleRestart} 
-              className="mt-4"
-              disabled={isSubmitting}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" /> 
-              Reset Assessment
-            </Button>
-          )}
         </div>
         
         <div className="mb-6">
