@@ -24,12 +24,12 @@ export const useDeepInsightState = () => {
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
 
-  // Calculate progress whenever responses or questions change
+  // Calculate progress based on current question index, not response count
   useEffect(() => {
-    const responseCount = Object.keys(responses).length;
-    const completionPercentage = Math.min((responseCount / questions.length) * 100, 100);
-    setProgress(completionPercentage);
-  }, [responses, questions.length]);
+    // We add 1 to currentQuestionIndex because it's zero-based but we want to show progress starting from 1
+    const progressValue = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+    setProgress(progressValue);
+  }, [currentQuestionIndex, totalQuestions]);
 
   // Check if there's a response for the current question
   const hasResponse = responses[currentQuestion.id] !== undefined;
