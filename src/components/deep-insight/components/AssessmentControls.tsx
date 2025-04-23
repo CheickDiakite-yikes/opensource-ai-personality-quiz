@@ -52,7 +52,7 @@ const AssessmentControls: React.FC<AssessmentControlsProps> = ({
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
+              Processing...
             </>
           ) : (
             <>
