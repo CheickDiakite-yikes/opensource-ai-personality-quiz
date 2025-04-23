@@ -54,7 +54,7 @@ const DeepInsightAssessmentPage: React.FC = () => {
         <AssessmentControls
           currentQuestionIndex={currentQuestionIndex}
           totalQuestions={totalQuestions}
-          hasResponse={hasResponse}
+          hasResponse={!!responses[currentQuestion.id]}
           isSubmitting={isSubmitting}
           onPrevious={handlePrevious}
           onNext={handleNext}
