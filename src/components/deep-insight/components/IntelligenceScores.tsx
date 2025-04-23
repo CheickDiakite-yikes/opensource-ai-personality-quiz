@@ -30,7 +30,11 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
               <span className="text-2xl font-bold">{cognitiveScore}</span>
               <span className="text-muted-foreground">/ 100</span>
             </div>
-            <Progress value={cognitiveScore} className="h-2" />
+            <Progress 
+              value={cognitiveScore} 
+              className="h-2" 
+              indicatorClassName={cognitiveScore > 0 ? "" : "bg-muted"}
+            />
           </div>
         </CardContent>
       </Card>
@@ -46,7 +50,11 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
               <span className="text-2xl font-bold">{emotionalScore}</span>
               <span className="text-muted-foreground">/ 100</span>
             </div>
-            <Progress value={emotionalScore} className="h-2" indicatorClassName={emotionalScore > 0 ? "" : "bg-muted"} />
+            <Progress 
+              value={emotionalScore} 
+              className="h-2" 
+              indicatorClassName={emotionalScore > 0 ? "" : "bg-muted"} 
+            />
           </div>
         </CardContent>
       </Card>
