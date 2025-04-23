@@ -162,6 +162,30 @@ export type Database = {
         }
         Relationships: []
       }
+      big_me_analyses: {
+        Row: {
+          analysis_result: Json
+          created_at: string
+          id: string
+          responses: Json | null
+          user_id: string
+        }
+        Insert: {
+          analysis_result: Json
+          created_at?: string
+          id?: string
+          responses?: Json | null
+          user_id: string
+        }
+        Update: {
+          analysis_result?: Json
+          created_at?: string
+          id?: string
+          responses?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       deep_insight_analyses: {
         Row: {
           cognitive_patterning: Json | null

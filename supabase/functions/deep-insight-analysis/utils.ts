@@ -152,10 +152,14 @@ export function getArraySafely(obj: any, path: string, minLength: number = 0): s
   try {
     const value = path.split('.').reduce((o, key) => o?.[key], obj);
     if (Array.isArray(value) && value.length >= minLength) {
-      return value;
+      // Ensure that all items are strings
+      return value.map(item => typeof item === 'string' ? item : 
+                              (item === null || item === undefined) ? '' : 
+                              (typeof item === 'object') ? JSON.stringify(item) : 
+                              String(item));
     }
     // Return a fallback array if the original doesn't meet length requirements
-    return Array.isArray(value) ? value : [];
+    return Array.isArray(value) ? value.map(v => String(v)) : [];
   } catch (error) {
     return [];
   }

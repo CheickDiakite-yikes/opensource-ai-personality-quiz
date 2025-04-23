@@ -53,6 +53,11 @@ serve(async (req) => {
         // With JSON mode enabled, we can directly parse the content
         const analysisContent = JSON.parse(rawContent);
         
+        // Validate that the content has the expected structure
+        if (!analysisContent || typeof analysisContent !== 'object') {
+          throw new Error("OpenAI response is not a valid JSON object");
+        }
+        
         console.timeEnd("analysis-processing");
         console.timeEnd("total-processing-time");
         

@@ -13,7 +13,8 @@ export const API_CONFIG = {
   RETRY_COUNT: 2,  // Added retry count
   RETRY_INITIAL_DELAY: 2000,  // Added initial retry delay in ms
   RETRY_MAX_DELAY: 10000,  // Added maximum retry delay in ms
-  RETRY_BACKOFF_FACTOR: 2  // Added exponential backoff factor
+  RETRY_BACKOFF_FACTOR: 2,  // Added exponential backoff factor
+  RESPONSE_FORMAT: { type: "json_object" }  // Ensure JSON response format
 };
 
 export interface OpenAIConfig {
@@ -24,4 +25,5 @@ export interface OpenAIConfig {
   frequency_penalty: number;
   totalPromptTokens: number;
   responsesCount: number;
+  response_format?: { type: string };
 }

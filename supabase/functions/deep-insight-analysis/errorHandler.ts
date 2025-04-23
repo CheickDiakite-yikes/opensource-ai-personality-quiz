@@ -25,5 +25,9 @@ export function handleRequestValidation(responses: any) {
     console.error("No responses provided in request");
     throw new Error("No responses provided");
   }
+  
+  // Additional validation if needed
+  if (Array.isArray(responses) && responses.length === 0) {
+    throw new Error("Response array is empty");
+  }
 }
-
