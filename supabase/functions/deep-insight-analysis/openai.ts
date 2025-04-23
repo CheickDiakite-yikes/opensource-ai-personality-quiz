@@ -2,16 +2,17 @@
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { logError, logDebug } from "./logging.ts";
+import { SYSTEM_PROMPT, USER_PROMPT } from "./prompts.ts";
 
 export async function callOpenAI(apiKey: string, formattedResponses: string) {
   const messages = [
     {
       role: "system",
-      content: "You are an expert psychological profiler specializing in deep insight analysis. Analyze the assessment responses to create a comprehensive personality profile that covers cognitive patterns, emotional architecture, and interpersonal dynamics."
+      content: SYSTEM_PROMPT
     },
     {
       role: "user",
-      content: `Please analyze these assessment responses and provide a detailed psychological profile:\n\n${formattedResponses}`
+      content: USER_PROMPT(formattedResponses)
     }
   ];
 
