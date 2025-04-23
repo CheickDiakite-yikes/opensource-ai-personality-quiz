@@ -5,10 +5,10 @@ import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
 import DeepInsightHeader from "./components/DeepInsightHeader";
 import PersonalityOverview from "./components/PersonalityOverview";
-import AnalysisScores from "./components/AnalysisScores";
+import AnalysisInsights from "./components/AnalysisInsights";
+import IntelligenceScores from "./components/IntelligenceScores";
 import DeepInsightTabs from "./components/DeepInsightTabs";
 import AnalysisActions from "./components/AnalysisActions";
-import TopTraitsSection from "./results-sections/TopTraitsSection";
 import AnalysisLoadingState from "./components/AnalysisLoadingState";
 import AnalysisErrorState from "./components/AnalysisErrorState";
 import AnalysisProcessingState from "./components/AnalysisProcessingState";
@@ -40,7 +40,6 @@ const DeepInsightResultsPage: React.FC = () => {
     return <AnalysisErrorState error={error} />;
   }
   
-  // Show partial analysis with an error message
   if (error && analysis) {
     return (
       <PageTransition>
@@ -66,13 +65,12 @@ const DeepInsightResultsPage: React.FC = () => {
           <>
             <PersonalityOverview overview={analysis.overview || ""} />
             
-            <AnalysisScores 
-              intelligenceScore={analysis.intelligence_score}
-              emotionalIntelligenceScore={analysis.emotional_intelligence_score}
-              responsePatterns={analysis.response_patterns}
+            <IntelligenceScores 
+              intelligenceScore={analysis.intelligence_score || 0}
+              emotionalIntelligenceScore={analysis.emotional_intelligence_score || 0}
             />
             
-            <TopTraitsSection coreTraits={analysis.core_traits} />
+            <AnalysisInsights analysis={analysis} />
             
             <DeepInsightTabs analysis={analysis} />
             
