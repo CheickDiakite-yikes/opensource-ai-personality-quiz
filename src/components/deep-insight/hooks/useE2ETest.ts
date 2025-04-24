@@ -42,62 +42,89 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
 
       // Save assessment
       addLog('Saving assessment to database');
-      const assessmentId = `test-${Date.now()}`;
-      const { error: assessmentError } = await supabase
-        .from('deep_insight_assessments')
-        .insert({
-          id: assessmentId,
-          user_id: user.id,
-          responses,
-          completed_at: new Date().toISOString(),
-        });
+      
+      try {
+        const testId = `test-${Date.now()}`;
+        const { error: assessmentError } = await supabase
+          .from('deep_insight_assessments')
+          .insert({
+            id: testId,
+            user_id: user.id,
+            responses,
+            completed_at: new Date().toISOString(),
+          });
 
-      if (assessmentError) {
-        throw new Error(`Failed to save assessment: ${assessmentError.message}`);
-      }
-
-      addLog(`Assessment saved with ID: ${assessmentId}`);
-
-      // Format responses for analysis
-      const formattedResponses: TestResponse[] = deepInsightQuestions.map(q => ({
-        questionId: q.id,
-        question: q.question,
-        answer: responses[q.id],
-        category: q.category || 'unknown'
-      }));
-
-      // Call analysis function
-      addLog('Calling Deep Insight Analysis function');
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke<AnalysisResponse>(
-        'deep-insight-analysis',
-        {
-          body: {
-            responses: formattedResponses,
-            assessmentId,
-            questionCount: deepInsightQuestions.length,
-            responseCount: Object.keys(responses).length
-          }
+        if (assessmentError) {
+          throw new Error(`Failed to save assessment: ${assessmentError.message}`);
         }
-      );
 
-      if (analysisError) throw analysisError;
-      if (!analysisData) throw new Error('No analysis data received');
+        addLog(`Assessment saved with ID: ${testId}`);
 
-      addLog('Analysis completed successfully');
-      setAnalysisId(analysisData.id);
-      addLog(`Analysis ID: ${analysisData.id}`);
+        // Format responses for analysis
+        const formattedResponses: TestResponse[] = deepInsightQuestions.map(q => ({
+          questionId: q.id,
+          question: q.question,
+          answer: responses[q.id],
+          category: q.category || 'unknown'
+        }));
 
-      // Verify analysis was saved
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('deep_insight_analyses')
-        .select('id')
-        .eq('id', analysisData.id)
-        .single();
+        // Check if we should proceed with analysis
+        if (formattedResponses.length === 0) {
+          throw new Error('No responses to analyze');
+        }
 
-      if (verifyError) {
-        addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
-      } else {
-        addLog('Analysis verified in database');
+        // Call analysis function
+        addLog('Calling Deep Insight Analysis function');
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke<AnalysisResponse>(
+          'deep-insight-analysis',
+          {
+            body: {
+              responses: formattedResponses,
+              assessmentId: testId,
+              questionCount: deepInsightQuestions.length,
+              responseCount: Object.keys(responses).length
+            }
+          }
+        );
+
+        if (analysisError) throw analysisError;
+        if (!analysisData) throw new Error('No analysis data received');
+
+        addLog('Analysis completed successfully');
+        setAnalysisId(analysisData.id);
+        addLog(`Analysis ID: ${analysisData.id}`);
+
+        // Verify analysis was saved
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('deep_insight_analyses')
+          .select('id')
+          .eq('id', analysisData.id)
+          .single();
+
+        if (verifyError) {
+          addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
+        } else {
+          addLog('Analysis verified in database');
+        }
+      } catch (dbError: any) {
+        // Specific handling for database/network errors
+        const errorMessage = dbError?.message || 'Unknown database error occurred';
+        addLog(`ERROR: ${errorMessage}`);
+        
+        // Try to determine if this is a network error
+        if (errorMessage.includes('Load failed') || errorMessage.includes('Network') || errorMessage.includes('connection')) {
+          addLog('ERROR: Network connection issue detected. Please check your internet connection.');
+          toast.error('Network connection issue', {
+            description: 'Please check your internet connection and try again'
+          });
+        } else {
+          // Standard error handling
+          toast.error('Database operation failed', {
+            description: errorMessage
+          });
+        }
+        
+        throw dbError; // Re-throw to be caught by outer catch
       }
 
     } catch (error) {

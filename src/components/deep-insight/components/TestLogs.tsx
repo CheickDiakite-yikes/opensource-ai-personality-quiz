@@ -1,25 +1,20 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 
 interface TestLogsProps {
   logs: string[];
 }
 
-export const TestLogs = ({ logs }: TestLogsProps) => {
+export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Test Logs</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <pre className="bg-muted p-4 rounded-lg text-sm font-mono whitespace-pre-wrap max-h-[400px] overflow-y-auto">
-          {logs.map((log, index) => (
-            <div key={index} className="pb-1">
-              {log}
-            </div>
-          ))}
-        </pre>
-      </CardContent>
-    </Card>
+    <div className="mt-4">
+      <h3 className="text-lg font-medium mb-2">Test Logs</h3>
+      <pre
+        className="bg-muted p-4 rounded-lg overflow-auto max-h-80 text-sm"
+        role="document"
+      >
+        {logs.join('\n')}
+      </pre>
+    </div>
   );
 };
