@@ -6,6 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { deepInsightQuestions } from '@/utils/deep-insight/questionBank';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { DeepInsightAnalysis } from './types/deepInsight';
+
+// Interface for the Supabase query results to avoid deep type instantiation
+interface QueryResult<T> {
+  data: T | null;
+  error: Error | null;
+}
 
 const DeepInsightE2ETest = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -128,15 +135,14 @@ const DeepInsightE2ETest = () => {
           // If no ID was received, try to find by assessment ID
           addLog('Checking for analysis by assessment ID');
           
-          // Fix: Add explicit type annotation to avoid excessive type instantiation
-          const { data: linkedAnalyses, error: linkedError } = await supabase
+          // Fix: Use a properly typed query result to avoid TypeScript error
+          const queryResult: QueryResult<DeepInsightAnalysis[]> = await supabase
             .from('deep_insight_analyses')
             .select('*')
             .eq('assessment_id', assessmentId)
-            .limit(1) as { 
-              data: any[] | null; 
-              error: any | null;
-            };
+            .limit(1);
+            
+          const { data: linkedAnalyses, error: linkedError } = queryResult;
             
           if (linkedError) {
             addLog(`Warning: Could not check linked analyses: ${linkedError.message}`);
