@@ -13,7 +13,11 @@ export function createErrorResponse(
     JSON.stringify({
       error: message || error.message,
       success: false,
-      status
+      status,
+      analysis: {
+        error_occurred: true,
+        error_message: message || error.message
+      }
     }),
     {
       status,

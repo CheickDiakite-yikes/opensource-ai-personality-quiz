@@ -13,45 +13,6 @@ import { retryable } from "./retryUtils.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
-// Create a minimal fallback response to ensure we always return something
-function generateFallbackAnalysis() {
-  return {
-    overview: "This is a preliminary analysis based on your responses. A more detailed analysis will be available shortly.",
-    core_traits: {
-      primary: "Analytical Thinker",
-      secondary: "Balanced Communicator",
-      strengths: ["Logical reasoning", "Detail orientation", "Structured approach"],
-      challenges: ["Perfectionism", "Overthinking", "Difficulty with ambiguity"]
-    },
-    cognitive_patterning: {
-      decision_making: "You tend to analyze problems thoroughly before reaching conclusions.",
-      problem_solving: "Your approach to problem-solving is methodical and structured.",
-      learning_style: "You learn best through organized, structured information with clear patterns."
-    },
-    emotional_architecture: {
-      emotional_awareness: "You demonstrate a solid level of emotional self-awareness.",
-      regulation_style: "You generally regulate emotions through logical processing.",
-      stress_response: "Under stress, you tend to seek structure and control."
-    },
-    interpersonal_dynamics: {
-      attachment_style: "Your attachment style shows a balance between independence and connection.",
-      communication_pattern: "Your communication style is clear and purposeful.",
-      conflict_resolution: "You approach conflicts by seeking logical solutions."
-    },
-    growth_potential: {
-      development_areas: ["Embracing ambiguity", "Reducing overthinking", "Balancing analysis with intuition"],
-      recommendations: ["Practice mindfulness to reduce overthinking", "Engage in creative activities", "Embrace opportunities that have unclear outcomes"]
-    },
-    intelligence_score: 75,
-    emotional_intelligence_score: 70,
-    response_patterns: {
-      consistency: "Your responses show a consistent pattern of analytical thinking.",
-      self_awareness: "You demonstrate good self-awareness in your responses.",
-      insight_depth: "Your insights show depth in logical and structured areas."
-    }
-  };
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -86,30 +47,25 @@ serve(async (req) => {
       try {
         analysisContent = JSON.parse(openAIResponse.choices[0].message.content);
         
-        // Basic validation of required fields
+        // Basic validation of required fields - but don't fill in placeholders
         const requiredTopLevelKeys = ["overview", "core_traits", "cognitive_patterning", 
-                                      "emotional_architecture", "interpersonal_dynamics", 
-                                      "growth_potential", "intelligence_score", 
-                                      "emotional_intelligence_score"];
+                                     "emotional_architecture", "interpersonal_dynamics", 
+                                     "growth_potential", "intelligence_score", 
+                                     "emotional_intelligence_score"];
         
         const missingKeys = requiredTopLevelKeys.filter(key => !(key in analysisContent));
         
         if (missingKeys.length > 0) {
           logError(`Missing required fields in OpenAI response: ${missingKeys.join(', ')}`);
-          // Merge fallback data for missing fields
-          const fallback = generateFallbackAnalysis();
-          missingKeys.forEach(key => {
-            analysisContent[key] = fallback[key];
-          });
+          throw new Error(`Incomplete analysis: missing ${missingKeys.join(', ')}`);
         }
         
       } catch (parseError) {
         logError("Failed to parse OpenAI response:", parseError);
-        // Use complete fallback if parsing fails
-        analysisContent = generateFallbackAnalysis();
+        throw parseError;
       }
       
-      // Format and validate the response
+      // Format the response
       const formattedResponse = formatAnalysisResponse(analysisContent);
       
       logInfo("Analysis completed successfully");
@@ -117,21 +73,19 @@ serve(async (req) => {
     } catch (aiError) {
       logError("OpenAI API error:", aiError);
       
-      // Return a fallback analysis with an error flag
-      const fallbackAnalysis = generateFallbackAnalysis();
-      fallbackAnalysis.error_occurred = true;
-      fallbackAnalysis.error_message = aiError.message || "Error generating analysis";
-      
-      return formatAnalysisResponse(fallbackAnalysis);
+      // Return an error response
+      return createErrorResponse(
+        aiError instanceof Error ? aiError : new Error("Unknown OpenAI error"), 
+        500, 
+        "Error generating analysis"
+      );
     }
   } catch (error) {
     logError("Unexpected error:", error);
-    
-    // Even in case of unexpected errors, try to return something usable
-    const fallbackAnalysis = generateFallbackAnalysis();
-    fallbackAnalysis.error_occurred = true;
-    fallbackAnalysis.error_message = "An unexpected error occurred";
-    
-    return formatAnalysisResponse(fallbackAnalysis);
+    return createErrorResponse(
+      error instanceof Error ? error : new Error("Unexpected error occurred"), 
+      500, 
+      "An unexpected error occurred"
+    );
   }
 });

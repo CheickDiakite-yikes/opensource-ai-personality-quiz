@@ -18,43 +18,7 @@ const DeepInsightResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { analysis, loading, error, fetchAnalysis } = useAnalysisFetching();
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
-  const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [autoRetryCount, setAutoRetryCount] = useState<number>(0);
   
-  // Auto-retry for incomplete analysis
-  useEffect(() => {
-    // Clear any existing timeout when component unmounts or analysis changes
-    return () => {
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
-    };
-  }, [retryTimeout]);
-
-  // Setup auto-retry if analysis exists but is incomplete
-  useEffect(() => {
-    if (loading || !analysis || autoRetryCount >= 3) return;
-    
-    // Check for incomplete analysis that needs auto-retry
-    const needsAutoRetry = 
-      analysis && 
-      (!analysis.overview || 
-        analysis.overview.includes("preliminary") ||
-        analysis.overview.includes("processing") || 
-        !analysis.core_traits?.primary ||
-        analysis.error_occurred);
-        
-    if (needsAutoRetry && autoRetryCount < 3) {
-      const timeout = setTimeout(() => {
-        console.log(`Auto-retrying analysis fetch (attempt ${autoRetryCount + 1}/3)...`);
-        setAutoRetryCount(prev => prev + 1);
-        fetchAnalysis();
-      }, 5000 * (autoRetryCount + 1)); // Gradually increase delay
-      
-      setRetryTimeout(timeout);
-    }
-  }, [analysis, loading, autoRetryCount, fetchAnalysis]);
-
   const handleManualRetry = async () => {
     setIsRetrying(true);
     try {
@@ -94,29 +58,13 @@ const DeepInsightResultsPage: React.FC = () => {
     );
   }
 
-  // Additional validation for incomplete analysis
-  const isAnalysisIncomplete = analysis && 
-     (!analysis.overview || 
-      analysis.overview.includes("processing") || 
-      analysis.overview.includes("preliminary") ||
-      !analysis.core_traits || 
-      (typeof analysis.core_traits === 'object' && 
-       analysis.core_traits !== null &&
-       (!('primary' in analysis.core_traits) || !analysis.core_traits.primary)));
-  
-  if (isAnalysisIncomplete) {
+  // No results found
+  if (!analysis) {
     return (
-      <PageTransition>
-        <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
-          <DeepInsightHeader />
-          <AnalysisProcessingState 
-            error="Your analysis is still being processed. Please check back in a few minutes or click 'Check Again' below."
-            isRetrying={isRetrying}
-            onRetry={handleManualRetry}
-            analysis={analysis}
-          />
-        </div>
-      </PageTransition>
+      <AnalysisErrorState 
+        error="No analysis results found. Please complete the assessment first." 
+        onRetry={() => navigate('/deep-insight')}
+      />
     );
   }
 
@@ -125,22 +73,18 @@ const DeepInsightResultsPage: React.FC = () => {
       <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
         <DeepInsightHeader />
         
-        {analysis && (
-          <>
-            <PersonalityOverview overview={analysis.overview || "Your Deep Insight Analysis reveals a multifaceted personality with unique cognitive patterns and emotional depths."} />
-            
-            <IntelligenceScores 
-              intelligenceScore={analysis.intelligence_score}
-              emotionalIntelligenceScore={analysis.emotional_intelligence_score}
-            />
-            
-            <AnalysisInsights analysis={analysis} />
-            
-            <DeepInsightTabs analysis={analysis} />
-            
-            <AnalysisActions analysis={analysis} />
-          </>
-        )}
+        <PersonalityOverview overview={analysis.overview || ""} />
+        
+        <IntelligenceScores 
+          intelligenceScore={analysis.intelligence_score}
+          emotionalIntelligenceScore={analysis.emotional_intelligence_score}
+        />
+        
+        <AnalysisInsights analysis={analysis} />
+        
+        <DeepInsightTabs analysis={analysis} />
+        
+        <AnalysisActions analysis={analysis} />
       </div>
     </PageTransition>
   );

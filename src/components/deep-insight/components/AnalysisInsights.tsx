@@ -40,8 +40,7 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Your detailed analysis insights are still being processed. This may take a few minutes as our AI processes your responses.
-            Check back soon to see your complete profile.
+            Your detailed analysis insights are still being processed or unavailable.
           </p>
         </CardContent>
       </Card>
@@ -73,7 +72,7 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
                   </div>
                 )}
                 {!cognitiveData.decisionMaking && !cognitiveData.learningStyle && (
-                  <p className="text-muted-foreground text-sm">Additional cognitive insights are being processed.</p>
+                  <p className="text-muted-foreground text-sm">No cognitive insights available.</p>
                 )}
               </div>
             </CardContent>
@@ -102,7 +101,7 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
                   </div>
                 )}
                 {!emotionalData.emotionalAwareness && !emotionalData.regulationStyle && (
-                  <p className="text-muted-foreground text-sm">Additional emotional insights are being processed.</p>
+                  <p className="text-muted-foreground text-sm">No emotional insights available.</p>
                 )}
               </div>
             </CardContent>
@@ -131,7 +130,7 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
                   </div>
                 )}
                 {!interpersonalData.attachmentStyle && !interpersonalData.communicationPattern && (
-                  <p className="text-muted-foreground text-sm">Additional interpersonal insights are being processed.</p>
+                  <p className="text-muted-foreground text-sm">No interpersonal insights available.</p>
                 )}
               </div>
             </CardContent>
@@ -160,7 +159,7 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
                   </div>
                 )}
                 {!traitsData.primary && !traitsData.secondary && (
-                  <p className="text-muted-foreground text-sm">Your core traits are still being analyzed.</p>
+                  <p className="text-muted-foreground text-sm">No core traits available.</p>
                 )}
               </div>
             </CardContent>
