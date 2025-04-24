@@ -124,21 +124,27 @@ const DeepInsightE2ETest = () => {
           // If no ID was received, try to find by assessment ID
           addLog('Checking for analysis by assessment ID');
           
-          // Fix: Use TypeScript's type assertion to avoid complex type inference
-          const result: { 
-            data: Array<{ id: string }> | null; 
-            error: Error | null 
-          } = await supabase
+          // Fixed approach: Simplify the query and use explicit type casting
+          interface QueryResult {
+            data: Array<{ id: string }> | null;
+            error: Error | null;
+          }
+          
+          const { data, error } = await supabase
             .from('deep_insight_analyses')
             .select('id')
             .eq('assessment_id', assessmentId)
-            .limit(1) as any;
-          
-          if (result.error) {
-            addLog(`Warning: Could not check linked analyses: ${result.error.message}`);
-          } else if (result.data && result.data.length > 0) {
-            setAnalysisId(result.data[0].id);
-            addLog(`Found linked analysis with ID: ${result.data[0].id}`);
+            .limit(1);
+            
+          // Safely handle the result
+          if (error) {
+            addLog(`Warning: Could not check linked analyses: ${error.message}`);
+          } else if (data && data.length > 0) {
+            const foundId = data[0]?.id;
+            if (foundId) {
+              setAnalysisId(foundId);
+              addLog(`Found linked analysis with ID: ${foundId}`);
+            }
           } else {
             addLog('No linked analysis found by assessment ID');
           }
