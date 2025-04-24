@@ -152,15 +152,14 @@ export const useDeepInsightState = () => {
             }
           };
 
-          // Store error information in the complete_analysis JSON field instead of separate columns
-          // that don't exist in the database schema
+          // Store error information in the complete_analysis JSON field
           const analysisData = {
             user_id: user.id,
             complete_analysis: {
-              ...data.analysis.complete_analysis || {},
+              ...(data.analysis.complete_analysis || {}),
               status: data.analysis.complete_analysis?.status || 'completed',
-              error_occurred: data.analysis.error_occurred || false,
-              error_message: data.analysis.error_message || null
+              error_occurred: data.analysis.complete_analysis?.error_occurred || false,
+              error_message: data.analysis.complete_analysis?.error_message || null
             },
             overview: data.analysis.overview || defaultAnalysis.overview,
             core_traits: data.analysis.core_traits || defaultAnalysis.core_traits,
@@ -173,7 +172,9 @@ export const useDeepInsightState = () => {
             response_patterns: data.analysis.response_patterns || {
               primaryChoice: Object.keys(responses)[0],
               secondaryChoice: Object.keys(responses)[1]
-            }
+            },
+            // Store raw responses for future reference (this is nullable in the schema)
+            raw_responses: responses
           };
           
           // Save the analysis to the database
