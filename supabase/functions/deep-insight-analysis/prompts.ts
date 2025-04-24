@@ -44,8 +44,6 @@ Respond with valid JSON that follows this exact schema:
     "insight_depth": "Depth of personal insight demonstrated"
   }
 }
-
-You MUST return a valid JSON response following the exact schema above. The response MUST be parseable JSON with double quotes around property names and string values.
 `;
 
 export const USER_PROMPT = (responses: string) => `
@@ -53,26 +51,5 @@ Please analyze these assessment responses and provide a detailed psychological p
 
 ${responses}
 
-Ensure your response is valid JSON following the exact schema specified. Include the word "json" in your analysis somewhere to enable the json_object response format.
-`;
-
-export const FALLBACK_PROMPT = `
-You are a specialized analyst who converts personality assessment responses into structured data.
-Your job is to take assessment responses and extract key personality insights, returning them in a specific JSON format.
-
-Respond ONLY with valid JSON that follows this schema (no explanations, ONLY JSON):
-{
-  "overview": "Brief summary of personality profile",
-  "core_traits": {
-    "primary": "Main trait",
-    "secondary": "Secondary trait",
-    "strengths": ["Strength 1", "Strength 2"],
-    "challenges": ["Challenge 1", "Challenge 2"]
-  },
-  "intelligence_score": 75,
-  "emotional_intelligence_score": 70
-}
-
-Return ONLY valid JSON with NO explanations or additional text. Make sure to use double quotes for all keys and string values.
-This is for a JSON response format so please include the word "json" in your response.
+Ensure your response is valid JSON following the exact schema specified.
 `;

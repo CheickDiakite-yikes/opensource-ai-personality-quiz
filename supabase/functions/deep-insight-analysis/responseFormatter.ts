@@ -1,6 +1,6 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
-import { logInfo, logError, logDebug } from "./logging.ts";
+import { logInfo, logError } from "./logging.ts";
 
 export function formatAnalysisResponse(analysisContent: any) {
   try {
@@ -11,31 +11,13 @@ export function formatAnalysisResponse(analysisContent: any) {
       throw new Error("Invalid analysis content structure");
     }
     
-    // Log what fields we actually received for debugging
-    const receivedFields = Object.keys(analysisContent);
-    logDebug(`Received fields in analysis: ${receivedFields.join(', ')}`);
-    
-    // Check if we have enough data for a meaningful response
-    const hasMinimalData = analysisContent.overview || 
-                           analysisContent.core_traits || 
-                           analysisContent.intelligence_score || 
-                           analysisContent.emotional_intelligence_score;
-                           
-    if (!hasMinimalData) {
-      logError("Analysis is missing essential data", analysisContent);
-    }
-    
-    // Add processing status if data seems incomplete
-    const processingStatus = !hasMinimalData || !analysisContent.overview;
-    
     // Transform any non-standard property names to snake_case if needed
     const transformedAnalysis = {
       ...analysisContent,
       intelligence_score: analysisContent.intelligence_score || analysisContent.intelligenceScore || 0,
       emotional_intelligence_score: analysisContent.emotional_intelligence_score || 
-                                    analysisContent.emotionalIntelligenceScore || 0,
-      response_patterns: analysisContent.response_patterns || analysisContent.responsePatterns || {},
-      status: processingStatus ? "processing" : "complete"
+                                   analysisContent.emotionalIntelligenceScore || 0,
+      response_patterns: analysisContent.response_patterns || analysisContent.responsePatterns || {}
     };
     
     // Create the final response with the analysis data
@@ -43,8 +25,7 @@ export function formatAnalysisResponse(analysisContent: any) {
       JSON.stringify({
         success: true,
         status: 200,
-        analysis: transformedAnalysis,
-        message: processingStatus ? "Analysis is being processed" : "Analysis is complete"
+        analysis: transformedAnalysis
       }),
       {
         status: 200,
@@ -57,11 +38,7 @@ export function formatAnalysisResponse(analysisContent: any) {
       JSON.stringify({
         success: false,
         status: 500,
-        message: `Error formatting analysis: ${error.message}`,
-        analysis: {
-          overview: "Analysis processing encountered a technical issue. Please try again.",
-          status: "error"
-        }
+        message: `Error formatting analysis: ${error.message}`
       }),
       {
         status: 500,

@@ -7,10 +7,9 @@ import PageTransition from "@/components/ui/PageTransition";
 
 interface AnalysisErrorStateProps {
   error: string;
-  onRetry?: () => void;
 }
 
-const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error, onRetry }) => {
+const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error }) => {
   const navigate = useNavigate();
   
   return (
@@ -19,16 +18,9 @@ const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error, onRetry 
         <Brain className="h-16 w-16 text-muted mb-4" />
         <h1 className="text-2xl font-bold mb-4 text-center">Analysis Unavailable</h1>
         <p className="text-muted-foreground text-center mb-6">{error}</p>
-        <div className="flex gap-4">
-          {onRetry && (
-            <Button onClick={onRetry} variant="outline">
-              Retry
-            </Button>
-          )}
-          <Button onClick={() => navigate("/deep-insight")}>
-            Take the Assessment
-          </Button>
-        </div>
+        <Button onClick={() => navigate("/deep-insight")}>
+          Take the Assessment
+        </Button>
       </div>
     </PageTransition>
   );
