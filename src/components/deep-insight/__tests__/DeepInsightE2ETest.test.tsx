@@ -53,7 +53,7 @@ describe('DeepInsightE2ETest', () => {
         analysisId: null,
         runE2ETest: vi.fn(),
       }),
-    }), { virtual: true });
+    });
 
     render(<DeepInsightE2ETest />);
     const button = screen.getByRole('button');
@@ -68,9 +68,10 @@ describe('DeepInsightE2ETest', () => {
         analysisId: 'test-analysis-123',
         runE2ETest: vi.fn(),
       }),
-    }), { virtual: true });
+    });
 
     render(<DeepInsightE2ETest />);
     expect(screen.getByText('Test Completed Successfully')).toBeInTheDocument();
   });
 });
+
