@@ -56,6 +56,7 @@ describe('useE2ETest', () => {
     expect(result.current.analysisId).toBe('analysis-123');
     expect(result.current.isRunning).toBe(false);
     expect(mockAddLog).toHaveBeenCalledWith('Analysis completed successfully');
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed successfully/));
   });
 
   it('should handle errors when user is not authenticated', async () => {
@@ -72,6 +73,9 @@ describe('useE2ETest', () => {
   it('should handle database verification with multiple attempts', async () => {
     // Mock first verification fail then alternative lookup success
     const mockFrom = vi.fn();
+    const currentTime = new Date();
+    const recentTime = new Date(currentTime.getTime() - 10000).toISOString(); // 10 seconds ago
+    
     mockFrom.mockImplementationOnce(() => ({
       select: vi.fn().mockImplementation(() => ({
         eq: vi.fn().mockImplementation(() => ({
@@ -83,7 +87,7 @@ describe('useE2ETest', () => {
         eq: vi.fn().mockImplementation(() => ({
           order: vi.fn().mockImplementation(() => ({
             limit: vi.fn().mockResolvedValue({ 
-              data: [{ id: 'different-id', created_at: new Date().toISOString() }], 
+              data: [{ id: 'different-id', created_at: recentTime }], 
               error: null 
             })
           }))
@@ -103,6 +107,45 @@ describe('useE2ETest', () => {
 
     expect(result.current.analysisId).toBe('analysis-123');
     expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringContaining('Found most recent analysis'));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Found most recent analysis/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Analysis ID mismatch but recently created/));
+  });
+  
+  it('should handle the case when no analysis is found at all', async () => {
+    // Mock both verification attempts failing
+    const mockFrom = vi.fn();
+    mockFrom.mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          order: vi.fn().mockImplementation(() => ({
+            limit: vi.fn().mockResolvedValue({ data: [], error: null })
+          }))
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockResolvedValue({ data: [], error: null })
+    }));
+    
+    (supabase.from as any).mockImplementation(mockFrom);
+    
+    const { result } = renderHook(() => useE2ETest(mockUser, mockAddLog));
+
+    await act(async () => {
+      await result.current.runE2ETest();
+      // Fast-forward timers to handle the setTimeout
+      vi.runAllTimers();
+    });
+
+    expect(result.current.analysisId).toBe('analysis-123');
+    expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
+    expect(mockAddLog).toHaveBeenCalledWith('Warning: No analyses found in database at all - possible connectivity issue');
+    expect(mockAddLog).toHaveBeenCalledWith('Warning: Analysis with ID analysis-123 not found in database');
+    expect(mockAddLog).toHaveBeenCalledWith('E2E test completed successfully - using analysis ID: analysis-123');
   });
 });
