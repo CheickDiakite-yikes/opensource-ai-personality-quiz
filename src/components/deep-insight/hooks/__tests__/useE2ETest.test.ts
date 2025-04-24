@@ -45,6 +45,19 @@ describe('useE2ETest', () => {
   });
 
   it('should handle test run success', async () => {
+    // Mock successful database verification
+    (supabase.from as any).mockImplementation(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ 
+            data: [{ id: 'analysis-123', created_at: new Date().toISOString() }], 
+            error: null 
+          })
+        }))
+      })),
+      insert: vi.fn().mockResolvedValue({ error: null })
+    }));
+    
     const { result } = renderHook(() => useE2ETest(mockUser, mockAddLog));
 
     await act(async () => {
@@ -56,7 +69,7 @@ describe('useE2ETest', () => {
     expect(result.current.analysisId).toBe('analysis-123');
     expect(result.current.isRunning).toBe(false);
     expect(mockAddLog).toHaveBeenCalledWith('Analysis completed successfully');
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed successfully/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/verified in database/));
   });
 
   it('should handle errors when user is not authenticated', async () => {
@@ -85,6 +98,12 @@ describe('useE2ETest', () => {
     })).mockImplementationOnce(() => ({
       select: vi.fn().mockImplementation(() => ({
         eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
           order: vi.fn().mockImplementation(() => ({
             limit: vi.fn().mockResolvedValue({ 
               data: [{ id: 'different-id', created_at: recentTime }], 
@@ -93,6 +112,8 @@ describe('useE2ETest', () => {
           }))
         }))
       }))
+    })).mockImplementationOnce(() => ({
+      insert: vi.fn().mockResolvedValue({ error: null })
     }));
     
     (supabase.from as any).mockImplementation(mockFrom);
@@ -112,9 +133,15 @@ describe('useE2ETest', () => {
   });
   
   it('should handle the case when no analysis is found at all', async () => {
-    // Mock both verification attempts failing
+    // Mock all verification attempts failing
     const mockFrom = vi.fn();
     mockFrom.mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
       select: vi.fn().mockImplementation(() => ({
         eq: vi.fn().mockImplementation(() => ({
           limit: vi.fn().mockResolvedValue({ data: [], error: null })
@@ -130,6 +157,10 @@ describe('useE2ETest', () => {
       }))
     })).mockImplementationOnce(() => ({
       select: vi.fn().mockResolvedValue({ data: [], error: null })
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockResolvedValue({ count: 0 })
+    })).mockImplementationOnce(() => ({
+      insert: vi.fn().mockResolvedValue({ error: null })
     }));
     
     (supabase.from as any).mockImplementation(mockFrom);
@@ -144,8 +175,46 @@ describe('useE2ETest', () => {
 
     expect(result.current.analysisId).toBe('analysis-123');
     expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
-    expect(mockAddLog).toHaveBeenCalledWith('Warning: No analyses found in database at all - possible connectivity issue');
-    expect(mockAddLog).toHaveBeenCalledWith('Warning: Analysis with ID analysis-123 not found in database');
-    expect(mockAddLog).toHaveBeenCalledWith('E2E test completed successfully - using analysis ID: analysis-123');
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Warning: Analysis with ID .* not found in database/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed, but analysis verification failed/));
+  });
+  
+  it('should handle string format conversion for UUID lookups', async () => {
+    // Mock first verification failing with direct UUID but succeeding with string conversion
+    const mockFrom = vi.fn();
+    const currentTime = new Date().toISOString();
+    
+    mockFrom.mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ 
+            data: [{ id: 'analysis-123', created_at: currentTime }], 
+            error: null 
+          })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      insert: vi.fn().mockResolvedValue({ error: null })
+    }));
+    
+    (supabase.from as any).mockImplementation(mockFrom);
+    
+    const { result } = renderHook(() => useE2ETest(mockUser, mockAddLog));
+
+    await act(async () => {
+      await result.current.runE2ETest();
+      // Fast-forward timers to handle the setTimeout
+      vi.runAllTimers();
+    });
+
+    expect(result.current.analysisId).toBe('analysis-123');
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Analysis verified with string conversion/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed successfully with verified analysis/));
   });
 });

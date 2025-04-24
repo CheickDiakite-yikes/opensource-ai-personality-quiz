@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -94,6 +93,27 @@ serve(async (req) => {
         try {
           analysisContent = JSON.parse(responseContent);
           logInfo("Successfully parsed JSON response from OpenAI");
+          
+          // Generate a proper UUID for the analysis if not provided or invalid format
+          if (!analysisContent.id) {
+            analysisContent.id = crypto.randomUUID();
+            logInfo(`Generated UUID for analysis: ${analysisContent.id}`);
+          } else {
+            // Ensure the ID is in a proper database-compatible format if it exists
+            try {
+              // Try to convert to UUID format if it's not already
+              if (!analysisContent.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                const originalId = analysisContent.id;
+                analysisContent.id = crypto.randomUUID();
+                logInfo(`Replaced non-UUID format ID '${originalId}' with valid UUID: ${analysisContent.id}`);
+              }
+            } catch (idError) {
+              // If there's any issue with the ID, generate a new UUID
+              analysisContent.id = crypto.randomUUID();
+              logInfo(`Generated replacement UUID for invalid ID format: ${analysisContent.id}`);
+            }
+          }
+          
         } catch (firstParseError) {
           // Try to extract JSON from response if not pure JSON
           logWarning("Initial JSON parse failed, trying to extract JSON from response", firstParseError);

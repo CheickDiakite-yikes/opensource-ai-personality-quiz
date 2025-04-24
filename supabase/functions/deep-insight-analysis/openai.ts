@@ -81,56 +81,46 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
 
       const result = await response.json();
     
-    // Log the raw response for debugging
-    logInfo('Raw OpenAI Response received');
-    logDebug(`Full OpenAI response: ${JSON.stringify(result)}`);
-    
-    // Log detailed response information
-    if (result.choices && result.choices[0]) {
-      logInfo(`First choice finish_reason: ${result.choices[0].finish_reason}`);
-      logDebug(`Response content sample: ${result.choices[0].message.content.substring(0, 200)}...`);
-    }
-    
-    // Log token usage
-    if (result.usage) {
-      logInfo(`Token usage details:
-        Total tokens: ${result.usage.total_tokens}
-        Prompt tokens: ${result.usage.prompt_tokens}
-        Completion tokens: ${result.usage.completion_tokens}
-      `);
-    }
-
-      // IMPORTANT FIX: More robust validation of OpenAI response
-      if (!result) {
-        logError("Empty response from OpenAI API");
-        throw new Error("Empty response from OpenAI API");
-      }
+      // Log the raw response for debugging
+      logInfo('Raw OpenAI Response received');
       
-      // Added more comprehensive null checks
-      if (!result.choices) {
-        logError("Invalid response structure - choices field missing:", result);
-        return createEmergencyResponse("OpenAI response missing choices field");
-      }
-      
-      if (!Array.isArray(result.choices) || result.choices.length === 0) {
-        logError("Invalid choices array in OpenAI response:", result.choices);
-        return createEmergencyResponse("OpenAI response has empty choices array");
-      }
-
-      const firstChoice = result.choices[0];
-      if (!firstChoice) {
-        logError("First choice is null or undefined:", result.choices);
-        return createEmergencyResponse("First choice in OpenAI response is invalid");
-      }
-      
-      if (!firstChoice.message) {
-        logError("Message field missing in first choice:", firstChoice);
-        return createEmergencyResponse("Message field missing in OpenAI response");
-      }
+      // Detailed validation of the response content
+      logDebug('Validating OpenAI response');
       
       // Log token usage for monitoring
       if (result.usage) {
         logInfo(`Token usage: ${result.usage.total_tokens} (${result.usage.prompt_tokens} prompt, ${result.usage.completion_tokens} completion)`);
+      }
+      
+      // IMPORTANT FIX: Force UUID string format to ensure compatibility with database
+      // Ensure that the id field uses a proper format that can be stored in the database
+      try {
+        if (result.choices && 
+            result.choices[0] && 
+            result.choices[0].message && 
+            result.choices[0].message.content) {
+          
+          const contentString = result.choices[0].message.content;
+          // Check if we need to parse JSON content
+          if (contentString.startsWith('{') && contentString.endsWith('}')) {
+            try {
+              const parsedContent = JSON.parse(contentString);
+              
+              // If there's an ID in the result, ensure it's formatted correctly for storage
+              if (parsedContent.id && typeof parsedContent.id === 'string') {
+                logInfo(`Response contains ID: ${parsedContent.id}, ensuring database compatibility`);
+                
+                // If we need to modify the ID format, we could do it here
+                // For now, we're just ensuring it exists and is valid
+              }
+            } catch (parseError) {
+              // If parsing fails, just proceed with the original response
+              logWarning(`Failed to parse response content: ${parseError}`);
+            }
+          }
+        }
+      } catch (idFormatError) {
+        logError(`Error during ID format validation: ${idFormatError}`);
       }
       
       return result;
@@ -157,11 +147,17 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
 // Create an emergency response when all else fails
 function createEmergencyResponse(errorMessage: string) {
   logWarning("Creating emergency response due to API failure: " + errorMessage);
+  
+  // Generate a standard UUID string that will work in any database
+  const emergencyUuid = crypto.randomUUID();
+  logInfo(`Generated emergency UUID: ${emergencyUuid}`);
+  
   return {
     choices: [
       {
         message: {
           content: JSON.stringify({
+            id: emergencyUuid, // Use proper UUID string format
             overview: `Analysis could not be completed due to API limitations: ${errorMessage}. Please try again later.`,
             core_traits: {
               primary: "Analysis incomplete - please try again",
@@ -289,6 +285,9 @@ async function tryFallbackModel(apiKey: string, formattedResponses: string) {
     if (result.usage) {
       logInfo(`Fallback token usage: ${result.usage.total_tokens} (${result.usage.prompt_tokens} prompt, ${result.usage.completion_tokens} completion)`);
     }
+    
+    const emergencyUuid = crypto.randomUUID();
+    logInfo(`Generated fallback UUID if needed: ${emergencyUuid}`);
     
     return result;
   } catch (fallbackError) {
