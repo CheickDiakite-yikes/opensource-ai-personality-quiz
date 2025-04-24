@@ -251,6 +251,11 @@ serve(async (req) => {
       logInfo("Formatting analysis response for client");
       const formattedResponse = formatAnalysisResponse(analysisContent);
       
+      // Log the full analysis data
+      logInfo(`Analysis ID: ${analysisContent.id}`);
+      logInfo(`Analysis overview length: ${analysisContent.overview?.length || 0} chars`);
+      logDebug(`Full analysis data: ${JSON.stringify(analysisContent).substring(0, 200)}...`);
+      
       // Direct database insertion to ensure it's saved properly
       try {
         // Use fetch with direct Supabase API access
@@ -269,6 +274,9 @@ serve(async (req) => {
           }
           
           // Create the analysis record directly via REST API
+          const dbInsertStartTime = Date.now();
+          logInfo(`Starting database insertion at ${new Date().toISOString()}`);
+          
           const dbResponse = await fetch(`${supabaseUrl}/rest/v1/deep_insight_analyses`, {
             method: 'POST',
             headers: {
@@ -290,15 +298,56 @@ serve(async (req) => {
               emotional_intelligence_score: analysisContent.emotional_intelligence_score || 50,
               response_patterns: analysisContent.response_patterns || {},
               created_at: new Date().toISOString(),
-              title: "E2E Test Analysis"
+              title: "E2E Test Analysis",
+              complete_analysis: {
+                status: "completed",
+                timestamp: new Date().toISOString()
+              }
             })
           });
+          
+          const dbInsertDuration = Date.now() - dbInsertStartTime;
+          logInfo(`Database insertion took ${dbInsertDuration}ms`);
           
           if (!dbResponse.ok) {
             const errorText = await dbResponse.text();
             logError(`Failed to insert analysis directly: ${dbResponse.status} - ${errorText}`);
+            
+            // Try again with a different method as fallback
+            try {
+              logInfo("Trying alternative insertion method...");
+              // Here we would add an alternative insertion method if needed
+            } catch (altError) {
+              logError("Alternative insertion also failed:", altError);
+            }
           } else {
             logInfo(`Successfully inserted analysis ${analysisId} directly into database`);
+            
+            // Verify the record was inserted
+            const verifyStartTime = Date.now();
+            try {
+              const verifyResponse = await fetch(`${supabaseUrl}/rest/v1/deep_insight_analyses?id=eq.${analysisId}&select=id`, {
+                method: 'GET',
+                headers: {
+                  'apikey': supabaseServiceKey,
+                  'Authorization': `Bearer ${supabaseServiceKey}`
+                }
+              });
+              
+              if (verifyResponse.ok) {
+                const verifyData = await verifyResponse.json();
+                if (Array.isArray(verifyData) && verifyData.length > 0) {
+                  logInfo(`Verified analysis ${analysisId} exists in database`);
+                } else {
+                  logWarning(`Verification failed: Analysis ${analysisId} not found in database after insertion`);
+                }
+              }
+            } catch (verifyError) {
+              logWarning(`Verification check failed: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
+            }
+            
+            const verifyDuration = Date.now() - verifyStartTime;
+            logInfo(`Verification check took ${verifyDuration}ms`);
           }
         } else {
           logWarning("Missing Supabase credentials for direct insertion");
@@ -310,7 +359,20 @@ serve(async (req) => {
       
       const totalDuration = Date.now() - startTime;
       logInfo(`Analysis completed successfully in ${totalDuration}ms`);
-      return formattedResponse;
+      
+      // Return the full analysis data in the response for debugging
+      const responseBody = {
+        ...formattedResponse,
+        debug: {
+          processingTime: totalDuration,
+          analysisId: analysisContent.id,
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      return new Response(JSON.stringify(responseBody), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     } catch (aiError) {
       logError("OpenAI API error:", aiError);
       

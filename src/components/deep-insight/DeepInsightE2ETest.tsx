@@ -10,7 +10,7 @@ import { AnalysisSuccess } from './components/AnalysisSuccess';
 const DeepInsightE2ETest = () => {
   const { user } = useAuth();
   const { logs, addLog, clearLogs } = useTestLogs();
-  const { isRunning, analysisId, runE2ETest } = useE2ETest(user, addLog);
+  const { isRunning, analysisId, runE2ETest, rawResponse } = useE2ETest(user, addLog);
 
   const handleRunTest = async () => {
     clearLogs();

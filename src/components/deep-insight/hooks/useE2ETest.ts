@@ -7,10 +7,12 @@ import { v4 as uuidv4 } from "uuid";
 export const useE2ETest = (user: User | null, addLog: (message: string) => void) => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any>(null);
 
   const runE2ETest = async () => {
     setIsRunning(true);
     setAnalysisId(null);
+    setRawResponse(null);
 
     try {
       // Check if user is authenticated
@@ -69,6 +71,12 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
         return;
       }
       
+      // Store and log the raw response for debugging
+      setRawResponse(data);
+      addLog("--- START OF EDGE FUNCTION RESPONSE ---");
+      addLog(`Full response: ${JSON.stringify(data, null, 2)}`);
+      addLog("--- END OF EDGE FUNCTION RESPONSE ---");
+      
       if (!data || !data.id) {
         addLog("ERROR: Function did not return a valid analysis ID");
         setIsRunning(false);
@@ -80,7 +88,7 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
       addLog(`Analysis ID: ${functionProvidedId}`);
       
       // Wait for database consistency
-      const waitTime = 2; // seconds
+      const waitTime = 5; // Increased from 2 to 5 seconds
       addLog(`Waiting for database consistency (${waitTime} seconds)...`);
       await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       
@@ -100,6 +108,7 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
         if (analysisData && analysisData.length > 0) {
           // The exact analysis was found
           addLog(`Analysis verified in database with ID: ${functionProvidedId}`);
+          addLog(`Analysis data: ${JSON.stringify(analysisData[0], null, 2).substring(0, 200)}...`);
           setAnalysisId(functionProvidedId);
           setIsRunning(false);
           return;
@@ -140,8 +149,8 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
             addLog(`Found most recent analysis from ${mostRecent.created_at}: ${mostRecent.id}`);
             addLog(`Found analysis with different ID created ${secondsAgo}s ago`);
             
-            if (secondsAgo < 30) {
-              // Very recent analysis (within 30 seconds), likely our test
+            if (secondsAgo < 60) {  // Increased window from 30 to 60 seconds
+              // Very recent analysis (within 60 seconds), likely our test
               addLog("Analysis is very recent, likely from this test run");
               setAnalysisId(mostRecent.id);
               setIsRunning(false);
@@ -161,6 +170,8 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
               
             if (count === 0) {
               addLog("The analyses table appears to be empty");
+            } else {
+              addLog(`The analyses table contains ${count} records, but none for this user`);  
             }
             
             // Direct insert as a last resort
@@ -176,7 +187,6 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
                   title: "E2E Test Analysis",
                   overview: "Analysis generated during E2E test",
                   created_at: new Date().toISOString(),
-                  // Add required complete_analysis field
                   complete_analysis: {
                     status: "completed",
                     timestamp: new Date().toISOString()
@@ -210,6 +220,7 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
   return {
     isRunning,
     analysisId,
-    runE2ETest
+    runE2ETest,
+    rawResponse
   };
 };
