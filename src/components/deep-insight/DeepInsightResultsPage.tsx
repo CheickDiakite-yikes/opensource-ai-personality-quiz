@@ -37,18 +37,22 @@ const DeepInsightResultsPage: React.FC = () => {
     return <AnalysisLoadingState />;
   }
 
+  // Check for errors without analysis data
   if (error && !analysis) {
     return <AnalysisErrorState error={error} onRetry={handleManualRetry} />;
   }
   
-  // Handle partial analysis with error
-  if (error && analysis) {
+  // Handle case where we have analysis but also an error (partial results)
+  // This error might come from the hook or from the complete_analysis field
+  const hasError = error || (analysis?.complete_analysis?.error_occurred === true);
+  
+  if (hasError && analysis) {
     return (
       <PageTransition>
         <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
           <DeepInsightHeader />
           <AnalysisProcessingState 
-            error={error}
+            error={error || (analysis.complete_analysis?.error_message || "Processing incomplete")}
             isRetrying={isRetrying}
             onRetry={handleManualRetry}
             analysis={analysis}
@@ -68,6 +72,7 @@ const DeepInsightResultsPage: React.FC = () => {
     );
   }
 
+  // All good, show complete results
   return (
     <PageTransition>
       <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">

@@ -18,16 +18,17 @@ export function formatAnalysisResponse(analysisContent: any) {
       emotional_intelligence_score: analysisContent.emotional_intelligence_score || 
                                    analysisContent.emotionalIntelligenceScore || 0,
       response_patterns: analysisContent.response_patterns || analysisContent.responsePatterns || {},
-      // Ensure these properties exist
-      error_occurred: analysisContent.error_occurred !== undefined ? analysisContent.error_occurred : false,
-      error_message: analysisContent.error_message || null,
       
       // If any core objects don't exist, mark as error rather than providing placeholders
       core_traits: analysisContent.core_traits || null,
       cognitive_patterning: analysisContent.cognitive_patterning || null,
       emotional_architecture: analysisContent.emotional_architecture || null,
       interpersonal_dynamics: analysisContent.interpersonal_dynamics || null,
-      growth_potential: analysisContent.growth_potential || null
+      growth_potential: analysisContent.growth_potential || null,
+      
+      // Store error information in the analysis object itself
+      error_occurred: analysisContent.error_occurred !== undefined ? analysisContent.error_occurred : false,
+      error_message: analysisContent.error_message || null
     };
     
     // Create the final response with the analysis data
@@ -45,6 +46,7 @@ export function formatAnalysisResponse(analysisContent: any) {
   } catch (error) {
     logError("Error formatting analysis response", error);
     
+    // Create an error response that includes error information in the analysis field
     return new Response(
       JSON.stringify({
         success: false,
@@ -52,7 +54,9 @@ export function formatAnalysisResponse(analysisContent: any) {
         message: `Error formatting analysis: ${error instanceof Error ? error.message : "Unknown error"}`,
         analysis: {
           error_occurred: true,
-          error_message: error instanceof Error ? error.message : "Unknown error formatting analysis"
+          error_message: error instanceof Error ? error.message : "Unknown error formatting analysis",
+          // Include a basic structure to allow it to be stored in the database
+          overview: "Analysis processing encountered an error. Please try again later."
         }
       }),
       {

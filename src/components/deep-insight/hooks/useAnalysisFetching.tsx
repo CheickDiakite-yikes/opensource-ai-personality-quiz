@@ -46,7 +46,19 @@ export const useAnalysisFetching = () => {
       
       if (analyses && analyses.length > 0) {
         console.log("Analysis data found:", analyses[0].id);
-        setAnalysis(analyses[0] as DeepInsightAnalysis);
+        
+        // Check if there are processing errors stored in the complete_analysis field
+        const analysisData = analyses[0] as DeepInsightAnalysis;
+        
+        if (analysisData.complete_analysis && 
+            analysisData.complete_analysis.error_occurred === true) {
+          // Set error message from the complete_analysis field
+          setError(`Analysis processing incomplete: ${analysisData.complete_analysis.error_message || "Unknown error"}`);
+        } else {
+          setError(null);
+        }
+        
+        setAnalysis(analysisData);
       } else {
         console.log("No analysis found for user");
         setError("No analysis found. Please complete the assessment first.");

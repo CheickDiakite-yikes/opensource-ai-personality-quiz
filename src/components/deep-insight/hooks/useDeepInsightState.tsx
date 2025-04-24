@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,7 @@ export const useDeepInsightState = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useLocalStorage<DeepInsightResponses>('deep_insight_responses', {});
   const [progress, setProgress] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const { user } = useAuth();
   
@@ -151,10 +152,15 @@ export const useDeepInsightState = () => {
             }
           };
 
-          // Merge the received data with defaults for any missing fields
+          // Store error information in the complete_analysis JSON field instead of separate columns
+          // that don't exist in the database schema
           const analysisData = {
             user_id: user.id,
-            complete_analysis: data.analysis,
+            complete_analysis: {
+              ...data.analysis,
+              error_occurred: data.analysis.error_occurred || false,
+              error_message: data.analysis.error_message || null
+            },
             overview: data.analysis.overview || defaultAnalysis.overview,
             core_traits: data.analysis.core_traits || defaultAnalysis.core_traits,
             cognitive_patterning: data.analysis.cognitive_patterning || defaultAnalysis.cognitive_patterning,
@@ -166,10 +172,7 @@ export const useDeepInsightState = () => {
             response_patterns: data.analysis.response_patterns || {
               primaryChoice: Object.keys(responses)[0],
               secondaryChoice: Object.keys(responses)[1]
-            },
-            // Add error tracking
-            error_occurred: data.analysis.error_occurred || false,
-            error_message: data.analysis.error_message || null
+            }
           };
           
           // Save the analysis to the database
@@ -203,7 +206,11 @@ export const useDeepInsightState = () => {
           try {
             const fallbackAnalysis = {
               user_id: user.id,
-              complete_analysis: { status: "processing" },
+              complete_analysis: { 
+                status: "processing",
+                error_occurred: true,
+                error_message: analysisError instanceof Error ? analysisError.message : "Unknown error"
+              },
               overview: "Your analysis is still being processed. Please check back in a few minutes.",
               core_traits: {
                 primary: "Analytical Thinker",
@@ -212,9 +219,7 @@ export const useDeepInsightState = () => {
                 challenges: ["Perfectionism"]
               },
               intelligence_score: 70,
-              emotional_intelligence_score: 70,
-              error_occurred: true,
-              error_message: analysisError instanceof Error ? analysisError.message : "Unknown error"
+              emotional_intelligence_score: 70
             };
             
             await supabase.from('deep_insight_analyses').insert(fallbackAnalysis);

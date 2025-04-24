@@ -15,6 +15,7 @@ export function createErrorResponse(
       success: false,
       status,
       analysis: {
+        overview: "Analysis processing encountered an error. Please try again later.",
         error_occurred: true,
         error_message: message || error.message
       }

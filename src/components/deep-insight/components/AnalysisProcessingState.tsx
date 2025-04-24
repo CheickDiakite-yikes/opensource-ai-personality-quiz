@@ -23,13 +23,19 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
   onRetry,
   analysis,
 }) => {
+  // Check for error message in complete_analysis as well
+  const errorMessage = error || 
+    (analysis.complete_analysis?.error_message ? 
+      `Analysis processing issue: ${analysis.complete_analysis.error_message}` : 
+      "Analysis is still being processed. Please check back later.");
+
   return (
     <>
       <Alert variant="warning" className="mb-6">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Processing Status</AlertTitle>
         <AlertDescription>
-          {error}
+          {errorMessage}
           <div className="mt-2">
             <Button 
               variant="outline" 
