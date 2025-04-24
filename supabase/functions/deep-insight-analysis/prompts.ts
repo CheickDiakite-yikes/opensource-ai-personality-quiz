@@ -8,14 +8,14 @@ Analyze the assessment responses to create a comprehensive personality profile c
 - Core personality traits and values
 - Growth potential and development areas
 
-Respond with valid JSON that follows this exact schema:
+YOUR RESPONSE MUST BE VALID JSON. Follow this schema exactly:
 {
   "overview": "A paragraph summarizing the complete personality profile",
   "core_traits": {
     "primary": "Description of primary personality trait",
     "secondary": "Description of secondary trait",
-    "strengths": ["List of key strengths with explanations"],
-    "challenges": ["Areas where the person might face difficulties"]
+    "strengths": ["List of key strengths with explanations", "Another strength"],
+    "challenges": ["Areas where the person might face difficulties", "Another challenge"]
   },
   "cognitive_patterning": {
     "decision_making": "Analysis of decision-making style",
@@ -33,8 +33,8 @@ Respond with valid JSON that follows this exact schema:
     "conflict_resolution": "How conflicts are typically handled"
   },
   "growth_potential": {
-    "development_areas": ["Specific growth opportunities"],
-    "recommendations": ["Actionable suggestions for development"]
+    "development_areas": ["Specific growth opportunities", "Another growth area"],
+    "recommendations": ["Actionable suggestions for development", "Another recommendation"]
   },
   "intelligence_score": 85,
   "emotional_intelligence_score": 80,
@@ -44,6 +44,8 @@ Respond with valid JSON that follows this exact schema:
     "insight_depth": "Depth of personal insight demonstrated"
   }
 }
+
+If you're uncertain about any aspect, provide a best estimate based on available data rather than omitting a field. All fields in the schema must be present in your response.
 `;
 
 export const USER_PROMPT = (responses: string) => `
@@ -51,5 +53,5 @@ Please analyze these assessment responses and provide a detailed psychological p
 
 ${responses}
 
-Ensure your response is valid JSON following the exact schema specified.
+Ensure your response is valid JSON following the exact schema specified. Double check all fields are included with the correct types (strings for text, arrays for lists, numbers for scores).
 `;

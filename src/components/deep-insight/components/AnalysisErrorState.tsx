@@ -1,15 +1,16 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Brain } from "lucide-react";
+import { Brain, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/ui/PageTransition";
 
 interface AnalysisErrorStateProps {
   error: string;
+  onRetry?: () => void;
 }
 
-const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error }) => {
+const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error, onRetry }) => {
   const navigate = useNavigate();
   
   return (
@@ -18,9 +19,21 @@ const AnalysisErrorState: React.FC<AnalysisErrorStateProps> = ({ error }) => {
         <Brain className="h-16 w-16 text-muted mb-4" />
         <h1 className="text-2xl font-bold mb-4 text-center">Analysis Unavailable</h1>
         <p className="text-muted-foreground text-center mb-6">{error}</p>
-        <Button onClick={() => navigate("/deep-insight")}>
-          Take the Assessment
-        </Button>
+        <div className="flex gap-4">
+          {onRetry && (
+            <Button 
+              variant="outline"
+              onClick={onRetry} 
+              className="flex items-center gap-2"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Try Again
+            </Button>
+          )}
+          <Button onClick={() => navigate("/deep-insight")}>
+            Take the Assessment
+          </Button>
+        </div>
       </div>
     </PageTransition>
   );

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -18,8 +18,44 @@ const DeepInsightResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { analysis, loading, error, fetchAnalysis } = useAnalysisFetching();
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
+  const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [autoRetryCount, setAutoRetryCount] = useState<number>(0);
+  
+  // Auto-retry for incomplete analysis
+  useEffect(() => {
+    // Clear any existing timeout when component unmounts or analysis changes
+    return () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+    };
+  }, [retryTimeout]);
 
-  const handleRetry = async () => {
+  // Setup auto-retry if analysis exists but is incomplete
+  useEffect(() => {
+    if (loading || !analysis || autoRetryCount >= 3) return;
+    
+    // Check for incomplete analysis that needs auto-retry
+    const needsAutoRetry = 
+      analysis && 
+      (!analysis.overview || 
+        analysis.overview.includes("preliminary") ||
+        analysis.overview.includes("processing") || 
+        !analysis.core_traits?.primary ||
+        analysis.error_occurred);
+        
+    if (needsAutoRetry && autoRetryCount < 3) {
+      const timeout = setTimeout(() => {
+        console.log(`Auto-retrying analysis fetch (attempt ${autoRetryCount + 1}/3)...`);
+        setAutoRetryCount(prev => prev + 1);
+        fetchAnalysis();
+      }, 5000 * (autoRetryCount + 1)); // Gradually increase delay
+      
+      setRetryTimeout(timeout);
+    }
+  }, [analysis, loading, autoRetryCount, fetchAnalysis]);
+
+  const handleManualRetry = async () => {
     setIsRetrying(true);
     try {
       toast.loading("Refreshing your analysis...");
@@ -38,9 +74,10 @@ const DeepInsightResultsPage: React.FC = () => {
   }
 
   if (error && !analysis) {
-    return <AnalysisErrorState error={error} />;
+    return <AnalysisErrorState error={error} onRetry={handleManualRetry} />;
   }
   
+  // Handle partial analysis with error
   if (error && analysis) {
     return (
       <PageTransition>
@@ -49,7 +86,7 @@ const DeepInsightResultsPage: React.FC = () => {
           <AnalysisProcessingState 
             error={error}
             isRetrying={isRetrying}
-            onRetry={handleRetry}
+            onRetry={handleManualRetry}
             analysis={analysis}
           />
         </div>
@@ -58,14 +95,16 @@ const DeepInsightResultsPage: React.FC = () => {
   }
 
   // Additional validation for incomplete analysis
-  if (analysis && 
+  const isAnalysisIncomplete = analysis && 
      (!analysis.overview || 
       analysis.overview.includes("processing") || 
+      analysis.overview.includes("preliminary") ||
       !analysis.core_traits || 
       (typeof analysis.core_traits === 'object' && 
        analysis.core_traits !== null &&
-       (!('primary' in analysis.core_traits) || !analysis.core_traits.primary)))) {
-    
+       (!('primary' in analysis.core_traits) || !analysis.core_traits.primary)));
+  
+  if (isAnalysisIncomplete) {
     return (
       <PageTransition>
         <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
@@ -73,7 +112,7 @@ const DeepInsightResultsPage: React.FC = () => {
           <AnalysisProcessingState 
             error="Your analysis is still being processed. Please check back in a few minutes or click 'Check Again' below."
             isRetrying={isRetrying}
-            onRetry={handleRetry}
+            onRetry={handleManualRetry}
             analysis={analysis}
           />
         </div>

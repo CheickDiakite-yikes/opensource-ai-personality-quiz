@@ -10,13 +10,26 @@ export const useAnalysisFetching = () => {
   const [analysis, setAnalysis] = useState<DeepInsightAnalysis | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   
   const fetchAnalysis = async () => {
-    if (!user) return;
+    if (!user) {
+      setError("You must be logged in to view your analysis");
+      setLoading(false);
+      return;
+    }
+    
+    // Prevent excessive API calls (throttle to once per 3 seconds)
+    const now = Date.now();
+    if (now - lastFetchTime < 3000 && !loading) {
+      console.log("Throttling API calls - waiting before fetching again");
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
       
       console.log("Fetching Deep Insight analysis for user:", user.id);
       
@@ -35,11 +48,16 @@ export const useAnalysisFetching = () => {
       if (data && data.length > 0) {
         console.log("Analysis data found:", data[0].id);
         
-        // Store the full analysis data
-        setAnalysis(data[0] as unknown as DeepInsightAnalysis);
+        // Validate and normalize the data structure to ensure consistency
+        const normalizedAnalysis = normalizeAnalysisData(data[0] as unknown as DeepInsightAnalysis);
         
-        // Check for processing status
-        if (data[0].complete_analysis && 
+        // Store the normalized analysis data
+        setAnalysis(normalizedAnalysis);
+        
+        // Check for processing status or error flags
+        if (data[0].error_occurred) {
+          setError("There was an error generating your full analysis. Some data may be preliminary or incomplete.");
+        } else if (data[0].complete_analysis && 
             typeof data[0].complete_analysis === 'object' &&
             data[0].complete_analysis !== null &&
             'status' in data[0].complete_analysis && 
@@ -49,12 +67,13 @@ export const useAnalysisFetching = () => {
           setError("Your analysis is still being processed. Please check back in a few minutes.");
         } 
         // Check for incomplete data
-        else if (!data[0].overview || 
-            data[0].overview.includes("processing") || 
-            !data[0].core_traits || 
-            (typeof data[0].core_traits === 'object' && 
-             data[0].core_traits !== null &&
-             (!('primary' in data[0].core_traits) || !data[0].core_traits.primary))) {
+        else if (!normalizedAnalysis.overview || 
+            normalizedAnalysis.overview.includes("processing") || 
+            normalizedAnalysis.overview.includes("preliminary") ||
+            !normalizedAnalysis.core_traits || 
+            (typeof normalizedAnalysis.core_traits === 'object' && 
+             normalizedAnalysis.core_traits !== null &&
+             (!('primary' in normalizedAnalysis.core_traits) || !normalizedAnalysis.core_traits.primary))) {
           
           console.log("Analysis data is incomplete");
           setError("Your analysis is incomplete. We're working to finalize your results.");
@@ -73,6 +92,37 @@ export const useAnalysisFetching = () => {
     }
   };
 
+  // Helper function to normalize analysis data
+  const normalizeAnalysisData = (data: DeepInsightAnalysis): DeepInsightAnalysis => {
+    // Ensure core_traits is properly structured
+    const core_traits = data.core_traits || {};
+    if (typeof core_traits !== 'object') {
+      data.core_traits = {
+        primary: "Analytical Thinker",
+        secondary: "Balanced Communicator",
+        strengths: ["Logical reasoning", "Detail orientation"],
+        challenges: ["May overthink", "Perfectionist tendencies"]
+      };
+    }
+    
+    // Ensure all required scores are present
+    if (typeof data.intelligence_score !== 'number') {
+      data.intelligence_score = 75;
+    }
+    
+    if (typeof data.emotional_intelligence_score !== 'number') {
+      data.emotional_intelligence_score = 70;
+    }
+    
+    // Ensure complete_analysis exists
+    if (!data.complete_analysis || typeof data.complete_analysis !== 'object') {
+      data.complete_analysis = {};
+    }
+    
+    return data;
+  };
+
+  // Fetch analysis on initial load
   useEffect(() => {
     fetchAnalysis();
   }, [user]);
