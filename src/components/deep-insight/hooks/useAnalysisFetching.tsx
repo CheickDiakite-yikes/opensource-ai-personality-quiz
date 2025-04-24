@@ -48,20 +48,24 @@ export const useAnalysisFetching = () => {
       if (data && data.length > 0) {
         console.log("Analysis data found:", data[0].id);
         
+        // Explicitly cast the Supabase data to match our interface
+        // This ensures TypeScript knows about our custom error_occurred property
+        const analysisData = data[0] as unknown as DeepInsightAnalysis;
+        
         // Validate and normalize the data structure to ensure consistency
-        const normalizedAnalysis = normalizeAnalysisData(data[0] as unknown as DeepInsightAnalysis);
+        const normalizedAnalysis = normalizeAnalysisData(analysisData);
         
         // Store the normalized analysis data
         setAnalysis(normalizedAnalysis);
         
         // Check for processing status or error flags
-        if (data[0].error_occurred) {
+        if (normalizedAnalysis.error_occurred) {
           setError("There was an error generating your full analysis. Some data may be preliminary or incomplete.");
-        } else if (data[0].complete_analysis && 
-            typeof data[0].complete_analysis === 'object' &&
-            data[0].complete_analysis !== null &&
-            'status' in data[0].complete_analysis && 
-            data[0].complete_analysis.status === 'processing') {
+        } else if (normalizedAnalysis.complete_analysis && 
+            typeof normalizedAnalysis.complete_analysis === 'object' &&
+            normalizedAnalysis.complete_analysis !== null &&
+            'status' in normalizedAnalysis.complete_analysis && 
+            normalizedAnalysis.complete_analysis.status === 'processing') {
           
           console.log("Analysis is still being processed");
           setError("Your analysis is still being processed. Please check back in a few minutes.");
@@ -94,10 +98,22 @@ export const useAnalysisFetching = () => {
 
   // Helper function to normalize analysis data
   const normalizeAnalysisData = (data: DeepInsightAnalysis): DeepInsightAnalysis => {
+    // Create a copy of the data to avoid modifying the original
+    const normalizedData: DeepInsightAnalysis = { ...data };
+    
+    // Ensure error fields are present
+    if (typeof normalizedData.error_occurred === 'undefined') {
+      normalizedData.error_occurred = false;
+    }
+    
+    if (typeof normalizedData.error_message === 'undefined') {
+      normalizedData.error_message = null;
+    }
+    
     // Ensure core_traits is properly structured
-    const core_traits = data.core_traits || {};
+    const core_traits = normalizedData.core_traits || {};
     if (typeof core_traits !== 'object') {
-      data.core_traits = {
+      normalizedData.core_traits = {
         primary: "Analytical Thinker",
         secondary: "Balanced Communicator",
         strengths: ["Logical reasoning", "Detail orientation"],
@@ -106,20 +122,20 @@ export const useAnalysisFetching = () => {
     }
     
     // Ensure all required scores are present
-    if (typeof data.intelligence_score !== 'number') {
-      data.intelligence_score = 75;
+    if (typeof normalizedData.intelligence_score !== 'number') {
+      normalizedData.intelligence_score = 75;
     }
     
-    if (typeof data.emotional_intelligence_score !== 'number') {
-      data.emotional_intelligence_score = 70;
+    if (typeof normalizedData.emotional_intelligence_score !== 'number') {
+      normalizedData.emotional_intelligence_score = 70;
     }
     
     // Ensure complete_analysis exists
-    if (!data.complete_analysis || typeof data.complete_analysis !== 'object') {
-      data.complete_analysis = {};
+    if (!normalizedData.complete_analysis || typeof normalizedData.complete_analysis !== 'object') {
+      normalizedData.complete_analysis = {};
     }
     
-    return data;
+    return normalizedData;
   };
 
   // Fetch analysis on initial load
