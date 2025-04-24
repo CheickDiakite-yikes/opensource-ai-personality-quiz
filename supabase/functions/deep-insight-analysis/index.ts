@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -265,9 +264,19 @@ serve(async (req) => {
           // Log the attempt
           logInfo(`Explicitly inserting analysis with ID ${analysisId} into database using direct API call`);
           
-          // Extract the request body data
-          const reqData = await req.clone().json().catch(() => ({}));
-          const userId = reqData.user_id;
+          // Extract the request body data - don't try to clone the request to avoid body already read error
+          let userId = null;
+          
+          try {
+            // Handle request body more carefully
+            const reqText = await req.text();
+            if (reqText) {
+              const reqData = JSON.parse(reqText);
+              userId = reqData.user_id;
+            }
+          } catch (parseError) {
+            logWarning("Failed to extract user_id from request: " + parseError.message);
+          }
           
           if (!userId) {
             logWarning("No user_id found in request, using test user ID");
@@ -301,7 +310,8 @@ serve(async (req) => {
               title: "E2E Test Analysis",
               complete_analysis: {
                 status: "completed",
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                id: analysisId
               }
             })
           });
