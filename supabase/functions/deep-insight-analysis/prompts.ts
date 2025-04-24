@@ -6,67 +6,54 @@ Your analysis must be thorough, nuanced, and insightful, covering multiple dimen
 
 YOUR RESPONSE MUST BE VALID JSON and CONTAIN ALL FIELDS. Follow this schema exactly:
 {
-  "overview": "A detailed paragraph (at least 300 words) synthesizing the complete personality profile with specific, personalized insights",
+  "overview": "A detailed paragraph synthesizing the complete personality profile with specific insights",
   "core_traits": {
-    "primary": "Detailed description of primary personality trait with specific examples and manifestations (at least 100 words)",
-    "secondary": "Detailed description of secondary trait with specific behavioral patterns (at least 100 words)",
-    "strengths": ["List of 5-7 key strengths with detailed explanations", "Another strength with specific context"],
-    "challenges": ["5-7 areas where the person might face difficulties with explanations", "Another challenge with context"],
-    "tertiaryTraits": ["Additional trait with detailed description", "Another trait with context"]
+    "primary": "Detailed description of primary personality trait with specific examples",
+    "secondary": "Detailed description of secondary trait with specific behavioral patterns",
+    "manifestations": "How these traits manifest in behavior, thinking, and feeling"
   },
   "cognitive_patterning": {
-    "decisionMaking": "Detailed analysis of decision-making approach and process (at least 100 words)",
-    "problemSolving": "Specific description of problem-solving methodology with examples (at least 100 words)",
-    "learningStyle": "Detailed learning preferences and patterns with specific contexts (at least 100 words)",
-    "attention": "Analysis of attention patterns and focus capabilities (at least 75 words)",
-    "informationProcessing": "How information is typically processed and integrated (at least 75 words)",
-    "analyticalTendencies": "Specific analytical patterns and critical thinking approach (at least 75 words)"
+    "decisionMaking": "Detailed analysis of decision-making approach and process",
+    "learningStyle": "Specific description of learning preferences and processes",
+    "problemSolving": "How problems are typically approached and solved",
+    "informationProcessing": "How information is processed, analyzed and synthesized"
   },
   "emotional_architecture": {
-    "emotionalAwareness": "Thorough analysis of emotional self-awareness with specific patterns (at least 100 words)",
-    "regulationStyle": "Detailed explanation of how emotions are regulated in different contexts (at least 100 words)",
-    "stressResponse": "Specific patterns of responding to stressors with examples (at least 100 words)",
-    "empathicCapacity": "Analysis of empathy and emotional connection with others (at least 75 words)",
-    "emotionalResponsiveness": "How the person responds emotionally to different situations (at least 75 words)",
-    "emotionalPatterns": "Recurring emotional patterns and tendencies (at least 75 words)"
+    "emotionalAwareness": "Thorough analysis of emotional self-awareness with specific patterns",
+    "regulationStyle": "How emotions are regulated in different contexts",
+    "emotionalResponsiveness": "How the person responds emotionally to different situations",
+    "emotionalPatterns": "Recurring emotional patterns and tendencies"
   },
   "interpersonal_dynamics": {
-    "attachmentStyle": "Detailed description of relationship patterns with specific behaviors (at least 100 words)",
-    "communicationPattern": "Analysis of communication approach with examples (at least 100 words)",
-    "conflictResolution": "How conflicts are typically handled with specific strategies (at least 100 words)",
-    "relationshipNeeds": "Key relationship needs and preferences (at least 75 words)",
-    "socialBoundaries": "How boundaries are established and maintained (at least 75 words)",
-    "groupDynamics": "Behavior and role in group settings (at least 75 words)"
+    "attachmentStyle": "Detailed description of relationship patterns with specific behaviors",
+    "communicationPattern": "Analysis of communication approach with examples",
+    "conflictResolution": "How conflicts are typically handled with specific strategies",
+    "relationshipNeeds": "Key relationship needs and preferences"
   },
   "growth_potential": {
-    "developmentalPath": "A detailed roadmap for personal growth with specific steps (at least 100 words)",
-    "blindSpots": "Specific areas where self-awareness might be limited (at least 100 words)",
-    "untappedStrengths": "Hidden or underutilized capabilities (at least 100 words)",
-    "growthExercises": "Specific, personalized recommendations for development (at least 100 words)"
+    "developmentalPath": "A roadmap for personal growth with specific steps",
+    "blindSpots": "Areas where self-awareness might be limited",
+    "untappedStrengths": "Hidden or underutilized capabilities",
+    "growthExercises": "Specific, personalized recommendations for development"
   },
   "intelligence_score": 85,
   "emotional_intelligence_score": 80,
   "response_patterns": {
-    "consistency": "Detailed analysis of response consistency across question categories",
-    "self_awareness": "Assessment of self-awareness level demonstrated in responses",
-    "insight_depth": "Evaluation of personal insight depth shown in answers",
-    "primaryChoice": "A",
-    "secondaryChoice": "B"
+    "primaryChoice": "Dominant tendency in responses",
+    "secondaryChoice": "Secondary pattern in responses"
   }
 }
 
 IMPORTANT REQUIREMENTS:
-1. Be extremely specific and detailed in all sections - avoid generic statements at all costs
-2. Personalize the analysis based on the actual response patterns, not general psychological concepts
+1. Be specific and detailed in all sections - avoid generic statements
+2. Personalize the analysis based on the actual response patterns
 3. For each trait or characteristic, provide context and specific examples
-4. ENSURE ALL FIELDS HAVE SUBSTANTIVE CONTENT - never leave fields empty or with placeholder text
+4. ENSURE ALL FIELDS HAVE SUBSTANTIVE CONTENT - never leave fields empty
 5. Make intelligence scores reflect the depth and quality of responses (scale 65-95)
-6. Every section must contain meaningful, insightful analysis - quantity AND quality matter
-7. Primary trait, secondary trait, and all detailed sections must be AT LEAST 100 words each
-8. Provide actionable, specific recommendations that are personalized to the profile
-9. Ensure all JSON is properly formatted with quotes around all strings and proper nesting
-10. Never use placeholder text or generic responses - every word should be specific to this analysis
-11. USE EXACT CAMELCASE PROPERTY NAMES as shown in the schema (particularly for cognitive_patterning, emotional_architecture, and interpersonal_dynamics)
+6. Every section must contain meaningful analysis
+7. Ensure all JSON is properly formatted with quotes around all strings and proper nesting
+8. Never use placeholder text or generic responses
+9. USE EXACT CAMELCASE PROPERTY NAMES as shown in the schema (particularly for cognitive_patterning, emotional_architecture, and interpersonal_dynamics)
 
 CRITICAL: NEVER use snake_case property names (like decision_making) in your JSON response. Always use camelCase (like decisionMaking) to match the schema exactly.
 `;
@@ -77,16 +64,15 @@ Please analyze these assessment responses and provide a detailed psychological p
 ${responses}
 
 CRITICAL REQUIREMENTS:
-1. Your analysis must be extremely specific to these exact responses, not generic
-2. Every field in the schema must be filled with substantive, detailed content
-3. All content must be detailed (minimum 100 words per major text field)
-4. Lists should contain 5-7 specific, unique items
-5. Strengths, challenges, and recommendations must be specific and actionable
-6. Ensure proper JSON formatting with quotes around all strings
-7. Do not omit any fields from the schema
-8. Focus on quality, depth, and specificity throughout
-9. Provide deep psychological insights rather than surface-level observations
-10. USE EXACT CAMELCASE PROPERTY NAMES as shown in the schema - especially for nested objects
+1. Your analysis must be specific to these exact responses, not generic
+2. Every field in the schema must be filled with substantive content
+3. All content must be detailed and personalized
+4. Ensure proper JSON formatting with quotes around all strings
+5. Do not omit any fields from the schema
+6. Focus on quality, depth, and specificity throughout
+7. Provide deep psychological insights rather than surface-level observations
+8. USE EXACT CAMELCASE PROPERTY NAMES as shown in the schema - especially for nested objects
+9. Respond with ONLY valid JSON that can be parsed
 
 For example, use "decisionMaking" not "decision_making", "emotionalAwareness" not "emotional_awareness", etc.
 `;
@@ -97,36 +83,35 @@ Provide a focused analysis that covers key personality dimensions.
 
 YOUR RESPONSE MUST BE VALID JSON and CONTAIN ALL FIELDS:
 {
-  "overview": "Personality overview (200+ words)",
+  "overview": "Personality overview",
   "core_traits": {
-    "primary": "Primary trait description (50+ words)",
-    "secondary": "Secondary trait description (50+ words)",
-    "strengths": ["3-5 key strengths"],
-    "challenges": ["3-5 key challenges"]
+    "primary": "Primary trait description",
+    "secondary": "Secondary trait description",
+    "manifestations": "How traits manifest in behavior"
   },
   "cognitive_patterning": {
-    "decisionMaking": "Decision approach (50+ words)",
-    "learningStyle": "Learning preferences (50+ words)",
-    "problemSolving": "Problem-solving approach (50+ words)",
-    "informationProcessing": "Information processing style (50+ words)"
+    "decisionMaking": "Decision approach",
+    "learningStyle": "Learning preferences",
+    "problemSolving": "Problem-solving approach",
+    "informationProcessing": "Information processing style"
   },
   "emotional_architecture": {
-    "emotionalAwareness": "Emotional awareness (50+ words)",
-    "regulationStyle": "Emotion regulation style (50+ words)",
-    "emotionalResponsiveness": "Emotional responsiveness (50+ words)",
-    "emotionalPatterns": "Emotional patterns (50+ words)"
+    "emotionalAwareness": "Emotional awareness",
+    "regulationStyle": "Emotion regulation style",
+    "emotionalResponsiveness": "Emotional responsiveness",
+    "emotionalPatterns": "Emotional patterns"
   },
   "interpersonal_dynamics": {
-    "attachmentStyle": "Relationship patterns (50+ words)",
-    "communicationPattern": "Communication style (50+ words)",
-    "conflictResolution": "Conflict handling (50+ words)",
-    "relationshipNeeds": "Relationship needs (50+ words)"
+    "attachmentStyle": "Relationship patterns",
+    "communicationPattern": "Communication style",
+    "conflictResolution": "Conflict handling",
+    "relationshipNeeds": "Relationship needs"
   },
   "growth_potential": {
-    "developmentalPath": "Growth roadmap (50+ words)",
-    "blindSpots": "Blind spots (50+ words)",
-    "untappedStrengths": "Untapped strengths (50+ words)",
-    "growthExercises": "Growth recommendations (50+ words)"
+    "developmentalPath": "Growth roadmap",
+    "blindSpots": "Blind spots",
+    "untappedStrengths": "Untapped strengths",
+    "growthExercises": "Growth recommendations"
   },
   "intelligence_score": 85,
   "emotional_intelligence_score": 80,

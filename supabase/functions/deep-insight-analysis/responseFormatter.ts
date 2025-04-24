@@ -40,7 +40,6 @@ export function formatAnalysisResponse(analysisContent: any) {
       status: "completed",
       error_occurred: false,
       processing_time: new Date().toISOString(),
-      score_quality: "high",
       model_used: "gpt-4o"
     };
     
@@ -101,6 +100,10 @@ export function formatAnalysisResponse(analysisContent: any) {
     // Create an error response that still contains usable data
     const errorResponse = {
       overview: "An error occurred during analysis. Partial results may be available.",
+      core_traits: {
+        primary: "Analysis could not be completed.",
+        secondary: "Please try again later."
+      },
       intelligence_score: 50,
       emotional_intelligence_score: 50,
       complete_analysis: {

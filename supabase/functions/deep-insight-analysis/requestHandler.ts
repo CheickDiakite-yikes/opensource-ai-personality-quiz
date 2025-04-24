@@ -11,8 +11,14 @@ export async function processRequest(req: Request) {
     responses = body.responses;
     logInfo(`Request body parsed successfully, contains responses: ${!!responses}`);
     
-    // Log more details about the request body for debugging
-    logDebug(`Request body: ${JSON.stringify(body, null, 2).substring(0, 500)}...`);
+    // Log more details about the request for debugging
+    if (responses) {
+      const responseCount = Object.keys(responses).length;
+      logInfo(`Received ${responseCount} responses to analyze`);
+      logDebug(`First few response keys: ${Object.keys(responses).slice(0, 5).join(', ')}`);
+    } else {
+      logError("No responses found in request body");
+    }
   } catch (parseError) {
     logError("Error parsing request JSON:", parseError);
     return createErrorResponse(parseError, 400, "Invalid JSON in request body");
@@ -20,6 +26,7 @@ export async function processRequest(req: Request) {
 
   try {
     if (!responses || typeof responses !== 'object' || Object.keys(responses).length === 0) {
+      logError("Empty or invalid responses object received");
       throw new Error("Invalid or empty responses object");
     }
     
@@ -31,7 +38,7 @@ export async function processRequest(req: Request) {
     logInfo(`Processing ${Object.keys(responses).length} responses`);
     
     // Enhanced logging of response patterns
-    const responseLengths = Object.values(responses).map(r => String(r).length);
+    const responseLengths = Object.values(responses).map((r: any) => String(r).length);
     const avgLength = responseLengths.reduce((a: number, b: number) => a + b, 0) / responseLengths.length;
     const totalLength = formatted.length;
     
@@ -48,7 +55,7 @@ export async function processRequest(req: Request) {
       );
     }
     
-    // Log a sample of the formatted responses (first 500 chars)
+    // Log a sample of the formatted responses
     logDebug(`Formatted responses sample: ${formatted.substring(0, 500)}...`);
     
     return formatted;

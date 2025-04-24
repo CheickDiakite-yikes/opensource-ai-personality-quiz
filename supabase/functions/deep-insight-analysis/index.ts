@@ -9,7 +9,6 @@ import { callOpenAI } from "./openai.ts";
 import { formatAnalysisResponse } from "./responseFormatter.ts";
 import { createErrorResponse } from "./errorHandler.ts";
 import { logDebug, logError, logInfo, logWarning } from "./logging.ts";
-import { retryable } from "./retryUtils.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
@@ -24,6 +23,7 @@ serve(async (req) => {
   
   try {
     if (!openAIApiKey) {
+      logError("Missing OpenAI API key in environment variables");
       throw new Error("OpenAI API key not configured");
     }
 
@@ -34,7 +34,7 @@ serve(async (req) => {
       return formattedResponses; // Return error response if validation failed
     }
     
-    // Call OpenAI with proper error handling and retries
+    // Call OpenAI with proper error handling
     try {
       logInfo("Calling OpenAI API for deep insight analysis...");
       
@@ -46,6 +46,7 @@ serve(async (req) => {
       logInfo(`OpenAI API call completed in ${apiCallDuration}ms`);
       
       if (!openAIResponse || !openAIResponse.choices || !openAIResponse.choices[0]) {
+        logError("Invalid response structure from OpenAI API", openAIResponse);
         throw new Error("Invalid response from OpenAI API");
       }
       
@@ -55,26 +56,30 @@ serve(async (req) => {
         const responseContent = openAIResponse.choices[0].message.content;
         
         // Log response characteristics for debugging
-        logDebug(`OpenAI response length: ${responseContent.length} characters`);
+        logInfo(`OpenAI response received, length: ${responseContent.length} characters`);
         logDebug(`Response starts with: ${responseContent.substring(0, 50)}...`);
         
         try {
           analysisContent = JSON.parse(responseContent);
+          logInfo("Successfully parsed JSON response from OpenAI");
         } catch (firstParseError) {
           // Try to extract JSON from response if not pure JSON
-          logWarning("Initial JSON parse failed, trying to extract JSON from response");
+          logWarning("Initial JSON parse failed, trying to extract JSON from response", firstParseError);
           
           // Look for JSON-like content in the response
           const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             try {
               analysisContent = JSON.parse(jsonMatch[0]);
+              logInfo("Successfully extracted and parsed JSON from response text");
             } catch (extractError) {
               logError("Failed to extract JSON from response", extractError);
+              logDebug(`Response content: ${responseContent}`);
               throw new Error("Failed to parse OpenAI response as JSON");
             }
           } else {
             logError("No JSON-like structure found in response");
+            logDebug(`Response content: ${responseContent}`);
             throw new Error("OpenAI response did not contain valid JSON");
           }
         }
@@ -92,7 +97,7 @@ serve(async (req) => {
           throw new Error(`Incomplete analysis: missing ${missingKeys.join(', ')}`);
         }
         
-        // Check for proper casing in nested objects
+        // Check for proper casing in nested objects and fix if needed
         const cognitiveKeys = ["decisionMaking", "learningStyle", "problemSolving", "informationProcessing"];
         const emotionalKeys = ["emotionalAwareness", "regulationStyle", "emotionalResponsiveness", "emotionalPatterns"];
         const interpersonalKeys = ["attachmentStyle", "communicationPattern", "conflictResolution", "relationshipNeeds"];
@@ -136,6 +141,7 @@ serve(async (req) => {
       }
       
       // Format the response
+      logInfo("Formatting analysis response for client");
       const formattedResponse = formatAnalysisResponse(analysisContent);
       
       const totalDuration = Date.now() - startTime;
