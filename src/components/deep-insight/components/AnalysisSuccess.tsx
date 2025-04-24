@@ -46,11 +46,12 @@ export const AnalysisSuccess: React.FC<AnalysisSuccessProps> = ({ analysisId }) 
           </Button>
           <Button 
             variant="outline" 
-            asChild
+            onClick={() => {
+              const url = `/deep-insight/results/${analysisId}`;
+              window.open(url, '_blank');
+            }}
           >
-            <Link to="/profile">
-              Go to Profile
-            </Link>
+            Open in New Tab
           </Button>
         </div>
       </CardContent>

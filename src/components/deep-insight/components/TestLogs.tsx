@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TestLogsProps {
   logs: string[];
@@ -11,6 +12,7 @@ interface TestLogsProps {
 
 export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
   const [expandedJson, setExpandedJson] = useState<{[key: number]: boolean}>({});
+  const [copiedJson, setCopiedJson] = useState<{[key: number]: boolean}>({});
 
   const toggleJsonExpansion = (index: number) => {
     setExpandedJson(prev => ({
@@ -19,9 +21,19 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
     }));
   };
 
+  const copyJsonToClipboard = (jsonText: string, index: number) => {
+    navigator.clipboard.writeText(jsonText).then(() => {
+      setCopiedJson(prev => ({ ...prev, [index]: true }));
+      toast.success("JSON copied to clipboard");
+      setTimeout(() => setCopiedJson(prev => ({ ...prev, [index]: false })), 3000);
+    });
+  };
+
   const isJsonLog = (log: string) => {
     return log.includes('{') && log.includes('}') && 
-           (log.includes('Full response:') || log.includes('Analysis data:'));
+           (log.includes('Full response:') || 
+            log.includes('Analysis data:') ||
+            log.includes('debug:'));
   };
 
   const formatJsonLog = (log: string, index: number, isExpanded: boolean) => {
@@ -62,6 +74,9 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
       }
       
       // If expanded, show formatted JSON
+      const formattedJson = JSON.stringify(parsedJson, null, 2);
+      const isCopied = copiedJson[index];
+      
       return (
         <div>
           <div className="flex items-start">
@@ -74,9 +89,17 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
               <ChevronDown className="h-4 w-4" />
             </Button>
             <span>{prefix}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-2 p-1 h-6 text-xs"
+              onClick={() => copyJsonToClipboard(formattedJson, index)}
+            >
+              <Copy className="h-3 w-3 mr-1" /> {isCopied ? "Copied!" : "Copy"}
+            </Button>
           </div>
           <pre className="bg-muted/50 p-2 rounded mt-1 overflow-auto text-xs">
-            {JSON.stringify(parsedJson, null, 2)}
+            {formattedJson}
           </pre>
         </div>
       );
@@ -89,7 +112,7 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
     <div className="mt-4">
       <h3 className="text-lg font-medium mb-2">Test Logs</h3>
       <ScrollArea className="bg-muted p-4 rounded-lg h-96 border border-muted-foreground/20">
-        <pre
+        <div
           className="text-sm whitespace-pre-wrap font-mono"
           role="document"
         >
@@ -119,7 +142,7 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
               </div>
             );
           })}
-        </pre>
+        </div>
       </ScrollArea>
     </div>
   );

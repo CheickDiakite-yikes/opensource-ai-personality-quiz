@@ -77,18 +77,31 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
       addLog(`Full response: ${JSON.stringify(data, null, 2)}`);
       addLog("--- END OF EDGE FUNCTION RESPONSE ---");
       
-      if (!data || !data.id) {
+      // Extract analysis ID from different possible locations in response
+      let functionProvidedId = null;
+      
+      // Check in debug section first (new format)
+      if (data?.debug?.analysisId) {
+        functionProvidedId = data.debug.analysisId;
+        addLog(`Analysis ID found in debug section: ${functionProvidedId}`);
+      } 
+      // Legacy format - direct id property
+      else if (data?.id) {
+        functionProvidedId = data.id;
+        addLog(`Analysis ID found in root level: ${functionProvidedId}`);
+      } 
+      // No valid ID found
+      else {
         addLog("ERROR: Function did not return a valid analysis ID");
         setIsRunning(false);
         return;
       }
       
-      const functionProvidedId = data.id;
       addLog("Analysis completed successfully");
       addLog(`Analysis ID: ${functionProvidedId}`);
       
       // Wait for database consistency
-      const waitTime = 5; // Increased from 2 to 5 seconds
+      const waitTime = 5; // seconds
       addLog(`Waiting for database consistency (${waitTime} seconds)...`);
       await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       
@@ -149,36 +162,23 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
             addLog(`Found most recent analysis from ${mostRecent.created_at}: ${mostRecent.id}`);
             addLog(`Found analysis with different ID created ${secondsAgo}s ago`);
             
-            if (secondsAgo < 60) {  // Increased window from 30 to 60 seconds
-              // Very recent analysis (within 60 seconds), likely our test
+            if (secondsAgo < 60) {  // Within 60 seconds, likely our test
               addLog("Analysis is very recent, likely from this test run");
               setAnalysisId(mostRecent.id);
               setIsRunning(false);
               return;
             } else {
-              // Analysis exists but is older
               addLog("This may be a previous test run - using the one from analysis function");
               setAnalysisId(functionProvidedId);
             }
           } else {
             addLog(`No analyses found for user ${user.id}`);
             
-            // Check if there are ANY analyses in the table
-            const { count } = await supabase
-              .from('deep_insight_analyses')
-              .select('*', { count: 'exact', head: true });
-              
-            if (count === 0) {
-              addLog("The analyses table appears to be empty");
-            } else {
-              addLog(`The analyses table contains ${count} records, but none for this user`);  
-            }
-            
             // Direct insert as a last resort
             addLog("Attempting to directly insert analysis data");
             
             try {
-              const directInsertId = uuidv4();
+              const directInsertId = functionProvidedId || uuidv4();
               await supabase
                 .from('deep_insight_analyses')
                 .insert({
@@ -189,7 +189,8 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
                   created_at: new Date().toISOString(),
                   complete_analysis: {
                     status: "completed",
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    id: directInsertId
                   }
                 });
                 
@@ -206,7 +207,7 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
         addLog(`ERROR during verification: ${verificationError instanceof Error ? verificationError.message : 'Unknown error'}`);
       }
       
-      // After all verification attempts, still use the function-provided ID as fallback
+      // After all verification attempts, use the function-provided ID as fallback
       addLog(`E2E test completed, but analysis verification failed - using function-provided ID: ${functionProvidedId}`);
       setAnalysisId(functionProvidedId);
       
