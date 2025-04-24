@@ -45,15 +45,33 @@ serve(async (req) => {
       
       logInfo(`OpenAI API call completed in ${apiCallDuration}ms`);
       
-      if (!openAIResponse || !openAIResponse.choices || !openAIResponse.choices[0]) {
+      if (!openAIResponse || !openAIResponse.choices) {
         logError("Invalid response structure from OpenAI API", openAIResponse);
         throw new Error("Invalid response from OpenAI API");
+      }
+
+      // Safely check if choices array exists and has at least one item
+      if (!Array.isArray(openAIResponse.choices) || openAIResponse.choices.length === 0) {
+        logError("OpenAI response missing choices array or empty choices array", openAIResponse);
+        throw new Error("OpenAI response has no choices available");
+      }
+      
+      // Safely access first choice and message
+      const firstChoice = openAIResponse.choices[0];
+      if (!firstChoice || !firstChoice.message) {
+        logError("OpenAI response first choice is invalid or missing message", firstChoice);
+        throw new Error("Invalid choice structure in OpenAI response");
       }
       
       // Get content from the response and parse it safely
       let analysisContent;
       try {
-        const responseContent = openAIResponse.choices[0].message.content;
+        const responseContent = firstChoice.message.content;
+        
+        if (!responseContent) {
+          logError("OpenAI response content is empty or null");
+          throw new Error("Empty content in OpenAI response");
+        }
         
         // Log response characteristics for debugging
         logInfo(`OpenAI response received, length: ${responseContent.length} characters`);

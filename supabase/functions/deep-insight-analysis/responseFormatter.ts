@@ -9,7 +9,7 @@ export function formatAnalysisResponse(analysisContent: any) {
       throw new Error("Empty analysis content received");
     }
 
-    // Ensure core sections are present
+    // Ensure core sections are present with safe defaults
     const requiredSections = [
       "overview", 
       "core_traits", 
@@ -23,6 +23,15 @@ export function formatAnalysisResponse(analysisContent: any) {
     
     if (missingSections.length > 0) {
       logError(`Missing required sections in analysis: ${missingSections.join(", ")}`);
+      
+      // Add placeholder data for missing sections
+      missingSections.forEach(section => {
+        if (section === "overview") {
+          analysisContent.overview = "Analysis overview is still being processed.";
+        } else {
+          analysisContent[section] = {};
+        }
+      });
     }
     
     // Ensure scores are valid numbers
@@ -33,7 +42,7 @@ export function formatAnalysisResponse(analysisContent: any) {
     
     // Log the analysis structure for debugging
     logDebug(`Formatting analysis response with sections: ${Object.keys(analysisContent).join(", ")}`);
-    logDebug(`Overview length: ${analysisContent.overview?.length || 0} characters`);
+    logDebug(`Overview length: ${(analysisContent.overview || "").length} characters`);
     
     // Create a complete_analysis field to track processing status
     const complete_analysis = {
@@ -43,37 +52,44 @@ export function formatAnalysisResponse(analysisContent: any) {
       model_used: "gpt-4o"
     };
     
+    // Safely access nested objects with fallbacks
+    const core_traits = analysisContent.core_traits || {};
+    const cognitive_patterning = analysisContent.cognitive_patterning || {};
+    const emotional_architecture = analysisContent.emotional_architecture || {};
+    const interpersonal_dynamics = analysisContent.interpersonal_dynamics || {};
+    const growth_potential = analysisContent.growth_potential || {};
+    
     // Format the final response
     const formattedData = {
       overview: analysisContent.overview || "Analysis overview is being generated.",
-      core_traits: analysisContent.core_traits || {
-        primary: "Primary trait analysis is being processed.",
-        secondary: "Secondary trait analysis is being processed.",
-        manifestations: "Trait manifestations are being analyzed."
+      core_traits: {
+        primary: core_traits.primary || "Primary trait analysis is being processed.",
+        secondary: core_traits.secondary || "Secondary trait analysis is being processed.",
+        manifestations: core_traits.manifestations || "Trait manifestations are being analyzed."
       },
-      cognitive_patterning: analysisContent.cognitive_patterning || {
-        decisionMaking: "Decision-making pattern analysis is being processed.",
-        learningStyle: "Learning style analysis is being processed.",
-        problemSolving: "Problem-solving approach is being analyzed.",
-        informationProcessing: "Information processing style is being analyzed."
+      cognitive_patterning: {
+        decisionMaking: cognitive_patterning.decisionMaking || "Decision-making pattern analysis is being processed.",
+        learningStyle: cognitive_patterning.learningStyle || "Learning style analysis is being processed.",
+        problemSolving: cognitive_patterning.problemSolving || "Problem-solving approach is being analyzed.",
+        informationProcessing: cognitive_patterning.informationProcessing || "Information processing style is being analyzed."
       },
-      emotional_architecture: analysisContent.emotional_architecture || {
-        emotionalAwareness: "Emotional awareness analysis is being processed.",
-        regulationStyle: "Emotional regulation style is being analyzed.",
-        emotionalResponsiveness: "Emotional responsiveness pattern is being analyzed.",
-        emotionalPatterns: "Emotional pattern analysis is being processed."
+      emotional_architecture: {
+        emotionalAwareness: emotional_architecture.emotionalAwareness || "Emotional awareness analysis is being processed.",
+        regulationStyle: emotional_architecture.regulationStyle || "Emotional regulation style is being analyzed.",
+        emotionalResponsiveness: emotional_architecture.emotionalResponsiveness || "Emotional responsiveness pattern is being analyzed.",
+        emotionalPatterns: emotional_architecture.emotionalPatterns || "Emotional pattern analysis is being processed."
       },
-      interpersonal_dynamics: analysisContent.interpersonal_dynamics || {
-        attachmentStyle: "Attachment style analysis is being processed.",
-        communicationPattern: "Communication pattern analysis is being processed.",
-        conflictResolution: "Conflict resolution style is being analyzed.",
-        relationshipNeeds: "Relationship needs are being analyzed."
+      interpersonal_dynamics: {
+        attachmentStyle: interpersonal_dynamics.attachmentStyle || "Attachment style analysis is being processed.",
+        communicationPattern: interpersonal_dynamics.communicationPattern || "Communication pattern analysis is being processed.",
+        conflictResolution: interpersonal_dynamics.conflictResolution || "Conflict resolution style is being analyzed.",
+        relationshipNeeds: interpersonal_dynamics.relationshipNeeds || "Relationship needs are being analyzed."
       },
-      growth_potential: analysisContent.growth_potential || {
-        developmentalPath: "Developmental path is being mapped.",
-        blindSpots: "Blind spots analysis is being processed.",
-        untappedStrengths: "Untapped strengths are being identified.",
-        growthExercises: "Growth exercises are being formulated."
+      growth_potential: {
+        developmentalPath: growth_potential.developmentalPath || "Developmental path is being mapped.",
+        blindSpots: growth_potential.blindSpots || "Blind spots analysis is being processed.",
+        untappedStrengths: growth_potential.untappedStrengths || "Untapped strengths are being identified.",
+        growthExercises: growth_potential.growthExercises || "Growth exercises are being formulated."
       },
       intelligence_score: intelligenceScore,
       emotional_intelligence_score: emotionalIntelligenceScore,
@@ -103,6 +119,30 @@ export function formatAnalysisResponse(analysisContent: any) {
       core_traits: {
         primary: "Analysis could not be completed.",
         secondary: "Please try again later."
+      },
+      cognitive_patterning: {
+        decisionMaking: "Analysis incomplete",
+        learningStyle: "Analysis incomplete",
+        problemSolving: "Analysis incomplete",
+        informationProcessing: "Analysis incomplete"
+      },
+      emotional_architecture: {
+        emotionalAwareness: "Analysis incomplete",
+        regulationStyle: "Analysis incomplete",
+        emotionalResponsiveness: "Analysis incomplete",
+        emotionalPatterns: "Analysis incomplete"
+      },
+      interpersonal_dynamics: {
+        attachmentStyle: "Analysis incomplete",
+        communicationPattern: "Analysis incomplete",
+        conflictResolution: "Analysis incomplete",
+        relationshipNeeds: "Analysis incomplete"
+      },
+      growth_potential: {
+        developmentalPath: "Analysis incomplete",
+        blindSpots: "Analysis incomplete",
+        untappedStrengths: "Analysis incomplete",
+        growthExercises: "Analysis incomplete"
       },
       intelligence_score: 50,
       emotional_intelligence_score: 50,

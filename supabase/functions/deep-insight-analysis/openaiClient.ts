@@ -1,7 +1,7 @@
 
 import { API_CONFIG } from "./openaiConfig.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { logError, logDebug, logResponseStats, createPerformanceTracker } from "./logging.ts";
+import { logError, logDebug, logInfo, createPerformanceTracker } from "./logging.ts";
 import { retryable } from "./retryUtils.ts";
 
 /**
@@ -41,12 +41,16 @@ export async function createOpenAIRequest(
 
   logDebug("Creating OpenAI request", { 
     model: payload.model, 
-    messagesCount: messages.length,
+    messagesCount: messages ? messages.length : 0,
     maxTokens,
     temperature: API_CONFIG.TEMPERATURE
   });
 
   try {
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error("Messages array must not be empty");
+    }
+    
     const response = await fetch(API_CONFIG.BASE_URL, {
       method: "POST",
       headers: headers,
@@ -55,16 +59,21 @@ export async function createOpenAIRequest(
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      let errorData;
+      let errorBody = "";
+      let errorData = null;
       
       try {
-        errorData = JSON.parse(errorBody);
-      } catch {
-        errorData = { message: errorBody };
+        errorBody = await response.text();
+        try {
+          errorData = JSON.parse(errorBody);
+        } catch {
+          errorData = { message: errorBody };
+        }
+      } catch (e) {
+        errorData = { message: "Could not read error response" };
       }
       
-      const errorMessage = errorData.error?.message || errorData.message || `HTTP ${response.status}`;
+      const errorMessage = errorData?.error?.message || errorData?.message || `HTTP ${response.status}`;
       
       logError({
         status: response.status,
@@ -80,7 +89,7 @@ export async function createOpenAIRequest(
     }
 
     const duration = perfTracker.end();
-    logDebug(`OpenAI request succeeded in ${duration.toFixed(2)}ms`);
+    logInfo(`OpenAI request succeeded in ${duration.toFixed(2)}ms`);
     return response;
     
   } catch (error) {
@@ -104,13 +113,26 @@ export async function createOpenAIRequest(
 export async function handleOpenAIResponse(response: Response) {
   const perfTracker = createPerformanceTracker("OpenAI response processing");
   
+  if (!response) {
+    throw new Error("OpenAI response is null or undefined");
+  }
+  
   try {
     const data = await response.json();
-    logResponseStats(data);
     
-    // Validate response structure
-    if (!data.choices || !Array.isArray(data.choices) || !data.choices.length) {
-      throw new Error("OpenAI response missing expected 'choices' array");
+    // Verify essential data structure
+    if (!data) {
+      throw new Error("OpenAI response JSON is null or empty");
+    }
+    
+    // Check for the choices array
+    if (!data.choices || !Array.isArray(data.choices)) {
+      throw new Error("OpenAI response missing choices array");
+    }
+    
+    // Check that we have at least one choice
+    if (data.choices.length === 0) {
+      throw new Error("OpenAI response contains empty choices array");
     }
     
     perfTracker.end();
@@ -137,6 +159,10 @@ export async function createStreamingOpenAIRequest(
     ...corsHeaders,
   };
 
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw new Error("Messages array must not be empty");
+  }
+
   const payload = {
     model: API_CONFIG.DEFAULT_MODEL,
     messages: messages,
@@ -157,7 +183,12 @@ export async function createStreamingOpenAIRequest(
   });
 
   if (!response.ok) {
-    const errorBody = await response.text();
+    let errorBody = "";
+    try {
+      errorBody = await response.text();
+    } catch (e) {
+      errorBody = "Could not read error response";
+    }
     logError({ status: response.status, body: errorBody }, "OpenAI API streaming error");
     throw new Error(`OpenAI API Error: ${response.status} - ${errorBody}`);
   }

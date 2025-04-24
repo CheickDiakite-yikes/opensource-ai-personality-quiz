@@ -16,11 +16,11 @@ export function retryable<T>(fn: Function, maxRetries: number = 3) {
         
         return await fn(...args);
       } catch (error) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         logError(`Attempt ${attempt + 1}/${maxRetries} failed:`, error);
       }
     }
     
-    throw lastError || new Error(`Failed after ${maxRetries} attempts`);
+    throw lastError || new Error(`Failed after ${maxRetries} attempts with unknown error`);
   };
 }
