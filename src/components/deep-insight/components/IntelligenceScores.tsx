@@ -31,6 +31,7 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
             <Progress 
               value={intelligenceScore || 0} 
               className="h-2 bg-blue-950" 
+              indicatorClassName="bg-blue-400"
             />
           </div>
         </CardContent>
@@ -48,6 +49,7 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
             <Progress 
               value={emotionalIntelligenceScore || 0} 
               className="h-2 bg-rose-950" 
+              indicatorClassName="bg-rose-400"
             />
           </div>
         </CardContent>
