@@ -71,24 +71,56 @@ export const useDeepInsightState = () => {
     }
 
     // Validate minimum number of responses
-    if (Object.keys(responses).length < 5) {
+    const responseCount = Object.keys(responses).length;
+    if (responseCount < 5) {
       toast.error("Please complete at least 5 questions before submitting");
       return;
     }
+    
+    // Encourage more responses for better analysis if less than 50% complete
+    if (responseCount < Math.floor(totalQuestions * 0.5)) {
+      toast.warning(
+        `You've only answered ${responseCount} of ${totalQuestions} questions. For a more accurate analysis, we recommend answering more questions.`, 
+        {
+          description: "Continue or submit now?",
+          action: {
+            label: "Submit anyway",
+            onClick: () => submitResponses()
+          },
+          duration: 8000
+        }
+      );
+      return;
+    }
 
+    await submitResponses();
+  };
+  
+  const submitResponses = async () => {
     setIsSubmitting(true);
     setSubmissionError(null);
 
     try {
       // More detailed loading toast
-      const submissionToast = toast.loading("Analyzing your responses...", {
-        description: "This may take a few moments",
+      const submissionToast = toast.loading("Processing your responses...", {
+        description: `Analyzing ${Object.keys(responses).length} questions for deep insights`,
         duration: Infinity
       });
       
       // First save the responses to the database
       if (user) {
         const assessmentId = `deep-insight-${Date.now()}`;
+        
+        // Format response data for better analysis
+        const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
+          const question = questions.find(q => q.id === questionId);
+          return {
+            questionId,
+            question: question ? question.question : "Unknown question",
+            answer,
+            category: question?.category || "unknown"
+          };
+        });
         
         const { error: assessmentError } = await supabase
           .from('deep_insight_assessments')
@@ -107,13 +139,23 @@ export const useDeepInsightState = () => {
         }
         
         try {
+          toast.dismiss(submissionToast);
+          const analysisToast = toast.loading("Creating your personality profile...", {
+            description: "Our AI is analyzing your responses for deep insights",
+            duration: Infinity
+          });
+          
           // Call edge function to analyze responses
           const { data, error } = await supabase.functions.invoke("deep-insight-analysis", {
             body: { 
-              responses,
-              assessmentId 
+              responses: formattedResponses,
+              assessmentId,
+              questionCount: totalQuestions,
+              responseCount: Object.keys(responses).length
             }
           });
+          
+          toast.dismiss(analysisToast);
           
           if (error) {
             throw new Error(`Analysis failed: ${error.message}`);
@@ -135,19 +177,19 @@ export const useDeepInsightState = () => {
               challenges: ["May overthink", "Perfectionist tendencies"]
             },
             cognitive_patterning: {
-              decisionMaking: "You take a thoughtful, measured approach to decisions.",
-              learningStyle: "You learn best through structured, logical information."
+              decision_making: "You take a thoughtful, measured approach to decisions.",
+              learning_style: "You learn best through structured, logical information."
             },
             emotional_architecture: {
-              emotionalAwareness: "You have a balanced awareness of your emotions.",
-              regulationStyle: "You tend to process emotions through logical analysis."
+              emotional_awareness: "You have a balanced awareness of your emotions.",
+              regulation_style: "You tend to process emotions through logical analysis."
             },
             interpersonal_dynamics: {
-              attachmentStyle: "You value independence while maintaining connections.",
-              communicationPattern: "Your communication is clear and precise."
+              attachment_style: "You value independence while maintaining connections.",
+              communication_pattern: "Your communication is clear and precise."
             },
             growth_potential: {
-              developmentAreas: ["Finding balance between analysis and action"],
+              development_areas: ["Finding balance between analysis and action"],
               recommendations: ["Practice mindfulness techniques to reduce overthinking"]
             }
           };
@@ -191,7 +233,6 @@ export const useDeepInsightState = () => {
           }
           
           // Update toast to success
-          toast.dismiss(submissionToast);
           toast.success("Analysis completed successfully!", {
             description: "Redirecting to your results"
           });

@@ -41,7 +41,10 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
         attempts === 1 ? API_CONFIG.FALLBACK_TIMEOUT : API_CONFIG.FALLBACK_TIMEOUT * 1.5);
       
       // Use the appropriate model based on retry attempt
+      // Always try gpt-4o first for highest quality analysis
       const model = attempts === 1 ? API_CONFIG.DEFAULT_MODEL : API_CONFIG.FALLBACK_MODEL;
+      
+      logDebug(`Making OpenAI request with model: ${model}`);
       
       const response = await fetch(API_CONFIG.BASE_URL, {
         method: "POST",
@@ -82,9 +85,61 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
         throw lastError;
       }
       
+      const responseData = await response.json();
+      
+      // Validate response structure
+      if (!responseData.choices || 
+          !responseData.choices[0] || 
+          !responseData.choices[0].message || 
+          !responseData.choices[0].message.content) {
+        const validationError = new Error("Invalid response structure from OpenAI API");
+        
+        if (attempts <= API_CONFIG.RETRY_ATTEMPTS) {
+          lastError = validationError;
+          await new Promise(r => setTimeout(r, Math.pow(2, attempts-1) * 1000));
+          continue;
+        }
+        
+        throw validationError;
+      }
+      
+      // Try to parse JSON to validate it before returning
+      try {
+        const content = responseData.choices[0].message.content;
+        const parsedContent = JSON.parse(content);
+        
+        // Quick validation of essential fields
+        const requiredFields = [
+          "overview", "core_traits", "cognitive_patterning", 
+          "emotional_architecture", "interpersonal_dynamics", "growth_potential"
+        ];
+        
+        const missingFields = requiredFields.filter(field => !parsedContent[field]);
+        
+        if (missingFields.length > 0) {
+          logError(`Missing required fields in response: ${missingFields.join(', ')}`);
+          
+          if (attempts <= API_CONFIG.RETRY_ATTEMPTS) {
+            lastError = new Error(`Incomplete analysis: missing ${missingFields.join(', ')}`);
+            await new Promise(r => setTimeout(r, Math.pow(2, attempts-1) * 1000));
+            continue;
+          }
+        }
+      } catch (jsonError) {
+        logError("Failed to parse OpenAI response as JSON:", jsonError);
+        
+        if (attempts <= API_CONFIG.RETRY_ATTEMPTS) {
+          lastError = new Error("Invalid JSON in OpenAI response");
+          await new Promise(r => setTimeout(r, Math.pow(2, attempts-1) * 1000));
+          continue;
+        }
+        
+        throw jsonError;
+      }
+      
       // Success! Return the response data
       logDebug(`Received successful response from OpenAI API using model: ${model}`);
-      return response.json();
+      return responseData;
       
     } catch (error) {
       // Handle aborted requests (timeouts)

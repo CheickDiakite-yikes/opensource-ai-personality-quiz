@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PersonalityOverviewProps {
   overview: string;
@@ -8,14 +8,11 @@ interface PersonalityOverviewProps {
 
 const PersonalityOverview: React.FC<PersonalityOverviewProps> = ({ overview }) => {
   return (
-    <Card className="mb-8 border-primary/20 bg-primary/5">
-      <CardHeader>
-        <CardTitle>Personality Overview</CardTitle>
-        <CardDescription>Summary of your core personality traits and tendencies</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-lg leading-relaxed">
-          {overview || "Your Deep Insight Analysis reveals a multifaceted personality with unique cognitive patterns and emotional depths. The following sections break down the key components of your psychological profile."}
+    <Card className="mb-8 border-primary/30">
+      <CardContent className="p-6 pt-6">
+        <h2 className="text-2xl font-semibold mb-4 text-primary">Personality Overview</h2>
+        <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+          {overview}
         </p>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { AlertTriangle, RefreshCcw, Clock, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DeepInsightAnalysis } from "../types/deepInsight";
@@ -9,6 +9,7 @@ import AnalysisScores from "./AnalysisScores";
 import TopTraitsSection from "../results-sections/TopTraitsSection";
 import DeepInsightTabs from "./DeepInsightTabs";
 import AnalysisActions from "./AnalysisActions";
+import { Progress } from "@/components/ui/progress";
 
 interface AnalysisProcessingStateProps {
   error: string;
@@ -23,30 +24,49 @@ const AnalysisProcessingState: React.FC<AnalysisProcessingStateProps> = ({
   onRetry,
   analysis,
 }) => {
-  // Check for error message in complete_analysis as well
-  const errorMessage = error || 
-    (analysis.complete_analysis?.error_message ? 
-      `Analysis processing issue: ${analysis.complete_analysis.error_message}` : 
-      "Analysis is still being processed. Please check back later.");
+  // Check if we're in a processing state or an error state
+  const isProcessing = !error || error.toLowerCase().includes('still being processed') || error.toLowerCase().includes('processing');
+  
+  // Determine alert variant
+  const alertVariant = isProcessing ? "default" : "warning";
+  
+  // Friendly message about what's happening
+  const processingMessage = isProcessing 
+    ? "Your deep insight analysis is still being processed. This may take a few minutes as our AI system generates comprehensive insights from your responses."
+    : error;
 
   return (
     <>
-      <Alert variant="warning" className="mb-6">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Processing Status</AlertTitle>
+      <Alert variant={alertVariant} className="mb-6">
+        {isProcessing ? (
+          <Clock className="h-4 w-4" />
+        ) : (
+          <AlertTriangle className="h-4 w-4" />
+        )}
+        <AlertTitle>{isProcessing ? "Processing Your Analysis" : "Processing Status"}</AlertTitle>
         <AlertDescription>
-          {errorMessage}
-          <div className="mt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRetry} 
-              disabled={isRetrying}
-              className="flex items-center gap-2"
-            >
-              {isRetrying ? "Checking..." : "Check Again"}
-              <RefreshCcw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
-            </Button>
+          <div className="space-y-2">
+            <p>{processingMessage}</p>
+            {isProcessing && (
+              <div className="mt-2">
+                <Progress value={65} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  We'll refresh automatically when your results are ready.
+                </p>
+              </div>
+            )}
+            <div className="mt-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onRetry} 
+                disabled={isRetrying}
+                className="flex items-center gap-2"
+              >
+                {isRetrying ? "Checking..." : "Check Status Now"}
+                <RefreshCcw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </AlertDescription>
       </Alert>

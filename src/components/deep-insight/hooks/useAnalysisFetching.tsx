@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DeepInsightAnalysis } from "../types/deepInsight";
+import { toast } from "sonner";
 
 export const useAnalysisFetching = () => {
   const { user } = useAuth();
@@ -11,16 +12,16 @@ export const useAnalysisFetching = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = useCallback(async () => {
     if (!user) {
       setError("You must be logged in to view your analysis");
       setLoading(false);
       return;
     }
     
-    // Prevent excessive API calls (throttle to once per 3 seconds)
+    // Prevent excessive API calls (throttle to once per 2 seconds)
     const now = Date.now();
-    if (now - lastFetchTime < 3000 && !loading) {
+    if (now - lastFetchTime < 2000 && !loading) {
       console.log("Throttling API calls - waiting before fetching again");
       return;
     }
@@ -50,10 +51,23 @@ export const useAnalysisFetching = () => {
         // Check if there are processing errors stored in the complete_analysis field
         const analysisData = analyses[0] as DeepInsightAnalysis;
         
+        // Validate response content to ensure we have quality data
+        const isDataComplete = analysisData.core_traits && 
+                              analysisData.cognitive_patterning && 
+                              analysisData.emotional_architecture &&
+                              analysisData.interpersonal_dynamics &&
+                              analysisData.growth_potential;
+                              
+        if (!isDataComplete) {
+          console.warn("Analysis data is incomplete or missing key sections");
+        }
+        
         if (analysisData.complete_analysis && 
             analysisData.complete_analysis.error_occurred === true) {
           // Set error message from the complete_analysis field
           setError(`Analysis processing incomplete: ${analysisData.complete_analysis.error_message || "Unknown error"}`);
+        } else if (!analysisData.overview || analysisData.overview.length < 30) {
+          setError("Analysis results appear to be incomplete. The system may still be processing your data.");
         } else {
           setError(null);
         }
@@ -71,12 +85,33 @@ export const useAnalysisFetching = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, lastFetchTime, loading]);
 
   // Fetch analysis on initial load
   useEffect(() => {
-    fetchAnalysis();
-  }, [user?.id]); // Only refetch when user ID changes
+    if (user?.id) {
+      fetchAnalysis();
+    }
+  }, [user?.id, fetchAnalysis]);
+
+  // Poll for updates if there was an error or incomplete data
+  useEffect(() => {
+    let pollingInterval: number | undefined;
+    
+    if ((error || (analysis?.complete_analysis?.status === 'processing')) && user?.id) {
+      // Poll every 10 seconds if we're waiting for processing to complete
+      pollingInterval = window.setInterval(() => {
+        console.log("Polling for updated analysis results...");
+        fetchAnalysis();
+      }, 10000) as unknown as number;
+    }
+    
+    return () => {
+      if (pollingInterval) {
+        window.clearInterval(pollingInterval);
+      }
+    };
+  }, [error, analysis, user?.id, fetchAnalysis]);
 
   return { analysis, loading, error, fetchAnalysis };
 };

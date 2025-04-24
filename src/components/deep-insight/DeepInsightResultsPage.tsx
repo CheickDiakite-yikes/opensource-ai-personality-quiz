@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -46,13 +46,23 @@ const DeepInsightResultsPage: React.FC = () => {
   // This error might come from the hook or from the complete_analysis field
   const hasError = error || (analysis?.complete_analysis?.error_occurred === true);
   
-  if (hasError && analysis) {
+  // Check if we have incomplete data (some parts are missing)
+  const isDataIncomplete = analysis && (!analysis.core_traits || 
+                                       !analysis.cognitive_patterning || 
+                                       !analysis.emotional_architecture || 
+                                       !analysis.interpersonal_dynamics ||
+                                       !analysis.growth_potential);
+                                       
+  // Check if we're in a processing state
+  const isProcessing = analysis?.complete_analysis?.status === 'processing' || isDataIncomplete;
+  
+  if ((hasError || isProcessing) && analysis) {
     return (
       <PageTransition>
         <div className="container max-w-4xl py-8 md:py-12 px-4 md:px-6">
           <DeepInsightHeader />
           <AnalysisProcessingState 
-            error={error || (analysis.complete_analysis?.error_message || "Processing incomplete")}
+            error={error || (analysis.complete_analysis?.error_message || isProcessing ? "Your analysis is still being processed" : "Processing incomplete")}
             isRetrying={isRetrying}
             onRetry={handleManualRetry}
             analysis={analysis}
