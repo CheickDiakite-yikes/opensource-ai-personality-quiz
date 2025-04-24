@@ -13,6 +13,7 @@ vi.mock('@/integrations/supabase/client', () => ({
       order: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
+      gt: vi.fn().mockReturnThis(),
     })),
     functions: {
       invoke: vi.fn().mockResolvedValue({ 
@@ -63,7 +64,7 @@ describe('useE2ETest', () => {
     await act(async () => {
       await result.current.runE2ETest();
       // Fast-forward timers to handle the setTimeout for database verification
-      vi.runAllTimers();
+      vi.advanceTimersByTime(5000);
     });
 
     expect(result.current.analysisId).toBe('analysis-123');
@@ -123,13 +124,12 @@ describe('useE2ETest', () => {
     await act(async () => {
       await result.current.runE2ETest();
       // Fast-forward timers to handle the setTimeout
-      vi.runAllTimers();
+      vi.advanceTimersByTime(5000);
     });
 
     expect(result.current.analysisId).toBe('analysis-123');
     expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Found most recent analysis/));
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Analysis ID mismatch but recently created/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Found .* analyses for current user/));
   });
   
   it('should handle the case when no analysis is found at all', async () => {
@@ -161,7 +161,12 @@ describe('useE2ETest', () => {
       select: vi.fn().mockResolvedValue({ count: 0 })
     })).mockImplementationOnce(() => ({
       insert: vi.fn().mockResolvedValue({ error: null })
-    }));
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockResolvedValue({ data: [{ id: 'analysis-123' }], error: null })
+    }))
+    
+    
+    ;
     
     (supabase.from as any).mockImplementation(mockFrom);
     
@@ -170,19 +175,19 @@ describe('useE2ETest', () => {
     await act(async () => {
       await result.current.runE2ETest();
       // Fast-forward timers to handle the setTimeout
-      vi.runAllTimers();
+      vi.advanceTimersByTime(5000);
     });
 
     expect(result.current.analysisId).toBe('analysis-123');
     expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Warning: Analysis with ID .* not found in database/));
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed, but analysis verification failed/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/No analyses found for user/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Attempting to directly insert analysis data/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Successfully inserted analysis record directly with ID/));
   });
   
-  it('should handle string format conversion for UUID lookups', async () => {
-    // Mock first verification failing with direct UUID but succeeding with string conversion
+  it('should handle direct insertion of analysis data when verification fails', async () => {
+    // Mock verification failing but direct insert succeeding
     const mockFrom = vi.fn();
-    const currentTime = new Date().toISOString();
     
     mockFrom.mockImplementationOnce(() => ({
       select: vi.fn().mockImplementation(() => ({
@@ -193,14 +198,25 @@ describe('useE2ETest', () => {
     })).mockImplementationOnce(() => ({
       select: vi.fn().mockImplementation(() => ({
         eq: vi.fn().mockImplementation(() => ({
-          limit: vi.fn().mockResolvedValue({ 
-            data: [{ id: 'analysis-123', created_at: currentTime }], 
-            error: null 
-          })
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          order: vi.fn().mockImplementation(() => ({
+            limit: vi.fn().mockResolvedValue({ data: [], error: null })
+          }))
         }))
       }))
     })).mockImplementationOnce(() => ({
       insert: vi.fn().mockResolvedValue({ error: null })
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          single: vi.fn().mockResolvedValue({ data: { id: 'analysis-123' }, error: null })
+        }))
+      }))
     }));
     
     (supabase.from as any).mockImplementation(mockFrom);
@@ -210,11 +226,61 @@ describe('useE2ETest', () => {
     await act(async () => {
       await result.current.runE2ETest();
       // Fast-forward timers to handle the setTimeout
-      vi.runAllTimers();
+      vi.advanceTimersByTime(5000);
     });
 
     expect(result.current.analysisId).toBe('analysis-123');
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Analysis verified with string conversion/));
-    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/E2E test completed successfully with verified analysis/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Attempting to directly insert analysis data/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Successfully inserted analysis record directly/));
+  });
+  
+  it('should check for very recent analyses when other methods fail', async () => {
+    // Mock verification failing but finding recent analyses
+    const veryRecentTime = new Date();
+    const mockFrom = vi.fn();
+    
+    mockFrom.mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          order: vi.fn().mockImplementation(() => ({
+            limit: vi.fn().mockResolvedValue({ data: [], error: null })
+          }))
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        gt: vi.fn().mockImplementation(() => ({
+          order: vi.fn().mockResolvedValue({ 
+            data: [{ id: 'very-recent-id', created_at: veryRecentTime.toISOString() }],
+            error: null
+          })
+        }))
+      }))
+    }));
+    
+    (supabase.from as any).mockImplementation(mockFrom);
+    
+    const { result } = renderHook(() => useE2ETest(mockUser, mockAddLog));
+
+    await act(async () => {
+      await result.current.runE2ETest();
+      // Fast-forward timers to handle the setTimeout
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Found .* analyses created in the last 15 seconds/));
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringMatching(/Using most recent analysis ID:/));
   });
 });
