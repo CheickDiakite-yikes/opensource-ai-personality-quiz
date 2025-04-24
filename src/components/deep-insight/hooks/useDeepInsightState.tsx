@@ -197,11 +197,10 @@ export const useDeepInsightState = () => {
           // Store error information in the complete_analysis JSON field
           const analysisData = {
             user_id: user.id,
-            complete_analysis: {
-              ...(data.analysis.complete_analysis || {}),
-              status: data.analysis.complete_analysis?.status || 'completed',
-              error_occurred: data.analysis.complete_analysis?.error_occurred || false,
-              error_message: data.analysis.complete_analysis?.error_message || null
+            complete_analysis: data.analysis.complete_analysis || {
+              status: 'completed',
+              error_occurred: false,
+              error_message: null
             },
             overview: data.analysis.overview || defaultAnalysis.overview,
             core_traits: data.analysis.core_traits || defaultAnalysis.core_traits,
@@ -283,12 +282,15 @@ export const useDeepInsightState = () => {
             });
           }
         }
+      } else {
+        toast.error("You must be logged in to submit your assessment");
       }
     } catch (error) {
       console.error('Unexpected error:', error);
       toast.error("Unexpected error occurred", {
         description: error instanceof Error ? error.message : "Please try again"
       });
+      setSubmissionError(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }

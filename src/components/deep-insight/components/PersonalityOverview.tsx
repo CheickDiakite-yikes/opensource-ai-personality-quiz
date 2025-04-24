@@ -12,7 +12,7 @@ const PersonalityOverview: React.FC<PersonalityOverviewProps> = ({ overview }) =
       <CardContent className="p-6 pt-6">
         <h2 className="text-2xl font-semibold mb-4 text-primary/90 font-serif">Deep Insight Overview</h2>
         <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-          {overview || "Your deep insight analysis is being generated. This comprehensive assessment will reveal key patterns in your cognitive style, emotional architecture, and interpersonal dynamics."}
+          {overview || "Your deep insight analysis is being generated. This comprehensive assessment will reveal key patterns in your cognitive style, emotional architecture, interpersonal dynamics, and core personality traits, providing a nuanced understanding of your unique psychological profile and potential growth areas."}
         </p>
       </CardContent>
     </Card>

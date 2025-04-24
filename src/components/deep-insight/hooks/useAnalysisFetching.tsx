@@ -60,9 +60,8 @@ export const useAnalysisFetching = () => {
                               
         if (!isDataComplete) {
           console.warn("Analysis data is incomplete or missing key sections");
-        }
-        
-        if (analysisData.complete_analysis && 
+          setError("Analysis data is incomplete. The system may still be processing your complete results.");
+        } else if (analysisData.complete_analysis && 
             analysisData.complete_analysis.error_occurred === true) {
           // Set error message from the complete_analysis field
           setError(`Analysis processing incomplete: ${analysisData.complete_analysis.error_message || "Unknown error"}`);
@@ -91,6 +90,8 @@ export const useAnalysisFetching = () => {
   useEffect(() => {
     if (user?.id) {
       fetchAnalysis();
+    } else {
+      setLoading(false);
     }
   }, [user?.id, fetchAnalysis]);
 

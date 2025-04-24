@@ -24,10 +24,10 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
             <h3 className="text-xl font-serif text-blue-400">Cognitive Profile</h3>
           </div>
           <div className="text-slate-300">
-            {cognitiveData.decisionMaking || cognitiveData.learningStyle ? (
+            {cognitiveData.decision_making || cognitiveData.learning_style ? (
               <div className="space-y-4">
-                {cognitiveData.decisionMaking && <p>{cognitiveData.decisionMaking}</p>}
-                {cognitiveData.learningStyle && <p>{cognitiveData.learningStyle}</p>}
+                {cognitiveData.decision_making && <p>{cognitiveData.decision_making}</p>}
+                {cognitiveData.learning_style && <p>{cognitiveData.learning_style}</p>}
               </div>
             ) : (
               <p className="text-slate-400">No cognitive insights available.</p>
@@ -44,10 +44,10 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
             <h3 className="text-xl font-serif text-rose-400">Emotional Architecture</h3>
           </div>
           <div className="text-rose-100">
-            {emotionalData.emotionalAwareness || emotionalData.regulationStyle ? (
+            {emotionalData.emotional_awareness || emotionalData.regulation_style ? (
               <div className="space-y-4">
-                {emotionalData.emotionalAwareness && <p>{emotionalData.emotionalAwareness}</p>}
-                {emotionalData.regulationStyle && <p>{emotionalData.regulationStyle}</p>}
+                {emotionalData.emotional_awareness && <p>{emotionalData.emotional_awareness}</p>}
+                {emotionalData.regulation_style && <p>{emotionalData.regulation_style}</p>}
               </div>
             ) : (
               <p className="text-rose-300">No emotional insights available.</p>
@@ -64,10 +64,10 @@ const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
             <h3 className="text-xl font-serif text-purple-400">Interpersonal Dynamics</h3>
           </div>
           <div className="text-purple-100">
-            {interpersonalData.attachmentStyle || interpersonalData.communicationPattern ? (
+            {interpersonalData.attachment_style || interpersonalData.communication_pattern ? (
               <div className="space-y-4">
-                {interpersonalData.attachmentStyle && <p>{interpersonalData.attachmentStyle}</p>}
-                {interpersonalData.communicationPattern && <p>{interpersonalData.communicationPattern}</p>}
+                {interpersonalData.attachment_style && <p>{interpersonalData.attachment_style}</p>}
+                {interpersonalData.communication_pattern && <p>{interpersonalData.communication_pattern}</p>}
               </div>
             ) : (
               <p className="text-purple-300">No interpersonal insights available.</p>

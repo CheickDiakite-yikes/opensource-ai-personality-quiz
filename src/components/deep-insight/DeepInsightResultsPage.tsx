@@ -93,6 +93,7 @@ const DeepInsightResultsPage: React.FC = () => {
         <IntelligenceScores 
           intelligenceScore={analysis.intelligence_score}
           emotionalIntelligenceScore={analysis.emotional_intelligence_score}
+          responsePatterns={analysis.response_patterns}
         />
         
         <AnalysisInsights analysis={analysis} />

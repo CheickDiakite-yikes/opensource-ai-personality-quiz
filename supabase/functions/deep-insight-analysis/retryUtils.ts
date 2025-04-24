@@ -1,42 +1,51 @@
 
-import { logDebug } from "./logging.ts";
+import { logInfo, logError } from "./logging.ts";
 
 /**
  * Creates a retryable version of an async function
+ * 
  * @param fn The function to make retryable
- * @param maxRetries Maximum number of retry attempts
- * @param baseDelay Base delay between retries in ms (will be multiplied by attempt)
- * @returns A new function that will retry on failure
+ * @param maxAttempts Maximum number of retry attempts
+ * @param getDelay Function to calculate delay between retries
+ * @returns A wrapped function that will retry on failure
  */
-export function retryable<T>(
-  fn: () => Promise<T>, 
-  maxRetries: number = 2, 
-  baseDelay: number = 1000
-): () => Promise<T> {
-  return async (): Promise<T> => {
+export function retryable<T extends (...args: any[]) => Promise<any>>(
+  fn: T,
+  maxAttempts: number = 3,
+  getDelay: (attempt: number) => number = (attempt) => Math.min(1000 * Math.pow(2, attempt), 10000)
+): T {
+  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     let lastError: Error | null = null;
     
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
+        // If this isn't the first attempt, log that we're retrying
         if (attempt > 0) {
-          const delay = baseDelay * Math.pow(2, attempt - 1);
-          logDebug(`Retry attempt ${attempt} after ${delay}ms delay`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          logInfo(`Retry attempt ${attempt + 1}/${maxAttempts}`);
         }
         
-        return await fn();
+        // Execute the function
+        const result = await fn(...args);
+        
+        // If successful, return the result
+        return result as ReturnType<T>;
       } catch (error) {
-        lastError = error;
-        logDebug(`Attempt ${attempt} failed: ${error.message}`);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        logError(`Attempt ${attempt + 1}/${maxAttempts} failed: ${lastError.message}`);
         
-        // If we've used all retries, throw the error
-        if (attempt === maxRetries) {
-          throw error;
+        // If this is the last attempt, don't wait
+        if (attempt === maxAttempts - 1) {
+          break;
         }
+        
+        // Calculate delay and wait before next attempt
+        const delay = getDelay(attempt);
+        logInfo(`Waiting ${delay}ms before next attempt...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
-    // This should never execute but TypeScript requires a return
-    throw lastError || new Error("Unknown error in retryable function");
-  };
+    // If we get here, all attempts failed
+    throw lastError || new Error("All retry attempts failed");
+  }) as T;
 }
