@@ -1,7 +1,7 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Heart, Users, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Brain, Heart, Users, Star } from "lucide-react";
 import { DeepInsightAnalysis } from "../types/deepInsight";
 
 interface AnalysisInsightsProps {
@@ -9,163 +9,102 @@ interface AnalysisInsightsProps {
 }
 
 const AnalysisInsights: React.FC<AnalysisInsightsProps> = ({ analysis }) => {
-  // Safety check for each data section
   const cognitiveData = analysis.cognitive_patterning || {};
   const emotionalData = analysis.emotional_architecture || {};
   const interpersonalData = analysis.interpersonal_dynamics || {};
   const traitsData = analysis.core_traits || {};
-  
-  // Helper function to check if a section has actual data
-  const hasData = (obj: any) => {
-    return obj && typeof obj === 'object' && Object.keys(obj).some(key => {
-      const value = obj[key];
-      return value !== null && value !== undefined && value !== '';
-    });
-  };
-  
-  // Check if we have enough real data to display
-  const hasCognitiveData = hasData(cognitiveData);
-  const hasEmotionalData = hasData(emotionalData);
-  const hasInterpersonalData = hasData(interpersonalData);
-  const hasTraitsData = hasData(traitsData);
-  
-  // Only render if we have at least some data
-  if (!hasCognitiveData && !hasEmotionalData && !hasInterpersonalData && !hasTraitsData) {
-    return (
-      <Card className="mb-8 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20">
-        <CardHeader>
-          <CardTitle className="flex items-center text-amber-700 dark:text-amber-400">
-            <Sparkles className="h-5 w-5 mr-2" /> Analysis in Progress
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Your detailed analysis insights are still being processed or unavailable.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <div className="space-y-8 mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {hasCognitiveData && (
-          <Card className="border-blue-200 dark:border-blue-900">
-            <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
-              <CardTitle className="flex items-center text-blue-700 dark:text-blue-400">
-                <Brain className="h-5 w-5 mr-2" /> Cognitive Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Cognitive Profile Card */}
+      <Card className="bg-slate-900/95 border-slate-800/50 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Brain className="h-6 w-6 text-blue-400" />
+            <h3 className="text-xl font-serif text-blue-400">Cognitive Profile</h3>
+          </div>
+          <div className="text-slate-300">
+            {cognitiveData.decisionMaking || cognitiveData.learningStyle ? (
               <div className="space-y-4">
-                {cognitiveData.decisionMaking && (
-                  <div>
-                    <h4 className="font-medium mb-2">Decision Making</h4>
-                    <p className="text-muted-foreground text-sm">{cognitiveData.decisionMaking}</p>
-                  </div>
-                )}
-                {cognitiveData.learningStyle && (
-                  <div>
-                    <h4 className="font-medium mb-2">Learning Style</h4>
-                    <p className="text-muted-foreground text-sm">{cognitiveData.learningStyle}</p>
-                  </div>
-                )}
-                {!cognitiveData.decisionMaking && !cognitiveData.learningStyle && (
-                  <p className="text-muted-foreground text-sm">No cognitive insights available.</p>
-                )}
+                {cognitiveData.decisionMaking && <p>{cognitiveData.decisionMaking}</p>}
+                {cognitiveData.learningStyle && <p>{cognitiveData.learningStyle}</p>}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-slate-400">No cognitive insights available.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {hasEmotionalData && (
-          <Card className="border-rose-200 dark:border-rose-900">
-            <CardHeader className="bg-rose-50 dark:bg-rose-900/20">
-              <CardTitle className="flex items-center text-rose-700 dark:text-rose-400">
-                <Heart className="h-5 w-5 mr-2" /> Emotional Architecture
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
+      {/* Emotional Architecture Card */}
+      <Card className="bg-rose-950/95 border-rose-900/50 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Heart className="h-6 w-6 text-rose-400" />
+            <h3 className="text-xl font-serif text-rose-400">Emotional Architecture</h3>
+          </div>
+          <div className="text-rose-100">
+            {emotionalData.emotionalAwareness || emotionalData.regulationStyle ? (
               <div className="space-y-4">
-                {emotionalData.emotionalAwareness && (
-                  <div>
-                    <h4 className="font-medium mb-2">Emotional Awareness</h4>
-                    <p className="text-muted-foreground text-sm">{emotionalData.emotionalAwareness}</p>
-                  </div>
-                )}
-                {emotionalData.regulationStyle && (
-                  <div>
-                    <h4 className="font-medium mb-2">Regulation Style</h4>
-                    <p className="text-muted-foreground text-sm">{emotionalData.regulationStyle}</p>
-                  </div>
-                )}
-                {!emotionalData.emotionalAwareness && !emotionalData.regulationStyle && (
-                  <p className="text-muted-foreground text-sm">No emotional insights available.</p>
-                )}
+                {emotionalData.emotionalAwareness && <p>{emotionalData.emotionalAwareness}</p>}
+                {emotionalData.regulationStyle && <p>{emotionalData.regulationStyle}</p>}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-rose-300">No emotional insights available.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {hasInterpersonalData && (
-          <Card className="border-violet-200 dark:border-violet-900">
-            <CardHeader className="bg-violet-50 dark:bg-violet-900/20">
-              <CardTitle className="flex items-center text-violet-700 dark:text-violet-400">
-                <Users className="h-5 w-5 mr-2" /> Interpersonal Dynamics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
+      {/* Interpersonal Dynamics Card */}
+      <Card className="bg-purple-950/95 border-purple-900/50 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Users className="h-6 w-6 text-purple-400" />
+            <h3 className="text-xl font-serif text-purple-400">Interpersonal Dynamics</h3>
+          </div>
+          <div className="text-purple-100">
+            {interpersonalData.attachmentStyle || interpersonalData.communicationPattern ? (
               <div className="space-y-4">
-                {interpersonalData.attachmentStyle && (
-                  <div>
-                    <h4 className="font-medium mb-2">Attachment Style</h4>
-                    <p className="text-muted-foreground text-sm">{interpersonalData.attachmentStyle}</p>
-                  </div>
-                )}
-                {interpersonalData.communicationPattern && (
-                  <div>
-                    <h4 className="font-medium mb-2">Communication Pattern</h4>
-                    <p className="text-muted-foreground text-sm">{interpersonalData.communicationPattern}</p>
-                  </div>
-                )}
-                {!interpersonalData.attachmentStyle && !interpersonalData.communicationPattern && (
-                  <p className="text-muted-foreground text-sm">No interpersonal insights available.</p>
-                )}
+                {interpersonalData.attachmentStyle && <p>{interpersonalData.attachmentStyle}</p>}
+                {interpersonalData.communicationPattern && <p>{interpersonalData.communicationPattern}</p>}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-purple-300">No interpersonal insights available.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {hasTraitsData && (
-          <Card className="border-green-200 dark:border-green-900">
-            <CardHeader className="bg-green-50 dark:bg-green-900/20">
-              <CardTitle className="flex items-center text-green-700 dark:text-green-400">
-                <Sparkles className="h-5 w-5 mr-2" /> Core Traits
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
+      {/* Core Traits Card */}
+      <Card className="bg-emerald-950/95 border-emerald-900/50 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Star className="h-6 w-6 text-emerald-400" />
+            <h3 className="text-xl font-serif text-emerald-400">Core Traits</h3>
+          </div>
+          <div className="text-emerald-100">
+            {traitsData.primary || traitsData.secondary ? (
               <div className="space-y-4">
                 {traitsData.primary && (
                   <div>
-                    <h4 className="font-medium mb-2">Primary Trait</h4>
-                    <p className="text-muted-foreground text-sm">{traitsData.primary}</p>
+                    <h4 className="font-medium text-emerald-300 mb-1">Primary Trait</h4>
+                    <p>{traitsData.primary}</p>
                   </div>
                 )}
                 {traitsData.secondary && (
                   <div>
-                    <h4 className="font-medium mb-2">Secondary Trait</h4>
-                    <p className="text-muted-foreground text-sm">{traitsData.secondary}</p>
+                    <h4 className="font-medium text-emerald-300 mb-1">Secondary Trait</h4>
+                    <p>{traitsData.secondary}</p>
                   </div>
                 )}
-                {!traitsData.primary && !traitsData.secondary && (
-                  <p className="text-muted-foreground text-sm">No core traits available.</p>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            ) : (
+              <p className="text-emerald-300">No core traits available.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
