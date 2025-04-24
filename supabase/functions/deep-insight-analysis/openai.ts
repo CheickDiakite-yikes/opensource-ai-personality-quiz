@@ -1,4 +1,3 @@
-
 import { API_CONFIG } from "./openaiConfig.ts";
 import { logDebug, logError, logInfo, logWarning } from "./logging.ts";
 import { SYSTEM_PROMPT, USER_PROMPT } from "./prompts.ts";
@@ -26,6 +25,13 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
         content: USER_PROMPT(formattedResponses)
       }
     ];
+
+    // Log request details
+    logDebug(`Request payload: ${JSON.stringify({
+      model: API_CONFIG.DEFAULT_MODEL,
+      messages: messages.map(m => ({ role: m.role, content: m.content.substring(0, 100) + '...' })),
+      temperature: API_CONFIG.TEMPERATURE,
+    })}`);
 
     const requestPayload = {
       model: API_CONFIG.DEFAULT_MODEL,
@@ -74,7 +80,26 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
       }
 
       const result = await response.json();
-      
+    
+    // Log the raw response for debugging
+    logInfo('Raw OpenAI Response received');
+    logDebug(`Full OpenAI response: ${JSON.stringify(result)}`);
+    
+    // Log detailed response information
+    if (result.choices && result.choices[0]) {
+      logInfo(`First choice finish_reason: ${result.choices[0].finish_reason}`);
+      logDebug(`Response content sample: ${result.choices[0].message.content.substring(0, 200)}...`);
+    }
+    
+    // Log token usage
+    if (result.usage) {
+      logInfo(`Token usage details:
+        Total tokens: ${result.usage.total_tokens}
+        Prompt tokens: ${result.usage.prompt_tokens}
+        Completion tokens: ${result.usage.completion_tokens}
+      `);
+    }
+
       // IMPORTANT FIX: More robust validation of OpenAI response
       if (!result) {
         logError("Empty response from OpenAI API");

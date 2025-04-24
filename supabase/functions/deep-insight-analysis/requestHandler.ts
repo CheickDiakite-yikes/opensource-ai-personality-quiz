@@ -1,4 +1,3 @@
-
 import { corsHeaders } from "../_shared/cors.ts";
 import { createErrorResponse } from "./errorHandler.ts";
 import { logInfo, logError, logDebug } from "./logging.ts";
@@ -53,32 +52,20 @@ export async function processRequest(req: Request) {
         .join("\n\n");
         
       logInfo(`Processing ${responses.length} array-format responses`);
+      logDebug(`Sample responses: ${JSON.stringify(responses.slice(0, 2))}`);
     } else if (typeof responses === 'object') {
       formatted = Object.entries(responses)
         .map(([id, answer]) => `Question ${id}: ${answer || "No answer provided"}`)
         .join("\n\n");
         
       logInfo(`Processing ${Object.keys(responses).length} object-format responses`);
+      logDebug(`Sample response keys: ${JSON.stringify(Object.keys(responses).slice(0, 2))}`);
     } else {
       throw new Error("Responses must be an array or object");
     }
 
-    // Enhanced logging of response patterns
-    const totalLength = formatted.length;
-    logInfo(`Total response length: ${totalLength} characters`);
-    
-    // Ensure we have sufficient content to analyze
-    if (totalLength < 100) {
-      logError("Response content too short for meaningful analysis");
-      return createErrorResponse(
-        new Error("Insufficient response data"), 
-        400, 
-        "The provided responses are too short for meaningful analysis"
-      );
-    }
-    
-    // Log a sample of the formatted responses
-    logDebug(`Formatted responses sample: ${formatted.substring(0, 500)}...`);
+    // Log the formatted content for debugging
+    logDebug(`Formatted request content (first 500 chars): ${formatted.substring(0, 500)}...`);
     
     return formatted;
   } catch (error) {

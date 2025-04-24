@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -28,16 +27,16 @@ const DeepInsightE2ETest = () => {
         throw new Error('User not authenticated. Please sign in to run the test.');
       }
 
-      // Step 1: Generate test responses for all questions
+      // Step 1: Generate test responses
       addLog('Generating test responses');
       const responses = deepInsightQuestions.reduce((acc, question) => {
-        // Randomly select an option for each question
         const randomOptionIndex = Math.floor(Math.random() * question.options.length);
         acc[question.id] = question.options[randomOptionIndex];
         return acc;
       }, {} as Record<string, string>);
 
       addLog(`Generated ${Object.keys(responses).length} responses`);
+      addLog(`Sample responses: ${JSON.stringify(Object.entries(responses).slice(0, 2))}`);
 
       // Step 2: Save assessment to database
       addLog('Saving assessment to database');
@@ -46,9 +45,9 @@ const DeepInsightE2ETest = () => {
         .from('deep_insight_assessments')
         .insert({
           id: assessmentId,
+          user_id: user.id,
           responses: responses,
           completed_at: new Date().toISOString(),
-          user_id: user.id // Add the user_id field which is required
         });
 
       if (assessmentError) {
@@ -70,7 +69,9 @@ const DeepInsightE2ETest = () => {
         };
       });
 
-      // Add more detailed error handling for the edge function call
+      addLog(`Formatted ${formattedResponses.length} responses for analysis`);
+      addLog(`Analysis payload sample: ${JSON.stringify(formattedResponses.slice(0, 2))}`);
+
       try {
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
           'deep-insight-analysis',
@@ -89,89 +90,41 @@ const DeepInsightE2ETest = () => {
           throw new Error(`Analysis failed: ${analysisError.message}`);
         }
 
+        addLog('Analysis response received');
+        addLog(`Raw analysis data: ${JSON.stringify(analysisData)}`);
+
         if (!analysisData) {
           addLog('Error: No analysis data received');
           throw new Error('No analysis data received');
         }
 
         addLog('Analysis completed successfully');
+        setAnalysisId(analysisData.id);
 
-        // Step 4: Verify analysis was saved
+        // Verify the analysis was saved
         addLog('Verifying analysis in database');
-        
-        // Try to save the analysis directly if the edge function succeeded but didn't save to DB
-        try {
-          const { data: savedAnalyses, error: fetchError } = await supabase
-            .from('deep_insight_analyses')
-            .select('*')
-            .eq('id', analysisData.id)
-            .single();
+        const { data: savedAnalysis, error: verifyError } = await supabase
+          .from('deep_insight_analyses')
+          .select('*')
+          .eq('id', analysisData.id)
+          .single();
 
-          if (fetchError) {
-            addLog(`Warning: Could not verify saved analysis: ${fetchError.message}`);
-            
-            // Try to save the analysis manually as a fallback
-            if (analysisData.overview || analysisData.core_traits) {
-              addLog('Attempting to save analysis manually');
-              
-              const analysisToSave = {
-                user_id: user.id,
-                complete_analysis: analysisData.complete_analysis || {
-                  status: 'completed',
-                  error_occurred: false
-                },
-                overview: analysisData.overview || "Analysis overview is being processed.",
-                core_traits: analysisData.core_traits || {},
-                cognitive_patterning: analysisData.cognitive_patterning || {},
-                emotional_architecture: analysisData.emotional_architecture || {},
-                interpersonal_dynamics: analysisData.interpersonal_dynamics || {},
-                growth_potential: analysisData.growth_potential || {},
-                intelligence_score: analysisData.intelligence_score || 70,
-                emotional_intelligence_score: analysisData.emotional_intelligence_score || 70
-              };
-              
-              const { data: manualSave, error: saveError } = await supabase
-                .from('deep_insight_analyses')
-                .insert(analysisToSave)
-                .select('id')
-                .single();
-                
-              if (saveError) {
-                addLog(`Error saving analysis manually: ${saveError.message}`);
-                throw new Error(`Failed to manually save analysis: ${saveError.message}`);
-              }
-              
-              if (manualSave) {
-                setAnalysisId(manualSave.id);
-                addLog(`Analysis manually saved with ID: ${manualSave.id}`);
-                addLog('E2E test completed with manual save!');
-              }
-            }
-          } else {
-            setAnalysisId(savedAnalyses.id);
-            addLog(`Analysis verified and saved with ID: ${savedAnalyses.id}`);
-            addLog('E2E test completed successfully!');
-          }
-        } catch (dbError) {
-          addLog(`Error verifying analysis: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
-          throw new Error(`Failed to verify or save analysis: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+        if (verifyError) {
+          addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
+        } else {
+          addLog(`Analysis verified in database with ID: ${savedAnalysis.id}`);
+          addLog(`Analysis overview sample: ${savedAnalysis.overview?.substring(0, 200)}...`);
         }
 
-        toast.success('E2E Test completed successfully!', {
-          description: `Analysis ID: ${analysisId || 'Processing'}`
-        });
       } catch (functionError) {
-        // More detailed error handling for the edge function
         const errorMessage = functionError instanceof Error ? functionError.message : 'Unknown error occurred';
         addLog(`ERROR: ${errorMessage}`);
         
         if (errorMessage.includes('non-2xx status code')) {
-          addLog('This could indicate an error in the edge function. Check the edge function logs.');
+          addLog('This indicates an error in the edge function. Check the edge function logs for more details.');
         }
         
-        toast.error('E2E Test encountered an error', {
-          description: errorMessage
-        });
+        throw functionError;
       }
 
     } catch (error) {
