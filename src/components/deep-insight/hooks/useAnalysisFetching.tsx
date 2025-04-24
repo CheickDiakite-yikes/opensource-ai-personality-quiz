@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DeepInsightAnalysis } from "../types/deepInsight";
-import { Json } from "@/utils/types";
 
 export const useAnalysisFetching = () => {
   const { user } = useAuth();
@@ -33,7 +32,7 @@ export const useAnalysisFetching = () => {
       
       console.log("Fetching Deep Insight analysis for user:", user.id);
       
-      const { data, error } = await supabase
+      const { data: analyses, error } = await supabase
         .from('deep_insight_analyses')
         .select('*')
         .eq('user_id', user.id)
@@ -45,23 +44,9 @@ export const useAnalysisFetching = () => {
         throw error;
       }
       
-      if (data && data.length > 0) {
-        console.log("Analysis data found:", data[0].id);
-        
-        // Cast the Supabase data to match our interface
-        const analysisData = data[0] as unknown as DeepInsightAnalysis;
-        
-        // Check if data is actually valid - don't provide defaults
-        if (!analysisData.overview || !analysisData.core_traits || 
-            analysisData.error_occurred || !analysisData.cognitive_patterning) {
-          
-          setAnalysis(analysisData); // Still set the analysis so we can show what we have
-          setError("Analysis is incomplete or contains errors. We're showing the available data.");
-          return;
-        }
-        
-        // Store the analysis data
-        setAnalysis(analysisData);
+      if (analyses && analyses.length > 0) {
+        console.log("Analysis data found:", analyses[0].id);
+        setAnalysis(analyses[0] as DeepInsightAnalysis);
       } else {
         console.log("No analysis found for user");
         setError("No analysis found. Please complete the assessment first.");
