@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
@@ -155,7 +154,6 @@ export const useDeepInsightState = () => {
           // Merge the received data with defaults for any missing fields
           const analysisData = {
             user_id: user.id,
-            assessment_id: assessmentId,
             complete_analysis: data.analysis,
             overview: data.analysis.overview || defaultAnalysis.overview,
             core_traits: data.analysis.core_traits || defaultAnalysis.core_traits,
@@ -205,7 +203,6 @@ export const useDeepInsightState = () => {
           try {
             const fallbackAnalysis = {
               user_id: user.id,
-              assessment_id: assessmentId,
               complete_analysis: { status: "processing" },
               overview: "Your analysis is still being processed. Please check back in a few minutes.",
               core_traits: {
