@@ -51,6 +51,7 @@ export interface MotivationalProfile {
 export interface CompleteAnalysis {
   careerInsights?: CareerInsights;
   motivationalProfile?: MotivationalProfile;
+  status?: 'processing' | 'completed' | 'error';
 }
 
 export interface DeepInsightAnalysis {
@@ -71,4 +72,6 @@ export interface DeepInsightAnalysis {
   };
   complete_analysis?: CompleteAnalysis;
   user_id?: string;
+  error_occurred?: boolean;
+  error_message?: string;
 }
