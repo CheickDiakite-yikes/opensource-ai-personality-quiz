@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DeepInsightAnalysis } from "../types/deepInsight";
@@ -8,11 +8,23 @@ import { Json } from "@/utils/types";
 export const useAnalysisFetching = () => {
   const { user } = useAuth();
   const [analysis, setAnalysis] = useState<DeepInsightAnalysis | null>(null);
+  const [cachedAnalysis, setCachedAnalysis] = useState<DeepInsightAnalysis | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = useCallback(async (forceRefresh = true) => {
     if (!user) return;
+    
+    // If we have a cached result and we're not forcing a refresh,
+    // and it's been less than 10 seconds since the last fetch, return the cached result
+    const now = Date.now();
+    if (!forceRefresh && cachedAnalysis && now - lastFetchTime < 10000) {
+      console.log("Using cached analysis, last fetched", (now - lastFetchTime) / 1000, "seconds ago");
+      setAnalysis(cachedAnalysis);
+      setLoading(false);
+      return cachedAnalysis;
+    }
     
     try {
       setLoading(true);
@@ -36,7 +48,10 @@ export const useAnalysisFetching = () => {
         console.log("Analysis data found:", data[0].id);
         
         // Store the full analysis data
-        setAnalysis(data[0] as unknown as DeepInsightAnalysis);
+        const analysisData = data[0] as unknown as DeepInsightAnalysis;
+        setAnalysis(analysisData);
+        setCachedAnalysis(analysisData);
+        setLastFetchTime(now);
         
         // Check for processing status
         if (data[0].complete_analysis && 
@@ -61,21 +76,25 @@ export const useAnalysisFetching = () => {
         } else {
           console.log("Analysis data is complete and ready to display");
         }
+        
+        return analysisData;
       } else {
         console.log("No analysis found for user");
         setError("No analysis found. Please complete the assessment first.");
+        return null;
       }
     } catch (err) {
       console.error("Error fetching analysis:", err);
       setError("Failed to load analysis. Please try again later.");
+      return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, cachedAnalysis, lastFetchTime]);
 
   useEffect(() => {
-    fetchAnalysis();
-  }, [user]);
+    fetchAnalysis(false);
+  }, [user, fetchAnalysis]);
 
   return { analysis, loading, error, fetchAnalysis };
 };

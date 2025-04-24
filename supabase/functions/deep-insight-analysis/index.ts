@@ -35,23 +35,16 @@ serve(async (req) => {
     // Call OpenAI with proper error handling
     try {
       logInfo("Calling OpenAI API for deep insight analysis...");
-      const openAIResponse = await callOpenAI(openAIApiKey, formattedResponses);
+      const analysisContent = await callOpenAI(openAIApiKey, formattedResponses);
       
-      if (!openAIResponse || !openAIResponse.choices || !openAIResponse.choices[0]) {
-        throw new Error("Invalid response from OpenAI API");
-      }
-      
-      // Get content from the response
-      const analysisContent = JSON.parse(openAIResponse.choices[0].message.content);
-      
-      // Format and validate the response
-      const formattedResponse = formatAnalysisResponse(analysisContent);
-      
+      // Format and return the response
       logInfo("Analysis completed successfully");
-      return formattedResponse;
+      return formatAnalysisResponse(analysisContent);
     } catch (aiError) {
       logError("OpenAI API error:", aiError);
-      return createErrorResponse(aiError, 502, "Error generating analysis");
+      
+      // Provide partial analysis if available from a previous attempt
+      return createErrorResponse(aiError, 502, "Error generating complete analysis. Some results may be partial.");
     }
   } catch (error) {
     logError("Unexpected error:", error);
