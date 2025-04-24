@@ -23,7 +23,7 @@ export const AnalysisSuccess: React.FC<AnalysisSuccessProps> = ({ analysisId }) 
         </p>
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
           <Button asChild className="bg-green-600 hover:bg-green-700">
-            <Link to={`/deep-insight/${analysisId}`}>
+            <Link to={`/deep-insight/results/${analysisId}`}>
               View Analysis Report
             </Link>
           </Button>
