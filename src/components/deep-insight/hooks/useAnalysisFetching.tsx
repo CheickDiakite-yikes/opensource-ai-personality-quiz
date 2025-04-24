@@ -11,6 +11,7 @@ export const useAnalysisFetching = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState<number>(0);
   
   const fetchAnalysis = useCallback(async () => {
     if (!user) {
@@ -60,7 +61,14 @@ export const useAnalysisFetching = () => {
                               
         if (!isDataComplete) {
           console.warn("Analysis data is incomplete or missing key sections");
-          setError("Analysis data is incomplete. The system may still be processing your complete results.");
+          
+          // Check if we're in a polling cycle - don't set error for first 5 retries
+          if (retryCount > 5) {
+            setError("Analysis data is incomplete. The system may still be processing your complete results.");
+          } else {
+            console.log(`Waiting for complete results (attempt ${retryCount + 1})`);
+            setRetryCount(prev => prev + 1);
+          }
         } else if (analysisData.complete_analysis && 
             analysisData.complete_analysis.error_occurred === true) {
           // Set error message from the complete_analysis field
@@ -69,6 +77,7 @@ export const useAnalysisFetching = () => {
           setError("Analysis results appear to be incomplete. The system may still be processing your data.");
         } else {
           setError(null);
+          setRetryCount(0); // Reset retry counter on success
         }
         
         setAnalysis(analysisData);
@@ -84,7 +93,7 @@ export const useAnalysisFetching = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, lastFetchTime, loading]);
+  }, [user, lastFetchTime, loading, retryCount]);
 
   // Fetch analysis on initial load
   useEffect(() => {
@@ -99,12 +108,23 @@ export const useAnalysisFetching = () => {
   useEffect(() => {
     let pollingInterval: number | undefined;
     
-    if ((error || (analysis?.complete_analysis?.status === 'processing')) && user?.id) {
-      // Poll every 10 seconds if we're waiting for processing to complete
+    const shouldPoll = user?.id && (
+      error || 
+      (analysis?.complete_analysis?.status === 'processing') || 
+      (!analysis?.core_traits || !analysis?.cognitive_patterning) ||
+      retryCount > 0
+    );
+    
+    if (shouldPoll) {
+      // Poll frequently at first, then slow down
+      const pollTime = retryCount < 5 ? 5000 : 10000;
+      
+      console.log(`Setting up polling at ${pollTime}ms intervals (retry #${retryCount})`);
+      
       pollingInterval = window.setInterval(() => {
         console.log("Polling for updated analysis results...");
         fetchAnalysis();
-      }, 10000) as unknown as number;
+      }, pollTime) as unknown as number;
     }
     
     return () => {
@@ -112,7 +132,7 @@ export const useAnalysisFetching = () => {
         window.clearInterval(pollingInterval);
       }
     };
-  }, [error, analysis, user?.id, fetchAnalysis]);
+  }, [error, analysis, user?.id, fetchAnalysis, retryCount]);
 
   return { analysis, loading, error, fetchAnalysis };
 };

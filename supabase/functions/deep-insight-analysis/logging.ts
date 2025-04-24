@@ -1,25 +1,33 @@
 
-// Simple logging utilities with timestamps and log levels
+// Enhanced logging module with detailed info for debugging
 
-export function logDebug(message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  console.debug(`[${timestamp}] [DEBUG] ${message}`, data !== undefined ? data : '');
+export function logInfo(message: string): void {
+  console.log(`[INFO] ${new Date().toISOString()} - ${message}`);
 }
 
-export function logInfo(message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  console.info(`[${timestamp}] [INFO] ${message}`, data !== undefined ? data : '');
-}
-
-export function logError(message: string, error?: any) {
-  const timestamp = new Date().toISOString();
+export function logError(message: string, error?: unknown): void {
+  console.error(`[ERROR] ${new Date().toISOString()} - ${message}`);
+  
   if (error) {
     if (error instanceof Error) {
-      console.error(`[${timestamp}] [ERROR] ${message}`, error.message, '\n', error.stack || '');
+      console.error(`[ERROR DETAILS] ${error.message}`);
+      if (error.stack) {
+        console.error(`[ERROR STACK] ${error.stack.split('\n').slice(0, 3).join('\n')}`);
+      }
     } else {
-      console.error(`[${timestamp}] [ERROR] ${message}`, error);
+      console.error(`[ERROR DETAILS] ${String(error)}`);
     }
-  } else {
-    console.error(`[${timestamp}] [ERROR] ${message}`);
   }
+}
+
+export function logDebug(message: string): void {
+  console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`);
+}
+
+export function logWarning(message: string): void {
+  console.warn(`[WARNING] ${new Date().toISOString()} - ${message}`);
+}
+
+export function logAnalysisProgress(stage: string, status: string): void {
+  console.log(`[ANALYSIS PROGRESS] ${new Date().toISOString()} - Stage: ${stage}, Status: ${status}`);
 }

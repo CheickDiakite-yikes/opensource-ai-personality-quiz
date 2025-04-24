@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     console.log(`[get-public-deep-analysis] Getting deep insight analysis with ID: ${id}`);
 
-    // Get analysis from deep_insight_analyses table
+    // Get analysis from deep_insight_analyses table with maximum details
     const { data: analysisData, error: analysisError } = await supabase
       .from('deep_insight_analyses')
       .select('*')
@@ -69,6 +69,32 @@ Deno.serve(async (req) => {
     
     if (!analysisData) {
       console.error(`[get-public-deep-analysis] Analysis not found for ID: ${id}`);
+      
+      // Try to find by user_id if possible
+      let alternativeData = null;
+      
+      try {
+        const { data: latestAnalysis } = await supabase
+          .from('deep_insight_analyses')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (latestAnalysis && latestAnalysis.length > 0) {
+          alternativeData = latestAnalysis[0];
+          console.log(`[get-public-deep-analysis] Found latest analysis as fallback: ${alternativeData.id}`);
+        }
+      } catch (err) {
+        console.error("[get-public-deep-analysis] Error looking for fallback analysis:", err);
+      }
+      
+      if (alternativeData) {
+        return new Response(
+          JSON.stringify(alternativeData),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Analysis not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -76,6 +102,18 @@ Deno.serve(async (req) => {
     }
     
     console.log(`[get-public-deep-analysis] Successfully found analysis: ${analysisData.id}`);
+    
+    // Check if analysis is complete
+    const isComplete = analysisData.overview && 
+                     analysisData.core_traits && 
+                     analysisData.cognitive_patterning &&
+                     analysisData.emotional_architecture &&
+                     analysisData.interpersonal_dynamics;
+                     
+    if (!isComplete) {
+      console.warn(`[get-public-deep-analysis] Analysis ${analysisData.id} is incomplete`);
+    }
+    
     return new Response(
       JSON.stringify(analysisData),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

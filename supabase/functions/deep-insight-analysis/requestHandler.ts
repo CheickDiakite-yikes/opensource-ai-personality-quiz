@@ -1,7 +1,7 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { createErrorResponse } from "./errorHandler.ts";
-import { logInfo, logError } from "./logging.ts";
+import { logInfo, logError, logDebug } from "./logging.ts";
 
 export async function processRequest(req: Request) {
   // Parse request body early to quickly return errors if needed
@@ -10,6 +10,9 @@ export async function processRequest(req: Request) {
     const body = await req.json();
     responses = body.responses;
     logInfo(`Request body parsed successfully, contains responses: ${!!responses}`);
+    
+    // Log more details about the request body for debugging
+    logDebug(`Request body: ${JSON.stringify(body, null, 2).substring(0, 500)}...`);
   } catch (parseError) {
     logError("Error parsing request JSON:", parseError);
     return createErrorResponse(parseError, 400, "Invalid JSON in request body");
@@ -20,20 +23,37 @@ export async function processRequest(req: Request) {
       throw new Error("Invalid or empty responses object");
     }
     
+    // Format the responses as a clean, well-structured string for the AI
     const formatted = Object.entries(responses)
-      .map(([id, answer]) => `Q${id}: ${answer}`)
-      .join("\n");
+      .map(([id, answer]) => `Question ${id}: ${answer}`)
+      .join("\n\n");
 
     logInfo(`Processing ${Object.keys(responses).length} responses`);
     
     // Enhanced logging of response patterns
     const responseLengths = Object.values(responses).map(r => String(r).length);
     const avgLength = responseLengths.reduce((a: number, b: number) => a + b, 0) / responseLengths.length;
-    logInfo(`Average response length: ${avgLength}`);
-    logInfo(`Total response length: ${formatted.length} characters`);
+    const totalLength = formatted.length;
+    
+    logInfo(`Average response length: ${avgLength.toFixed(1)} chars`);
+    logInfo(`Total response length: ${totalLength} characters`);
+    
+    // Ensure we have sufficient content to analyze
+    if (totalLength < 100) {
+      logError("Response content too short for meaningful analysis");
+      return createErrorResponse(
+        new Error("Insufficient response data"), 
+        400, 
+        "The provided responses are too short for meaningful analysis"
+      );
+    }
+    
+    // Log a sample of the formatted responses (first 500 chars)
+    logDebug(`Formatted responses sample: ${formatted.substring(0, 500)}...`);
     
     return formatted;
   } catch (error) {
+    logError("Error processing request:", error);
     return createErrorResponse(error, 400, error.message);
   }
 }
