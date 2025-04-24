@@ -8,7 +8,7 @@ import { processRequest } from "./requestHandler.ts";
 import { callOpenAI } from "./openai.ts";
 import { formatAnalysisResponse } from "./responseFormatter.ts";
 import { createErrorResponse } from "./errorHandler.ts";
-import { logDebug, logError, logInfo } from "./logging.ts";
+import { logDebug, logError, logInfo, logWarning } from "./logging.ts";
 import { retryable } from "./retryUtils.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
@@ -20,6 +20,7 @@ serve(async (req) => {
   }
 
   logInfo("Deep Insight Analysis function started");
+  const startTime = Date.now();
   
   try {
     if (!openAIApiKey) {
@@ -33,10 +34,16 @@ serve(async (req) => {
       return formattedResponses; // Return error response if validation failed
     }
     
-    // Call OpenAI with proper error handling
+    // Call OpenAI with proper error handling and retries
     try {
       logInfo("Calling OpenAI API for deep insight analysis...");
+      
+      // Add detailed timing logs
+      const apiCallStartTime = Date.now();
       const openAIResponse = await callOpenAI(openAIApiKey, formattedResponses);
+      const apiCallDuration = Date.now() - apiCallStartTime;
+      
+      logInfo(`OpenAI API call completed in ${apiCallDuration}ms`);
       
       if (!openAIResponse || !openAIResponse.choices || !openAIResponse.choices[0]) {
         throw new Error("Invalid response from OpenAI API");
@@ -45,7 +52,32 @@ serve(async (req) => {
       // Get content from the response and parse it safely
       let analysisContent;
       try {
-        analysisContent = JSON.parse(openAIResponse.choices[0].message.content);
+        const responseContent = openAIResponse.choices[0].message.content;
+        
+        // Log response characteristics for debugging
+        logDebug(`OpenAI response length: ${responseContent.length} characters`);
+        logDebug(`Response starts with: ${responseContent.substring(0, 50)}...`);
+        
+        try {
+          analysisContent = JSON.parse(responseContent);
+        } catch (firstParseError) {
+          // Try to extract JSON from response if not pure JSON
+          logWarning("Initial JSON parse failed, trying to extract JSON from response");
+          
+          // Look for JSON-like content in the response
+          const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              analysisContent = JSON.parse(jsonMatch[0]);
+            } catch (extractError) {
+              logError("Failed to extract JSON from response", extractError);
+              throw new Error("Failed to parse OpenAI response as JSON");
+            }
+          } else {
+            logError("No JSON-like structure found in response");
+            throw new Error("OpenAI response did not contain valid JSON");
+          }
+        }
         
         // Basic validation of required fields - but don't fill in placeholders
         const requiredTopLevelKeys = ["overview", "core_traits", "cognitive_patterning", 
@@ -60,6 +92,44 @@ serve(async (req) => {
           throw new Error(`Incomplete analysis: missing ${missingKeys.join(', ')}`);
         }
         
+        // Check for proper casing in nested objects
+        const cognitiveKeys = ["decisionMaking", "learningStyle", "problemSolving", "informationProcessing"];
+        const emotionalKeys = ["emotionalAwareness", "regulationStyle", "emotionalResponsiveness", "emotionalPatterns"];
+        const interpersonalKeys = ["attachmentStyle", "communicationPattern", "conflictResolution", "relationshipNeeds"];
+        
+        // Fix camelCase property names if needed
+        if (analysisContent.cognitive_patterning) {
+          cognitiveKeys.forEach(camelKey => {
+            // Look for potential snake_case versions
+            const snakeKey = camelKey.replace(/([A-Z])/g, "_$1").toLowerCase();
+            if (analysisContent.cognitive_patterning[snakeKey] && !analysisContent.cognitive_patterning[camelKey]) {
+              // Copy snake_case to camelCase
+              analysisContent.cognitive_patterning[camelKey] = analysisContent.cognitive_patterning[snakeKey];
+              logWarning(`Fixed cognitive property: ${snakeKey} -> ${camelKey}`);
+            }
+          });
+        }
+        
+        if (analysisContent.emotional_architecture) {
+          emotionalKeys.forEach(camelKey => {
+            const snakeKey = camelKey.replace(/([A-Z])/g, "_$1").toLowerCase();
+            if (analysisContent.emotional_architecture[snakeKey] && !analysisContent.emotional_architecture[camelKey]) {
+              analysisContent.emotional_architecture[camelKey] = analysisContent.emotional_architecture[snakeKey];
+              logWarning(`Fixed emotional property: ${snakeKey} -> ${camelKey}`);
+            }
+          });
+        }
+        
+        if (analysisContent.interpersonal_dynamics) {
+          interpersonalKeys.forEach(camelKey => {
+            const snakeKey = camelKey.replace(/([A-Z])/g, "_$1").toLowerCase();
+            if (analysisContent.interpersonal_dynamics[snakeKey] && !analysisContent.interpersonal_dynamics[camelKey]) {
+              analysisContent.interpersonal_dynamics[camelKey] = analysisContent.interpersonal_dynamics[snakeKey];
+              logWarning(`Fixed interpersonal property: ${snakeKey} -> ${camelKey}`);
+            }
+          });
+        }
+        
       } catch (parseError) {
         logError("Failed to parse OpenAI response:", parseError);
         throw parseError;
@@ -68,7 +138,8 @@ serve(async (req) => {
       // Format the response
       const formattedResponse = formatAnalysisResponse(analysisContent);
       
-      logInfo("Analysis completed successfully");
+      const totalDuration = Date.now() - startTime;
+      logInfo(`Analysis completed successfully in ${totalDuration}ms`);
       return formattedResponse;
     } catch (aiError) {
       logError("OpenAI API error:", aiError);

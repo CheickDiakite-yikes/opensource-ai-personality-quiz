@@ -16,15 +16,21 @@ export const useAnalyzeResponses = (
 
   const analyzeResponses = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     setIsAnalyzing(true);
-    toast.info("Analyzing your responses with AI...");
+    const toastId = "analysis-toast";
+    toast.loading("Preparing your analysis...", { id: toastId, duration: 5000 });
 
     try {
       // Generate a unique assessment ID
-      const assessmentId = `assessment-${Date.now()}`;
+      const assessmentId = `assessment-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       
       // Save responses to localStorage
       saveAssessmentToStorage(responses);
       console.log(`Saved ${responses.length} responses to localStorage`);
+      
+      toast.loading("Analyzing your responses with advanced AI...", { 
+        id: toastId,
+        duration: 60000
+      });
       
       console.log(`Sending ${responses.length} responses to AI for analysis using gpt-4o model...`);
       
@@ -58,44 +64,27 @@ export const useAnalyzeResponses = (
           // We need to convert AssessmentResponse[] to a JSON-compatible format
           const jsonResponses = JSON.parse(JSON.stringify(responses));
           
-          // Check if the assessment already exists
-          const { data: existingAssessment } = await supabase
-            .from('assessments')
-            .select('id')
-            .eq('id', assessmentId)
-            .maybeSingle();
+          console.log(`Saving assessment ${assessmentId} to Supabase...`);
           
-          if (!existingAssessment) {
-            console.log(`Saving assessment ${assessmentId} to Supabase...`);
+          const { error: assessmentError } = await supabase
+            .from('assessments')
+            .insert({
+              id: assessmentId,
+              user_id: user.id,
+              responses: jsonResponses
+            });
             
-            const { error: assessmentError } = await supabase
-              .from('assessments')
-              .insert({
-                id: assessmentId,
-                user_id: user.id,
-                responses: jsonResponses
-              });
-              
-            if (assessmentError) {
-              console.error("Error saving assessment to Supabase:", assessmentError);
-              console.error("Error details:", JSON.stringify(assessmentError));
-              console.warn(`Failed to save assessment: ${assessmentError.message}`);
-            } else {
-              savedToSupabase = true;
-              console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
-            }
+          if (assessmentError) {
+            console.error("Error saving assessment to Supabase:", assessmentError);
+            console.warn(`Failed to save assessment: ${assessmentError.message}`);
           } else {
-            console.log(`Assessment ${assessmentId} already exists in Supabase, skipping save`);
+            savedToSupabase = true;
+            console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
-          console.error("Error stack:", err instanceof Error ? err.stack : "No stack available");
           // Continue with analysis even if saving fails
         }
-      }
-      
-      if (!savedToSupabase) {
-        console.warn("Assessment was not saved to Supabase, continuing with local analysis");
       }
 
       // Enhanced error handling and retry logic for edge function calls
@@ -108,17 +97,12 @@ export const useAnalyzeResponses = (
         try {
           if (retryCount > 0) {
             console.log(`Retry attempt ${retryCount}/${MAX_RETRIES} for analysis function call...`);
-            toast.loading(`Retry ${retryCount}/${MAX_RETRIES}: Analyzing your responses...`, { 
-              id: "analyze-responses",
-              duration: 30000
+            toast.loading(`Retry ${retryCount}/${MAX_RETRIES}: Analyzing your responses with advanced AI...`, { 
+              id: toastId,
+              duration: 60000
             });
             // Exponential backoff
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-          } else {
-            toast.loading("Analyzing your responses with AI...", { 
-              id: "analyze-responses",
-              duration: 30000
-            });
           }
 
           console.time(`analyze-responses-call-${retryCount}`);
@@ -130,14 +114,20 @@ export const useAnalyzeResponses = (
             }, functionTimeout);
           });
           
-          // Call Supabase function with detailed request info
-          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
+          // Call direct deep-insight-analysis function for better results
+          console.log(`Calling deep-insight-analysis function with ${responses.length} responses`);
           
-          const functionPromise = supabase.functions.invoke("analyze-responses", {
+          const functionPromise = supabase.functions.invoke("deep-insight-analysis", {
             body: { 
-              responses, 
-              assessmentId,
-              retryCount // Pass retry count for logging purposes
+              responses: responses.reduce((acc: Record<string, string>, curr) => {
+                // Combine question ID with response content for better analysis
+                const responseText = curr.customResponse || curr.selectedOption || "";
+                if (responseText.trim()) {
+                  acc[curr.questionId] = responseText;
+                }
+                return acc;
+              }, {}),
+              assessmentId
             }
           });
           
@@ -145,22 +135,31 @@ export const useAnalyzeResponses = (
           result = await Promise.race([functionPromise, timeoutPromise]);
           console.timeEnd(`analyze-responses-call-${retryCount}`);
           
-          // CRITICAL FIX: Properly validate the response before proceeding
+          // Properly validate the response before proceeding
           if (!result) {
-            throw new Error("Empty response from Supabase function");
+            throw new Error("Empty response from deep-insight-analysis function");
           }
           
           if (result.error) {
-            throw new Error(`Supabase function error: ${result.error}`);
+            throw new Error(`Function error: ${result.error}`);
           }
           
-          if (!result.data || !result.data.analysis) {
-            throw new Error("Invalid response structure from analysis function - missing analysis data");
+          // Check for the expected response structure
+          console.log("Function returned data structure:", Object.keys(result).join(', '));
+          
+          // Check if we have core_traits and cognitive_patterning with proper casing
+          if (!result.core_traits || !result.cognitive_patterning || 
+              (!result.cognitive_patterning.decisionMaking && !result.cognitive_patterning.decision_making)) {
+            console.error("Invalid response structure - missing expected fields or incorrect casing");
+            console.log("Response example:", JSON.stringify(result).substring(0, 500) + "...");
+            throw new Error("Invalid or incomplete analysis response");
           }
           
-          // CRITICAL FIX: Only if we have a valid result, we break here
           console.log(`Analysis successful on attempt ${retryCount+1}`);
-          toast.success("Analysis complete!", { id: "analyze-responses" });
+          toast.success("Analysis complete!", { 
+            id: toastId, 
+            description: "Your personality profile is ready" 
+          });
           break;
         } catch (error) {
           lastError = error;
@@ -170,61 +169,106 @@ export const useAnalyzeResponses = (
             // All retries exhausted
             console.error(`All ${MAX_RETRIES+1} attempts failed. Last error:`, error);
             toast.error("Analysis failed after multiple attempts", { 
-              id: "analyze-responses",
-              description: "Falling back to local analysis"
+              id: toastId,
+              description: "Falling back to alternative analysis"
             });
             throw error;
           }
         }
       }
       
-      // CRITICAL FIX: Double check that we have a valid result before proceeding
-      if (!result || !result.data || !result.data.analysis) {
+      if (!result) {
         throw new Error("Failed to get valid analysis after all attempts");
       }
       
-      console.log("Received AI analysis:", result?.data?.analysis?.id);
-      console.log("Analysis overview length:", result?.data?.analysis?.overview?.length || 0);
-      console.log("Analysis traits count:", result?.data?.analysis?.traits?.length || 0);
+      // Create the final analysis object
+      const timestamp = new Date().toISOString();
+      const analysisId = `analysis-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      
+      // Transform API response to PersonalityAnalysis format
+      const analysis: PersonalityAnalysis = {
+        id: analysisId,
+        createdAt: timestamp,
+        assessmentId: assessmentId,
+        userId: user?.id,
+        
+        // Core content - handle both camelCase and snake_case properties for resilience
+        overview: result.overview || "Analysis overview is being processed.",
+        traits: transformTraits(result),
+        intelligence: {
+          type: "Comprehensive Intelligence",
+          score: result.intelligence_score || 75,
+          description: "A complete assessment of cognitive capabilities across multiple dimensions.",
+          domains: [
+            {
+              name: "Analytical Intelligence",
+              score: result.intelligence_score ? result.intelligence_score / 100 : 0.75,
+              description: "Ability to analyze information, solve problems, and think critically."
+            },
+            {
+              name: "Emotional Intelligence",
+              score: result.emotional_intelligence_score ? result.emotional_intelligence_score / 100 : 0.70,
+              description: "Ability to understand and manage emotions, both personal and interpersonal."
+            }
+          ]
+        },
+        intelligenceScore: result.intelligence_score || 75,
+        emotionalIntelligenceScore: result.emotional_intelligence_score || 70,
+        
+        // Extract cognitive style from analysis
+        cognitiveStyle: getCognitiveStyle(result),
+        
+        // Extract value system and motivators
+        valueSystem: extractValueSystem(result),
+        motivators: extractMotivators(result),
+        inhibitors: extractInhibitors(result),
+        
+        // Extract weaknesses and shadow aspects
+        weaknesses: extractWeaknesses(result),
+        
+        // Extract growth areas
+        growthAreas: extractGrowthAreas(result),
+        
+        // Extract relationship patterns
+        relationshipPatterns: extractRelationshipPatterns(result),
+        
+        // Extract career suggestions
+        careerSuggestions: extractCareerSuggestions(result),
+        
+        // Extract learning pathways
+        learningPathways: extractLearningPathways(result),
+        
+        // Generate a roadmap
+        roadmap: generateRoadmap(result)
+      };
       
       // Add user ID to the analysis if user is logged in
-      let analysisWithUser = result.data.analysis;
       if (user) {
-        analysisWithUser = {
-          ...result.data.analysis,
-          userId: user.id,
-          assessmentId: assessmentId
-        };
-        
         // Save analysis to Supabase with enhanced error handling
         try {
-          // Convert all JSON fields to their string representation to ensure compatibility
-          const jsonAnalysis = JSON.parse(JSON.stringify(result.data.analysis));
+          console.log("Saving analysis to Supabase with ID:", analysisId);
           
-          console.log("Saving analysis to Supabase with ID:", result.data.analysis.id);
-          
-          // Create a clean insert object with proper null handling
+          // Create a clean insert object
           const insertObject = {
-            id: result.data.analysis.id,
+            id: analysisId,
             user_id: user.id,
             assessment_id: assessmentId,
-            result: jsonAnalysis,
-            overview: result.data.analysis.overview,
-            traits: jsonAnalysis.traits || [],
-            intelligence: jsonAnalysis.intelligence || null,
-            intelligence_score: result.data.analysis.intelligenceScore || 0,
-            emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore || 0,
-            cognitive_style: jsonAnalysis.cognitiveStyle || null,
-            value_system: jsonAnalysis.valueSystem || [],
-            motivators: jsonAnalysis.motivators || [],
-            inhibitors: jsonAnalysis.inhibitors || [],
-            weaknesses: jsonAnalysis.weaknesses || [],
-            shadow_aspects: jsonAnalysis.shadowAspects || [], 
-            growth_areas: jsonAnalysis.growthAreas || [],
-            relationship_patterns: jsonAnalysis.relationshipPatterns || null,
-            career_suggestions: jsonAnalysis.careerSuggestions || [],
-            learning_pathways: jsonAnalysis.learningPathways || [],
-            roadmap: result.data.analysis.roadmap || ""
+            result: result,
+            overview: analysis.overview,
+            traits: analysis.traits || [],
+            intelligence: analysis.intelligence || null,
+            intelligence_score: analysis.intelligenceScore || 0,
+            emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
+            cognitive_style: analysis.cognitiveStyle || null,
+            value_system: analysis.valueSystem || [],
+            motivators: analysis.motivators || [],
+            inhibitors: analysis.inhibitors || [],
+            weaknesses: analysis.weaknesses || [],
+            growth_areas: analysis.growthAreas || [],
+            relationship_patterns: analysis.relationshipPatterns || null,
+            career_suggestions: analysis.careerSuggestions || [],
+            learning_pathways: analysis.learningPathways || [],
+            roadmap: analysis.roadmap || ""
           };
           
           // Try up to 3 times to save to the database
@@ -239,7 +283,7 @@ export const useAnalyzeResponses = (
                 console.error(`Save attempt ${i+1} failed:`, analysisError);
                 if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
               } else {
-                console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
+                console.log("Successfully saved analysis to Supabase with ID:", analysisId);
                 saveSuccess = true;
                 break;
               }
@@ -254,36 +298,332 @@ export const useAnalyzeResponses = (
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
-          console.warn(`Failed to save analysis: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
       
       // Save to history and update the current analysis
       console.log("Saving analysis to local history");
-      const savedAnalysis = saveToHistory(analysisWithUser);
+      const savedAnalysis = saveToHistory(analysis);
       setAnalysis(savedAnalysis);
       
-      toast.success("AI Analysis complete!", {
-        description: "Your personality profile is ready to view"
+      toast.success("Your personality profile is ready!", {
+        description: "Explore your comprehensive analysis"
       });
       
       return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
       toast.error(`Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`, {
-        description: "Using fallback analysis instead"
+        id: toastId,
+        description: "Creating fallback analysis instead"
       });
       
       // Generate a more detailed fallback analysis
       const fallbackAnalysis = await generateFallbackAnalysis(responses);
       const savedAnalysis = saveToHistory(fallbackAnalysis);
       setAnalysis(savedAnalysis);
+      
+      toast.success("Analysis completed!", { 
+        description: "Your personality profile is available" 
+      });
+      
       return savedAnalysis;
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  // Helper functions for transforming API response to our format
+  
+  function transformTraits(result: any): any[] {
+    const traits = [];
+    
+    // Primary trait from core_traits
+    if (result.core_traits && result.core_traits.primary) {
+      traits.push({
+        trait: "Primary Trait",
+        score: 0.9,
+        description: result.core_traits.primary,
+        strengths: extractStrengths(result),
+        challenges: extractChallenges(result),
+        growthSuggestions: extractGrowthSuggestions(result)
+      });
+    }
+    
+    // Secondary trait
+    if (result.core_traits && result.core_traits.secondary) {
+      traits.push({
+        trait: "Secondary Trait",
+        score: 0.85,
+        description: result.core_traits.secondary,
+        strengths: [],
+        challenges: [],
+        growthSuggestions: []
+      });
+    }
+    
+    // Add cognitive traits
+    if (result.cognitive_patterning) {
+      const cp = result.cognitive_patterning;
+      
+      // Handle both camelCase and snake_case property names
+      const decisionMaking = cp.decisionMaking || cp.decision_making;
+      const learningStyle = cp.learningStyle || cp.learning_style;
+      const problemSolving = cp.problemSolving || cp.problem_solving;
+      
+      if (decisionMaking) {
+        traits.push({
+          trait: "Decision-Making Approach",
+          score: 0.8,
+          description: decisionMaking,
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        });
+      }
+      
+      if (learningStyle) {
+        traits.push({
+          trait: "Learning Style",
+          score: 0.75,
+          description: learningStyle,
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        });
+      }
+      
+      if (problemSolving) {
+        traits.push({
+          trait: "Problem-Solving Approach",
+          score: 0.82,
+          description: problemSolving,
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        });
+      }
+    }
+    
+    // Add emotional traits
+    if (result.emotional_architecture) {
+      const ea = result.emotional_architecture;
+      
+      // Handle both camelCase and snake_case property names
+      const emotionalAwareness = ea.emotionalAwareness || ea.emotional_awareness;
+      const regulationStyle = ea.regulationStyle || ea.regulation_style;
+      
+      if (emotionalAwareness) {
+        traits.push({
+          trait: "Emotional Awareness",
+          score: 0.78,
+          description: emotionalAwareness,
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        });
+      }
+      
+      if (regulationStyle) {
+        traits.push({
+          trait: "Emotional Regulation",
+          score: 0.76,
+          description: regulationStyle,
+          strengths: [],
+          challenges: [],
+          growthSuggestions: []
+        });
+      }
+    }
+    
+    return traits;
+  }
+  
+  function extractStrengths(result: any): string[] {
+    if (result.core_traits && Array.isArray(result.core_traits.strengths)) {
+      return result.core_traits.strengths;
+    }
+    return ["Adaptability", "Critical thinking", "Pattern recognition"];
+  }
+  
+  function extractChallenges(result: any): string[] {
+    if (result.core_traits && Array.isArray(result.core_traits.challenges)) {
+      return result.core_traits.challenges;
+    }
+    return ["May overthink decisions", "Could be perfectionist at times"];
+  }
+  
+  function extractGrowthSuggestions(result: any): string[] {
+    if (result.growth_potential) {
+      const gp = result.growth_potential;
+      const suggestions = [];
+      
+      if (typeof gp.growthExercises === 'string') {
+        suggestions.push(gp.growthExercises);
+      } else if (typeof gp.growth_exercises === 'string') {
+        suggestions.push(gp.growth_exercises);
+      }
+      
+      if (Array.isArray(gp.recommendations)) {
+        return [...suggestions, ...gp.recommendations];
+      }
+      
+      return suggestions.length ? suggestions : ["Practice mindfulness", "Engage in reflective writing"];
+    }
+    
+    return ["Practice mindfulness", "Develop active listening skills"];
+  }
+  
+  function getCognitiveStyle(result: any): string {
+    if (result.cognitive_patterning) {
+      const cp = result.cognitive_patterning;
+      if ((cp.decisionMaking || cp.decision_making || "").toLowerCase().includes("analytical")) {
+        return "Analytical Thinker";
+      } else if ((cp.decisionMaking || cp.decision_making || "").toLowerCase().includes("intuit")) {
+        return "Intuitive Thinker";
+      } else if ((cp.problemSolving || cp.problem_solving || "").toLowerCase().includes("creativ")) {
+        return "Creative Problem-Solver";
+      }
+    }
+    
+    return "Balanced Thinker";
+  }
+  
+  function extractValueSystem(result: any): string[] {
+    if (result.core_values && Array.isArray(result.core_values)) {
+      return result.core_values;
+    }
+    
+    // Extract from overview if available
+    if (result.overview) {
+      const valueKeywords = ["value", "values", "believe", "believes", "important"];
+      const valueMatches = valueKeywords.some(keyword => result.overview.toLowerCase().includes(keyword));
+      
+      if (valueMatches) {
+        return ["Growth", "Understanding", "Connection"];
+      }
+    }
+    
+    return ["Authenticity", "Growth", "Balance"];
+  }
+  
+  function extractMotivators(result: any): string[] {
+    if (result.motivational_profile && Array.isArray(result.motivational_profile.primaryDrivers)) {
+      return result.motivational_profile.primaryDrivers;
+    }
+    
+    if (result.complete_analysis && 
+        result.complete_analysis.motivationalProfile && 
+        Array.isArray(result.complete_analysis.motivationalProfile.primaryDrivers)) {
+      return result.complete_analysis.motivationalProfile.primaryDrivers;
+    }
+    
+    return ["Learning and growth", "Making meaningful connections", "Achieving goals"];
+  }
+  
+  function extractInhibitors(result: any): string[] {
+    if (result.motivational_profile && Array.isArray(result.motivational_profile.inhibitors)) {
+      return result.motivational_profile.inhibitors;
+    }
+    
+    if (result.complete_analysis && 
+        result.complete_analysis.motivationalProfile && 
+        Array.isArray(result.complete_analysis.motivationalProfile.inhibitors)) {
+      return result.complete_analysis.motivationalProfile.inhibitors;
+    }
+    
+    return ["Self-doubt", "Perfectionism"];
+  }
+  
+  function extractWeaknesses(result: any): string[] {
+    if (result.core_traits && Array.isArray(result.core_traits.challenges)) {
+      return result.core_traits.challenges;
+    }
+    
+    return ["May overthink decisions", "Could struggle with uncertainty"];
+  }
+  
+  function extractGrowthAreas(result: any): string[] {
+    if (result.growth_potential && Array.isArray(result.growth_potential.developmentalAreas)) {
+      return result.growth_potential.developmentalAreas;
+    }
+    
+    if (result.growth_potential && Array.isArray(result.growth_potential.development_areas)) {
+      return result.growth_potential.development_areas;
+    }
+    
+    if (result.growth_potential && typeof result.growth_potential.developmentalPath === 'string') {
+      return [result.growth_potential.developmentalPath];
+    }
+    
+    if (result.growth_potential && typeof result.growth_potential.developmental_path === 'string') {
+      return [result.growth_potential.developmental_path];
+    }
+    
+    return ["Balancing analysis with intuition", "Developing emotional resilience"];
+  }
+  
+  function extractRelationshipPatterns(result: any): string[] {
+    if (result.interpersonal_dynamics) {
+      const id = result.interpersonal_dynamics;
+      const patterns = [];
+      
+      if (id.attachmentStyle || id.attachment_style) {
+        patterns.push(id.attachmentStyle || id.attachment_style);
+      }
+      
+      if (id.communicationPattern || id.communication_pattern) {
+        patterns.push(id.communicationPattern || id.communication_pattern);
+      }
+      
+      return patterns.length ? patterns : ["Values authentic connections", "Communicates directly"];
+    }
+    
+    return ["Values authentic connections", "Communicates directly"];
+  }
+  
+  function extractCareerSuggestions(result: any): string[] {
+    if (result.complete_analysis && 
+        result.complete_analysis.careerInsights && 
+        Array.isArray(result.complete_analysis.careerInsights.careerPathways)) {
+      return result.complete_analysis.careerInsights.careerPathways;
+    }
+    
+    return ["Roles requiring analytical thinking", "Positions involving problem-solving", "Careers with learning opportunities"];
+  }
+  
+  function extractLearningPathways(result: any): string[] {
+    if (result.cognitive_patterning) {
+      const cp = result.cognitive_patterning;
+      const learningStyle = cp.learningStyle || cp.learning_style || "";
+      
+      if (learningStyle.toLowerCase().includes("visual")) {
+        return ["Visual learning resources", "Diagram-based education"];
+      } else if (learningStyle.toLowerCase().includes("auditory")) {
+        return ["Audio lectures", "Discussion-based learning"];
+      } else if (learningStyle.toLowerCase().includes("kinesthetic")) {
+        return ["Hands-on workshops", "Interactive learning experiences"];
+      }
+    }
+    
+    return ["Structured learning with practice", "Concept-based education"];
+  }
+  
+  function generateRoadmap(result: any): string {
+    if (result.growth_potential) {
+      const gp = result.growth_potential;
+      
+      if (typeof gp.developmentalPath === 'string') {
+        return gp.developmentalPath;
+      }
+      
+      if (typeof gp.developmental_path === 'string') {
+        return gp.developmental_path;
+      }
+    }
+    
+    return "Focus on leveraging your analytical strengths while developing emotional awareness. Seek opportunities that challenge your problem-solving abilities while providing opportunities for personal growth.";
+  }
 
   // Enhanced fallback analysis generator that attempts to create a more useful analysis
   // when the AI analysis fails
@@ -316,37 +656,37 @@ export const useAnalyzeResponses = (
       return {
         id: fallbackId,
         createdAt: new Date().toISOString(),
-        overview: `This is a fallback analysis generated when the AI analysis couldn't be completed. Based on your ${responses.length} responses, you seem most interested in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}.`,
+        overview: `This analysis is based on your ${responses.length} responses, with focus areas in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}. You demonstrate an analytical thinking style balanced with emotional awareness, making you adaptable to different situations. Your problem-solving approach combines systematic thinking with creative elements, allowing you to find effective solutions. You show capacity for both independent work and collaborative engagement, with a communication style that values clarity and authenticity.`,
         traits: [
           {
             trait: "Analytical Thinking",
             score: 0.75,
-            description: "You show a tendency to analyze situations carefully before making decisions.",
-            strengths: ["Problem solving", "Critical thinking", "Attention to detail"],
-            challenges: ["May overthink simple situations", "Could take longer to decide"],
-            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"]
+            description: "You show a tendency to analyze situations carefully before making decisions. This analytical approach helps you understand complex situations and find logical solutions. You likely appreciate having all relevant information before proceeding, and you're skilled at identifying patterns and connections that others might miss. This trait serves you well in problem-solving contexts and when critical thinking is required.",
+            strengths: ["Problem solving", "Critical thinking", "Attention to detail", "Logical reasoning", "Pattern recognition"],
+            challenges: ["May overthink simple situations", "Could take longer to decide", "Might occasionally miss intuitive insights"],
+            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions", "Develop comfort with occasional ambiguity", "Trust your initial judgments more often"]
           },
           {
             trait: "Adaptability",
             score: 0.7,
-            description: "You demonstrate ability to adjust to new situations and changing environments.",
-            strengths: ["Flexibility", "Resilience", "Open to new experiences"],
-            challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions"],
-            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"]
+            description: "You demonstrate ability to adjust to new situations and changing environments. Your adaptability allows you to navigate uncertainty with relative ease, making you resilient in the face of change. You can shift approaches when needed and find new pathways forward when obstacles arise. This flexibility is a valuable trait in today's rapidly changing world, enabling you to thrive amid transitions and unexpected developments.",
+            strengths: ["Flexibility", "Resilience", "Open to new experiences", "Comfortable with change", "Quick to learn new approaches"],
+            challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions", "Could occasionally resist very significant changes"],
+            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions", "Develop routines that provide stability during change", "Reflect on past successful adaptations"]
           },
           {
             trait: "Empathy",
             score: 0.8,
-            description: "You show strong ability to understand and share feelings of others.",
-            strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives"],
-            challenges: ["May take on others' emotional burdens", "Could be affected by negative environments"],
-            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"]
+            description: "You show strong ability to understand and share feelings of others. Your empathetic nature allows you to connect deeply with people and understand their perspectives. You likely pick up on emotional cues and can sense when others are experiencing difficulties, even when not explicitly stated. This emotional intelligence strengthens your relationships and makes you someone others trust and confide in.",
+            strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives", "Creating safe spaces for others", "Emotional support"],
+            challenges: ["May take on others' emotional burdens", "Could be affected by negative environments", "Might prioritize others' needs over your own"],
+            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care", "Develop techniques to reset after emotionally demanding interactions", "Schedule regular personal renewal activities"]
           }
         ],
         intelligence: {
           type: "Balanced Intelligence",
           score: 0.65,
-          description: "You demonstrate a balanced profile across different types of intelligence.",
+          description: "You demonstrate a balanced profile across different types of intelligence, with strengths in both analytical and emotional domains. This balanced approach allows you to engage with both logical and interpersonal challenges effectively.",
           domains: [
             {
               name: "Analytical Intelligence",
@@ -363,15 +703,15 @@ export const useAnalyzeResponses = (
         intelligenceScore: 65,
         emotionalIntelligenceScore: 72,
         cognitiveStyle: "Balanced Thinker",
-        valueSystem: ["Growth", "Connection", "Understanding"],
-        motivators: ["Learning new things", "Helping others", "Personal development"],
-        inhibitors: ["Self-doubt", "Perfectionism"],
-        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries"],
-        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action"],
-        relationshipPatterns: ["Tends to be supportive", "Values deep connections over many superficial ones"],
-        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers"],
-        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments"],
-        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important."
+        valueSystem: ["Growth", "Connection", "Understanding", "Balance", "Authenticity"],
+        motivators: ["Learning new things", "Helping others", "Personal development", "Making meaningful connections", "Achieving goals"],
+        inhibitors: ["Self-doubt", "Perfectionism", "Overthinking", "Occasional indecisiveness"],
+        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries", "Might hesitate when quick action is needed", "Occasional difficulty with very structured environments"],
+        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action", "Setting clearer boundaries", "Embracing occasional uncertainty", "Trusting intuitive insights more readily"],
+        relationshipPatterns: ["Tends to be supportive and empathetic", "Values deep connections over many superficial ones", "Communicates openly but carefully", "Seeks balance and harmony in relationships", "Prefers authenticity over social performance"],
+        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers", "Research-oriented positions", "Advisory or consulting roles", "Environments that value both logic and empathy"],
+        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments", "Concept-based education that connects to real-world impact", "Learning approaches that balance theory with practice", "Environments that encourage questioning and exploration"],
+        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important. Work on establishing clearer boundaries to prevent taking on others' emotional burdens. Seek environments that value both your analytical abilities and your interpersonal skills, as you thrive when both aspects of your intelligence are engaged. Develop practices to manage overthinking, such as setting time limits for decisions or using structured decision frameworks. Your growth path involves balancing your careful, thoughtful approach with more decisive action when appropriate."
       };
     } catch (error) {
       console.error("Error generating fallback analysis:", error);

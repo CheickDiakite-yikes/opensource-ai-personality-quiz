@@ -23,8 +23,10 @@ IMPORTANT GUIDELINES:
 8. Assign accurate, evidence-based intelligence and emotional intelligence scores.
 9. Format your response as a detailed JSON object.
 10. NEVER use phrases like "based on limited information" or qualifiers about the assessment limitations.
+11. FOLLOW THE EXACT PROPERTY NAMING IN CAMELCASE as specified in the example response.
 
-Your response MUST include these JSON fields, all FULLY POPULATED with rich, detailed content (no placeholders):
+YOUR RESPONSE MUST INCLUDE THESE JSON FIELDS, USING EXACT PROPERTY NAMES AS SHOWN:
+
 {
   "overview": "[500+ words comprehensive personality overview]",
   "core_traits": {
@@ -63,6 +65,8 @@ Your response MUST include these JSON fields, all FULLY POPULATED with rich, det
     "secondaryChoice": "[type identifier]"
   }
 }
+
+CRITICAL: USE camelCase for cognitive_patterning, emotional_architecture, and interpersonal_dynamics properties.
 `;
 
   // Log the constructed prompt (abbreviated for privacy)
@@ -86,69 +90,131 @@ Your response MUST include these JSON fields, all FULLY POPULATED with rich, det
     };
 
     logInfo(`Calling OpenAI API with model: ${API_CONFIG.DEFAULT_MODEL}`);
-    logDebug(`Request payload: ${JSON.stringify(requestPayload, null, 2).substring(0, 500)}...`);
+    logDebug(`Request payload: ${JSON.stringify(requestPayload).substring(0, 500)}...`);
 
     // First attempt with primary model
     const fetchAPI = retryable(fetch, API_CONFIG.RETRY_ATTEMPTS);
-    const response = await fetchAPI(API_CONFIG.BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestPayload),
-    });
+    
+    // Add timeout controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      logError("Request timeout exceeded");
+    }, API_CONFIG.FALLBACK_TIMEOUT);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      logError(`OpenAI API error (status ${response.status}): ${errorText}`);
-      
-      // If the error is 429 (rate limit) or 500+ (server error), try with fallback model
-      if (response.status === 429 || response.status >= 500) {
-        logInfo(`Retrying with fallback model: ${API_CONFIG.FALLBACK_MODEL}`);
+    try {
+      const response = await fetchAPI(API_CONFIG.BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestPayload),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logError(`OpenAI API error (status ${response.status}): ${errorText}`);
         
-        const fallbackPayload = {
-          ...requestPayload,
-          model: API_CONFIG.FALLBACK_MODEL,
-          max_tokens: API_CONFIG.FALLBACK_MAX_TOKENS
-        };
-        
-        const fallbackResponse = await fetch(API_CONFIG.BASE_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify(fallbackPayload),
-        });
-        
-        if (!fallbackResponse.ok) {
-          const fallbackErrorText = await fallbackResponse.text();
-          logError(`Fallback OpenAI API error: ${fallbackErrorText}`);
-          throw new Error(`OpenAI API error: ${fallbackErrorText}`);
+        // If the error is 429 (rate limit) or 500+ (server error), try with fallback model
+        if (response.status === 429 || response.status >= 500) {
+          logInfo(`Retrying with fallback model: ${API_CONFIG.FALLBACK_MODEL}`);
+          
+          const fallbackPayload = {
+            ...requestPayload,
+            model: API_CONFIG.FALLBACK_MODEL,
+            max_tokens: API_CONFIG.FALLBACK_MAX_TOKENS,
+            messages: [
+              {
+                role: "system",
+                content: prompt + "\n\nNOTE: You MUST respond with a valid JSON document containing ALL required fields."
+              }
+            ]
+          };
+          
+          // Create new controller for fallback
+          const fallbackController = new AbortController();
+          const fallbackTimeoutId = setTimeout(() => {
+            fallbackController.abort();
+            logError("Fallback request timeout exceeded");
+          }, API_CONFIG.FALLBACK_TIMEOUT);
+          
+          try {
+            const fallbackResponse = await fetch(API_CONFIG.BASE_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify(fallbackPayload),
+              signal: fallbackController.signal
+            });
+            
+            clearTimeout(fallbackTimeoutId);
+            
+            if (!fallbackResponse.ok) {
+              const fallbackErrorText = await fallbackResponse.text();
+              logError(`Fallback OpenAI API error: ${fallbackErrorText}`);
+              throw new Error(`OpenAI API error: ${fallbackErrorText}`);
+            }
+            
+            const result = await fallbackResponse.json();
+            
+            // Check for empty or invalid response
+            if (!result || !result.choices || !result.choices[0] || !result.choices[0].message) {
+              throw new Error("Invalid or empty response from OpenAI fallback model");
+            }
+            
+            // Verify we have content
+            const content = result.choices[0].message.content;
+            if (!content || content.trim() === "") {
+              throw new Error("Empty content from OpenAI fallback model");
+            }
+            
+            return result;
+          } catch (fallbackError) {
+            clearTimeout(fallbackTimeoutId);
+            throw fallbackError;
+          }
         }
         
-        return await fallbackResponse.json();
+        throw new Error(`OpenAI API error: ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      // Verify that the response contains choices with valid content
+      if (!result.choices || 
+          !result.choices[0] || 
+          !result.choices[0].message || 
+          !result.choices[0].message.content) {
+        throw new Error("Invalid response structure or missing content from OpenAI API");
       }
       
-      throw new Error(`OpenAI API error: ${errorText}`);
+      // Check for empty content
+      const content = result.choices[0].message.content;
+      if (!content || content.trim() === "") {
+        throw new Error("Empty content from OpenAI API");
+      }
+      
+      // Log success with response token usage
+      if (result.usage) {
+        logInfo(`OpenAI API call successful. Used ${result.usage.total_tokens} tokens (${result.usage.prompt_tokens} prompt, ${result.usage.completion_tokens} completion)`);
+      } else {
+        logInfo("OpenAI API call successful but no token usage data received");
+      }
+      
+      return result;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === "AbortError") {
+        throw new Error("Request timed out");
+      }
+      throw fetchError;
     }
-
-    const result = await response.json();
-    
-    // Verify that the response contains choices
-    if (!result || !result.choices || !result.choices[0]) {
-      throw new Error("Invalid response structure from OpenAI API");
-    }
-    
-    // Log success with response token usage
-    if (result.usage) {
-      logInfo(`OpenAI API call successful. Used ${result.usage.total_tokens} tokens (${result.usage.prompt_tokens} prompt, ${result.usage.completion_tokens} completion)`);
-    } else {
-      logInfo("OpenAI API call successful but no token usage data received");
-    }
-    
-    return result;
   } catch (error) {
     logError("Error calling OpenAI API:", error);
     throw error;
