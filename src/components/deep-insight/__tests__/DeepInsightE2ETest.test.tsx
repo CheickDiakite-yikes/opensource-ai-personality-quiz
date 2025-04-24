@@ -1,6 +1,7 @@
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DeepInsightE2ETest from '../DeepInsightE2ETest';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,7 +29,7 @@ vi.mock('../hooks/useE2ETest', () => ({
 
 describe('DeepInsightE2ETest', () => {
   beforeEach(() => {
-    (useAuth as jest.Mock).mockReturnValue({ user: { id: 'test-user' } });
+    (useAuth as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ user: { id: 'test-user' } });
   });
 
   it('renders the main test page correctly', () => {
@@ -52,7 +53,7 @@ describe('DeepInsightE2ETest', () => {
         analysisId: null,
         runE2ETest: vi.fn(),
       }),
-    }));
+    }), { virtual: true });
 
     render(<DeepInsightE2ETest />);
     const button = screen.getByRole('button');
@@ -67,7 +68,7 @@ describe('DeepInsightE2ETest', () => {
         analysisId: 'test-analysis-123',
         runE2ETest: vi.fn(),
       }),
-    }));
+    }), { virtual: true });
 
     render(<DeepInsightE2ETest />);
     expect(screen.getByText('Test Completed Successfully')).toBeInTheDocument();

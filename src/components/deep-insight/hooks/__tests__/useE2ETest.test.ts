@@ -2,7 +2,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useE2ETest } from '../useE2ETest';
 import { supabase } from '@/integrations/supabase/client';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
