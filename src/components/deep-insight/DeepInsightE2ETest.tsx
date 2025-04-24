@@ -5,11 +5,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { deepInsightQuestions } from '@/utils/deep-insight/questionBank';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DeepInsightE2ETest = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const addLog = (message: string) => {
     setLogs(prev => [...prev, `${new Date().toISOString()} - ${message}`]);
@@ -20,6 +22,11 @@ const DeepInsightE2ETest = () => {
       setIsRunning(true);
       setLogs([]);
       addLog('Starting E2E test');
+
+      // Check if user is authenticated
+      if (!user) {
+        throw new Error('User not authenticated. Please sign in to run the test.');
+      }
 
       // Step 1: Generate test responses for all questions
       addLog('Generating test responses');
@@ -40,7 +47,8 @@ const DeepInsightE2ETest = () => {
         .insert({
           id: assessmentId,
           responses: responses,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          user_id: user.id // Add the user_id field which is required
         });
 
       if (assessmentError) {
