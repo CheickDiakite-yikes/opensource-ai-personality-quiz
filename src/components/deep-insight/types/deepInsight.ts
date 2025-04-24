@@ -73,5 +73,5 @@ export interface DeepInsightAnalysis {
   complete_analysis?: CompleteAnalysis;
   user_id?: string;
   error_occurred?: boolean;
-  error_message?: string;
+  error_message?: string | null;
 }
