@@ -26,6 +26,12 @@ describe('useE2ETest', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock timer functions
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should initialize with correct default values', () => {
@@ -40,6 +46,8 @@ describe('useE2ETest', () => {
 
     await act(async () => {
       await result.current.runE2ETest();
+      // Fast-forward timers to handle the setTimeout
+      vi.runAllTimers();
     });
 
     expect(result.current.analysisId).toBe('analysis-123');

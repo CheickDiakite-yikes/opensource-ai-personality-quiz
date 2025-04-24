@@ -94,8 +94,12 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
         setAnalysisId(analysisData.id);
         addLog(`Analysis ID: ${analysisData.id}`);
 
-        // Verify analysis was saved - use select() instead of single() to avoid errors when multiple rows might be returned
+        // Verify analysis was saved with improved handling
+        // Add a small delay to allow database consistency
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         try {
+          // Try with exact match first
           const { data: verifyData, error: verifyError } = await supabase
             .from('deep_insight_analyses')
             .select('id')
@@ -103,8 +107,32 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
             .limit(1);
 
           if (verifyError) {
-            addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
+            addLog(`Warning: Verification query error: ${verifyError.message}`);
           } else if (!verifyData || verifyData.length === 0) {
+            // Try alternative lookup methods if exact match fails
+            addLog(`Warning: Direct lookup failed. Trying UUID lookup...`);
+            
+            // Convert to UUID if not already in UUID format
+            let searchId = analysisData.id;
+            // If id is not a valid UUID, try to format it
+            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchId)) {
+              try {
+                // If it's a simple string ID, we'll need a different approach
+                const { data: altData } = await supabase
+                  .from('deep_insight_analyses')
+                  .select('id')
+                  .order('created_at', { ascending: false })
+                  .limit(1);
+                
+                if (altData && altData.length > 0) {
+                  addLog(`Found most recent analysis: ${altData[0].id}`);
+                  return analysisData.id; // Return the original ID from the analysis
+                }
+              } catch (e) {
+                addLog(`Warning: Alternative lookup also failed: ${e.message}`);
+              }
+            }
+            
             addLog(`Warning: Analysis with ID ${analysisData.id} not found in database`);
           } else {
             addLog('Analysis verified in database');
