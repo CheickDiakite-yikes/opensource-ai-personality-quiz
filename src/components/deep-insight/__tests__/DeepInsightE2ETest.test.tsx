@@ -19,13 +19,15 @@ vi.mock('../hooks/useTestLogs', () => ({
   }),
 }));
 
-vi.mock('../hooks/useE2ETest', () => ({
-  useE2ETest: () => ({
-    isRunning: false,
-    analysisId: null,
-    runE2ETest: vi.fn(),
-  }),
-}));
+vi.mock('../hooks/useE2ETest', () => {
+  return {
+    useE2ETest: () => ({
+      isRunning: false,
+      analysisId: null,
+      runE2ETest: vi.fn(),
+    }),
+  };
+});
 
 describe('DeepInsightE2ETest', () => {
   beforeEach(() => {
@@ -47,12 +49,14 @@ describe('DeepInsightE2ETest', () => {
   });
 
   it('disables the run button when test is in progress', () => {
-    vi.mock('../hooks/useE2ETest', () => ({
-      useE2ETest: () => ({
-        isRunning: true,
-        analysisId: null,
-        runE2ETest: vi.fn(),
-      }),
+    vi.mock('../hooks/useE2ETest', () => {
+      return {
+        useE2ETest: () => ({
+          isRunning: true,
+          analysisId: null,
+          runE2ETest: vi.fn(),
+        }),
+      };
     });
 
     render(<DeepInsightE2ETest />);
@@ -62,16 +66,17 @@ describe('DeepInsightE2ETest', () => {
   });
 
   it('shows success message when analysis is complete', () => {
-    vi.mock('../hooks/useE2ETest', () => ({
-      useE2ETest: () => ({
-        isRunning: false,
-        analysisId: 'test-analysis-123',
-        runE2ETest: vi.fn(),
-      }),
+    vi.mock('../hooks/useE2ETest', () => {
+      return {
+        useE2ETest: () => ({
+          isRunning: false,
+          analysisId: 'test-analysis-123',
+          runE2ETest: vi.fn(),
+        }),
+      };
     });
 
     render(<DeepInsightE2ETest />);
     expect(screen.getByText('Test Completed Successfully')).toBeInTheDocument();
   });
 });
-
