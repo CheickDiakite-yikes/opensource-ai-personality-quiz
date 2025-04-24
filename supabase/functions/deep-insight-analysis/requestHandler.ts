@@ -1,3 +1,4 @@
+
 import { corsHeaders } from "../_shared/cors.ts";
 import { createErrorResponse } from "./errorHandler.ts";
 import { logInfo, logError, logDebug } from "./logging.ts";
@@ -13,6 +14,12 @@ export async function processRequest(req: Request) {
     
     const body = await req.json();
     responses = body?.responses;
+    const assessmentId = body?.assessmentId; // Extract assessmentId if provided
+    
+    if (assessmentId) {
+      logInfo(`Processing request for assessment ID: ${assessmentId}`);
+    }
+    
     logInfo(`Request body parsed successfully, contains responses: ${!!responses}`);
     
     // Log more details about the request for debugging

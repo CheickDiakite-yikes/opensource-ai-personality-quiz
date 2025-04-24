@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -99,23 +100,48 @@ const DeepInsightE2ETest = () => {
         }
 
         addLog('Analysis completed successfully');
-        setAnalysisId(analysisData.id);
-
-        // Verify the analysis was saved
-        addLog('Verifying analysis in database');
-        const { data: savedAnalysis, error: verifyError } = await supabase
-          .from('deep_insight_analyses')
-          .select('*')
-          .eq('id', analysisData.id)
-          .single();
-
-        if (verifyError) {
-          addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
+        
+        // The analysis should now come back with its own ID
+        if (analysisData.id) {
+          setAnalysisId(analysisData.id);
+          addLog(`Analysis ID received: ${analysisData.id}`);
         } else {
-          addLog(`Analysis verified in database with ID: ${savedAnalysis.id}`);
-          addLog(`Analysis overview sample: ${savedAnalysis.overview?.substring(0, 200)}...`);
+          addLog('Warning: No analysis ID in response');
         }
 
+        // Verify the analysis was saved
+        if (analysisData.id) {
+          addLog('Verifying analysis in database');
+          const { data: savedAnalysis, error: verifyError } = await supabase
+            .from('deep_insight_analyses')
+            .select('*')
+            .eq('id', analysisData.id)
+            .single();
+
+          if (verifyError) {
+            addLog(`Warning: Could not verify saved analysis: ${verifyError.message}`);
+          } else {
+            addLog(`Analysis verified in database with ID: ${savedAnalysis.id}`);
+            addLog(`Analysis overview sample: ${savedAnalysis.overview?.substring(0, 200)}...`);
+          }
+        } else {
+          // If no ID was received, try to find by assessment ID
+          addLog('Checking for analysis by assessment ID');
+          const { data: linkedAnalyses, error: linkedError } = await supabase
+            .from('deep_insight_analyses')
+            .select('*')
+            .eq('assessment_id', assessmentId)
+            .limit(1);
+            
+          if (linkedError) {
+            addLog(`Warning: Could not check linked analyses: ${linkedError.message}`);
+          } else if (linkedAnalyses && linkedAnalyses.length > 0) {
+            setAnalysisId(linkedAnalyses[0].id);
+            addLog(`Found linked analysis with ID: ${linkedAnalyses[0].id}`);
+          } else {
+            addLog('No linked analysis found by assessment ID');
+          }
+        }
       } catch (functionError) {
         const errorMessage = functionError instanceof Error ? functionError.message : 'Unknown error occurred';
         addLog(`ERROR: ${errorMessage}`);

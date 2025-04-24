@@ -125,7 +125,9 @@ export function formatAnalysisResponse(analysisContent: any) {
         primaryChoice: "balanced",
         secondaryChoice: "adaptive"
       },
-      complete_analysis: complete_analysis
+      complete_analysis: complete_analysis,
+      // Generate a unique ID for the analysis
+      id: crypto.randomUUID()
     };
     
     // Log success and return the formatted response
@@ -179,7 +181,9 @@ export function formatAnalysisResponse(analysisContent: any) {
         error_occurred: true,
         error_message: error instanceof Error ? error.message : "Unknown error",
         processing_time: new Date().toISOString()
-      }
+      },
+      // Even for errors, create a valid ID
+      id: crypto.randomUUID()
     };
     
     return new Response(
