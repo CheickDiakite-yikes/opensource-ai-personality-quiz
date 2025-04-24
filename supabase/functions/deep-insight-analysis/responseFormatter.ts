@@ -16,7 +16,7 @@ export function formatAnalysisResponse(analysisContent: any) {
       ...analysisContent,
       intelligence_score: analysisContent.intelligence_score || analysisContent.intelligenceScore || 0,
       emotional_intelligence_score: analysisContent.emotional_intelligence_score || 
-                                   analysisContent.emotionalIntelligenceScore || 0,
+                                    analysisContent.emotionalIntelligenceScore || 0,
       response_patterns: analysisContent.response_patterns || analysisContent.responsePatterns || {},
       
       // If any core objects don't exist, mark as error rather than providing placeholders
@@ -26,9 +26,13 @@ export function formatAnalysisResponse(analysisContent: any) {
       interpersonal_dynamics: analysisContent.interpersonal_dynamics || null,
       growth_potential: analysisContent.growth_potential || null,
       
-      // Store error information in the analysis object itself
-      error_occurred: analysisContent.error_occurred !== undefined ? analysisContent.error_occurred : false,
-      error_message: analysisContent.error_message || null
+      // Complete analysis section with proper error handling
+      complete_analysis: {
+        ...(analysisContent.complete_analysis || {}),
+        status: analysisContent.complete_analysis?.status || 'completed',
+        error_occurred: analysisContent.complete_analysis?.error_occurred || false,
+        error_message: analysisContent.complete_analysis?.error_message || null
+      }
     };
     
     // Create the final response with the analysis data
@@ -53,10 +57,12 @@ export function formatAnalysisResponse(analysisContent: any) {
         status: 500,
         message: `Error formatting analysis: ${error instanceof Error ? error.message : "Unknown error"}`,
         analysis: {
-          error_occurred: true,
-          error_message: error instanceof Error ? error.message : "Unknown error formatting analysis",
-          // Include a basic structure to allow it to be stored in the database
-          overview: "Analysis processing encountered an error. Please try again later."
+          overview: "Analysis processing encountered an error. Please try again later.",
+          complete_analysis: {
+            status: "error",
+            error_occurred: true,
+            error_message: error instanceof Error ? error.message : "Unknown error formatting analysis"
+          }
         }
       }),
       {

@@ -157,7 +157,8 @@ export const useDeepInsightState = () => {
           const analysisData = {
             user_id: user.id,
             complete_analysis: {
-              ...data.analysis,
+              ...data.analysis.complete_analysis || {},
+              status: data.analysis.complete_analysis?.status || 'completed',
               error_occurred: data.analysis.error_occurred || false,
               error_message: data.analysis.error_message || null
             },

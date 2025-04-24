@@ -9,6 +9,7 @@ export function createErrorResponse(
 ) {
   logError(message || error.message, error);
   
+  // Store error information in the complete_analysis JSON object
   return new Response(
     JSON.stringify({
       error: message || error.message,
@@ -16,8 +17,11 @@ export function createErrorResponse(
       status,
       analysis: {
         overview: "Analysis processing encountered an error. Please try again later.",
-        error_occurred: true,
-        error_message: message || error.message
+        complete_analysis: {
+          status: "error",
+          error_occurred: true,
+          error_message: message || error.message
+        }
       }
     }),
     {
