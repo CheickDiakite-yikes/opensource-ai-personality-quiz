@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -124,21 +125,21 @@ const DeepInsightE2ETest = () => {
           // If no ID was received, try to find by assessment ID
           addLog('Checking for analysis by assessment ID');
           
-          // Fix: Use explicit type annotations to avoid deep type instantiation
-          const result = await supabase
+          // Solution: Completely avoid type inference by using any and then handling types safely
+          const { data: linkedAnalysesData, error: linkedError }: {
+            data: { id: string }[] | null;
+            error: Error | null;
+          } = await supabase
             .from('deep_insight_analyses')
-            .select('id')  // Select only the ID field to simplify the type
+            .select('id')
             .eq('assessment_id', assessmentId)
             .limit(1);
             
-          const linkedAnalyses = result.data;
-          const linkedError = result.error;
-            
           if (linkedError) {
             addLog(`Warning: Could not check linked analyses: ${linkedError.message}`);
-          } else if (linkedAnalyses && linkedAnalyses.length > 0) {
-            setAnalysisId(linkedAnalyses[0].id);
-            addLog(`Found linked analysis with ID: ${linkedAnalyses[0].id}`);
+          } else if (linkedAnalysesData && linkedAnalysesData.length > 0) {
+            setAnalysisId(linkedAnalysesData[0].id);
+            addLog(`Found linked analysis with ID: ${linkedAnalysesData[0].id}`);
           } else {
             addLog('No linked analysis found by assessment ID');
           }
