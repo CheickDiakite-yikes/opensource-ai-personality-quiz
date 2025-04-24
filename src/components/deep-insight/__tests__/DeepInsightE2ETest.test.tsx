@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DeepInsightE2ETest from '../DeepInsightE2ETest';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,19 +19,19 @@ vi.mock('../hooks/useTestLogs', () => ({
   }),
 }));
 
-vi.mock('../hooks/useE2ETest', () => {
-  return {
-    useE2ETest: () => ({
-      isRunning: false,
-      analysisId: null,
-      runE2ETest: vi.fn(),
-    }),
-  };
-});
+// Default mock for useE2ETest
+vi.mock('../hooks/useE2ETest', () => ({
+  useE2ETest: vi.fn(() => ({
+    isRunning: false,
+    analysisId: null,
+    runE2ETest: vi.fn(),
+  })),
+}));
 
 describe('DeepInsightE2ETest', () => {
   beforeEach(() => {
-    (useAuth as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ user: { id: 'test-user' } });
+    (useAuth as any).mockReturnValue({ user: { id: 'test-user' } });
+    vi.clearAllMocks();
   });
 
   it('renders the main test page correctly', () => {
@@ -49,14 +49,12 @@ describe('DeepInsightE2ETest', () => {
   });
 
   it('disables the run button when test is in progress', () => {
-    vi.mock('../hooks/useE2ETest', () => {
-      return {
-        useE2ETest: () => ({
-          isRunning: true,
-          analysisId: null,
-          runE2ETest: vi.fn(),
-        }),
-      };
+    // Override the mock for this specific test
+    const { useE2ETest } = require('../hooks/useE2ETest');
+    (useE2ETest as any).mockReturnValue({
+      isRunning: true,
+      analysisId: null,
+      runE2ETest: vi.fn(),
     });
 
     render(<DeepInsightE2ETest />);
@@ -66,14 +64,12 @@ describe('DeepInsightE2ETest', () => {
   });
 
   it('shows success message when analysis is complete', () => {
-    vi.mock('../hooks/useE2ETest', () => {
-      return {
-        useE2ETest: () => ({
-          isRunning: false,
-          analysisId: 'test-analysis-123',
-          runE2ETest: vi.fn(),
-        }),
-      };
+    // Override the mock for this specific test
+    const { useE2ETest } = require('../hooks/useE2ETest');
+    (useE2ETest as any).mockReturnValue({
+      isRunning: false,
+      analysisId: 'test-analysis-123',
+      runE2ETest: vi.fn(),
     });
 
     render(<DeepInsightE2ETest />);
