@@ -34,7 +34,7 @@ export const TestLogs: React.FC<TestLogsProps> = ({ logs }) => {
                   <Badge variant="destructive" className="mr-2 h-1.5 w-1.5 rounded-full p-0 inline-block" />
                 )}
                 {isSuccess && (
-                  <Badge variant="success" className="mr-2 h-1.5 w-1.5 rounded-full p-0 inline-block bg-emerald-500" />
+                  <Badge variant="secondary" className="mr-2 h-1.5 w-1.5 rounded-full p-0 inline-block bg-emerald-500" />
                 )}
                 {log}
               </div>
