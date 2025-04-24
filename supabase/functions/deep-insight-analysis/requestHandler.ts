@@ -18,10 +18,14 @@ export async function processRequest(req: Request) {
     
     // Log more details about the request for debugging
     if (responses) {
-      const responseCount = Object.keys(responses).length;
+      const responseCount = Array.isArray(responses) ? responses.length : Object.keys(responses).length;
       logInfo(`Received ${responseCount} responses to analyze`);
       if (responseCount > 0) {
-        logDebug(`First few response keys: ${Object.keys(responses).slice(0, 5).join(', ')}`);
+        if (Array.isArray(responses)) {
+          logDebug(`First few response IDs: ${responses.slice(0, 5).map(r => r.questionId || 'unknown').join(', ')}`);
+        } else {
+          logDebug(`First few response keys: ${Object.keys(responses).slice(0, 5).join(', ')}`);
+        }
       }
     } else {
       logError("No responses found in request body");
@@ -32,24 +36,35 @@ export async function processRequest(req: Request) {
   }
 
   try {
-    if (!responses || typeof responses !== 'object' || Object.keys(responses).length === 0) {
-      logError("Empty or invalid responses object received");
+    if (!responses) {
+      logError("Empty responses object received");
       throw new Error("Invalid or empty responses object");
     }
     
-    // Format the responses as a clean, well-structured string for the AI
-    const formatted = Object.entries(responses)
-      .map(([id, answer]) => `Question ${id}: ${answer || "No answer provided"}`)
-      .join("\n\n");
+    // Handle both array format and object format
+    let formatted = "";
+    if (Array.isArray(responses)) {
+      formatted = responses
+        .map((item, index) => {
+          const question = item.question || `Question ${item.questionId || index}`;
+          const answer = item.answer || item.selectedOption || "No answer provided";
+          return `Question ${index}: ${answer}`;
+        })
+        .join("\n\n");
+        
+      logInfo(`Processing ${responses.length} array-format responses`);
+    } else if (typeof responses === 'object') {
+      formatted = Object.entries(responses)
+        .map(([id, answer]) => `Question ${id}: ${answer || "No answer provided"}`)
+        .join("\n\n");
+        
+      logInfo(`Processing ${Object.keys(responses).length} object-format responses`);
+    } else {
+      throw new Error("Responses must be an array or object");
+    }
 
-    logInfo(`Processing ${Object.keys(responses).length} responses`);
-    
     // Enhanced logging of response patterns
-    const responseLengths = Object.values(responses).map((r: any) => String(r || "").length);
-    const avgLength = responseLengths.reduce((a: number, b: number) => a + b, 0) / responseLengths.length || 0;
     const totalLength = formatted.length;
-    
-    logInfo(`Average response length: ${avgLength.toFixed(1)} chars`);
     logInfo(`Total response length: ${totalLength} characters`);
     
     // Ensure we have sufficient content to analyze

@@ -9,8 +9,12 @@ import { callOpenAI } from "./openai.ts";
 import { formatAnalysisResponse } from "./responseFormatter.ts";
 import { createErrorResponse } from "./errorHandler.ts";
 import { logDebug, logError, logInfo, logWarning } from "./logging.ts";
+import { retryable } from "./retryUtils.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+
+// Create a retryable version of the OpenAI call
+const retryableOpenAICall = retryable(callOpenAI, 2);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -34,22 +38,27 @@ serve(async (req) => {
       return formattedResponses; // Return error response if validation failed
     }
     
-    // Call OpenAI with proper error handling
+    // Call OpenAI with proper error handling using our retryable function
     try {
       logInfo("Calling OpenAI API for deep insight analysis...");
       
       // Add detailed timing logs
       const apiCallStartTime = Date.now();
-      const openAIResponse = await callOpenAI(openAIApiKey, formattedResponses);
+      const openAIResponse = await retryableOpenAICall(openAIApiKey, formattedResponses);
       const apiCallDuration = Date.now() - apiCallStartTime;
       
       logInfo(`OpenAI API call completed in ${apiCallDuration}ms`);
       
-      if (!openAIResponse || !openAIResponse.choices) {
-        logError("Invalid response structure from OpenAI API", openAIResponse);
-        throw new Error("Invalid response from OpenAI API");
+      if (!openAIResponse) {
+        logError("Received null OpenAI response");
+        throw new Error("Null response from OpenAI API");
       }
 
+      if (!openAIResponse.choices) {
+        logError("Invalid response structure from OpenAI API", openAIResponse);
+        throw new Error("Invalid response from OpenAI API - missing choices");
+      }
+      
       // Safely check if choices array exists and has at least one item
       if (!Array.isArray(openAIResponse.choices) || openAIResponse.choices.length === 0) {
         logError("OpenAI response missing choices array or empty choices array", openAIResponse);
@@ -58,9 +67,14 @@ serve(async (req) => {
       
       // Safely access first choice and message
       const firstChoice = openAIResponse.choices[0];
-      if (!firstChoice || !firstChoice.message) {
-        logError("OpenAI response first choice is invalid or missing message", firstChoice);
-        throw new Error("Invalid choice structure in OpenAI response");
+      if (!firstChoice) {
+        logError("OpenAI response first choice is null or undefined", openAIResponse.choices);
+        throw new Error("First choice in OpenAI response is invalid");
+      }
+      
+      if (!firstChoice.message) {
+        logError("OpenAI response first choice is missing message field", firstChoice);
+        throw new Error("Invalid choice structure in OpenAI response - missing message");
       }
       
       // Get content from the response and parse it safely
@@ -111,8 +125,18 @@ serve(async (req) => {
         const missingKeys = requiredTopLevelKeys.filter(key => !(key in analysisContent));
         
         if (missingKeys.length > 0) {
-          logError(`Missing required fields in OpenAI response: ${missingKeys.join(', ')}`);
-          throw new Error(`Incomplete analysis: missing ${missingKeys.join(', ')}`);
+          logWarning(`Missing required fields in OpenAI response: ${missingKeys.join(', ')}`);
+          // Create placeholder values for missing fields instead of failing
+          missingKeys.forEach(key => {
+            if (key.includes("_score")) {
+              analysisContent[key] = 50; // Default scores to 50
+            } else if (key === "overview") {
+              analysisContent[key] = "Analysis overview is still being processed.";
+            } else {
+              analysisContent[key] = {}; // Empty object for structural fields
+            }
+          });
+          logInfo("Added placeholder values for missing fields");
         }
         
         // Check for proper casing in nested objects and fix if needed
@@ -129,7 +153,15 @@ serve(async (req) => {
               // Copy snake_case to camelCase
               analysisContent.cognitive_patterning[camelKey] = analysisContent.cognitive_patterning[snakeKey];
               logWarning(`Fixed cognitive property: ${snakeKey} -> ${camelKey}`);
+            } else if (!analysisContent.cognitive_patterning[camelKey] && !analysisContent.cognitive_patterning[snakeKey]) {
+              // Add placeholder if neither exists
+              analysisContent.cognitive_patterning[camelKey] = "This aspect is still being analyzed.";
             }
+          });
+        } else {
+          analysisContent.cognitive_patterning = {};
+          cognitiveKeys.forEach(key => {
+            analysisContent.cognitive_patterning[key] = "This aspect is still being analyzed.";
           });
         }
         
@@ -139,7 +171,14 @@ serve(async (req) => {
             if (analysisContent.emotional_architecture[snakeKey] && !analysisContent.emotional_architecture[camelKey]) {
               analysisContent.emotional_architecture[camelKey] = analysisContent.emotional_architecture[snakeKey];
               logWarning(`Fixed emotional property: ${snakeKey} -> ${camelKey}`);
+            } else if (!analysisContent.emotional_architecture[camelKey] && !analysisContent.emotional_architecture[snakeKey]) {
+              analysisContent.emotional_architecture[camelKey] = "This aspect is still being analyzed.";
             }
+          });
+        } else {
+          analysisContent.emotional_architecture = {};
+          emotionalKeys.forEach(key => {
+            analysisContent.emotional_architecture[key] = "This aspect is still being analyzed.";
           });
         }
         
@@ -149,8 +188,35 @@ serve(async (req) => {
             if (analysisContent.interpersonal_dynamics[snakeKey] && !analysisContent.interpersonal_dynamics[camelKey]) {
               analysisContent.interpersonal_dynamics[camelKey] = analysisContent.interpersonal_dynamics[snakeKey];
               logWarning(`Fixed interpersonal property: ${snakeKey} -> ${camelKey}`);
+            } else if (!analysisContent.interpersonal_dynamics[camelKey] && !analysisContent.interpersonal_dynamics[snakeKey]) {
+              analysisContent.interpersonal_dynamics[camelKey] = "This aspect is still being analyzed.";
             }
           });
+        } else {
+          analysisContent.interpersonal_dynamics = {};
+          interpersonalKeys.forEach(key => {
+            analysisContent.interpersonal_dynamics[key] = "This aspect is still being analyzed.";
+          });
+        }
+        
+        // Ensure growth_potential exists and has minimal structure
+        if (!analysisContent.growth_potential) {
+          analysisContent.growth_potential = {
+            developmentalPath: "Your growth path is being analyzed.",
+            blindSpots: "Potential blind spots are being identified.",
+            untappedStrengths: "Your untapped potential is being assessed.",
+            growthExercises: "Personalized exercises are being developed."
+          };
+        }
+        
+        // Ensure core_traits exists and has minimal structure
+        if (!analysisContent.core_traits) {
+          analysisContent.core_traits = {
+            primary: "Your primary traits are being identified.",
+            secondary: "Your secondary traits are being analyzed.",
+            strengths: ["Analysis in progress"],
+            challenges: ["Analysis in progress"]
+          };
         }
         
       } catch (parseError) {

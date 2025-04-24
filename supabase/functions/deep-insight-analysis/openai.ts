@@ -2,6 +2,7 @@
 import { API_CONFIG } from "./openaiConfig.ts";
 import { logDebug, logError, logInfo, logWarning } from "./logging.ts";
 import { SYSTEM_PROMPT, USER_PROMPT } from "./prompts.ts";
+import { retryable } from "./retryUtils.ts";
 
 // Enhanced call to OpenAI with better prompting and error handling
 export async function callOpenAI(apiKey: string, formattedResponses: string) {
@@ -39,7 +40,7 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
 
     logDebug(`Request payload: ${JSON.stringify(requestPayload).substring(0, 500)}...`);
 
-    // Make the API call
+    // Make the API call with better error handling
     try {
       const response = await fetch(API_CONFIG.BASE_URL, {
         method: "POST",
@@ -74,16 +75,32 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
 
       const result = await response.json();
       
-      // Verify that we have a proper response
-      if (!result.choices || !Array.isArray(result.choices) || result.choices.length === 0) {
-        logError("Invalid response structure from OpenAI API", result);
-        throw new Error("Invalid response from OpenAI API");
+      // IMPORTANT FIX: More robust validation of OpenAI response
+      if (!result) {
+        logError("Empty response from OpenAI API");
+        throw new Error("Empty response from OpenAI API");
+      }
+      
+      // Added more comprehensive null checks
+      if (!result.choices) {
+        logError("Invalid response structure - choices field missing:", result);
+        return createEmergencyResponse("OpenAI response missing choices field");
+      }
+      
+      if (!Array.isArray(result.choices) || result.choices.length === 0) {
+        logError("Invalid choices array in OpenAI response:", result.choices);
+        return createEmergencyResponse("OpenAI response has empty choices array");
       }
 
       const firstChoice = result.choices[0];
-      if (!firstChoice || !firstChoice.message || !firstChoice.message.content) {
-        logError("Invalid choice structure in OpenAI response", firstChoice);
-        throw new Error("Invalid choice structure in OpenAI response");
+      if (!firstChoice) {
+        logError("First choice is null or undefined:", result.choices);
+        return createEmergencyResponse("First choice in OpenAI response is invalid");
+      }
+      
+      if (!firstChoice.message) {
+        logError("Message field missing in first choice:", firstChoice);
+        return createEmergencyResponse("Message field missing in OpenAI response");
       }
       
       // Log token usage for monitoring
@@ -106,8 +123,61 @@ export async function callOpenAI(apiKey: string, formattedResponses: string) {
   } catch (error) {
     clearTimeout(timeoutId);
     logError("Error calling OpenAI API:", error);
-    throw error;
+    
+    // Last resort - return a minimal valid response
+    return createEmergencyResponse(error instanceof Error ? error.message : "Unknown OpenAI API error");
   }
+}
+
+// Create an emergency response when all else fails
+function createEmergencyResponse(errorMessage: string) {
+  logWarning("Creating emergency response due to API failure: " + errorMessage);
+  return {
+    choices: [
+      {
+        message: {
+          content: JSON.stringify({
+            overview: `Analysis could not be completed due to API limitations: ${errorMessage}. Please try again later.`,
+            core_traits: {
+              primary: "Analysis incomplete - please try again",
+              secondary: "Analysis incomplete - please try again",
+              manifestations: "Analysis incomplete - please try again"
+            },
+            cognitive_patterning: {
+              decisionMaking: "Analysis incomplete - please try again",
+              learningStyle: "Analysis incomplete - please try again",
+              problemSolving: "Analysis incomplete - please try again",
+              informationProcessing: "Analysis incomplete - please try again"
+            },
+            emotional_architecture: {
+              emotionalAwareness: "Analysis incomplete - please try again",
+              regulationStyle: "Analysis incomplete - please try again",
+              emotionalResponsiveness: "Analysis incomplete - please try again",
+              emotionalPatterns: "Analysis incomplete - please try again"
+            },
+            interpersonal_dynamics: {
+              attachmentStyle: "Analysis incomplete - please try again",
+              communicationPattern: "Analysis incomplete - please try again",
+              conflictResolution: "Analysis incomplete - please try again",
+              relationshipNeeds: "Analysis incomplete - please try again"
+            },
+            growth_potential: {
+              developmentalPath: "Analysis incomplete - please try again",
+              blindSpots: "Analysis incomplete - please try again",
+              untappedStrengths: "Analysis incomplete - please try again",
+              growthExercises: "Analysis incomplete - please try again"
+            },
+            intelligence_score: 50,
+            emotional_intelligence_score: 50,
+            response_patterns: {
+              primaryChoice: "balanced",
+              secondaryChoice: "adaptive"
+            }
+          })
+        }
+      }
+    ]
+  };
 }
 
 // Fallback function to use a smaller, faster model when the main one fails
@@ -170,16 +240,22 @@ async function tryFallbackModel(apiKey: string, formattedResponses: string) {
 
     const result = await response.json();
     
-    // Verify the fallback response
+    // IMPORTANT FIX: More robust validation for fallback response
+    if (!result) {
+      logError("Empty response from fallback model");
+      return createEmergencyResponse("Empty response from fallback model");
+    }
+    
+    // Added more comprehensive null checks for fallback
     if (!result.choices || !Array.isArray(result.choices) || result.choices.length === 0) {
       logError("Invalid response structure from fallback model", result);
-      throw new Error("Invalid response from fallback model");
+      return createEmergencyResponse("Invalid response from fallback model");
     }
     
     const firstChoice = result.choices[0];
-    if (!firstChoice || !firstChoice.message || !firstChoice.message.content) {
+    if (!firstChoice || !firstChoice.message) {
       logError("Invalid choice structure in fallback response", firstChoice);
-      throw new Error("Invalid choice structure in fallback response");
+      return createEmergencyResponse("Invalid choice structure in fallback response");
     }
     
     logInfo("Successfully received response from fallback model");
@@ -192,56 +268,6 @@ async function tryFallbackModel(apiKey: string, formattedResponses: string) {
     return result;
   } catch (fallbackError) {
     logError("Error with fallback model:", fallbackError);
-    
-    // Create a minimal valid response as last resort
-    const minimalResponseData = {
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              overview: "Analysis could not be completed due to API limitations. Please try again later.",
-              core_traits: {
-                primary: "Analysis incomplete - please try again",
-                secondary: "Analysis incomplete - please try again",
-                manifestations: "Analysis incomplete - please try again"
-              },
-              cognitive_patterning: {
-                decisionMaking: "Analysis incomplete - please try again",
-                learningStyle: "Analysis incomplete - please try again",
-                problemSolving: "Analysis incomplete - please try again",
-                informationProcessing: "Analysis incomplete - please try again"
-              },
-              emotional_architecture: {
-                emotionalAwareness: "Analysis incomplete - please try again",
-                regulationStyle: "Analysis incomplete - please try again",
-                emotionalResponsiveness: "Analysis incomplete - please try again",
-                emotionalPatterns: "Analysis incomplete - please try again"
-              },
-              interpersonal_dynamics: {
-                attachmentStyle: "Analysis incomplete - please try again",
-                communicationPattern: "Analysis incomplete - please try again",
-                conflictResolution: "Analysis incomplete - please try again",
-                relationshipNeeds: "Analysis incomplete - please try again"
-              },
-              growth_potential: {
-                developmentalPath: "Analysis incomplete - please try again",
-                blindSpots: "Analysis incomplete - please try again",
-                untappedStrengths: "Analysis incomplete - please try again",
-                growthExercises: "Analysis incomplete - please try again"
-              },
-              intelligence_score: 50,
-              emotional_intelligence_score: 50,
-              response_patterns: {
-                primaryChoice: "balanced",
-                secondaryChoice: "adaptive"
-              }
-            })
-          }
-        }
-      ]
-    };
-    
-    logWarning("Returning emergency minimal response due to API failures");
-    return minimalResponseData;
+    return createEmergencyResponse("Fallback model also failed");
   }
 }

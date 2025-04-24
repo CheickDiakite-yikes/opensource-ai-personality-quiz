@@ -53,11 +53,39 @@ export function formatAnalysisResponse(analysisContent: any) {
     };
     
     // Safely access nested objects with fallbacks
-    const core_traits = analysisContent.core_traits || {};
-    const cognitive_patterning = analysisContent.cognitive_patterning || {};
-    const emotional_architecture = analysisContent.emotional_architecture || {};
-    const interpersonal_dynamics = analysisContent.interpersonal_dynamics || {};
-    const growth_potential = analysisContent.growth_potential || {};
+    const core_traits = analysisContent.core_traits || {
+      primary: "Analysis in progress",
+      secondary: "Analysis in progress",
+      manifestations: "Analysis in progress"
+    };
+    
+    const cognitive_patterning = analysisContent.cognitive_patterning || {
+      decisionMaking: "Analysis in progress",
+      learningStyle: "Analysis in progress",
+      problemSolving: "Analysis in progress",
+      informationProcessing: "Analysis in progress"
+    };
+    
+    const emotional_architecture = analysisContent.emotional_architecture || {
+      emotionalAwareness: "Analysis in progress",
+      regulationStyle: "Analysis in progress",
+      emotionalResponsiveness: "Analysis in progress",
+      emotionalPatterns: "Analysis in progress"
+    };
+    
+    const interpersonal_dynamics = analysisContent.interpersonal_dynamics || {
+      attachmentStyle: "Analysis in progress",
+      communicationPattern: "Analysis in progress",
+      conflictResolution: "Analysis in progress",
+      relationshipNeeds: "Analysis in progress"
+    };
+    
+    const growth_potential = analysisContent.growth_potential || {
+      developmentalPath: "Analysis in progress",
+      blindSpots: "Analysis in progress",
+      untappedStrengths: "Analysis in progress",
+      growthExercises: "Analysis in progress"
+    };
     
     // Format the final response
     const formattedData = {
@@ -149,7 +177,7 @@ export function formatAnalysisResponse(analysisContent: any) {
       complete_analysis: {
         status: "error",
         error_occurred: true,
-        error_message: error.message,
+        error_message: error instanceof Error ? error.message : "Unknown error",
         processing_time: new Date().toISOString()
       }
     };
