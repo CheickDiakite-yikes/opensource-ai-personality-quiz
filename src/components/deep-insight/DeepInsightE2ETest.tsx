@@ -7,7 +7,6 @@ import { deepInsightQuestions } from '@/utils/deep-insight/questionBank';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { DeepInsightAnalysis } from './types/deepInsight';
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 const DeepInsightE2ETest = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -125,21 +124,21 @@ const DeepInsightE2ETest = () => {
           // If no ID was received, try to find by assessment ID
           addLog('Checking for analysis by assessment ID');
           
-          // Solution: Completely avoid type inference by using any and then handling types safely
-          const { data: linkedAnalysesData, error: linkedError }: {
-            data: { id: string }[] | null;
-            error: Error | null;
+          // Fix: Use TypeScript's type assertion to avoid complex type inference
+          const result: { 
+            data: Array<{ id: string }> | null; 
+            error: Error | null 
           } = await supabase
             .from('deep_insight_analyses')
             .select('id')
             .eq('assessment_id', assessmentId)
-            .limit(1);
-            
-          if (linkedError) {
-            addLog(`Warning: Could not check linked analyses: ${linkedError.message}`);
-          } else if (linkedAnalysesData && linkedAnalysesData.length > 0) {
-            setAnalysisId(linkedAnalysesData[0].id);
-            addLog(`Found linked analysis with ID: ${linkedAnalysesData[0].id}`);
+            .limit(1) as any;
+          
+          if (result.error) {
+            addLog(`Warning: Could not check linked analyses: ${result.error.message}`);
+          } else if (result.data && result.data.length > 0) {
+            setAnalysisId(result.data[0].id);
+            addLog(`Found linked analysis with ID: ${result.data[0].id}`);
           } else {
             addLog('No linked analysis found by assessment ID');
           }
