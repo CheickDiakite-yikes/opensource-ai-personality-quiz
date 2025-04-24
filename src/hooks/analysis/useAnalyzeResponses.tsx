@@ -248,26 +248,27 @@ export const useAnalyzeResponses = (
         try {
           console.log("Saving analysis to Supabase with ID:", analysisId);
           
-          // Create a clean insert object
+          // Create a clean insert object that is JSON-compatible
+          // Convert all complex objects to JSON strings to ensure compatibility with the database
           const insertObject = {
             id: analysisId,
             user_id: user.id,
             assessment_id: assessmentId,
             result: result,
             overview: analysis.overview,
-            traits: analysis.traits || [],
-            intelligence: analysis.intelligence || null,
+            traits: JSON.parse(JSON.stringify(analysis.traits || [])),
+            intelligence: JSON.parse(JSON.stringify(analysis.intelligence || {})),
             intelligence_score: analysis.intelligenceScore || 0,
             emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
-            cognitive_style: analysis.cognitiveStyle || null,
-            value_system: analysis.valueSystem || [],
-            motivators: analysis.motivators || [],
-            inhibitors: analysis.inhibitors || [],
-            weaknesses: analysis.weaknesses || [],
-            growth_areas: analysis.growthAreas || [],
-            relationship_patterns: analysis.relationshipPatterns || null,
-            career_suggestions: analysis.careerSuggestions || [],
-            learning_pathways: analysis.learningPathways || [],
+            cognitive_style: JSON.parse(JSON.stringify(analysis.cognitiveStyle || {})),
+            value_system: JSON.parse(JSON.stringify(analysis.valueSystem || [])),
+            motivators: JSON.parse(JSON.stringify(analysis.motivators || [])),
+            inhibitors: JSON.parse(JSON.stringify(analysis.inhibitors || [])),
+            weaknesses: JSON.parse(JSON.stringify(analysis.weaknesses || [])),
+            growth_areas: JSON.parse(JSON.stringify(analysis.growthAreas || [])),
+            relationship_patterns: JSON.parse(JSON.stringify(analysis.relationshipPatterns || null)),
+            career_suggestions: JSON.parse(JSON.stringify(analysis.careerSuggestions || [])),
+            learning_pathways: JSON.parse(JSON.stringify(analysis.learningPathways || [])),
             roadmap: analysis.roadmap || ""
           };
           
@@ -625,8 +626,7 @@ export const useAnalyzeResponses = (
     return "Focus on leveraging your analytical strengths while developing emotional awareness. Seek opportunities that challenge your problem-solving abilities while providing opportunities for personal growth.";
   }
 
-  // Enhanced fallback analysis generator that attempts to create a more useful analysis
-  // when the AI analysis fails
+  // Enhanced fallback analysis generator
   const generateFallbackAnalysis = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     console.log("Generating fallback analysis from responses");
     
