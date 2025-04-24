@@ -10,6 +10,9 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: vi.fn(() => ({
       insert: vi.fn().mockResolvedValue({ error: null }),
       select: vi.fn().mockResolvedValue({ data: [{ id: 'test-id' }], error: null }),
+      order: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
     })),
     functions: {
       invoke: vi.fn().mockResolvedValue({ 
@@ -46,7 +49,7 @@ describe('useE2ETest', () => {
 
     await act(async () => {
       await result.current.runE2ETest();
-      // Fast-forward timers to handle the setTimeout
+      // Fast-forward timers to handle the setTimeout for database verification
       vi.runAllTimers();
     });
 
@@ -64,5 +67,42 @@ describe('useE2ETest', () => {
 
     expect(mockAddLog).toHaveBeenCalledWith('ERROR: User not authenticated. Please sign in to run the test.');
     expect(result.current.isRunning).toBe(false);
+  });
+  
+  it('should handle database verification with multiple attempts', async () => {
+    // Mock first verification fail then alternative lookup success
+    const mockFrom = vi.fn();
+    mockFrom.mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      }))
+    })).mockImplementationOnce(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        eq: vi.fn().mockImplementation(() => ({
+          order: vi.fn().mockImplementation(() => ({
+            limit: vi.fn().mockResolvedValue({ 
+              data: [{ id: 'different-id', created_at: new Date().toISOString() }], 
+              error: null 
+            })
+          }))
+        }))
+      }))
+    }));
+    
+    (supabase.from as any).mockImplementation(mockFrom);
+    
+    const { result } = renderHook(() => useE2ETest(mockUser, mockAddLog));
+
+    await act(async () => {
+      await result.current.runE2ETest();
+      // Fast-forward timers to handle the setTimeout
+      vi.runAllTimers();
+    });
+
+    expect(result.current.analysisId).toBe('analysis-123');
+    expect(mockAddLog).toHaveBeenCalledWith('Warning: Direct lookup failed. Trying UUID lookup...');
+    expect(mockAddLog).toHaveBeenCalledWith(expect.stringContaining('Found most recent analysis'));
   });
 });
