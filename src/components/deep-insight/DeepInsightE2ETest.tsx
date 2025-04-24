@@ -127,11 +127,16 @@ const DeepInsightE2ETest = () => {
         } else {
           // If no ID was received, try to find by assessment ID
           addLog('Checking for analysis by assessment ID');
+          
+          // Fix: Add explicit type annotation to avoid excessive type instantiation
           const { data: linkedAnalyses, error: linkedError } = await supabase
             .from('deep_insight_analyses')
             .select('*')
             .eq('assessment_id', assessmentId)
-            .limit(1);
+            .limit(1) as { 
+              data: any[] | null; 
+              error: any | null;
+            };
             
           if (linkedError) {
             addLog(`Warning: Could not check linked analyses: ${linkedError.message}`);
