@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -23,10 +23,17 @@ const DeepInsightResultsPage: React.FC = () => {
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
   const [autoRetryEnabled, setAutoRetryEnabled] = useState<boolean>(true);
+  
+  // Using NodeJS.Timeout type for the timer
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-retry logic for incomplete analysis
   useEffect(() => {
-    let retryTimer: number | undefined;
+    // Clear any existing timer
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
     
     if (analysis && 
         (!analysis.overview || 
@@ -43,7 +50,7 @@ const DeepInsightResultsPage: React.FC = () => {
       
       console.log(`Analysis incomplete, scheduling retry in ${delayMs/1000} seconds (attempt ${retryCount + 1}/5)`);
       
-      retryTimer = setTimeout(() => {
+      retryTimerRef.current = setTimeout(() => {
         console.log(`Auto-retrying analysis fetch (${retryCount + 1}/5)`);
         fetchAnalysis();
         setRetryCount(prevCount => prevCount + 1);
@@ -51,7 +58,9 @@ const DeepInsightResultsPage: React.FC = () => {
     }
     
     return () => {
-      if (retryTimer) clearTimeout(retryTimer);
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
     };
   }, [analysis, autoRetryEnabled, retryCount, fetchAnalysis]);
 
