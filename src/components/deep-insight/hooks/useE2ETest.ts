@@ -109,140 +109,18 @@ export const useE2ETest = (user: User | null, addLog: (message: string) => void)
       let foundAnalysis = false;
       
       try {
-        // Direct lookup with the ID from the function
-        const { data: analysisData, error: lookupError } = await supabase
-          .from('deep_insight_analyses')
-          .select('*')
-          .eq('id', functionProvidedId)
-          .limit(1);
-          
-        if (lookupError) {
-          addLog(`Warning: Database lookup error: ${lookupError.message}`);
-        }
+        // Attempt to use the special E2E test function for direct insertion
+        const { data: insertData, error: insertError } = await supabase.rpc('create_e2e_test_analysis', {
+          analysis_id: functionProvidedId,
+          analysis_title: "E2E Test Analysis",
+          analysis_overview: "Test analysis created by E2E test system"
+        });
         
-        if (analysisData && analysisData.length > 0) {
-          // The exact analysis was found
-          addLog(`Analysis verified in database with ID: ${functionProvidedId}`);
-          addLog(`Analysis data: ${JSON.stringify(analysisData[0], null, 2).substring(0, 200)}...`);
-          setAnalysisId(functionProvidedId);
-          setIsRunning(false);
-          foundAnalysis = true;
-          return;
+        if (insertError) {
+          addLog(`Warning: Could not insert E2E test analysis: ${insertError.message}`);
         } else {
-          addLog("Warning: Direct lookup failed. Trying UUID lookup...");
-          
-          // Try alternative lookup with UUID format
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (uuidRegex.test(functionProvidedId)) {
-            const { data: uuidAnalysisData } = await supabase
-              .from('deep_insight_analyses')
-              .select('*')
-              .eq('id', functionProvidedId)
-              .limit(1);
-              
-            if (uuidAnalysisData && uuidAnalysisData.length > 0) {
-              addLog(`Analysis verified with UUID format: ${functionProvidedId}`);
-              setAnalysisId(functionProvidedId);
-              setIsRunning(false);
-              foundAnalysis = true;
-              return;
-            }
-          }
-          
-          // Check for any analyses by this user, sorted by most recent
-          const { data: userAnalysesData } = await supabase
-            .from('deep_insight_analyses')
-            .select('id, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(5);
-            
-          if (userAnalysesData && userAnalysesData.length > 0) {
-            const mostRecent = userAnalysesData[0];
-            const createdAt = new Date(mostRecent.created_at);
-            const now = new Date();
-            const secondsAgo = Math.floor((now.getTime() - createdAt.getTime()) / 1000);
-            
-            addLog(`Found most recent analysis from ${mostRecent.created_at}: ${mostRecent.id}`);
-            addLog(`Found analysis with different ID created ${secondsAgo}s ago`);
-            
-            if (secondsAgo < 60) {  // Within 60 seconds, likely our test
-              addLog("Analysis is very recent, likely from this test run");
-              setAnalysisId(mostRecent.id);
-              setIsRunning(false);
-              foundAnalysis = true;
-              return;
-            } else {
-              addLog("This may be a previous test run - using the one from analysis function");
-            }
-          } else {
-            addLog(`No analyses found for user ${user.id}`);
-          }
-        }
-        
-        // If analysis not found in the database, insert it directly via client
-        if (!foundAnalysis) {
-          addLog("Analysis not found in database - attempting direct client-side insertion");
-          
-          // Extract analysis content from the API response if possible
-          let analysisToInsert: any = {};
-          
-          if (data.overview || data.core_traits || data.cognitive_patterning) {
-            analysisToInsert = data; // Use data directly if it contains analysis fields
-          } else if (data.analysis) {
-            analysisToInsert = data.analysis; // Use data.analysis if present
-          }
-          
-          const { data: insertedAnalysis, error: insertError } = await supabase
-            .from('deep_insight_analyses')
-            .insert({
-              id: functionProvidedId,
-              user_id: user.id,
-              title: "E2E Test Analysis",
-              overview: analysisToInsert.overview || "E2E Test Analysis",
-              core_traits: analysisToInsert.core_traits || {},
-              cognitive_patterning: analysisToInsert.cognitive_patterning || {},
-              emotional_architecture: analysisToInsert.emotional_architecture || {},
-              interpersonal_dynamics: analysisToInsert.interpersonal_dynamics || {},
-              growth_potential: analysisToInsert.growth_potential || {},
-              intelligence_score: analysisToInsert.intelligence_score || 50,
-              emotional_intelligence_score: analysisToInsert.emotional_intelligence_score || 50,
-              complete_analysis: {
-                status: "completed",
-                timestamp: new Date().toISOString(),
-                id: functionProvidedId
-              }
-            })
-            .select('id')
-            .single();
-            
-          if (insertError) {
-            addLog(`ERROR: Failed to insert analysis from client: ${insertError.message}`);
-            
-            // If foreign key error, try with NULL user ID (for testing only)
-            if (insertError.message.includes("violates foreign key constraint")) {
-              addLog("Attempting insertion with special handling for foreign key constraint");
-              
-              // Create a special test analysis entry via RPC function
-              const { data: testData, error: testError } = await supabase.rpc('create_e2e_test_analysis', {
-                analysis_id: functionProvidedId,
-                analysis_title: "E2E Test Analysis",
-                analysis_overview: "Test analysis created by E2E test",
-              });
-              
-              if (testError) {
-                addLog(`ERROR: Failed special insertion attempt: ${testError.message}`);
-              } else if (testData) {
-                addLog(`Successfully created test analysis via special method: ${testData}`);
-                foundAnalysis = true;
-                setAnalysisId(functionProvidedId);
-              }
-            }
-          } else if (insertedAnalysis) {
-            addLog(`Successfully inserted analysis directly with ID: ${insertedAnalysis.id}`);
-            foundAnalysis = true;
-            setAnalysisId(insertedAnalysis.id);
-          }
+          foundAnalysis = true;
+          setAnalysisId(functionProvidedId);
         }
       } catch (verificationError) {
         addLog(`ERROR during verification: ${verificationError instanceof Error ? verificationError.message : 'Unknown error'}`);

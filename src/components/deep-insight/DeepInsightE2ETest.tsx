@@ -9,6 +9,7 @@ import { AnalysisSuccess } from './components/AnalysisSuccess';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 const DeepInsightE2ETest = () => {
   const { user } = useAuth();
@@ -19,13 +20,12 @@ const DeepInsightE2ETest = () => {
   useEffect(() => {
     const checkOrCreateE2eTestFunction = async () => {
       try {
-        // Check if the function exists
-        const { error: checkError } = await supabase
-          .rpc('create_e2e_test_analysis', {
-            analysis_id: '00000000-0000-0000-0000-000000000000',
-            analysis_title: 'Test Check',
-            analysis_overview: 'Just checking if function exists'
-          });
+        // Check if the function exists using the correct function name
+        const { error: checkError } = await supabase.rpc('create_e2e_test_analysis', {
+          analysis_id: uuidv4(),
+          analysis_title: 'Test Check',
+          analysis_overview: 'Just checking if function exists'
+        });
         
         // If function doesn't exist, warn the user
         if (checkError && checkError.message.includes('does not exist')) {
