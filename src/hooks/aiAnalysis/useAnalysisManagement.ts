@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { PersonalityAnalysis } from '@/utils/types';
 import { sortAnalysesByDate } from './utils';
@@ -86,7 +85,7 @@ export function useAnalysisManagement() {
   return {
     analysisHistory,
     currentAnalysis,
-    setCurrentAnalysis: setAnalysisById, // Return our enhanced version
+    setCurrentAnalysis: setAnalysisById, // Replace with our enhanced version
     getAnalysisHistory,
     addToHistory,
     setAllAnalyses

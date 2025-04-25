@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -26,12 +27,14 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 interface ReportHeaderProps {
   analysis: PersonalityAnalysis;
   analysisHistory?: PersonalityAnalysis[];
+  onAnalysisChange?: (analysisId: string) => void;
   onManualRefresh?: () => Promise<void>;
 }
 
 const ReportHeader: React.FC<ReportHeaderProps> = ({ 
   analysis,
   analysisHistory = [],
+  onAnalysisChange,
   onManualRefresh
 }) => {
   const isMobile = useIsMobile();
@@ -218,7 +221,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                     return (
                       <DropdownMenuItem 
                         key={item.id}
-                        onClick={() => {}}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
                       >
                         {dateLabel}
                       </DropdownMenuItem>
@@ -345,7 +348,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                     return (
                       <DropdownMenuItem 
                         key={item.id}
-                        onClick={() => {}}
+                        onClick={() => onAnalysisChange && onAnalysisChange(item.id)}
                       >
                         {dateLabel}
                       </DropdownMenuItem>
