@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { PersonalityAnalysis } from "@/utils/types";
 import { convertToPersonalityAnalysis } from "./utils";
-import { loadAnalysisHistory } from "../analysis/useLocalStorage";
 import { toast } from "sonner";
 
 export const useSupabaseSync = () => {
@@ -76,7 +75,9 @@ export const useSupabaseSync = () => {
         // Log all IDs for debugging
         logFetch(`Analysis IDs: ${directData.map(a => a.id).join(', ')}`);
         
-        return directData;
+        // Convert the data to our internal format
+        const convertedData = directData.map(item => convertToPersonalityAnalysis(item));
+        return convertedData;
       } else {
         logFetch("Direct fetch returned no data");
       }
@@ -229,6 +230,12 @@ export const useSupabaseSync = () => {
       
       logFetch(`Successfully retrieved ${allData.length} total analyses`);
       setRetryAttempts(0); // Reset retry counter on success
+      
+      // Convert the data to our internal format
+      if (allData.length > 0) {
+        return allData.map(item => convertToPersonalityAnalysis(item));
+      }
+      
       return allData;
     } catch (error) {
       console.error("[SupabaseSync] Error in fetchAnalysesFromSupabase:", error);

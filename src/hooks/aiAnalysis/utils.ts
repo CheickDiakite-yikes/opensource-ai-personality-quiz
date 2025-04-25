@@ -7,6 +7,8 @@ import { PersonalityAnalysis } from '@/utils/types';
 export const convertToPersonalityAnalysis = (data: any): PersonalityAnalysis => {
   if (!data) return null as any;
   
+  console.log("Converting analysis data:", data.id);
+  
   // Handle the relationship patterns being either an object or array
   let relationshipPatterns = data.relationship_patterns;
   
@@ -61,6 +63,7 @@ export const convertToPersonalityAnalysis = (data: any): PersonalityAnalysis => 
     inhibitors: ensureArray(data.inhibitors),
     weaknesses: ensureArray(data.weaknesses),
     growthAreas: ensureArray(data.growth_areas),
+    shadowAspects: ensureArray(data.shadow_aspects),
     relationshipPatterns: relationshipPatterns,
     careerSuggestions: ensureArray(data.career_suggestions),
     learningPathways: ensureArray(data.learning_pathways),

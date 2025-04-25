@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
@@ -6,6 +5,30 @@ import { saveAssessmentToStorage } from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { v4 as uuidv4 } from "uuid";
+
+// Helper function to convert data to JSON compatible format
+const toJsonCompatible = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => toJsonCompatible(item));
+  }
+  
+  // Handle objects
+  if (typeof obj === 'object' && obj !== null) {
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = toJsonCompatible(value);
+    }
+    return result;
+  }
+  
+  // Handle primitive values
+  return obj;
+};
 
 export const useAnalyzeResponses = (
   saveToHistory: (analysis: PersonalityAnalysis) => PersonalityAnalysis, 
@@ -40,23 +63,12 @@ export const useAnalyzeResponses = (
           .join(', ')
       );
       
-      // Check for empty responses that might cause issues
-      const emptyResponses = responses.filter(r => 
-        (!r.selectedOption || r.selectedOption.trim() === "") && 
-        (!r.customResponse || r.customResponse.trim() === "")
-      );
-      
-      if (emptyResponses.length > 0) {
-        console.warn(`Found ${emptyResponses.length} empty responses that may affect analysis quality`);
-        console.warn("Empty response IDs:", emptyResponses.map(r => r.questionId).join(", "));
-      }
-      
       // Store assessment responses in Supabase if user is logged in
       let savedToSupabase = false;
       if (user) {
         try {
           // We need to convert AssessmentResponse[] to a JSON-compatible format
-          const jsonResponses = JSON.parse(JSON.stringify(responses));
+          const jsonResponses = toJsonCompatible(responses);
           
           // Check if the assessment already exists
           const { data: existingAssessment } = await supabase
@@ -78,7 +90,6 @@ export const useAnalyzeResponses = (
               
             if (assessmentError) {
               console.error("Error saving assessment to Supabase:", assessmentError);
-              console.error("Error details:", JSON.stringify(assessmentError));
               console.warn(`Failed to save assessment: ${assessmentError.message}`);
             } else {
               savedToSupabase = true;
@@ -89,13 +100,8 @@ export const useAnalyzeResponses = (
           }
         } catch (err) {
           console.error("Error saving assessment:", err);
-          console.error("Error stack:", err instanceof Error ? err.stack : "No stack available");
           // Continue with analysis even if saving fails
         }
-      }
-      
-      if (!savedToSupabase) {
-        console.warn("Assessment was not saved to Supabase, continuing with local analysis");
       }
 
       // Enhanced error handling and retry logic for edge function calls
@@ -145,7 +151,7 @@ export const useAnalyzeResponses = (
           result = await Promise.race([functionPromise, timeoutPromise]);
           console.timeEnd(`analyze-responses-call-${retryCount}`);
           
-          // CRITICAL FIX: Properly validate the response before proceeding
+          // Validate the response before proceeding
           if (!result) {
             throw new Error("Empty response from Supabase function");
           }
@@ -158,7 +164,6 @@ export const useAnalyzeResponses = (
             throw new Error("Invalid response structure from analysis function - missing analysis data");
           }
           
-          // CRITICAL FIX: Only if we have a valid result, we break here
           console.log(`Analysis successful on attempt ${retryCount+1}`);
           toast.success("Analysis complete!", { id: "analyze-responses" });
           break;
@@ -178,7 +183,7 @@ export const useAnalyzeResponses = (
         }
       }
       
-      // CRITICAL FIX: Double check that we have a valid result before proceeding
+      // Double check that we have a valid result before proceeding
       if (!result || !result.data || !result.data.analysis) {
         throw new Error("Failed to get valid analysis after all attempts");
       }
@@ -198,8 +203,8 @@ export const useAnalyzeResponses = (
         
         // Save analysis to Supabase with enhanced error handling
         try {
-          // Convert all JSON fields to their string representation to ensure compatibility
-          const jsonAnalysis = JSON.parse(JSON.stringify(result.data.analysis));
+          // Create a JSON compatible object from the analysis
+          const jsonCompatibleAnalysis = toJsonCompatible(result.data.analysis);
           
           console.log("Saving analysis to Supabase with ID:", result.data.analysis.id);
           
@@ -208,24 +213,33 @@ export const useAnalyzeResponses = (
             id: result.data.analysis.id,
             user_id: user.id,
             assessment_id: assessmentId,
-            result: jsonAnalysis,
+            result: jsonCompatibleAnalysis,
             overview: result.data.analysis.overview || "",
-            traits: Array.isArray(jsonAnalysis.traits) ? jsonAnalysis.traits : [],
-            intelligence: jsonAnalysis.intelligence || null,
+            traits: jsonCompatibleAnalysis.traits || [],
+            intelligence: jsonCompatibleAnalysis.intelligence || null,
             intelligence_score: result.data.analysis.intelligenceScore || 0,
             emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore || 0,
-            cognitive_style: jsonAnalysis.cognitiveStyle || null,
-            value_system: Array.isArray(jsonAnalysis.valueSystem) ? jsonAnalysis.valueSystem : [],
-            motivators: Array.isArray(jsonAnalysis.motivators) ? jsonAnalysis.motivators : [],
-            inhibitors: Array.isArray(jsonAnalysis.inhibitors) ? jsonAnalysis.inhibitors : [],
-            weaknesses: Array.isArray(jsonAnalysis.weaknesses) ? jsonAnalysis.weaknesses : [],
-            shadow_aspects: Array.isArray(jsonAnalysis.shadowAspects) ? jsonAnalysis.shadowAspects : [], 
-            growth_areas: Array.isArray(jsonAnalysis.growthAreas) ? jsonAnalysis.growthAreas : [],
-            relationship_patterns: jsonAnalysis.relationshipPatterns || null,
-            career_suggestions: Array.isArray(jsonAnalysis.careerSuggestions) ? jsonAnalysis.careerSuggestions : [],
-            learning_pathways: Array.isArray(jsonAnalysis.learningPathways) ? jsonAnalysis.learningPathways : [],
+            cognitive_style: jsonCompatibleAnalysis.cognitiveStyle || null,
+            value_system: jsonCompatibleAnalysis.valueSystem || [],
+            motivators: jsonCompatibleAnalysis.motivators || [],
+            inhibitors: jsonCompatibleAnalysis.inhibitors || [],
+            weaknesses: jsonCompatibleAnalysis.weaknesses || [],
+            shadow_aspects: jsonCompatibleAnalysis.shadowAspects || [], 
+            growth_areas: jsonCompatibleAnalysis.growthAreas || [],
+            relationship_patterns: jsonCompatibleAnalysis.relationshipPatterns || null,
+            career_suggestions: jsonCompatibleAnalysis.careerSuggestions || [],
+            learning_pathways: jsonCompatibleAnalysis.learningPathways || [],
             roadmap: result.data.analysis.roadmap || ""
           };
+          
+          // Log what we're about to save
+          console.log("Analysis data that will be saved:", {
+            id: insertObject.id,
+            user_id: insertObject.user_id,
+            assessment_id: insertObject.assessment_id,
+            traitsCount: Array.isArray(insertObject.traits) ? insertObject.traits.length : 0,
+            overviewLength: insertObject.overview ? insertObject.overview.length : 0
+          });
           
           // Try up to 3 times to save to the database
           let saveSuccess = false;
@@ -249,8 +263,20 @@ export const useAnalyzeResponses = (
             }
           }
           
+          // If saving failed, let's try to check if the analysis already exists
           if (!saveSuccess) {
-            console.warn("Failed to save analysis to Supabase after multiple attempts");
+            const { data: existingAnalysis } = await supabase
+              .from('analyses')
+              .select('id')
+              .eq('id', result.data.analysis.id)
+              .maybeSingle();
+              
+            if (existingAnalysis) {
+              console.log("Analysis already exists in database with ID:", existingAnalysis.id);
+              saveSuccess = true;
+            } else {
+              console.warn("Failed to save analysis to Supabase after multiple attempts");
+            }
           }
         } catch (err) {
           console.error("Error saving analysis:", err);
@@ -270,7 +296,6 @@ export const useAnalyzeResponses = (
       return savedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
       toast.error(`Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`, {
         description: "Using fallback analysis instead"
       });
@@ -285,8 +310,7 @@ export const useAnalyzeResponses = (
     }
   };
 
-  // Enhanced fallback analysis generator that attempts to create a more useful analysis
-  // when the AI analysis fails
+  // Enhanced fallback analysis generator
   const generateFallbackAnalysis = async (responses: AssessmentResponse[]): Promise<PersonalityAnalysis> => {
     console.log("Generating fallback analysis from responses");
     
@@ -314,68 +338,42 @@ export const useAnalyzeResponses = (
       
       // Create a simple fallback analysis with some basic traits
       return {
-        id: fallbackId,
+        id: `fallback-${uuidv4()}`,
         createdAt: new Date().toISOString(),
-        overview: `This is a fallback analysis generated when the AI analysis couldn't be completed. Based on your ${responses.length} responses, you seem most interested in ${topCategories.join(", ")}. Your responses were generally ${responseQuality}.`,
+        overview: "This is a fallback analysis created when the AI analysis couldn't be completed.",
         traits: [
           {
-            trait: "Analytical Thinking",
-            score: 0.75,
-            description: "You show a tendency to analyze situations carefully before making decisions.",
-            strengths: ["Problem solving", "Critical thinking", "Attention to detail"],
-            challenges: ["May overthink simple situations", "Could take longer to decide"],
-            growthSuggestions: ["Practice balancing analysis with intuition", "Set time limits for decisions"]
-          },
-          {
-            trait: "Adaptability",
+            trait: "Resilience",
             score: 0.7,
-            description: "You demonstrate ability to adjust to new situations and changing environments.",
-            strengths: ["Flexibility", "Resilience", "Open to new experiences"],
-            challenges: ["May sometimes feel uncomfortable with rapid change", "Might need time to process transitions"],
-            growthSuggestions: ["Embrace uncertainty as opportunity", "Practice mindfulness during transitions"]
-          },
-          {
-            trait: "Empathy",
-            score: 0.8,
-            description: "You show strong ability to understand and share feelings of others.",
-            strengths: ["Strong listening skills", "Building rapport", "Understanding others' perspectives"],
-            challenges: ["May take on others' emotional burdens", "Could be affected by negative environments"],
-            growthSuggestions: ["Practice emotional boundaries", "Balance empathy with self-care"]
+            description: "You show ability to recover from setbacks and adapt to challenges.",
+            strengths: ["Persistence", "Adaptability"],
+            challenges: ["May push too hard sometimes"],
+            growthSuggestions: ["Balance effort with rest"]
           }
         ],
         intelligence: {
-          type: "Balanced Intelligence",
-          score: 0.65,
-          description: "You demonstrate a balanced profile across different types of intelligence.",
-          domains: [
-            {
-              name: "Analytical Intelligence",
-              score: 0.68,
-              description: "Your ability to solve problems, analyze information and think critically."
-            },
-            {
-              name: "Emotional Intelligence",
-              score: 0.72,
-              description: "Your ability to understand and manage emotions, both yours and others'."
-            }
-          ]
+          type: "General Intelligence",
+          score: 0.5,
+          description: "A balanced set of cognitive capabilities.",
+          domains: []
         },
-        intelligenceScore: 65,
-        emotionalIntelligenceScore: 72,
-        cognitiveStyle: "Balanced Thinker",
-        valueSystem: ["Growth", "Connection", "Understanding"],
-        motivators: ["Learning new things", "Helping others", "Personal development"],
-        inhibitors: ["Self-doubt", "Perfectionism"],
-        weaknesses: ["May overthink decisions", "Could struggle with setting boundaries"],
-        growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action"],
+        intelligenceScore: 50,
+        emotionalIntelligenceScore: 50,
+        cognitiveStyle: "Balanced",
+        valueSystem: ["Growth"],
+        motivators: ["Learning"],
+        inhibitors: [],
+        weaknesses: [],
+        growthAreas: [],
         relationshipPatterns: {
-          strengths: ["Tends to be supportive", "Values deep connections"],
-          challenges: ["May avoid conflict", "Could struggle with setting boundaries"],
-          compatibleTypes: ["Independent thinkers", "Growth-oriented individuals"]
+          strengths: [],
+          challenges: [],
+          compatibleTypes: []
         },
-        careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers"],
-        learningPathways: ["Structured learning with practical applications", "Collaborative learning environments"],
-        roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important."
+        careerSuggestions: [],
+        learningPathways: [],
+        roadmap: "",
+        shadowAspects: []
       };
     } catch (error) {
       console.error("Error generating fallback analysis:", error);
@@ -416,7 +414,8 @@ export const useAnalyzeResponses = (
         },
         careerSuggestions: [],
         learningPathways: [],
-        roadmap: ""
+        roadmap: "",
+        shadowAspects: []
       };
     }
   };

@@ -5,6 +5,7 @@ import { PersonalityAnalysis } from '@/utils/types';
 import { useState, useEffect, useRef } from 'react';
 import { useAnalysisRefresh } from './useAnalysisRefresh';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Main hook for accessing AI analysis functionality
 export const useAIAnalysis = () => {
@@ -94,7 +95,7 @@ export const useAIAnalysis = () => {
     }
   }, [analysis, isLoading, loadAllAnalysesFromSupabase, analysisHistory.length, isRetrying]);
 
-  // Add the forceFetchAllAnalyses method to fix the TypeScript error
+  // Add the forceFetchAllAnalyses method
   const forceFetchAllAnalyses = async (): Promise<PersonalityAnalysis[]> => {
     try {
       console.log("[useAIAnalysis] Force fetching all analyses");

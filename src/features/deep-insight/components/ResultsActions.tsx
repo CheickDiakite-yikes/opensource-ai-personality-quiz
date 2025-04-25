@@ -5,16 +5,40 @@ import { Download, Sparkles, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AnalysisData, toJsonObject } from "../utils/analysis/types";
+import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import { Json } from "@/integrations/supabase/types";
+import { Json } from "@/utils/types";
 
 interface ResultsActionsProps {
   onSave: () => void;
   itemVariants: any;
   analysis: AnalysisData;
 }
+
+// Convert object to JSON compatible format for Supabase
+const toJsonObject = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => toJsonObject(item));
+  }
+  
+  // Handle objects
+  if (typeof obj === 'object' && obj !== null) {
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = toJsonObject(value);
+    }
+    return result;
+  }
+  
+  // Handle primitive values
+  return obj;
+};
 
 export const ResultsActions: React.FC<ResultsActionsProps> = ({ 
   onSave, 
@@ -41,7 +65,6 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         const jsonAnalysis = toJsonObject(analysis);
         
         // Prepare analysis data in the format required by the database
-        // Cast everything to Json type to satisfy TypeScript
         const analysisData = {
           id: analysisId,
           user_id: user.id,
