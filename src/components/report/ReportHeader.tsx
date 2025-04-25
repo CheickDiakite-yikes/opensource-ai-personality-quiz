@@ -24,6 +24,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
   const renderDate = () => {
     try {
+      if (!analysis?.createdAt) return "Recent assessment";
       const date = new Date(analysis.createdAt);
       return format(date, "MMMM d, yyyy");
     } catch (error) {
@@ -43,19 +44,27 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
   // Ensure we have a valid analysis object with an ID
   if (!analysis || !analysis.id) {
-    console.log("Invalid analysis in ReportHeader:", analysis);
     return (
       <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold">
               {isMobile ? "Analysis" : "Personality Analysis"}
             </h1>
             <div className="flex items-center text-muted-foreground mt-1">
               <Calendar className="h-4 w-4 mr-1" />
-              Loading analysis...
+              {analysisHistory.length > 0 ? "Select an analysis" : "No analyses available"}
             </div>
           </div>
+          
+          <HeaderActions 
+            analysis={analysis || {} as PersonalityAnalysis} // Pass empty object as fallback
+            analysisHistory={analysisHistory}
+            isMobile={isMobile}
+            isRefreshing={isRefreshing}
+            onAnalysisChange={onAnalysisChange}
+            onRefresh={handleRefresh}
+          />
         </div>
       </div>
     );
@@ -64,7 +73,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold">
             {isMobile ? "Your Analysis" : "Your Personality Analysis"}
           </h1>

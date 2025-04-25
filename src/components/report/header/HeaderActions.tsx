@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShareDialog } from "./ShareDialog";
 import { HistoryDropdown } from "./HistoryDropdown";
@@ -25,9 +25,20 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
   onRefresh
 }) => {
   const [copied, setCopied] = useState(false);
-  const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
+  
+  // Ensure we have a valid analysis ID before creating the share URL
+  const shareUrl = analysis && analysis.id 
+    ? `${window.location.origin}/shared/${analysis.id}`
+    : '';
 
   const handleCopyLink = () => {
+    if (!shareUrl) {
+      toast.error("Cannot copy link", {
+        description: "No valid analysis is currently selected"
+      });
+      return;
+    }
+    
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     toast.success("Link copied to clipboard", {
@@ -41,7 +52,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
 
   return (
     <div className={`flex items-center gap-2 ${isMobile ? 'self-start w-full' : 'self-end sm:self-auto'}`}>
-      {hasValidAnalysis && (
+      {hasValidAnalysis ? (
         <>
           <Button
             onClick={handleCopyLink}
@@ -64,10 +75,8 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
           
           <ShareDialog shareUrl={shareUrl} isMobile={isMobile} />
         </>
-      )}
-      
-      {/* When there's no valid analysis, only show a refresh button */}
-      {!hasValidAnalysis && (
+      ) : (
+        // When there's no valid analysis, show a refresh button
         <Button
           onClick={onRefresh}
           size={isMobile ? "sm" : "default"}
@@ -75,6 +84,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
           disabled={isRefreshing}
           className={isMobile ? "flex-1 px-2" : undefined}
         >
+          <RefreshCcw className="h-4 w-4 mr-2" />
           {isRefreshing ? "Loading..." : "Refresh Analyses"}
         </Button>
       )}

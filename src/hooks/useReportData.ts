@@ -80,6 +80,19 @@ export function useReportData(reportId?: string) {
     initialLoad();
   }, [reportId]); // Depend only on reportId to avoid unnecessary reruns
 
+  // When on /report with no reportId parameter, we need to set the current analysis
+  // to the first one in history if available
+  useEffect(() => {
+    if (!reportId && !isLoading && !isLoadingAllAnalyses && currentHistory.length > 0 && 
+        !stableAnalysis && !directlyFetchedAnalysis) {
+      console.log("No reportId but history available, setting current analysis to:", currentHistory[0].id);
+      const found = setCurrentAnalysis(currentHistory[0].id);
+      if (found) {
+        console.log("Successfully set current analysis from history");
+      }
+    }
+  }, [reportId, isLoading, isLoadingAllAnalyses, currentHistory, stableAnalysis, directlyFetchedAnalysis, setCurrentAnalysis]);
+
   // Handle setting the analysis when data changes
   useEffect(() => {
     const currentAnalysis = directlyFetchedAnalysis || stableAnalysis || analysis;
@@ -105,7 +118,7 @@ export function useReportData(reportId?: string) {
         });
       }
     }
-  }, [reportId, analysis, stableAnalysis, directlyFetchedAnalysis, isLoading, loadAttempts, isChangingAnalysis]);
+  }, [reportId, analysis, stableAnalysis, directlyFetchedAnalysis, isLoading, loadAttempts, isChangingAnalysis, setCurrentAnalysis, fetchAnalysisById]);
   
   // Update stable analysis when the main analysis changes
   useEffect(() => {
@@ -116,29 +129,6 @@ export function useReportData(reportId?: string) {
     }
   }, [analysis, stableAnalysis]);
   
-  // Handle first analysis load or redirect
-  useEffect(() => {
-    // Skip if we're still loading or changing analyses
-    if (isLoading || isLoadingAllAnalyses || isChangingAnalysis) {
-      return;
-    }
-    
-    // If we have analyses but no specific ID was provided, use the most recent one
-    if (!reportId && currentHistory && currentHistory.length > 0) {
-      console.log("No reportId but history available, navigating to first analysis:", currentHistory[0].id);
-      navigate(`/report/${currentHistory[0].id}`, { replace: true });
-    } 
-    // If we have no analyses and we've tried loading, go to assessment
-    else if (!reportId && !isLoading && !isLoadingAllAnalyses && 
-             currentHistory.length === 0 && loadAttempts > 0) {
-      console.log("No analyses found after loading attempts, redirecting to assessment");
-      toast.error("No analysis reports found", {
-        description: "Please complete the assessment first to view your report"
-      });
-      navigate("/assessment", { replace: true });
-    }
-  }, [reportId, currentHistory, isLoading, isLoadingAllAnalyses, loadAttempts, isChangingAnalysis, navigate]);
-
   // Handle changing between analyses
   const handleAnalysisChange = useCallback(async (analysisId: string) => {
     if (analysisId === reportId) return;
@@ -210,8 +200,16 @@ export function useReportData(reportId?: string) {
             const directAnalysis = await fetchAnalysisById(reportId);
             if (directAnalysis) {
               setDirectlyFetchedAnalysis(directAnalysis);
+            } else if (analyses.length > 0) {
+              // If we couldn't find the requested analysis, but we have others, use the first one
+              console.log("Using first available analysis instead:", analyses[0].id);
+              navigate(`/report/${analyses[0].id}`, { replace: true });
             }
           }
+        } else if (!reportId && analyses.length > 0) {
+          // If we're on the base route and have analyses, navigate to the first one
+          console.log("No reportId, navigating to first analysis:", analyses[0].id);
+          navigate(`/report/${analyses[0].id}`, { replace: true });
         }
       } else {
         console.log("No analyses found during refresh");
@@ -221,7 +219,7 @@ export function useReportData(reportId?: string) {
       console.error("Error manually refreshing analyses:", error);
       toast.error("Failed to refresh analyses", { id: "refresh-toast" });
     }
-  }, [reportId, stableAnalysis, directlyFetchedAnalysis, forceFetchAllAnalyses, fetchAnalysisById, setCurrentAnalysis]);
+  }, [reportId, stableAnalysis, directlyFetchedAnalysis, forceFetchAllAnalyses, fetchAnalysisById, setCurrentAnalysis, navigate]);
 
   // Determine the current displayable analysis
   const displayAnalysis = directlyFetchedAnalysis || stableAnalysis || analysis;
