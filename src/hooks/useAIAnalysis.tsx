@@ -49,6 +49,7 @@ export const useAIAnalysis = () => {
 
   // Track when this hook is mounted/unmounted to prevent stale state
   const isMounted = useRef(true);
+  
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -56,128 +57,57 @@ export const useAIAnalysis = () => {
     };
   }, []);
 
-  // Add a function to manually force refresh from all sources
-  const forceFetchAllAnalyses = async () => {
-    const toastId = "force-refresh";
-    toast.loading("Forcing complete analysis refresh...", { id: toastId });
-    console.log("[useAIAnalysis] Starting force fetch of all analyses");
-    
-    try {
-      // First try the direct refresh from useAnalysisRefresh
-      const directAnalyses = await forceAnalysisRefresh().catch(err => {
-        console.error("Error in forceAnalysisRefresh:", err);
-        return null;
-      });
+  // Handle initial loading and periodic refreshes
+  useEffect(() => {
+    // Only load if the component is still mounted
+    if (isMounted.current && !isRetrying) {
+      console.log("[useAIAnalysis] Initial load or forced refresh triggered");
       
-      if (!isMounted.current) return null;
-      console.log(`[useAIAnalysis] Direct refresh found ${directAnalyses?.length || 0} analyses`);
-      
-      // Then try the loadAll method from useAIAnalysisCore
-      const coreAnalyses = await loadAllAnalysesFromSupabase().catch(err => {
-        console.error("Error in loadAllAnalysesFromSupabase:", err);
-        return null;
-      });
-      
-      if (!isMounted.current) return null;
-      console.log(`[useAIAnalysis] Core refresh found ${coreAnalyses?.length || 0} analyses`);
-      
-      // Determine if we succeeded
-      const totalAnalyses = Math.max(
-        directAnalyses?.length || 0,
-        coreAnalyses?.length || 0,
-        analysisHistory?.length || 0
-      );
-      
-      if (totalAnalyses > 0) {
-        toast.success(`Found ${totalAnalyses} analyses`, { 
-          id: toastId,
-          description: "Your reports are now available"
-        });
-      } else {
-        toast.error("Could not find any analyses", { 
-          id: toastId,
-          description: "Please check your connection and try again"
-        });
-      }
-      
-      return directAnalyses || coreAnalyses;
-    } catch (error) {
-      console.error("[useAIAnalysis] Error in forceFetchAllAnalyses:", error);
-      toast.error("Error refreshing analyses", { id: toastId });
-      return null;
-    }
-  };
-
-  // Fixed API for analysis generation to prevent duplicate retries
-  const enhancedAnalyzeResponses = async (responses: any) => {
-    console.log("[useAIAnalysis] Starting enhanced analysis with responses:", responses.length);
-    
-    // CRITICAL FIX: Use ref to prevent duplicate retries
-    if (retryRef.current) {
-      console.warn("[useAIAnalysis] Analysis is already being retried, skipping redundant retry");
-      throw new Error("Analysis is already being retried");
-    }
-    
-    try {
-      // First try the standard analysis method
-      const result = await analyzeResponses(responses);
-      console.log("[useAIAnalysis] Analysis completed successfully:", result?.id);
-      return result;
-    } catch (error) {
-      console.error("[useAIAnalysis] Error in first analysis attempt:", error);
-      
-      // Only retry if we aren't already doing so
-      if (retryRef.current) {
-        console.warn("[useAIAnalysis] Already retrying, not starting another retry");
-        throw error;
-      }
-      
-      // Mark that we're retrying to prevent multiple simultaneous retries
-      setIsRetrying(true);
-      retryRef.current = true;
-      
-      toast.loading("First analysis attempt failed, retrying once...", { id: "retry-analysis" });
-      
-      try {
-        // Wait 3 seconds before retrying
-        await new Promise(resolve => setTimeout(resolve, 3000));
+      // Avoid unnecessary loading if we already have data
+      if (!analysis && !isLoading && analysisHistory.length === 0) {
+        console.log("[useAIAnalysis] No analysis data found, loading from Supabase");
         
-        if (!isMounted.current) {
-          throw new Error("Component unmounted during retry");
-        }
+        setIsRetrying(true);
+        retryRef.current = true;
         
-        const secondAttempt = await analyzeResponses(responses);
-        console.log("[useAIAnalysis] Second analysis attempt succeeded:", secondAttempt?.id);
-        toast.success("Analysis completed on retry", { id: "retry-analysis" });
-        return secondAttempt;
-      } catch (secondError) {
-        console.error("[useAIAnalysis] Second analysis attempt also failed:", secondError);
-        toast.error("Analysis failed after multiple attempts", { id: "retry-analysis" });
-        throw secondError;
-      } finally {
-        if (isMounted.current) {
-          setIsRetrying(false);
-        }
-        retryRef.current = false;
+        // Load all analyses from Supabase
+        loadAllAnalysesFromSupabase()
+          .then(analyses => {
+            if (isMounted.current) {
+              if (analyses && analyses.length > 0) {
+                console.log(`[useAIAnalysis] Successfully loaded ${analyses.length} analyses from Supabase`);
+              } else {
+                console.log("[useAIAnalysis] No analyses found in Supabase");
+              }
+              setIsRetrying(false);
+              retryRef.current = false;
+            }
+          })
+          .catch(error => {
+            if (isMounted.current) {
+              console.error("[useAIAnalysis] Error loading analyses:", error);
+              setIsRetrying(false);
+              retryRef.current = false;
+            }
+          });
       }
     }
-  };
+  }, [analysis, isLoading, loadAllAnalysesFromSupabase, analysisHistory.length, isRetrying]);
 
   return {
     analysis,
-    isLoading: isLoading || isLoadingAnalysisById,
+    isLoading,
     isAnalyzing,
-    analyzeResponses: enhancedAnalyzeResponses,
+    analyzeResponses,
     getAnalysisHistory,
     setCurrentAnalysis,
     refreshAnalysis,
-    getAnalysisById,
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
     fetchAnalysisById,
+    getAnalysisById,
+    isLoadingAnalysisById,
     fetchError,
-    analysisHistory,
-    forceFetchAllAnalyses,
-    isRetrying
+    forceAnalysisRefresh
   };
 };

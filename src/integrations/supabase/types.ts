@@ -162,6 +162,51 @@ export type Database = {
         }
         Relationships: []
       }
+      big_me_analyses: {
+        Row: {
+          analysis_report: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_report: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          analysis_report?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deep_analyses: {
+        Row: {
+          analysis_data: Json
+          assessment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          assessment_id: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          analysis_data?: Json
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -191,6 +236,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_e2e_test_analysis: {
+        Args: {
+          analysis_id: string
+          analysis_title: string
+          analysis_overview: string
+        }
+        Returns: string
+      }
       get_analysis_by_id: {
         Args: { analysis_id: string }
         Returns: Json

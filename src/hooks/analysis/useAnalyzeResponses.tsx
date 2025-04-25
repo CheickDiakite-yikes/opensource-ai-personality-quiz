@@ -203,27 +203,27 @@ export const useAnalyzeResponses = (
           
           console.log("Saving analysis to Supabase with ID:", result.data.analysis.id);
           
-          // Create a clean insert object with proper null handling
+          // Create a clean insert object that matches the database schema exactly
           const insertObject = {
             id: result.data.analysis.id,
             user_id: user.id,
             assessment_id: assessmentId,
             result: jsonAnalysis,
-            overview: result.data.analysis.overview,
-            traits: jsonAnalysis.traits || [],
+            overview: result.data.analysis.overview || "",
+            traits: Array.isArray(jsonAnalysis.traits) ? jsonAnalysis.traits : [],
             intelligence: jsonAnalysis.intelligence || null,
             intelligence_score: result.data.analysis.intelligenceScore || 0,
             emotional_intelligence_score: result.data.analysis.emotionalIntelligenceScore || 0,
             cognitive_style: jsonAnalysis.cognitiveStyle || null,
-            value_system: jsonAnalysis.valueSystem || [],
-            motivators: jsonAnalysis.motivators || [],
-            inhibitors: jsonAnalysis.inhibitors || [],
-            weaknesses: jsonAnalysis.weaknesses || [],
-            shadow_aspects: jsonAnalysis.shadowAspects || [], 
-            growth_areas: jsonAnalysis.growthAreas || [],
+            value_system: Array.isArray(jsonAnalysis.valueSystem) ? jsonAnalysis.valueSystem : [],
+            motivators: Array.isArray(jsonAnalysis.motivators) ? jsonAnalysis.motivators : [],
+            inhibitors: Array.isArray(jsonAnalysis.inhibitors) ? jsonAnalysis.inhibitors : [],
+            weaknesses: Array.isArray(jsonAnalysis.weaknesses) ? jsonAnalysis.weaknesses : [],
+            shadow_aspects: Array.isArray(jsonAnalysis.shadowAspects) ? jsonAnalysis.shadowAspects : [], 
+            growth_areas: Array.isArray(jsonAnalysis.growthAreas) ? jsonAnalysis.growthAreas : [],
             relationship_patterns: jsonAnalysis.relationshipPatterns || null,
-            career_suggestions: jsonAnalysis.careerSuggestions || [],
-            learning_pathways: jsonAnalysis.learningPathways || [],
+            career_suggestions: Array.isArray(jsonAnalysis.careerSuggestions) ? jsonAnalysis.careerSuggestions : [],
+            learning_pathways: Array.isArray(jsonAnalysis.learningPathways) ? jsonAnalysis.learningPathways : [],
             roadmap: result.data.analysis.roadmap || ""
           };
           
@@ -368,7 +368,11 @@ export const useAnalyzeResponses = (
         inhibitors: ["Self-doubt", "Perfectionism"],
         weaknesses: ["May overthink decisions", "Could struggle with setting boundaries"],
         growthAreas: ["Developing more confidence in decisions", "Finding balance between analysis and action"],
-        relationshipPatterns: ["Tends to be supportive", "Values deep connections over many superficial ones"],
+        relationshipPatterns: {
+          strengths: ["Tends to be supportive", "Values deep connections"],
+          challenges: ["May avoid conflict", "Could struggle with setting boundaries"],
+          compatibleTypes: ["Independent thinkers", "Growth-oriented individuals"]
+        },
         careerSuggestions: ["Roles requiring analytical thinking", "Positions involving helping others", "Creative problem-solving careers"],
         learningPathways: ["Structured learning with practical applications", "Collaborative learning environments"],
         roadmap: "Focus on developing confidence in your decisions while maintaining your analytical strengths. Your natural empathy makes you well-suited for roles where understanding others is important."
@@ -405,7 +409,11 @@ export const useAnalyzeResponses = (
         inhibitors: [],
         weaknesses: [],
         growthAreas: [],
-        relationshipPatterns: [],
+        relationshipPatterns: {
+          strengths: [],
+          challenges: [],
+          compatibleTypes: []
+        },
         careerSuggestions: [],
         learningPathways: [],
         roadmap: ""
