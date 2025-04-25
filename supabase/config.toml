@@ -1,5 +1,3 @@
 
 project_id = "fhmvdprcmhkolyzuecrr"
 
-[functions.deep-insight-analysis]
-verify_jwt = true
