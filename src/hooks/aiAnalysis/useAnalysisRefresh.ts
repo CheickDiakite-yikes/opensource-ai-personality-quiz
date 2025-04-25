@@ -1,17 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PersonalityAnalysis } from '@/utils/types';
 import { toast } from 'sonner';
-import { sortAnalysesByDate } from './utils';
-import { convertToPersonalityAnalysis } from './utils';
+import { sortAnalysesByDate, convertToPersonalityAnalysis } from './utils';
 
 export function useAnalysisRefresh() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user } = useAuth();
 
-  const forceAnalysisRefresh = async (): Promise<PersonalityAnalysis[]> => {
+  const forceAnalysisRefresh = useCallback(async (): Promise<PersonalityAnalysis[]> => {
     if (!user) {
       console.log('[AnalysisRefresh] No user logged in, cannot refresh');
       return [];
@@ -21,12 +20,18 @@ export function useAnalysisRefresh() {
     console.log('[AnalysisRefresh] Forcing analysis refresh for user:', user.id);
 
     try {
-      // Force fetch the most recent analyses
+      // Force fetch the most recent analyses with a generous timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const { data: analyses, error } = await supabase
         .from('analyses')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
+      
+      clearTimeout(timeoutId);
 
       if (error) {
         throw new Error(`Failed to fetch analyses: ${error.message}`);
@@ -40,7 +45,9 @@ export function useAnalysisRefresh() {
       console.log(`[AnalysisRefresh] Found ${analyses.length} analyses in the database`);
       
       // Convert to PersonalityAnalysis objects
-      const convertedAnalyses = analyses.map(convertToPersonalityAnalysis).filter(Boolean);
+      const convertedAnalyses = analyses
+        .map(convertToPersonalityAnalysis)
+        .filter(Boolean) as PersonalityAnalysis[];
       
       // Sort by date (newest first)
       const sortedAnalyses = sortAnalysesByDate(convertedAnalyses);
@@ -55,7 +62,7 @@ export function useAnalysisRefresh() {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [user]);
 
   return {
     isRefreshing,

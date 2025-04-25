@@ -19,37 +19,47 @@ interface ResultsActionsProps {
 
 // Prepare typed analysis data for database insertion
 const prepareAnalysisData = (analysis: AnalysisData, userId: string) => {
+  if (!analysis) {
+    console.error("Cannot prepare analysis data: Analysis is null or undefined");
+    return null;
+  }
+  
   const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
   
-  // Convert all complex objects to Json type
-  return {
-    id: analysisId,
-    user_id: userId,
-    assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
-    overview: analysis.overview || "",
-    traits: toJsonObject(analysis.traits || []),
-    intelligence: toJsonObject(analysis.intelligence || {}),
-    intelligence_score: analysis.intelligenceScore || 0,
-    emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
-    cognitive_style: toJsonObject(analysis.cognitiveStyle || {}),
-    value_system: toJsonObject(analysis.valueSystem || []),
-    motivators: toJsonObject(analysis.motivators || []),
-    inhibitors: toJsonObject(analysis.inhibitors || []),
-    weaknesses: toJsonObject(analysis.weaknesses || []),
-    growth_areas: toJsonObject(analysis.growthAreas || []),
-    relationship_patterns: toJsonObject(analysis.relationshipPatterns || {}),
-    career_suggestions: toJsonObject(analysis.careerSuggestions || []),
-    learning_pathways: toJsonObject(analysis.learningPathways || []),
-    roadmap: analysis.roadmap || "",
-    result: toJsonObject(analysis),
-    // Deep Insight specific fields
-    response_patterns: toJsonObject(analysis.responsePatterns || {}),
-    core_traits: toJsonObject(analysis.coreTraits || {}),
-    cognitive_patterning: toJsonObject(analysis.cognitivePatterning || {}),
-    emotional_architecture: toJsonObject(analysis.emotionalArchitecture || {}),
-    interpersonal_dynamics: toJsonObject(analysis.interpersonalDynamics || {}),
-    growth_potential: toJsonObject(analysis.growthPotential || {})
-  };
+  try {
+    // Convert all complex objects to Json type
+    return {
+      id: analysisId,
+      user_id: userId,
+      assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
+      overview: analysis.overview || "",
+      traits: toJsonObject(analysis.traits || []),
+      intelligence: toJsonObject(analysis.intelligence || {}),
+      intelligence_score: analysis.intelligenceScore || 0,
+      emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
+      cognitive_style: toJsonObject(analysis.cognitiveStyle || {}),
+      value_system: toJsonObject(analysis.valueSystem || []),
+      motivators: toJsonObject(analysis.motivators || []),
+      inhibitors: toJsonObject(analysis.inhibitors || []),
+      weaknesses: toJsonObject(analysis.weaknesses || []),
+      growth_areas: toJsonObject(analysis.growthAreas || []),
+      relationship_patterns: toJsonObject(analysis.relationshipPatterns || {}),
+      career_suggestions: toJsonObject(analysis.careerSuggestions || []),
+      learning_pathways: toJsonObject(analysis.learningPathways || []),
+      roadmap: analysis.roadmap || "",
+      result: toJsonObject(analysis),
+      // Deep Insight specific fields
+      response_patterns: toJsonObject(analysis.responsePatterns || {}),
+      core_traits: toJsonObject(analysis.coreTraits || {}),
+      cognitive_patterning: toJsonObject(analysis.cognitivePatterning || {}),
+      emotional_architecture: toJsonObject(analysis.emotionalArchitecture || {}),
+      interpersonal_dynamics: toJsonObject(analysis.interpersonalDynamics || {}),
+      growth_potential: toJsonObject(analysis.growthPotential || {})
+    };
+  } catch (error) {
+    console.error("Error preparing analysis data:", error);
+    return null;
+  }
 };
 
 export const ResultsActions: React.FC<ResultsActionsProps> = ({ 
@@ -73,12 +83,20 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         // Prepare analysis data in the format required by the database
         const analysisData = prepareAnalysisData(analysis, user.id);
         
+        if (!analysisData) {
+          throw new Error("Failed to prepare analysis data");
+        }
+        
         // Check if the analysis already exists
-        const { data: existingData } = await supabase
+        const { data: existingData, error: checkError } = await supabase
           .from('analyses')
           .select('id')
           .eq('id', analysisData.id)
           .maybeSingle();
+
+        if (checkError) {
+          console.error("Error checking for existing analysis:", checkError);
+        }
 
         if (existingData) {
           // Update existing analysis

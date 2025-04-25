@@ -2,7 +2,7 @@
 import { useAIAnalysisCore } from './aiAnalysis/useAIAnalysisCore';
 import { useAnalysisById } from './aiAnalysis/useAnalysisById';
 import { PersonalityAnalysis } from '@/utils/types';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAnalysisRefresh } from './useAnalysisRefresh';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,29 +27,12 @@ export const useAIAnalysis = () => {
   const { getAnalysisById, isLoadingAnalysisById } = useAnalysisById();
   const { forceAnalysisRefresh } = useAnalysisRefresh();
   
-  // Track last total count for debugging
-  const [lastHistoryCount, setLastHistoryCount] = useState<number>(0);
+  // State for tracking retries and loading
   const [isRetrying, setIsRetrying] = useState(false);
   const retryRef = useRef<boolean>(false); // Use ref to avoid stale closures
   const maxRetries = useRef<number>(3); // Maximum number of retries
   
-  // Log changes to analysis history for debugging
-  useEffect(() => {
-    const currentCount = analysisHistory?.length || 0;
-    if (currentCount !== lastHistoryCount) {
-      console.log(`[useAIAnalysis] Analysis history count changed: ${lastHistoryCount} -> ${currentCount}`);
-      
-      // Add detailed logging about analyses
-      if (analysisHistory && analysisHistory.length > 0) {
-        console.log(`[useAIAnalysis] First analysis ID: ${analysisHistory[0].id}`);
-        console.log(`[useAIAnalysis] Analysis history IDs: ${analysisHistory.map(a => a.id).join(', ')}`);
-      }
-      
-      setLastHistoryCount(currentCount);
-    }
-  }, [analysisHistory, lastHistoryCount]);
-
-  // Track when this hook is mounted/unmounted to prevent stale state
+  // Track when this hook is mounted/unmounted
   const isMounted = useRef(true);
   
   useEffect(() => {
@@ -59,75 +42,68 @@ export const useAIAnalysis = () => {
     };
   }, []);
 
-  // Handle initial loading and periodic refreshes
+  // Handle initial loading of analyses
   useEffect(() => {
-    // Only load if the component is still mounted
-    if (isMounted.current && !isRetrying) {
-      console.log("[useAIAnalysis] Initial load or forced refresh triggered");
+    if (isMounted.current && !isRetrying && analysisHistory.length === 0 && !isLoading) {
+      console.log("[useAIAnalysis] No analysis data found, loading from Supabase");
       
-      // Avoid unnecessary loading if we already have data
-      if (!analysis && !isLoading && analysisHistory.length === 0) {
-        console.log("[useAIAnalysis] No analysis data found, loading from Supabase");
-        
-        setIsRetrying(true);
-        retryRef.current = true;
-        
-        let retryCount = 0;
-        const attemptLoad = async () => {
-          try {
-            // Load all analyses from Supabase
-            const analyses = await loadAllAnalysesFromSupabase();
-            
-            if (isMounted.current) {
-              if (analyses && analyses.length > 0) {
-                console.log(`[useAIAnalysis] Successfully loaded ${analyses.length} analyses from Supabase`);
-                setIsRetrying(false);
-                retryRef.current = false;
-              } else if (retryCount < maxRetries.current) {
-                console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current}: No analyses found, retrying...`);
-                retryCount++;
-                setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
-              } else {
-                console.log("[useAIAnalysis] Max retries reached, no analyses found");
-                setIsRetrying(false);
-                retryRef.current = false;
-              }
-            }
-          } catch (error) {
-            if (isMounted.current) {
-              console.error("[useAIAnalysis] Error loading analyses:", error);
-              if (retryCount < maxRetries.current) {
-                console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current} due to error`);
-                retryCount++;
-                setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
-              } else {
-                console.log("[useAIAnalysis] Max retries reached after errors");
-                setIsRetrying(false);
-                retryRef.current = false;
-              }
+      setIsRetrying(true);
+      retryRef.current = true;
+      
+      let retryCount = 0;
+      const attemptLoad = async () => {
+        try {
+          // Load all analyses from Supabase
+          const analyses = await loadAllAnalysesFromSupabase();
+          
+          if (isMounted.current) {
+            if (analyses && analyses.length > 0) {
+              console.log(`[useAIAnalysis] Successfully loaded ${analyses.length} analyses from Supabase`);
+              setIsRetrying(false);
+              retryRef.current = false;
+            } else if (retryCount < maxRetries.current) {
+              console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current}: No analyses found, retrying...`);
+              retryCount++;
+              setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
+            } else {
+              console.log("[useAIAnalysis] Max retries reached, no analyses found");
+              setIsRetrying(false);
+              retryRef.current = false;
             }
           }
-        };
-        
-        // Start the retry process
-        attemptLoad();
-      }
+        } catch (error) {
+          if (isMounted.current) {
+            console.error("[useAIAnalysis] Error loading analyses:", error);
+            if (retryCount < maxRetries.current) {
+              console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current} due to error`);
+              retryCount++;
+              setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
+            } else {
+              console.log("[useAIAnalysis] Max retries reached after errors");
+              setIsRetrying(false);
+              retryRef.current = false;
+            }
+          }
+        }
+      };
+      
+      // Start the retry process
+      attemptLoad();
     }
-  }, [analysis, isLoading, loadAllAnalysesFromSupabase, analysisHistory.length, isRetrying]);
+  }, [analysisHistory.length, isLoading, loadAllAnalysesFromSupabase, isRetrying]);
 
-  // Add the forceFetchAllAnalyses method
-  const forceFetchAllAnalyses = async (): Promise<PersonalityAnalysis[]> => {
+  // Add the forceFetchAllAnalyses method 
+  const forceFetchAllAnalyses = useCallback(async (): Promise<PersonalityAnalysis[]> => {
     try {
       console.log("[useAIAnalysis] Force fetching all analyses");
       toast.loading("Fetching all analyses...", { id: "force-fetch" });
       
-      // Try to get analyses from Supabase with direct fetch
+      // Try direct approach - get all analyses at once
       let allAnalyses = await fetchAnalysesFromSupabase(true);
       
       if (allAnalyses && allAnalyses.length > 0) {
         console.log(`[useAIAnalysis] Direct fetch successful, found ${allAnalyses.length} analyses`);
         toast.success(`Found ${allAnalyses.length} analyses`, { id: "force-fetch" });
-        console.log(`[useAIAnalysis] Analysis IDs: ${allAnalyses.map(a => a.id).join(', ')}`);
         return allAnalyses;
       }
       
@@ -160,7 +136,44 @@ export const useAIAnalysis = () => {
       });
       return [];
     }
-  };
+  }, [fetchAnalysesFromSupabase, loadAllAnalysesFromSupabase, forceAnalysisRefresh]);
+
+  // Enhanced direct fetch with better error handling
+  const enhancedFetchById = useCallback(async (id: string): Promise<PersonalityAnalysis | null> => {
+    try {
+      // First try our main fetch method
+      const result = await fetchAnalysisById(id);
+      if (result) return result;
+      
+      // If that fails, try a direct database query with a timeout
+      console.log(`Direct Supabase query for analysis ID: ${id}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .abortSignal(controller.signal)
+        .maybeSingle();
+      
+      clearTimeout(timeoutId);
+      
+      if (error) throw error;
+      if (!data) return null;
+      
+      // Use the getAnalysisById as a last resort
+      if (!result) {
+        return await getAnalysisById(id);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in enhancedFetchById for ID ${id}:`, error);
+      return null;
+    }
+  }, [fetchAnalysisById, getAnalysisById]);
 
   return {
     analysis,
@@ -172,11 +185,12 @@ export const useAIAnalysis = () => {
     refreshAnalysis,
     fetchAnalysesFromSupabase,
     loadAllAnalysesFromSupabase,
-    fetchAnalysisById,
+    fetchAnalysisById: enhancedFetchById,
     getAnalysisById,
     isLoadingAnalysisById,
     fetchError,
     forceAnalysisRefresh,
-    forceFetchAllAnalyses
+    forceFetchAllAnalyses,
+    analysisHistory
   };
 };
