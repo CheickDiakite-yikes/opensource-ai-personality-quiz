@@ -25,6 +25,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
   onRefresh
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isRefreshingLocal, setIsRefreshingLocal] = useState(false);
   
   // Ensure we have a valid analysis ID before creating the share URL
   const shareUrl = analysis && analysis.id 
@@ -45,6 +46,17 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
       description: "Share this link to let others view your personality analysis"
     });
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  // Handle refresh with local state management
+  const handleRefreshClick = async () => {
+    setIsRefreshingLocal(true);
+    try {
+      await onRefresh();
+    } finally {
+      // Ensure we reset state even if there's an error
+      setTimeout(() => setIsRefreshingLocal(false), 2000);
+    }
   };
 
   // Check if we have a valid analysis with a proper ID
@@ -70,7 +82,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
             isMobile={isMobile}
             isRefreshing={isRefreshing}
             onAnalysisChange={onAnalysisChange}
-            onRefresh={onRefresh}
+            onRefresh={handleRefreshClick}
           />
           
           <ShareDialog shareUrl={shareUrl} isMobile={isMobile} />
@@ -78,14 +90,14 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
       ) : (
         // When there's no valid analysis, show a refresh button
         <Button
-          onClick={onRefresh}
+          onClick={handleRefreshClick}
           size={isMobile ? "sm" : "default"}
           variant="outline"
-          disabled={isRefreshing}
+          disabled={isRefreshing || isRefreshingLocal}
           className={isMobile ? "flex-1 px-2" : undefined}
         >
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          {isRefreshing ? "Loading..." : "Refresh Analyses"}
+          <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing || isRefreshingLocal ? 'animate-spin' : ''}`} />
+          {isRefreshing || isRefreshingLocal ? "Loading..." : "Refresh Analyses"}
         </Button>
       )}
     </div>

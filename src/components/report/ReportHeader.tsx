@@ -34,52 +34,32 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
   const handleRefresh = async () => {
     if (isRefreshing || !onManualRefresh) return;
+    
     setIsRefreshing(true);
     try {
       await onManualRefresh();
     } finally {
-      setIsRefreshing(false);
+      setTimeout(() => setIsRefreshing(false), 1000);
     }
   };
 
-  // Ensure we have a valid analysis object with an ID
-  if (!analysis || !analysis.id) {
-    return (
-      <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {isMobile ? "Analysis" : "Personality Analysis"}
-            </h1>
-            <div className="flex items-center text-muted-foreground mt-1">
-              <Calendar className="h-4 w-4 mr-1" />
-              {analysisHistory.length > 0 ? "Select an analysis" : "No analyses available"}
-            </div>
-          </div>
-          
-          <HeaderActions 
-            analysis={analysis || {} as PersonalityAnalysis} // Pass empty object as fallback
-            analysisHistory={analysisHistory}
-            isMobile={isMobile}
-            isRefreshing={isRefreshing}
-            onAnalysisChange={onAnalysisChange}
-            onRefresh={handleRefresh}
-          />
-        </div>
-      </div>
-    );
-  }
+  // Safe check for valid analysis
+  const hasValidAnalysis = analysis && analysis.id && analysis.id.length > 0;
 
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold">
-            {isMobile ? "Your Analysis" : "Your Personality Analysis"}
+            {isMobile ? (hasValidAnalysis ? "Your Analysis" : "Analysis") : 
+                       (hasValidAnalysis ? "Your Personality Analysis" : "Personality Analysis")}
           </h1>
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
-            {renderDate()}
+            {hasValidAnalysis ? renderDate() : 
+             (analysisHistory.length > 0 ? "Select an analysis" : "No analyses available")}
+            
+            {/* Show count of reports if we have multiple */}
             {analysisHistory.length > 1 && (
               <span className="ml-2 text-xs">
                 ({analysisHistory.length} reports available)
@@ -89,7 +69,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
 
         <HeaderActions 
-          analysis={analysis}
+          analysis={analysis || {} as PersonalityAnalysis} // Pass empty object as fallback
           analysisHistory={analysisHistory}
           isMobile={isMobile}
           isRefreshing={isRefreshing}
