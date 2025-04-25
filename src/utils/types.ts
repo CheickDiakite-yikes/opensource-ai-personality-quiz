@@ -106,6 +106,7 @@ export interface PersonalityAnalysis {
   inhibitors: string[];
   weaknesses: string[];
   growthAreas: string[];
+  shadowAspects?: string[]; // Added to fix the type error
   relationshipPatterns: RelationshipPatterns | string[];
   careerSuggestions: string[];
   learningPathways: string[];

@@ -60,11 +60,52 @@ export const convertToPersonalityAnalysis = (data: any): PersonalityAnalysis => 
     motivators: ensureArray(data.motivators),
     inhibitors: ensureArray(data.inhibitors),
     weaknesses: ensureArray(data.weaknesses),
-    shadowAspects: ensureArray(data.shadow_aspects),
     growthAreas: ensureArray(data.growth_areas),
     relationshipPatterns: relationshipPatterns,
     careerSuggestions: ensureArray(data.career_suggestions),
     learningPathways: ensureArray(data.learning_pathways),
     roadmap: data.roadmap || ''
   };
+};
+
+/**
+ * Sorts an array of analyses by date, with newest first
+ */
+export const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
+  if (!analyses || !Array.isArray(analyses)) return [];
+  
+  return [...analyses].sort((a, b) => {
+    const dateA = new Date(a.createdAt || '');
+    const dateB = new Date(b.createdAt || '');
+    return dateB.getTime() - dateA.getTime(); // Newest first
+  });
+};
+
+/**
+ * Converts a PersonalityAnalysis to a JSON-compatible format for Supabase
+ */
+export const toJsonObject = (analysis: any): Record<string, any> => {
+  // First convert the entire object to a string and back to handle circular references
+  const jsonString = JSON.stringify(analysis);
+  const jsonObject = JSON.parse(jsonString);
+  
+  // Process specific fields that need conversion
+  if (analysis.traits && Array.isArray(analysis.traits)) {
+    jsonObject.traits = analysis.traits.map((trait: any) => {
+      if (typeof trait === 'object') {
+        return { ...trait };
+      }
+      return trait;
+    });
+  }
+  
+  // Ensure all fields are JSON compatible
+  Object.keys(jsonObject).forEach(key => {
+    const value = jsonObject[key];
+    if (typeof value === 'undefined') {
+      jsonObject[key] = null;
+    }
+  });
+  
+  return jsonObject;
 };

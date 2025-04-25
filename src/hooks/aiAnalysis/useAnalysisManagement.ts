@@ -1,10 +1,21 @@
+
 import { useCallback } from 'react';
 import { saveAnalysisToHistory } from '../analysis/useLocalStorage';
-import { sortAnalysesByDate } from './utils';
 import { AIAnalysisState, AIAnalysisActions } from './types';
 import { PersonalityAnalysis } from '@/utils/types';
 
-// This hook handles selecting and managing analysis entries
+// Function to sort analyses by date, with newest first
+const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
+  if (!analyses || !Array.isArray(analyses)) return [];
+  
+  return [...analyses].sort((a, b) => {
+    const dateA = new Date(a.createdAt || '');
+    const dateB = new Date(b.createdAt || '');
+    return dateB.getTime() - dateA.getTime(); // Newest first
+  });
+};
+
+// Hook for managing analysis state
 export const useAnalysisManagement = (
   state: AIAnalysisState,
   actions: AIAnalysisActions

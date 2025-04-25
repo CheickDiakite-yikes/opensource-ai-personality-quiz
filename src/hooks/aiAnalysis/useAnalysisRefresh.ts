@@ -3,9 +3,21 @@ import { useCallback, useRef } from 'react';
 import { AIAnalysisState, AIAnalysisActions } from './types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { convertToPersonalityAnalysis, sortAnalysesByDate } from './utils';
+import { convertToPersonalityAnalysis } from './utils';
 import { toast } from 'sonner';
 import { loadAnalysisHistory } from '../analysis/useLocalStorage';
+import { PersonalityAnalysis } from '@/utils/types';
+
+// Function to sort analyses by date (newest first)
+const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
+  if (!analyses || !Array.isArray(analyses)) return [];
+  
+  return [...analyses].sort((a, b) => {
+    const dateA = new Date(a.createdAt || '');
+    const dateB = new Date(b.createdAt || '');
+    return dateB.getTime() - dateA.getTime(); // Newest first
+  });
+};
 
 // Hook for refreshing analysis data from local storage or Supabase
 export const useAnalysisRefresh = (

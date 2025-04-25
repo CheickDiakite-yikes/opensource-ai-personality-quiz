@@ -94,6 +94,41 @@ export const useAIAnalysis = () => {
     }
   }, [analysis, isLoading, loadAllAnalysesFromSupabase, analysisHistory.length, isRetrying]);
 
+  // Add the forceFetchAllAnalyses method to fix the TypeScript error
+  const forceFetchAllAnalyses = async (): Promise<PersonalityAnalysis[]> => {
+    try {
+      console.log("[useAIAnalysis] Force fetching all analyses");
+      toast.loading("Fetching all analyses...", { id: "force-fetch" });
+      
+      // Try to get analyses from Supabase
+      const allAnalyses = await fetchAnalysesFromSupabase(true);
+      
+      if (allAnalyses && allAnalyses.length > 0) {
+        toast.success(`Found ${allAnalyses.length} analyses`, { id: "force-fetch" });
+        return allAnalyses;
+      }
+      
+      // If that fails, try the forceAnalysisRefresh method
+      console.log("[useAIAnalysis] Direct fetch failed, trying forceAnalysisRefresh");
+      const analyses = await forceAnalysisRefresh();
+      
+      if (analyses && analyses.length > 0) {
+        toast.success(`Found ${analyses.length} analyses through fallback method`, { id: "force-fetch" });
+        return analyses;
+      }
+      
+      toast.error("Could not find any analyses", { id: "force-fetch" });
+      return [];
+    } catch (error) {
+      console.error("[useAIAnalysis] Error in forceFetchAllAnalyses:", error);
+      toast.error("Error fetching analyses", {
+        id: "force-fetch",
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
+      return [];
+    }
+  };
+
   return {
     analysis,
     isLoading,
@@ -108,6 +143,7 @@ export const useAIAnalysis = () => {
     getAnalysisById,
     isLoadingAnalysisById,
     fetchError,
-    forceAnalysisRefresh
+    forceAnalysisRefresh,
+    forceFetchAllAnalyses
   };
 };
