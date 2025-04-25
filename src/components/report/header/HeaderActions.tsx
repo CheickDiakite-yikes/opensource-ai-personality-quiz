@@ -52,6 +52,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
   const handleRefreshClick = async () => {
     setIsRefreshingLocal(true);
     try {
+      console.log("Initiating refresh from HeaderActions");
       await onRefresh();
     } finally {
       // Ensure we reset state even if there's an error
@@ -61,6 +62,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
 
   // Check if we have a valid analysis with a proper ID
   const hasValidAnalysis = analysis && analysis.id && analysis.id.length > 5;
+  const isCurrentlyRefreshing = isRefreshing || isRefreshingLocal;
 
   return (
     <div className={`flex items-center gap-2 ${isMobile ? 'self-start w-full' : 'self-end sm:self-auto'}`}>
@@ -80,7 +82,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
             localAnalysisHistory={analysisHistory}
             currentAnalysisId={analysis.id}
             isMobile={isMobile}
-            isRefreshing={isRefreshing}
+            isRefreshing={isCurrentlyRefreshing}
             onAnalysisChange={onAnalysisChange}
             onRefresh={handleRefreshClick}
           />
@@ -93,11 +95,11 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
           onClick={handleRefreshClick}
           size={isMobile ? "sm" : "default"}
           variant="outline"
-          disabled={isRefreshing || isRefreshingLocal}
+          disabled={isCurrentlyRefreshing}
           className={isMobile ? "flex-1 px-2" : undefined}
         >
-          <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing || isRefreshingLocal ? 'animate-spin' : ''}`} />
-          {isRefreshing || isRefreshingLocal ? "Loading..." : "Refresh Analyses"}
+          <RefreshCcw className={`h-4 w-4 mr-2 ${isCurrentlyRefreshing ? 'animate-spin' : ''}`} />
+          {isCurrentlyRefreshing ? "Loading..." : "Refresh Analyses"}
         </Button>
       )}
     </div>

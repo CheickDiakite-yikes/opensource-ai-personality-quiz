@@ -44,6 +44,22 @@ Deno.serve(async (req) => {
       }
     }
     
+    // If no ID found at all, check for path parameter
+    if (!id) {
+      try {
+        const urlParts = new URL(req.url).pathname.split('/');
+        const potentialId = urlParts[urlParts.length - 1];
+        
+        // Validate that this looks like an ID
+        if (potentialId && potentialId.length > 8) {
+          id = potentialId;
+          console.log(`[get-public-analysis] Extracted ID from path: ${id}`);
+        }
+      } catch (e) {
+        console.error("[get-public-analysis] Error extracting path ID:", e);
+      }
+    }
+    
     // Log the ID that was found
     console.log(`[get-public-analysis] Processing request for analysis ID: ${id || 'none'}`);
 
@@ -107,10 +123,13 @@ Deno.serve(async (req) => {
     // If still not found, try a more flexible search
     try {
       console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
+      // If id is very long, use the last 10 characters for the search
+      const searchPattern = id.length > 12 ? id.slice(-10) : id;
+      
       const { data: flexData, error: flexError } = await supabase
         .from('analyses')
         .select('*')
-        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .filter('id', 'ilike', `%${searchPattern}%`)
         .order('created_at', { ascending: false })
         .limit(1);
         
@@ -167,7 +186,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to get analysis',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: Deno.env.get('DENO_ENV') === 'development' ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

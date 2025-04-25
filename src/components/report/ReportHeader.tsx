@@ -35,9 +35,12 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   const handleRefresh = async () => {
     if (isRefreshing || !onManualRefresh) return;
     
+    console.log("Manual refresh triggered from header");
     setIsRefreshing(true);
     try {
       await onManualRefresh();
+    } catch (error) {
+      console.error("Error during manual refresh:", error);
     } finally {
       setTimeout(() => setIsRefreshing(false), 1000);
     }
@@ -69,7 +72,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
 
         <HeaderActions 
-          analysis={analysis || {} as PersonalityAnalysis} // Pass empty object as fallback
+          analysis={hasValidAnalysis ? analysis : {} as PersonalityAnalysis}
           analysisHistory={analysisHistory}
           isMobile={isMobile}
           isRefreshing={isRefreshing}

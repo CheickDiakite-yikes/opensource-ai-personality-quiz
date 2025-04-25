@@ -32,31 +32,39 @@ const ReportPage: React.FC = () => {
 
   // When on the /report route (with no ID), check if we have analyses available
   useEffect(() => {
+    if (redirectAttempted) return;
+    
+    // Only handle this effect when on the base route
+    if (id) return; 
+    
     const handleInitialNavigation = async () => {
-      // Only run this once per component mount
-      if (redirectAttempted) return;
-      setRedirectAttempted(true);
-      
-      console.log("ReportPage navigation check:", {
-        id,
+      console.log("ReportPage initial navigation:", {
+        id: id || 'none', 
         historyLength: analysisHistory.length,
-        isLoading
+        isLoading,
+        hasAnalysis: !!analysis
       });
       
+      // If still loading, don't do anything yet
+      if (isLoading) return;
+      
+      setRedirectAttempted(true);
+      
       // If we're on /report with no ID but have analyses, redirect to the first one
-      if (!id && !isLoading && analysisHistory.length > 0) {
-        console.log("No ID but analyses available, redirecting to first analysis:", analysisHistory[0].id);
+      if (analysisHistory.length > 0) {
+        console.log("Redirecting to first analysis:", analysisHistory[0].id);
         navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+        return;
       }
-      // If we're on /report with no analyses and no loading, try refreshing once
-      else if (!id && !isLoading && analysisHistory.length === 0) {
-        console.log("No analyses found, attempting refresh");
-        await onManualRefresh();
-      }
+      
+      // If no analyses found, try a refresh
+      console.log("No analyses found, attempting refresh");
+      toast.loading("Loading analyses...");
+      await onManualRefresh();
     };
     
     handleInitialNavigation();
-  }, [id, isLoading, analysisHistory, navigate, redirectAttempted, onManualRefresh]);
+  }, [id, analysis, analysisHistory, isLoading, navigate, onManualRefresh, redirectAttempted]);
 
   // Show loading state
   if (isLoading) {
@@ -78,8 +86,10 @@ const ReportPage: React.FC = () => {
     );
   }
   
-  // Show "No analyses" view when appropriate
-  if (!analysis && !isLoading && analysisHistory.length === 0) {
+  // Handle different view states based on our data
+  
+  // No analyses and on base route - show "no analyses" view
+  if (!id && !analysis && analysisHistory.length === 0) {
     return (
       <div className="container py-8 text-center">
         <h2 className="text-2xl font-bold mb-4">No Analysis Reports Found</h2>
@@ -95,8 +105,8 @@ const ReportPage: React.FC = () => {
       </div>
     );
   }
-
-  // If we have analyses but no current one selected, either we're redirecting or something's wrong
+  
+  // Has analyses but not loaded yet (redirection in progress)
   if (!analysis && analysisHistory.length > 0) {
     return (
       <div className="container py-8">
