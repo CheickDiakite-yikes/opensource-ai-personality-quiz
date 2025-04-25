@@ -31,6 +31,7 @@ export const useAIAnalysis = () => {
   const [lastHistoryCount, setLastHistoryCount] = useState<number>(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const retryRef = useRef<boolean>(false); // Use ref to avoid stale closures
+  const maxRetries = useRef<number>(3); // Maximum number of retries
   
   // Log changes to analysis history for debugging
   useEffect(() => {
@@ -71,26 +72,45 @@ export const useAIAnalysis = () => {
         setIsRetrying(true);
         retryRef.current = true;
         
-        // Load all analyses from Supabase
-        loadAllAnalysesFromSupabase()
-          .then(analyses => {
+        let retryCount = 0;
+        const attemptLoad = async () => {
+          try {
+            // Load all analyses from Supabase
+            const analyses = await loadAllAnalysesFromSupabase();
+            
             if (isMounted.current) {
               if (analyses && analyses.length > 0) {
                 console.log(`[useAIAnalysis] Successfully loaded ${analyses.length} analyses from Supabase`);
+                setIsRetrying(false);
+                retryRef.current = false;
+              } else if (retryCount < maxRetries.current) {
+                console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current}: No analyses found, retrying...`);
+                retryCount++;
+                setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
               } else {
-                console.log("[useAIAnalysis] No analyses found in Supabase");
+                console.log("[useAIAnalysis] Max retries reached, no analyses found");
+                setIsRetrying(false);
+                retryRef.current = false;
               }
-              setIsRetrying(false);
-              retryRef.current = false;
             }
-          })
-          .catch(error => {
+          } catch (error) {
             if (isMounted.current) {
               console.error("[useAIAnalysis] Error loading analyses:", error);
-              setIsRetrying(false);
-              retryRef.current = false;
+              if (retryCount < maxRetries.current) {
+                console.log(`[useAIAnalysis] Retry ${retryCount + 1}/${maxRetries.current} due to error`);
+                retryCount++;
+                setTimeout(attemptLoad, Math.pow(2, retryCount) * 1000); // Exponential backoff
+              } else {
+                console.log("[useAIAnalysis] Max retries reached after errors");
+                setIsRetrying(false);
+                retryRef.current = false;
+              }
             }
-          });
+          }
+        };
+        
+        // Start the retry process
+        attemptLoad();
       }
     }
   }, [analysis, isLoading, loadAllAnalysesFromSupabase, analysisHistory.length, isRetrying]);
@@ -101,16 +121,28 @@ export const useAIAnalysis = () => {
       console.log("[useAIAnalysis] Force fetching all analyses");
       toast.loading("Fetching all analyses...", { id: "force-fetch" });
       
-      // Try to get analyses from Supabase
-      const allAnalyses = await fetchAnalysesFromSupabase(true);
+      // Try to get analyses from Supabase with direct fetch
+      let allAnalyses = await fetchAnalysesFromSupabase(true);
       
       if (allAnalyses && allAnalyses.length > 0) {
+        console.log(`[useAIAnalysis] Direct fetch successful, found ${allAnalyses.length} analyses`);
         toast.success(`Found ${allAnalyses.length} analyses`, { id: "force-fetch" });
+        console.log(`[useAIAnalysis] Analysis IDs: ${allAnalyses.map(a => a.id).join(', ')}`);
         return allAnalyses;
       }
       
-      // If that fails, try the forceAnalysisRefresh method
-      console.log("[useAIAnalysis] Direct fetch failed, trying forceAnalysisRefresh");
+      // If direct fetch failed, try fetch with pagination
+      console.log("[useAIAnalysis] Direct fetch failed, trying fetch with pagination");
+      allAnalyses = await loadAllAnalysesFromSupabase();
+      
+      if (allAnalyses && allAnalyses.length > 0) {
+        console.log(`[useAIAnalysis] Second load retrieved ${allAnalyses.length} analyses`);
+        toast.success(`Found ${allAnalyses.length} analyses through pagination`, { id: "force-fetch" });
+        return allAnalyses;
+      }
+      
+      // If that fails, try the forceAnalysisRefresh method as final fallback
+      console.log("[useAIAnalysis] Paginated fetch failed, trying forceAnalysisRefresh");
       const analyses = await forceAnalysisRefresh();
       
       if (analyses && analyses.length > 0) {

@@ -65,7 +65,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
         const jsonAnalysis = toJsonObject(analysis);
         
         // Prepare analysis data in the format required by the database
-        const analysisData = {
+        const analysisData: Record<string, any> = {
           id: analysisId,
           user_id: user.id,
           assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,

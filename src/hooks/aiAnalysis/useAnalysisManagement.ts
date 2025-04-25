@@ -1,52 +1,69 @@
 
-import { useCallback } from 'react';
-import { saveAnalysisToHistory } from '../analysis/useLocalStorage';
-import { AIAnalysisState, AIAnalysisActions } from './types';
+import { useState } from 'react';
 import { PersonalityAnalysis } from '@/utils/types';
+import { sortAnalysesByDate } from './utils';
 
-// Function to sort analyses by date, with newest first
-const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
-  if (!analyses || !Array.isArray(analyses)) return [];
-  
-  return [...analyses].sort((a, b) => {
-    const dateA = new Date(a.createdAt || '');
-    const dateB = new Date(b.createdAt || '');
-    return dateB.getTime() - dateA.getTime(); // Newest first
-  });
-};
+export function useAnalysisManagement() {
+  const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
+  const [currentAnalysis, setCurrentAnalysis] = useState<PersonalityAnalysis | null>(null);
 
-// Hook for managing analysis state
-export const useAnalysisManagement = (
-  state: AIAnalysisState,
-  actions: AIAnalysisActions
-) => {
-  const { analysisHistory, setAnalysis, setAnalysisHistory } = { ...state, ...actions };
+  const getAnalysisHistory = (): PersonalityAnalysis[] => analysisHistory;
 
-  // Function to save analysis to history
-  const saveToHistory = useCallback((newAnalysis: PersonalityAnalysis) => {
-    const savedAnalysis = saveAnalysisToHistory(newAnalysis, analysisHistory);
-    // Update the history state - always keep sorted by date
-    setAnalysisHistory(prev => sortAnalysesByDate([savedAnalysis, ...prev.filter(a => a.id !== savedAnalysis.id)]));
-    return savedAnalysis;
-  }, [analysisHistory, setAnalysisHistory]);
-
-  // Utility functions for history management
-  const getAnalysisHistory = useCallback(() => {
-    return analysisHistory;
-  }, [analysisHistory]);
-
-  const setCurrentAnalysis = useCallback((analysisId: string) => {
-    const selected = analysisHistory.find(item => item.id === analysisId);
-    if (selected) {
-      setAnalysis(selected);
-      return true;
+  const addToHistory = (analysis: PersonalityAnalysis): PersonalityAnalysis => {
+    const existingIndex = analysisHistory.findIndex((a) => a.id === analysis.id);
+    
+    if (existingIndex >= 0) {
+      // If the analysis already exists, update it
+      const updatedHistory = [...analysisHistory];
+      updatedHistory[existingIndex] = analysis;
+      
+      // Sort by date (newest first)
+      const sortedHistory = sortAnalysesByDate(updatedHistory);
+      setAnalysisHistory(sortedHistory);
+      
+      // Update current analysis if this is the one we're viewing
+      if (currentAnalysis && currentAnalysis.id === analysis.id) {
+        setCurrentAnalysis(analysis);
+      }
+      
+      return analysis;
+    } else {
+      // If it's a new analysis, add it to history
+      const newHistory = [analysis, ...analysisHistory];
+      
+      // Sort by date (newest first)
+      const sortedHistory = sortAnalysesByDate(newHistory);
+      setAnalysisHistory(sortedHistory);
+      
+      // Set as current analysis if there isn't one already
+      if (!currentAnalysis) {
+        setCurrentAnalysis(analysis);
+      }
+      
+      return analysis;
     }
-    return false;
-  }, [analysisHistory, setAnalysis]);
+  };
+
+  const setAllAnalyses = (analyses: PersonalityAnalysis[]) => {
+    if (!analyses || analyses.length === 0) return;
+    
+    // Sort analyses by date and update the history
+    const sortedAnalyses = sortAnalysesByDate(analyses);
+    console.log("Setting all analyses in history state");
+    setAnalysisHistory(sortedAnalyses);
+    
+    // Set the most recent analysis as the current one if none is set
+    if (!currentAnalysis && sortedAnalyses.length > 0) {
+      setCurrentAnalysis(sortedAnalyses[0]);
+    }
+  };
 
   return {
-    saveToHistory,
+    analysisHistory,
+    currentAnalysis,
+    setCurrentAnalysis,
     getAnalysisHistory,
-    setCurrentAnalysis
+    addToHistory,
+    setAllAnalyses
   };
-};
+}
