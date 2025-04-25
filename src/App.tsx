@@ -15,8 +15,7 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
-const DeepInsightAssessmentPage = lazy(() => import("@/components/deep-insight/DeepInsightAssessmentPage"));
-const DeepInsightResultsPage = lazy(() => import("@/components/deep-insight/DeepInsightResultsPage"));
+// Removed deep insight imports
 
 // Loading fallback component
 const PageLoader = () => (
@@ -112,21 +111,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* New Deep Insight Routes */}
-          <Route path="deep-insight" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightAssessmentPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="deep-insight/results/:id?" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightResultsPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
+          {/* Removed deep insight routes */}
           
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
