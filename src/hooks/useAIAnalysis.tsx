@@ -31,6 +31,22 @@ export const useAIAnalysis = () => {
   const [isRetrying, setIsRetrying] = useState(false);
   const retryRef = useRef<boolean>(false); // Use ref to avoid stale closures
   
+  // Log changes to analysis history for debugging
+  useEffect(() => {
+    const currentCount = analysisHistory?.length || 0;
+    if (currentCount !== lastHistoryCount) {
+      console.log(`[useAIAnalysis] Analysis history count changed: ${lastHistoryCount} -> ${currentCount}`);
+      
+      // Add detailed logging about analyses
+      if (analysisHistory && analysisHistory.length > 0) {
+        console.log(`[useAIAnalysis] First analysis ID: ${analysisHistory[0].id}`);
+        console.log(`[useAIAnalysis] Analysis history IDs: ${analysisHistory.map(a => a.id).join(', ')}`);
+      }
+      
+      setLastHistoryCount(currentCount);
+    }
+  }, [analysisHistory, lastHistoryCount]);
+
   // Track when this hook is mounted/unmounted to prevent stale state
   const isMounted = useRef(true);
   useEffect(() => {
@@ -54,6 +70,7 @@ export const useAIAnalysis = () => {
       });
       
       if (!isMounted.current) return null;
+      console.log(`[useAIAnalysis] Direct refresh found ${directAnalyses?.length || 0} analyses`);
       
       // Then try the loadAll method from useAIAnalysisCore
       const coreAnalyses = await loadAllAnalysesFromSupabase().catch(err => {
@@ -62,6 +79,7 @@ export const useAIAnalysis = () => {
       });
       
       if (!isMounted.current) return null;
+      console.log(`[useAIAnalysis] Core refresh found ${coreAnalyses?.length || 0} analyses`);
       
       // Determine if we succeeded
       const totalAnalyses = Math.max(
@@ -90,7 +108,7 @@ export const useAIAnalysis = () => {
     }
   };
 
-  // Enhanced analysis generation with retry mechanism
+  // Fixed API for analysis generation to prevent duplicate retries
   const enhancedAnalyzeResponses = async (responses: any) => {
     console.log("[useAIAnalysis] Starting enhanced analysis with responses:", responses.length);
     

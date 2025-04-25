@@ -74,4 +74,3 @@ export const motivationQuestions: AssessmentQuestion[] = [
     weight: 1.0
   }
 ];
-

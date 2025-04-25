@@ -74,4 +74,3 @@ export const leadershipQuestions: AssessmentQuestion[] = [
     weight: 0.9
   }
 ];
-

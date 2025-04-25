@@ -74,4 +74,3 @@ export const cognitivePatternQuestions: AssessmentQuestion[] = [
     weight: 0.8
   }
 ];
-

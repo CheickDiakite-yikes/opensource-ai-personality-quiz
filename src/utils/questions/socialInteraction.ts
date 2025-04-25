@@ -74,4 +74,3 @@ export const socialInteractionQuestions: AssessmentQuestion[] = [
     weight: 0.7
   }
 ];
-

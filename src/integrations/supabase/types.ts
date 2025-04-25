@@ -191,14 +191,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_e2e_test_analysis: {
-        Args: {
-          analysis_id: string
-          analysis_title: string
-          analysis_overview: string
-        }
-        Returns: string
-      }
       get_analysis_by_id: {
         Args: { analysis_id: string }
         Returns: Json

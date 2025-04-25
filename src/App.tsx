@@ -16,6 +16,11 @@ const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
 
+// New Deep Insight pages
+const DeepInsight = lazy(() => import("@/pages/DeepInsight"));
+const DeepInsightQuiz = lazy(() => import("@/pages/DeepInsightQuiz"));
+const DeepInsightResults = lazy(() => import("@/pages/DeepInsightResults"));
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -110,8 +115,28 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* Add a redirect for the deep-insight route to home */}
-          <Route path="deep-insight/*" element={<Navigate to="/" replace />} />
+          {/* New Deep Insight Routes */}
+          <Route path="deep-insight" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsight />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="deep-insight/quiz" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsightQuiz />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="deep-insight/results" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <DeepInsightResults />
+              </Suspense>
+            </PrivateRoute>
+          } />
           
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>

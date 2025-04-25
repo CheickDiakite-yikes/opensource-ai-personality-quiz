@@ -74,4 +74,3 @@ export const emotionalIntelligenceQuestions: AssessmentQuestion[] = [
     weight: 0.8
   }
 ];
-
