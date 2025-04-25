@@ -21,6 +21,11 @@ const DeepInsight = lazy(() => import("@/pages/DeepInsight"));
 const DeepInsightQuiz = lazy(() => import("@/pages/DeepInsightQuiz"));
 const DeepInsightResults = lazy(() => import("@/pages/DeepInsightResults"));
 
+// New Concise Insight pages
+const ConciseInsight = lazy(() => import("@/pages/ConciseInsight"));
+const ConciseInsightQuiz = lazy(() => import("@/pages/ConciseInsightQuiz"));
+const ConciseInsightResults = lazy(() => import("@/pages/ConciseInsightResults"));
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -115,7 +120,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* New Deep Insight Routes */}
+          {/* Deep Insight Routes */}
           <Route path="deep-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
@@ -134,6 +139,29 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <DeepInsightResults />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          {/* New Concise Insight Routes */}
+          <Route path="concise-insight" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ConciseInsight />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="concise-insight/quiz" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ConciseInsightQuiz />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="concise-insight/results" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ConciseInsightResults />
               </Suspense>
             </PrivateRoute>
           } />
