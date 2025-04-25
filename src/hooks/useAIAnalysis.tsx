@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAnalysisRefresh } from './useAnalysisRefresh';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Main hook for accessing AI analysis functionality
 export const useAIAnalysis = () => {
@@ -26,6 +27,8 @@ export const useAIAnalysis = () => {
   
   const { getAnalysisById, isLoadingAnalysisById } = useAnalysisById();
   const { forceAnalysisRefresh } = useAnalysisRefresh();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   // Track last total count for debugging
   const [lastHistoryCount, setLastHistoryCount] = useState<number>(0);
@@ -48,6 +51,35 @@ export const useAIAnalysis = () => {
       setLastHistoryCount(currentCount);
     }
   }, [analysisHistory, lastHistoryCount]);
+
+  // Fix for navigating to /report without ID
+  useEffect(() => {
+    if (location.pathname === '/report' && !isLoading && analysisHistory && analysisHistory.length > 0) {
+      console.log("[useAIAnalysis] On /report route without ID, redirecting to first analysis");
+      navigate(`/report/${analysisHistory[0].id}`, { replace: true });
+    } else if (location.pathname === '/report' && !isLoading && analysisHistory && analysisHistory.length === 0) {
+      // If there are no analyses but we're on /report, load them
+      if (!isRetrying) {
+        console.log("[useAIAnalysis] On /report route without analyses, attempting to load analyses");
+        setIsRetrying(true);
+        loadAllAnalysesFromSupabase().then(analyses => {
+          if (analyses && analyses.length > 0) {
+            navigate(`/report/${analyses[0].id}`, { replace: true });
+          } else {
+            // No analyses found, redirect to assessment
+            toast.info("No analysis reports found", {
+              description: "Please complete the assessment first to view your report"
+            });
+            navigate("/assessment", { replace: true });
+          }
+          setIsRetrying(false);
+        }).catch(error => {
+          console.error("[useAIAnalysis] Error loading analyses for redirect:", error);
+          setIsRetrying(false);
+        });
+      }
+    }
+  }, [location.pathname, isLoading, analysisHistory, navigate, isRetrying, loadAllAnalysesFromSupabase]);
 
   // Track when this hook is mounted/unmounted to prevent stale state
   const isMounted = useRef(true);

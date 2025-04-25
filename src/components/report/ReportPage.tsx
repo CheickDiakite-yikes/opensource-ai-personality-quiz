@@ -114,8 +114,8 @@ const ReportPage: React.FC = () => {
         if (id) {
           const foundAnalysis = setCurrentAnalysis(id);
           
-          // Handle the result properly instead of checking truthiness
-          if (foundAnalysis !== null) {
+          // Handle the result properly
+          if (foundAnalysis) {
             return; // Successfully set the analysis
           }
           
@@ -149,7 +149,7 @@ const ReportPage: React.FC = () => {
               console.log(`Loaded ${allAnalyses.length} analyses, trying to find ${id} again`);
               const secondAttemptResult = setCurrentAnalysis(id);
               
-              if (secondAttemptResult !== null) {
+              if (secondAttemptResult) {
                 console.log(`Successfully set current analysis to ${id} after loading all analyses`);
                 return;
               }
@@ -238,8 +238,8 @@ const ReportPage: React.FC = () => {
     // First try to set the current analysis using the normal method
     const foundAnalysis = setCurrentAnalysis(analysisId);
     
-    // Handle the result properly instead of checking truthiness
-    if (foundAnalysis !== null) {
+    // Handle the result properly
+    if (foundAnalysis) {
       navigate(`/report/${analysisId}`, { replace: false });
       return;
     }
@@ -272,7 +272,7 @@ const ReportPage: React.FC = () => {
     // Try one more time to set the current analysis
     const secondAttemptResult = setCurrentAnalysis(analysisId);
     
-    if (secondAttemptResult !== null) {
+    if (secondAttemptResult) {
       console.log(`Successfully set current analysis to ${analysisId} after loading all analyses`);
       navigate(`/report/${analysisId}`, { replace: false });
     } else {

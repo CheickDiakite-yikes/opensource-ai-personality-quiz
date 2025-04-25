@@ -93,10 +93,10 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           
           toast.success("Analysis updated successfully");
         } else {
-          // Insert new analysis
+          // Insert new analysis - Use an array for the insert
           const { error } = await supabase
             .from('analyses')
-            .insert([analysisData]); // Changed to array to match expected type
+            .insert([analysisData]);
 
           if (error) {
             throw new Error(`Failed to save analysis: ${error.message}`);
