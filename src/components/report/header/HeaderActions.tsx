@@ -11,7 +11,7 @@ interface HeaderActionsProps {
   analysis: PersonalityAnalysis;
   analysisHistory: PersonalityAnalysis[];
   isMobile?: boolean;
-  isRefreshing: boolean;
+  isRefreshing?: boolean;
   onAnalysisChange?: (analysisId: string) => void;
   onRefresh: () => Promise<void>;
 }
@@ -20,7 +20,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
   analysis,
   analysisHistory,
   isMobile,
-  isRefreshing,
+  isRefreshing = false,
   onAnalysisChange,
   onRefresh
 }) => {

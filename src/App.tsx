@@ -1,152 +1,122 @@
+import React, { useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate
+} from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ActivityProvider } from "./contexts/ActivityContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Dashboard from "./pages/Dashboard";
+import AssessmentPage from "./pages/AssessmentPage";
+import TraitsPage from "./components/traits/TraitsPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import UpdateProfilePage from "./pages/UpdateProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
+import PublicProfilePage from "./pages/PublicProfilePage";
+import DeepInsightPage from "./features/deep-insight/DeepInsightPage";
+import DeepInsightResultsPage from "./features/deep-insight/DeepInsightResultsPage";
+import { useAuth } from "./contexts/AuthContext";
+import { Toaster } from "sonner";
+import "./App.css";
+import EnhancedReportPage from "./components/report/EnhancedReportPage";
 
-import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
-import { useAuth } from "@/contexts/AuthContext";
-import { Toaster } from "@/components/ui/sonner";
+function AppRouter() {
+  const { currentUser, loading } = useAuth();
+  const [showApp, setShowApp] = useState(false);
 
-// Lazy load pages for better initial load performance
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const Auth = lazy(() => import("@/pages/Auth"));
-const AssessmentPage = lazy(() => import("@/components/assessment/AssessmentPage"));
-const ReportPage = lazy(() => import("@/components/report/ReportPage"));
-const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
-const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
-const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
-const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
+  useEffect(() => {
+    if (!loading) {
+      setShowApp(true);
+    }
+  }, [loading]);
 
-// New Deep Insight pages
-const DeepInsight = lazy(() => import("@/pages/DeepInsight"));
-const DeepInsightQuiz = lazy(() => import("@/pages/DeepInsightQuiz"));
-const DeepInsightResults = lazy(() => import("@/pages/DeepInsightResults"));
-
-// Loading fallback component
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-pulse flex space-x-2">
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
-      <div className="h-3 w-3 bg-primary rounded-full"></div>
-    </div>
-  </div>
-);
-
-// Private route component
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <PageLoader />;
+  if (!showApp) {
+    return <div>Loading...</div>;
   }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  return <>{children}</>;
-};
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          currentUser ? <Dashboard /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/assessment"
+        element={
+          currentUser ? <AssessmentPage /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/traits/:id"
+        element={
+          currentUser ? <TraitsPage /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/activities"
+        element={
+          currentUser ? <ActivitiesPage /> : <Navigate to="/login" />
+        }
+      />
+       <Route
+        path="/report"
+        element={<EnhancedReportPage />}
+      />
+      <Route
+        path="/report/:id"
+        element={<EnhancedReportPage />}
+      />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route
+        path="/update-profile"
+        element={
+          currentUser ? <UpdateProfilePage /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          currentUser ? <NotificationsPage /> : <Navigate to="/login" />
+        }
+      />
+      <Route path="/public-profile/:userId" element={<PublicProfilePage />} />
+      <Route
+        path="/deep-insight"
+        element={
+          currentUser ? <DeepInsightPage /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/deep-insight/results"
+        element={
+          currentUser ? <DeepInsightResultsPage /> : <Navigate to="/login" />
+        }
+      />
+    </Routes>
+  );
+}
 
 function App() {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <PageLoader />;
-  }
-  
   return (
-    <>
-      <Routes>
-        {/* Publicly accessible shared profile route outside of Layout to avoid auth problems */}
-        <Route path="/shared/:id" element={
-          <Suspense fallback={<PageLoader />}>
-            <SharedProfile />
-          </Suspense>
-        } />
-        
-        <Route path="/" element={<Layout />}>
-          <Route index element={
-            <Suspense fallback={<PageLoader />}>
-              <HomePage />
-            </Suspense>
-          } />
-          <Route path="auth" element={
-            user ? (
-              <Navigate to="/" replace />
-            ) : (
-              <Suspense fallback={<PageLoader />}>
-                <Auth />
-              </Suspense>
-            )
-          } />
-          <Route path="assessment" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <AssessmentPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="report/:id?" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <ReportPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="tracker" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <TrackerPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="profile" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <ProfilePage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="traits/:id?" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <TraitsPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          
-          {/* New Deep Insight Routes */}
-          <Route path="deep-insight" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsight />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="deep-insight/quiz" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightQuiz />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="deep-insight/results" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightResults />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          
-          <Route path="*" element={
-            <Suspense fallback={<PageLoader />}>
-              <NotFound />
-            </Suspense>
-          } />
-        </Route>
-      </Routes>
-      <Toaster />
-    </>
+    <ThemeProvider>
+      <AuthProvider>
+        <ActivityProvider>
+          <Router>
+            <AppRouter />
+          </Router>
+          <Toaster richColors />
+        </ActivityProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

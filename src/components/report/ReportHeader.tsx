@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { PersonalityAnalysis } from "@/utils/types";
@@ -20,7 +20,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
   onManualRefresh
 }) => {
   const isMobile = useIsMobile();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const renderDate = () => {
     try {
@@ -40,26 +40,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
       setIsRefreshing(false);
     }
   };
-
-  // Ensure we have a valid analysis object with an ID
-  if (!analysis || !analysis.id) {
-    console.log("Invalid analysis in ReportHeader:", analysis);
-    return (
-      <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {isMobile ? "Analysis" : "Personality Analysis"}
-            </h1>
-            <div className="flex items-center text-muted-foreground mt-1">
-              <Calendar className="h-4 w-4 mr-1" />
-              Loading analysis...
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
