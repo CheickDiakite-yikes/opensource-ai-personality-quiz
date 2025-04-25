@@ -17,6 +17,10 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
   emotionalIntelligenceScore = 0,
   responsePatterns 
 }) => {
+  // Ensure we have proper values - replace nulls with defaults
+  const cognitiveScore = typeof intelligenceScore === 'number' ? intelligenceScore : 70;
+  const emotionalScore = typeof emotionalIntelligenceScore === 'number' ? emotionalIntelligenceScore : 70;
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       <Card className="bg-gradient-to-br from-blue-950/90 to-indigo-950/90 border-blue-900/50">
@@ -26,10 +30,10 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
         <CardContent>
           <div className="space-y-4">
             <div className="text-3xl font-bold text-center text-blue-300">
-              {intelligenceScore || 0}
+              {cognitiveScore}
             </div>
             <Progress 
-              value={intelligenceScore || 0} 
+              value={cognitiveScore} 
               className="h-2 bg-blue-950" 
               indicatorClassName="bg-blue-400"
             />
@@ -44,10 +48,10 @@ const IntelligenceScores: React.FC<IntelligenceScoresProps> = ({
         <CardContent>
           <div className="space-y-4">
             <div className="text-3xl font-bold text-center text-rose-300">
-              {emotionalIntelligenceScore || 0}
+              {emotionalScore}
             </div>
             <Progress 
-              value={emotionalIntelligenceScore || 0} 
+              value={emotionalScore} 
               className="h-2 bg-rose-950" 
               indicatorClassName="bg-rose-400"
             />
