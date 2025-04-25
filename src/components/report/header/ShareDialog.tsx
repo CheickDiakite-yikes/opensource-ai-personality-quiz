@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Check, Copy, Twitter, Facebook, Linkedin } from "lucide-react";
+import { Check, Copy, Twitter, Facebook, Linkedin, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,7 +55,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ shareUrl, isMobile }) 
     <Dialog>
       <DialogTrigger asChild>
         <Button size={isMobile ? "sm" : "default"} className="flex-1 px-2">
-          <Share className="h-4 w-4 mr-2" /> Share
+          <Share2 className="h-4 w-4 mr-2" /> Share
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
