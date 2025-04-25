@@ -16,7 +16,6 @@ export function useReportData(reportId?: string) {
     fetchAnalysisById,
     loadAllAnalysesFromSupabase,
     forceFetchAllAnalyses,
-    getAnalysisById,
   } = useAIAnalysis();
   
   const navigate = useNavigate();
@@ -30,68 +29,84 @@ export function useReportData(reportId?: string) {
   // Get a stable copy of the analysis history
   const currentHistory = getAnalysisHistory();
   
-  // Initial data load when component mounts - only runs once
+  // Debug logging - add more visibility to state changes
+  useEffect(() => {
+    console.log("useReportData state:", {
+      reportId,
+      hasAnalysis: !!analysis,
+      hasStableAnalysis: !!stableAnalysis,
+      hasDirectAnalysis: !!directlyFetchedAnalysis,
+      historyLength: currentHistory.length,
+      isLoading,
+      isLoadingAllAnalyses,
+      isChangingAnalysis,
+      loadAttempts,
+      errorMessage
+    });
+  }, [
+    reportId, analysis, stableAnalysis, directlyFetchedAnalysis, 
+    currentHistory.length, isLoading, isLoadingAllAnalyses, 
+    isChangingAnalysis, loadAttempts, errorMessage
+  ]);
+  
+  // Initial data load when component mounts
   useEffect(() => {
     async function initialLoad() {
-      console.log("Initial load started for reportId:", reportId || 'none');
       setIsLoadingAllAnalyses(true);
-      
       try {
+        console.log("Initial load started for reportId:", reportId);
         // Try to load all analyses first for complete history
         await loadAllAnalysesFromSupabase();
         
         // If we have an ID but no data, try to load directly
-        if (reportId) {
-          console.log(`Checking for specific report ID: ${reportId}`);
+        if (reportId && !analysis && !stableAnalysis) {
+          console.log(`Trying direct fetch for report ID: ${reportId}`);
           const directAnalysis = await fetchAnalysisById(reportId);
-          
           if (directAnalysis) {
             console.log("Direct fetch successful:", directAnalysis.id);
             setDirectlyFetchedAnalysis(directAnalysis);
-            return;
-          } 
-          
-          // If not found via standard methods, try the edge function directly
-          console.log("Standard fetch failed, trying edge function directly");
-          const publicAnalysis = await getAnalysisById(reportId);
-          
-          if (publicAnalysis) {
-            console.log("Edge function fetch successful:", publicAnalysis.id);
-            setDirectlyFetchedAnalysis(publicAnalysis);
+          } else {
+            console.log("Direct fetch failed to find analysis");
           }
         }
       } catch (error) {
         console.error("Error in initial load:", error);
-        setErrorMessage("Could not load analyses. Please try again later.");
+        setErrorMessage("Error loading analyses. Please try refreshing.");
       } finally {
         setIsLoadingAllAnalyses(false);
       }
     }
     
     initialLoad();
-  }, []); // Empty dependency array - this only runs once on mount
+  }, [reportId]); // Depend only on reportId to avoid unnecessary reruns
 
-  // When reportId changes, update the analysis
+  // Handle setting the analysis when data changes
   useEffect(() => {
-    if (reportId && !isLoading && !isLoadingAllAnalyses) {
-      console.log(`Report ID changed to: ${reportId}`);
-      setCurrentAnalysis(reportId);
+    const currentAnalysis = directlyFetchedAnalysis || stableAnalysis || analysis;
+    
+    // If we have an ID but no analysis, try to set it
+    if (reportId && !currentAnalysis && !isLoading && !isChangingAnalysis) {
+      // Use setCurrentAnalysis to find the analysis by ID
+      const found = setCurrentAnalysis(reportId);
+      if (!found && loadAttempts < 2) {
+        // If not found and we haven't tried too many times, try a force fetch
+        setLoadAttempts(prev => prev + 1);
+        console.log(`Analysis ${reportId} not found, attempt ${loadAttempts + 1} to fetch`);
+        
+        // Try to fetch this specific analysis again
+        fetchAnalysisById(reportId).then(directAnalysis => {
+          if (directAnalysis) {
+            console.log("Successfully fetched analysis directly:", directAnalysis.id);
+            setDirectlyFetchedAnalysis(directAnalysis);
+          } else if (loadAttempts >= 1) {
+            // If we've tried multiple times and still can't find it
+            setErrorMessage(`Could not find analysis with ID: ${reportId}`);
+          }
+        });
+      }
     }
-  }, [reportId, isLoading, isLoadingAllAnalyses, setCurrentAnalysis]);
-
-  // Handle the case when we're on the base /report route with no ID - select first analysis
-  useEffect(() => {
-    if (!reportId && !isLoading && !isLoadingAllAnalyses && 
-        currentHistory.length > 0 && !stableAnalysis && !directlyFetchedAnalysis) {
-      console.log("No reportId provided but history available, setting first analysis:", 
-                  currentHistory[0].id);
-      
-      // Just set the current analysis - navigation will happen in ReportPage
-      setCurrentAnalysis(currentHistory[0].id);
-    }
-  }, [reportId, isLoading, isLoadingAllAnalyses, currentHistory, 
-      stableAnalysis, directlyFetchedAnalysis, setCurrentAnalysis]);
-
+  }, [reportId, analysis, stableAnalysis, directlyFetchedAnalysis, isLoading, loadAttempts, isChangingAnalysis]);
+  
   // Update stable analysis when the main analysis changes
   useEffect(() => {
     if (analysis && (!stableAnalysis || analysis.id !== stableAnalysis.id)) {
@@ -100,6 +115,29 @@ export function useReportData(reportId?: string) {
       setIsChangingAnalysis(false);
     }
   }, [analysis, stableAnalysis]);
+  
+  // Handle first analysis load or redirect
+  useEffect(() => {
+    // Skip if we're still loading or changing analyses
+    if (isLoading || isLoadingAllAnalyses || isChangingAnalysis) {
+      return;
+    }
+    
+    // If we have analyses but no specific ID was provided, use the most recent one
+    if (!reportId && currentHistory && currentHistory.length > 0) {
+      console.log("No reportId but history available, navigating to first analysis:", currentHistory[0].id);
+      navigate(`/report/${currentHistory[0].id}`, { replace: true });
+    } 
+    // If we have no analyses and we've tried loading, go to assessment
+    else if (!reportId && !isLoading && !isLoadingAllAnalyses && 
+             currentHistory.length === 0 && loadAttempts > 0) {
+      console.log("No analyses found after loading attempts, redirecting to assessment");
+      toast.error("No analysis reports found", {
+        description: "Please complete the assessment first to view your report"
+      });
+      navigate("/assessment", { replace: true });
+    }
+  }, [reportId, currentHistory, isLoading, isLoadingAllAnalyses, loadAttempts, isChangingAnalysis, navigate]);
 
   // Handle changing between analyses
   const handleAnalysisChange = useCallback(async (analysisId: string) => {
@@ -107,66 +145,53 @@ export function useReportData(reportId?: string) {
     
     console.log(`Changing analysis to: ${analysisId}`);
     setIsChangingAnalysis(true);
-    setErrorMessage(null);
     
     try {
-      // Try to set the current analysis
+      // Try to set the current analysis using the standard method
       const foundAnalysis = setCurrentAnalysis(analysisId);
       
-      if (foundAnalysis) {
+      if (foundAnalysis !== null) {
         console.log("Found analysis in current history:", analysisId);
-        navigate(`/report/${analysisId}`);
+        navigate(`/report/${analysisId}`, { replace: false });
         return;
       }
       
+      console.log("Analysis not found in history, trying direct fetch");
       // Try direct fetch if standard method fails
       const directAnalysis = await fetchAnalysisById(analysisId);
       
       if (directAnalysis) {
         console.log("Direct fetch successful:", directAnalysis.id);
         setDirectlyFetchedAnalysis(directAnalysis);
-        navigate(`/report/${analysisId}`);
-        return;
-      }
-      
-      // Try the edge function directly as last resort
-      const publicAnalysis = await getAnalysisById(analysisId);
-      
-      if (publicAnalysis) {
-        console.log("Edge function fetch successful:", publicAnalysis.id);
-        setDirectlyFetchedAnalysis(publicAnalysis);
-        navigate(`/report/${analysisId}`);
-        return;
-      }
-      
-      // Last resort: try to force fetch all analyses
-      console.log("All direct fetch methods failed, trying force fetch");
-      await forceFetchAllAnalyses();
-      
-      // Try one more time with the refreshed data
-      const secondAttempt = setCurrentAnalysis(analysisId);
-      
-      if (secondAttempt) {
-        console.log("Found analysis after force fetch");
-        navigate(`/report/${analysisId}`);
+        navigate(`/report/${analysisId}`, { replace: false });
       } else {
-        console.error("Could not find analysis after all attempts");
-        toast.error("Could not load the selected analysis");
-        setErrorMessage(`Could not find analysis with ID: ${analysisId}`);
+        console.log("Direct fetch failed, trying force fetch");
+        // Last resort: try to force fetch all analyses
+        await forceFetchAllAnalyses();
+        
+        // Try one more time with the refreshed data
+        const secondAttempt = setCurrentAnalysis(analysisId);
+        
+        if (secondAttempt !== null) {
+          console.log("Found analysis after force fetch");
+          navigate(`/report/${analysisId}`, { replace: false });
+        } else {
+          console.error("Could not find analysis after all attempts");
+          toast.error("Could not load the selected analysis");
+        }
       }
     } catch (error) {
       console.error("Error changing analysis:", error);
       toast.error("Failed to change analysis");
-      setErrorMessage("Failed to change analysis. Please try again.");
     } finally {
       setIsChangingAnalysis(false);
     }
-  }, [reportId, setCurrentAnalysis, fetchAnalysisById, forceFetchAllAnalyses, navigate, getAnalysisById]);
+  }, [reportId, setCurrentAnalysis, fetchAnalysisById, forceFetchAllAnalyses, navigate]);
 
-  // Manual refresh function
+  // Manual refresh function - Returns Promise<void>
   const handleManualRefresh = useCallback(async (): Promise<void> => {
     console.log("Manual refresh initiated");
-    toast.loading("Refreshing analyses...", { id: "refresh-toast" });
+    toast.loading("Refreshing your analyses...", { id: "refresh-toast" });
     setErrorMessage(null);
     
     try {
@@ -177,33 +202,16 @@ export function useReportData(reportId?: string) {
         toast.success(`Successfully loaded ${analyses.length} analyses`, { id: "refresh-toast" });
         
         // If we have a reportId but no analysis, try to find it in the refreshed data
-        if (reportId) {
+        if (reportId && !stableAnalysis && !directlyFetchedAnalysis) {
           const found = setCurrentAnalysis(reportId);
           
           if (!found) {
             console.log("Current analysis not found in refreshed data, trying direct fetch");
-            
-            // Try both standard and edge function methods
             const directAnalysis = await fetchAnalysisById(reportId);
-            
             if (directAnalysis) {
               setDirectlyFetchedAnalysis(directAnalysis);
-              return;
-            }
-            
-            const publicAnalysis = await getAnalysisById(reportId);
-            
-            if (publicAnalysis) {
-              setDirectlyFetchedAnalysis(publicAnalysis);
-              return;
             }
           }
-        } 
-        // If we're on the base route and have analyses, use the first one
-        else if (analyses.length > 0) {
-          console.log("No reportId, using first available analysis:", analyses[0].id);
-          setCurrentAnalysis(analyses[0].id);
-          navigate(`/report/${analyses[0].id}`, { replace: true });
         }
       } else {
         console.log("No analyses found during refresh");
@@ -213,11 +221,12 @@ export function useReportData(reportId?: string) {
       console.error("Error manually refreshing analyses:", error);
       toast.error("Failed to refresh analyses", { id: "refresh-toast" });
     }
-  }, [reportId, forceFetchAllAnalyses, fetchAnalysisById, setCurrentAnalysis, navigate, getAnalysisById]);
+  }, [reportId, stableAnalysis, directlyFetchedAnalysis, forceFetchAllAnalyses, fetchAnalysisById, setCurrentAnalysis]);
 
   // Determine the current displayable analysis
   const displayAnalysis = directlyFetchedAnalysis || stableAnalysis || analysis;
   
+  // Return all the data and functions
   return {
     analysis: displayAnalysis,
     analysisHistory: currentHistory,

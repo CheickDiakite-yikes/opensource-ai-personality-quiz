@@ -24,7 +24,6 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
   const renderDate = () => {
     try {
-      if (!analysis?.createdAt) return "Recent assessment";
       const date = new Date(analysis.createdAt);
       return format(date, "MMMM d, yyyy");
     } catch (error) {
@@ -34,35 +33,44 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
   const handleRefresh = async () => {
     if (isRefreshing || !onManualRefresh) return;
-    
-    console.log("Manual refresh triggered from header");
     setIsRefreshing(true);
     try {
       await onManualRefresh();
-    } catch (error) {
-      console.error("Error during manual refresh:", error);
     } finally {
-      setTimeout(() => setIsRefreshing(false), 1000);
+      setIsRefreshing(false);
     }
   };
 
-  // Safe check for valid analysis
-  const hasValidAnalysis = analysis && analysis.id && analysis.id.length > 0;
+  // Ensure we have a valid analysis object with an ID
+  if (!analysis || !analysis.id) {
+    console.log("Invalid analysis in ReportHeader:", analysis);
+    return (
+      <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {isMobile ? "Analysis" : "Personality Analysis"}
+            </h1>
+            <div className="flex items-center text-muted-foreground mt-1">
+              <Calendar className="h-4 w-4 mr-1" />
+              Loading analysis...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 sm:gap-1 max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex-1">
+        <div>
           <h1 className="text-2xl sm:text-3xl font-bold">
-            {isMobile ? (hasValidAnalysis ? "Your Analysis" : "Analysis") : 
-                       (hasValidAnalysis ? "Your Personality Analysis" : "Personality Analysis")}
+            {isMobile ? "Your Analysis" : "Your Personality Analysis"}
           </h1>
           <div className="flex items-center text-muted-foreground mt-1">
             <Calendar className="h-4 w-4 mr-1" />
-            {hasValidAnalysis ? renderDate() : 
-             (analysisHistory.length > 0 ? "Select an analysis" : "No analyses available")}
-            
-            {/* Show count of reports if we have multiple */}
+            {renderDate()}
             {analysisHistory.length > 1 && (
               <span className="ml-2 text-xs">
                 ({analysisHistory.length} reports available)
@@ -72,7 +80,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
 
         <HeaderActions 
-          analysis={hasValidAnalysis ? analysis : {} as PersonalityAnalysis}
+          analysis={analysis}
           analysisHistory={analysisHistory}
           isMobile={isMobile}
           isRefreshing={isRefreshing}

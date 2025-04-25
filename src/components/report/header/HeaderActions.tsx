@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Copy, Check, RefreshCcw } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShareDialog } from "./ShareDialog";
 import { HistoryDropdown } from "./HistoryDropdown";
@@ -25,21 +25,9 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
   onRefresh
 }) => {
   const [copied, setCopied] = useState(false);
-  const [isRefreshingLocal, setIsRefreshingLocal] = useState(false);
-  
-  // Ensure we have a valid analysis ID before creating the share URL
-  const shareUrl = analysis && analysis.id 
-    ? `${window.location.origin}/shared/${analysis.id}`
-    : '';
+  const shareUrl = `${window.location.origin}/shared/${analysis.id}`;
 
   const handleCopyLink = () => {
-    if (!shareUrl) {
-      toast.error("Cannot copy link", {
-        description: "No valid analysis is currently selected"
-      });
-      return;
-    }
-    
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     toast.success("Link copied to clipboard", {
@@ -47,26 +35,13 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
     });
     setTimeout(() => setCopied(false), 2000);
   };
-  
-  // Handle refresh with local state management
-  const handleRefreshClick = async () => {
-    setIsRefreshingLocal(true);
-    try {
-      console.log("Initiating refresh from HeaderActions");
-      await onRefresh();
-    } finally {
-      // Ensure we reset state even if there's an error
-      setTimeout(() => setIsRefreshingLocal(false), 2000);
-    }
-  };
 
   // Check if we have a valid analysis with a proper ID
   const hasValidAnalysis = analysis && analysis.id && analysis.id.length > 5;
-  const isCurrentlyRefreshing = isRefreshing || isRefreshingLocal;
 
   return (
     <div className={`flex items-center gap-2 ${isMobile ? 'self-start w-full' : 'self-end sm:self-auto'}`}>
-      {hasValidAnalysis ? (
+      {hasValidAnalysis && (
         <>
           <Button
             onClick={handleCopyLink}
@@ -82,24 +57,25 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
             localAnalysisHistory={analysisHistory}
             currentAnalysisId={analysis.id}
             isMobile={isMobile}
-            isRefreshing={isCurrentlyRefreshing}
+            isRefreshing={isRefreshing}
             onAnalysisChange={onAnalysisChange}
-            onRefresh={handleRefreshClick}
+            onRefresh={onRefresh}
           />
           
           <ShareDialog shareUrl={shareUrl} isMobile={isMobile} />
         </>
-      ) : (
-        // When there's no valid analysis, show a refresh button
+      )}
+      
+      {/* When there's no valid analysis, only show a refresh button */}
+      {!hasValidAnalysis && (
         <Button
-          onClick={handleRefreshClick}
+          onClick={onRefresh}
           size={isMobile ? "sm" : "default"}
           variant="outline"
-          disabled={isCurrentlyRefreshing}
+          disabled={isRefreshing}
           className={isMobile ? "flex-1 px-2" : undefined}
         >
-          <RefreshCcw className={`h-4 w-4 mr-2 ${isCurrentlyRefreshing ? 'animate-spin' : ''}`} />
-          {isCurrentlyRefreshing ? "Loading..." : "Refresh Analyses"}
+          {isRefreshing ? "Loading..." : "Refresh Analyses"}
         </Button>
       )}
     </div>
