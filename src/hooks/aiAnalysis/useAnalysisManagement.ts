@@ -1,7 +1,17 @@
 
 import { useState } from 'react';
 import { PersonalityAnalysis } from '@/utils/types';
-import { sortAnalysesByDate } from './utils';
+
+// Function to sort analyses by date, with newest first
+const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
+  if (!analyses || !Array.isArray(analyses)) return [];
+  
+  return [...analyses].sort((a, b) => {
+    const dateA = new Date(a.createdAt || '');
+    const dateB = new Date(b.createdAt || '');
+    return dateB.getTime() - dateA.getTime(); // Newest first
+  });
+};
 
 export function useAnalysisManagement() {
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);

@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAnalysisState } from './useAnalysisState';
-import { useAnalysisRefresh } from './useAnalysisRefresh';
+import { useAnalysisRefresh } from '../useAnalysisRefresh';
 import { useAnalysisManagement } from './useAnalysisManagement';
 import { useAnalyzeResponses } from '../analysis/useAnalyzeResponses';
 import { useSupabaseSync } from './useSupabaseSync';
@@ -11,9 +11,9 @@ import { toast } from 'sonner';
 // Main hook that combines the smaller hooks
 export const useAIAnalysisCore = () => {
   const state = useAnalysisState();
-  const { refreshAnalysis } = useAnalysisRefresh(state, state);
-  const { saveToHistory, getAnalysisHistory, setCurrentAnalysis } = useAnalysisManagement(state, state);
-  const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(saveToHistory, state.setAnalysis);
+  const { forceAnalysisRefresh } = useAnalysisRefresh();
+  const { addToHistory, getAnalysisHistory, setCurrentAnalysis } = useAnalysisManagement();
+  const { isAnalyzing, analyzeResponses } = useAnalyzeResponses(addToHistory, state.setAnalysis);
   const { fetchAnalysesFromSupabase, fetchAnalysisById, syncInProgress } = useSupabaseSync();
   const initialLoadCompletedRef = useRef(false);
   const fetchAttemptsRef = useRef(0);
@@ -34,7 +34,7 @@ export const useAIAnalysisCore = () => {
     if (!initialLoadCompletedRef.current) {
       const attemptRefresh = async () => {
         try {
-          await refreshAnalysis();
+          await forceAnalysisRefresh();
           initialLoadCompletedRef.current = true;
           console.log("Initial analysis load completed");
           fetchAttemptsRef.current = 0; // Reset attempts on success
@@ -67,7 +67,7 @@ export const useAIAnalysisCore = () => {
       
       attemptRefresh();
     }
-  }, [refreshAnalysis, fetchAnalysesFromSupabase]);
+  }, [forceAnalysisRefresh, fetchAnalysesFromSupabase]);
 
   // Function to manually reload all analyses from Supabase
   const loadAllAnalysesFromSupabase = async (): Promise<PersonalityAnalysis[]> => {
@@ -85,7 +85,7 @@ export const useAIAnalysisCore = () => {
       console.log(`Manual load retrieved ${data.length} analyses from Supabase`);
       
       // Re-attempt refresh to update the state with all analyses
-      await refreshAnalysis();
+      await forceAnalysisRefresh();
       
       // Get the latest history and update the local state
       const freshHistory = getAnalysisHistory();
@@ -107,6 +107,9 @@ export const useAIAnalysisCore = () => {
       return [];
     }
   };
+
+  // Create an alias for forceAnalysisRefresh named refreshAnalysis for backward compatibility
+  const refreshAnalysis = forceAnalysisRefresh;
 
   return {
     ...state,

@@ -17,19 +17,19 @@ interface ResultsActionsProps {
 }
 
 // Convert object to JSON compatible format for Supabase
-const toJsonObject = (obj: any): any => {
+const toJsonObject = (obj: any): Json => {
   if (obj === null || obj === undefined) {
     return null;
   }
   
   // Handle arrays
   if (Array.isArray(obj)) {
-    return obj.map(item => toJsonObject(item));
+    return obj.map(item => toJsonObject(item)) as Json[];
   }
   
   // Handle objects
   if (typeof obj === 'object' && obj !== null) {
-    const result: Record<string, any> = {};
+    const result: Record<string, Json> = {};
     for (const [key, value] of Object.entries(obj)) {
       result[key] = toJsonObject(value);
     }
@@ -37,7 +37,42 @@ const toJsonObject = (obj: any): any => {
   }
   
   // Handle primitive values
-  return obj;
+  return obj as Json;
+};
+
+// Prepare typed analysis data for database insertion
+const prepareAnalysisData = (analysis: AnalysisData, userId: string): Record<string, any> => {
+  const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
+  
+  // Convert all complex objects to Json type
+  return {
+    id: analysisId,
+    user_id: userId,
+    assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
+    overview: analysis.overview || "",
+    traits: toJsonObject(analysis.traits || []),
+    intelligence: toJsonObject(analysis.intelligence || {}),
+    intelligence_score: analysis.intelligenceScore || 0,
+    emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
+    cognitive_style: toJsonObject(analysis.cognitiveStyle || {}),
+    value_system: toJsonObject(analysis.valueSystem || []),
+    motivators: toJsonObject(analysis.motivators || []),
+    inhibitors: toJsonObject(analysis.inhibitors || []),
+    weaknesses: toJsonObject(analysis.weaknesses || []),
+    growth_areas: toJsonObject(analysis.growthAreas || []),
+    relationship_patterns: toJsonObject(analysis.relationshipPatterns || {}),
+    career_suggestions: toJsonObject(analysis.careerSuggestions || []),
+    learning_pathways: toJsonObject(analysis.learningPathways || []),
+    roadmap: analysis.roadmap || "",
+    result: toJsonObject(analysis),
+    // Deep Insight specific fields
+    response_patterns: toJsonObject(analysis.responsePatterns || {}),
+    core_traits: toJsonObject(analysis.coreTraits || {}),
+    cognitive_patterning: toJsonObject(analysis.cognitivePatterning || {}),
+    emotional_architecture: toJsonObject(analysis.emotionalArchitecture || {}),
+    interpersonal_dynamics: toJsonObject(analysis.interpersonalDynamics || {}),
+    growth_potential: toJsonObject(analysis.growthPotential || {})
+  };
 };
 
 export const ResultsActions: React.FC<ResultsActionsProps> = ({ 
@@ -58,47 +93,14 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
 
     try {
       if (user) {
-        // Store the analysis in Supabase
-        const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
-        
-        // Convert analysis to JSON-compatible object
-        const jsonAnalysis = toJsonObject(analysis);
-        
         // Prepare analysis data in the format required by the database
-        const analysisData: Record<string, any> = {
-          id: analysisId,
-          user_id: user.id,
-          assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
-          overview: analysis.overview,
-          traits: jsonAnalysis.traits as Json,
-          intelligence: jsonAnalysis.intelligence as Json,
-          intelligence_score: analysis.intelligenceScore || 0,
-          emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
-          cognitive_style: jsonAnalysis.cognitiveStyle as Json,
-          value_system: jsonAnalysis.valueSystem as Json,
-          motivators: jsonAnalysis.motivators as Json,
-          inhibitors: jsonAnalysis.inhibitors as Json,
-          weaknesses: jsonAnalysis.weaknesses as Json,
-          growth_areas: jsonAnalysis.growthAreas as Json,
-          relationship_patterns: jsonAnalysis.relationshipPatterns as Json,
-          career_suggestions: jsonAnalysis.careerSuggestions as Json,
-          learning_pathways: jsonAnalysis.learningPathways as Json,
-          roadmap: analysis.roadmap || "",
-          result: jsonAnalysis as Json,
-          // New Deep Insight specific fields
-          response_patterns: jsonAnalysis.responsePatterns as Json,
-          core_traits: jsonAnalysis.coreTraits as Json,
-          cognitive_patterning: jsonAnalysis.cognitivePatterning as Json,
-          emotional_architecture: jsonAnalysis.emotionalArchitecture as Json,
-          interpersonal_dynamics: jsonAnalysis.interpersonalDynamics as Json,
-          growth_potential: jsonAnalysis.growthPotential as Json
-        };
-
+        const analysisData = prepareAnalysisData(analysis, user.id);
+        
         // Check if the analysis already exists
         const { data: existingData } = await supabase
           .from('analyses')
           .select('id')
-          .eq('id', analysisId)
+          .eq('id', analysisData.id)
           .maybeSingle();
 
         if (existingData) {
@@ -106,7 +108,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           const { error } = await supabase
             .from('analyses')
             .update(analysisData)
-            .eq('id', analysisId);
+            .eq('id', analysisData.id);
 
           if (error) {
             throw new Error(`Failed to update analysis: ${error.message}`);

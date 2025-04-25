@@ -112,10 +112,10 @@ const ReportPage: React.FC = () => {
         
         // If we have an ID from the URL, try to load that specific analysis
         if (id) {
-          const success = setCurrentAnalysis(id);
+          const foundAnalysis = setCurrentAnalysis(id);
           
           // If setCurrentAnalysis fails, try to fetch the analysis directly
-          if (!success) {
+          if (!foundAnalysis) {
             console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
             const directAnalysis = await getAnalysisById(id);
             
@@ -135,7 +135,7 @@ const ReportPage: React.FC = () => {
           }
           
           // If we failed to load the specified analysis and haven't already attempted to handle this
-          if (!success && !analysis && !stableAnalysis && !directlyFetchedAnalysis && !hasAttemptedToLoadAnalysis) {
+          if (!foundAnalysis && !analysis && !stableAnalysis && !directlyFetchedAnalysis && !hasAttemptedToLoadAnalysis) {
             setHasAttemptedToLoadAnalysis(true);
             
             // Try to load all analyses to make sure we have the complete history
@@ -233,10 +233,10 @@ const ReportPage: React.FC = () => {
     setIsChangingAnalysis(true);
     
     // First try to set the current analysis using the normal method
-    const success = setCurrentAnalysis(analysisId);
+    const foundAnalysis = setCurrentAnalysis(analysisId);
     
     // If that fails, try to fetch it directly
-    if (!success) {
+    if (!foundAnalysis) {
       console.log(`Failed to set current analysis to ${analysisId}, trying direct fetch`);
       const directAnalysis = await getAnalysisById(analysisId);
       
