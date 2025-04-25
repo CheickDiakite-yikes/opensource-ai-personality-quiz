@@ -36,28 +36,48 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Check if we have a valid analysis with a proper ID
+  const hasValidAnalysis = analysis && analysis.id && analysis.id.length > 5;
+
   return (
     <div className={`flex items-center gap-2 ${isMobile ? 'self-start w-full' : 'self-end sm:self-auto'}`}>
-      <Button
-        onClick={handleCopyLink}
-        size={isMobile ? "sm" : "default"}
-        variant="outline"
-        className={isMobile ? "flex-1 px-2" : undefined}
-      >
-        {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
-        {isMobile ? "Copy" : (copied ? "Copied" : "Copy Link")}
-      </Button>
+      {hasValidAnalysis && (
+        <>
+          <Button
+            onClick={handleCopyLink}
+            size={isMobile ? "sm" : "default"}
+            variant="outline"
+            className={isMobile ? "flex-1 px-2" : undefined}
+          >
+            {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />} 
+            {isMobile ? "Copy" : (copied ? "Copied" : "Copy Link")}
+          </Button>
+          
+          <HistoryDropdown 
+            localAnalysisHistory={analysisHistory}
+            currentAnalysisId={analysis.id}
+            isMobile={isMobile}
+            isRefreshing={isRefreshing}
+            onAnalysisChange={onAnalysisChange}
+            onRefresh={onRefresh}
+          />
+          
+          <ShareDialog shareUrl={shareUrl} isMobile={isMobile} />
+        </>
+      )}
       
-      <HistoryDropdown 
-        localAnalysisHistory={analysisHistory}
-        currentAnalysisId={analysis.id}
-        isMobile={isMobile}
-        isRefreshing={isRefreshing}
-        onAnalysisChange={onAnalysisChange}
-        onRefresh={onRefresh}
-      />
-      
-      <ShareDialog shareUrl={shareUrl} isMobile={isMobile} />
+      {/* When there's no valid analysis, only show a refresh button */}
+      {!hasValidAnalysis && (
+        <Button
+          onClick={onRefresh}
+          size={isMobile ? "sm" : "default"}
+          variant="outline"
+          disabled={isRefreshing}
+          className={isMobile ? "flex-1 px-2" : undefined}
+        >
+          {isRefreshing ? "Loading..." : "Refresh Analyses"}
+        </Button>
+      )}
     </div>
   );
 };
