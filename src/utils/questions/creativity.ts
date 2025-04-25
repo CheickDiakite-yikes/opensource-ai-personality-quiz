@@ -74,3 +74,4 @@ export const creativityQuestions: AssessmentQuestion[] = [
     weight: 0.7
   }
 ];
+

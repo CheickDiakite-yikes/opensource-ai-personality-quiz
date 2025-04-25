@@ -124,6 +124,10 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
+          
+          {/* Add a redirect for the deep-insight route to home */}
+          <Route path="deep-insight/*" element={<Navigate to="/" replace />} />
+          
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
               <NotFound />

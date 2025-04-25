@@ -74,3 +74,4 @@ export const valueSystemQuestions: AssessmentQuestion[] = [
     weight: 1.0
   }
 ];
+

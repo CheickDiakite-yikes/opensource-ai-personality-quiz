@@ -23,7 +23,7 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
   growthAreas 
 }) => {
   const isMobile = useIsMobile();
-  const [weaknessesOpen, setWeaknessesOpen] = React.useState(!isMobile);
+  const [weaknessesOpen, setWeaknessesOpen] = React.useState(true); // Changed to default open
   const [growthOpen, setGrowthOpen] = React.useState(!isMobile);
   
   return (
@@ -38,10 +38,10 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
         }
       }
     }} className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'md:grid-cols-2 gap-6'}`}>
-      <Card className="glass-panel overflow-hidden">
-        <CardHeader className={`bg-gradient-to-r from-rose-500/10 to-red-500/10 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
-          <CardTitle className={isMobile ? 'text-base' : ''}>Weaknesses</CardTitle>
-          <CardDescription>Areas that may need attention</CardDescription>
+      <Card className="glass-panel overflow-hidden border-rose-500/30"> 
+        <CardHeader className={`bg-gradient-to-r from-rose-500/15 to-red-500/15 ${isMobile ? 'px-3 py-2 pb-2' : 'pb-3 md:pb-4'}`}>
+          <CardTitle className={isMobile ? 'text-base' : ''}>Areas for Improvement</CardTitle>
+          <CardDescription>Honest assessment of challenges</CardDescription>
         </CardHeader>
         
         {isMobile ? (
@@ -67,7 +67,7 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
                 <ul className="space-y-1.5">
                   {weaknesses.map((item, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-4 w-4 text-[0.65rem] text-primary mr-1.5 mt-0.5 flex-shrink-0">
+                      <span className="inline-flex items-center justify-center rounded-full bg-rose-500/20 h-4 w-4 text-[0.65rem] text-rose-700 mr-1.5 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </span>
                       <span className="text-xs">{item}</span>
@@ -82,7 +82,7 @@ const GrowthAreasSection: React.FC<GrowthAreasSectionProps> = ({
             <ul className="space-y-2">
               {weaknesses.map((item, index) => (
                 <li key={index} className="flex items-start">
-                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 h-6 w-6 text-sm text-primary mr-3 mt-0.5 flex-shrink-0">
+                  <span className="inline-flex items-center justify-center rounded-full bg-rose-500/20 h-6 w-6 text-sm text-rose-700 mr-3 mt-0.5 flex-shrink-0">
                     {index + 1}
                   </span>
                   <span className="text-sm md:text-base">{item}</span>

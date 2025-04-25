@@ -176,21 +176,40 @@ function calculateCategoryCoverage(responsesByCategory: Record<string, Assessmen
     const percentage = Math.min(100, Math.round((count / expected) * 100));
     
     // Calculate response quality based on whether custom responses were provided
-    // and how substantive they appear to be
+    // and how substantive they appear to be - now with more critical evaluation
     const responseQuality = responses.reduce((sum, response) => {
-      let quality = 0.5; // Default quality
+      let quality = 0.4; // Lower default quality
+      
+      // Evaluate quality based on option selected - options at the end of the list (e/f)
+      // generally indicate less sophisticated responses and get penalized
+      if (response.selectedOption) {
+        // Extract the option letter from the ID (e.g., "q31-a" -> "a")
+        const optionLetter = response.selectedOption.split('-')[1] || '';
+        
+        // Assign quality score based on the option letter
+        // Note: This is just an example, in reality we'd want to evaluate the actual response
+        switch(optionLetter) {
+          case 'a': quality = 0.8; break; // Usually insightful responses
+          case 'b': quality = 0.7; break; // Often thoughtful responses
+          case 'c': quality = 0.6; break; // Moderate responses
+          case 'd': quality = 0.5; break; // Basic responses
+          case 'e': quality = 0.3; break; // Potentially problematic responses
+          case 'f': quality = 0.2; break; // Often indicates lack of insight
+          default: quality = 0.4;
+        }
+      }
       
       // Higher quality for custom responses with substantial content
       if (response.customResponse && response.customResponse.trim().length > 0) {
-        quality = 0.7; // Base score for any custom response
+        quality = Math.max(quality, 0.5); // Base score for any custom response
         
         // If response includes detailed explanations (more than 100 chars)
         if (response.customResponse.length > 100) {
-          quality = 0.9;
+          quality = Math.max(quality, 0.7);
         }
         // If response is very detailed (more than 200 chars)
         if (response.customResponse.length > 200) {
-          quality = 1.0;
+          quality = Math.max(quality, 0.9);
         }
       }
       
@@ -243,8 +262,7 @@ async function generateAIAnalysis(
   }).join('\n\n');
 
   // Create a more specific and comprehensive prompt for analysis
-  const prompt = `
-  You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, deep, and reflects both positive traits and potential challenges using nuanced language.
+  const prompt = `You are an expert psychological profiler specializing in evidence-based, highly personalized assessments. Your task is to analyze assessment responses to create a truly individualized personality profile that is objective, balanced, deep, and reflects both positive traits and potential challenges using nuanced language.
 
   ## Assessment Data
   The user has answered questions across ${Object.keys(responsesByCategory).length} categories (${categoryCounts}):
@@ -290,7 +308,8 @@ async function generateAIAnalysis(
      - You MUST evaluate and consider EVERY individual response, not just general patterns
      - Identify unique combinations of traits that would not apply to most people
      - If you cite a pattern, give at least 2-3 specific response examples that support it
-
+     - Make full use of the available context window to analyze as many responses as possible
+     
   2. BE OBJECTIVELY BALANCED:
      - Do NOT portray the individual as only positive or idealized
      - Identify and describe potential negative traits, character flaws, or challenges revealed through responses
@@ -438,7 +457,7 @@ async function generateAIAnalysis(
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 16000, // Set maximum token count to 16,000
+        max_tokens: 16000, // Set maximum token count to 16,000 to maximize output
         seed: uniqueSeed, // Use unique seed for unique but consistent results
         temperature: 0.7,  // Balanced temperature for creative but coherent analysis
       }),
@@ -554,17 +573,17 @@ function calculateBaseScore(
 
   // Default base score if no relevant categories were found
   if (categoriesFound === 0) {
-    return 50; // Neutral starting point
+    return 40; // Lower neutral starting point
   }
 
   // Calculate averages
   const avgPercentage = totalPercentage / categoriesFound;
   const avgQuality = totalQuality / categoriesFound;
 
-  // Calculate base score: 70% weight on coverage, 30% on quality
-  // Scale to 40-70 range as base score (allows room for specific factor adjustments)
-  const baseScore = Math.round(((avgPercentage * 0.7) + (avgQuality * 100 * 0.3)) * 0.3) + 40;
+  // Calculate base score: 60% weight on coverage, 40% on quality
+  // Scale to 30-60 range as base score (allows room for specific factor adjustments)
+  const baseScore = Math.round(((avgPercentage * 0.6) + (avgQuality * 100 * 0.4)) * 0.3) + 30;
   
-  // Clamp score between 40 and 70
-  return Math.min(70, Math.max(40, baseScore));
+  // Clamp score between 30 and 60
+  return Math.min(60, Math.max(30, baseScore));
 }

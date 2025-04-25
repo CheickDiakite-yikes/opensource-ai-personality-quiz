@@ -74,3 +74,4 @@ export const resilienceQuestions: AssessmentQuestion[] = [
     weight: 1.0
   }
 ];
+
