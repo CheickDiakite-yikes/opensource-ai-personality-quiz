@@ -1,17 +1,6 @@
-
 import { useState } from 'react';
 import { PersonalityAnalysis } from '@/utils/types';
-
-// Function to sort analyses by date, with newest first
-const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
-  if (!analyses || !Array.isArray(analyses)) return [];
-  
-  return [...analyses].sort((a, b) => {
-    const dateA = new Date(a.createdAt || '');
-    const dateB = new Date(b.createdAt || '');
-    return dateB.getTime() - dateA.getTime(); // Newest first
-  });
-};
+import { sortAnalysesByDate } from './utils';
 
 export function useAnalysisManagement() {
   const [analysisHistory, setAnalysisHistory] = useState<PersonalityAnalysis[]>([]);
@@ -54,6 +43,31 @@ export function useAnalysisManagement() {
     }
   };
 
+  /**
+   * Set the current analysis by ID or analysis object
+   * @param analysisOrId - Either a PersonalityAnalysis object or an ID string
+   * @returns The analysis that was set as current, or null if not found
+   */
+  const setAnalysisById = (analysisOrId: PersonalityAnalysis | string): PersonalityAnalysis | null => {
+    // If it's already a full analysis object, just use it
+    if (typeof analysisOrId !== 'string') {
+      setCurrentAnalysis(analysisOrId);
+      return analysisOrId;
+    }
+    
+    // Otherwise, it's an ID string - find the analysis in history
+    const id = analysisOrId;
+    const found = analysisHistory.find((analysis) => analysis.id === id);
+    
+    if (found) {
+      setCurrentAnalysis(found);
+      return found;
+    }
+    
+    console.log(`Analysis with ID ${id} not found in history`);
+    return null;
+  };
+
   const setAllAnalyses = (analyses: PersonalityAnalysis[]) => {
     if (!analyses || analyses.length === 0) return;
     
@@ -71,7 +85,7 @@ export function useAnalysisManagement() {
   return {
     analysisHistory,
     currentAnalysis,
-    setCurrentAnalysis,
+    setCurrentAnalysis: setAnalysisById, // Replace with our enhanced version
     getAnalysisHistory,
     addToHistory,
     setAllAnalyses

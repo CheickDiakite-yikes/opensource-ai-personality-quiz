@@ -114,28 +114,31 @@ const ReportPage: React.FC = () => {
         if (id) {
           const foundAnalysis = setCurrentAnalysis(id);
           
+          // Handle the result properly instead of checking truthiness
+          if (foundAnalysis !== null) {
+            return; // Successfully set the analysis
+          }
+          
           // If setCurrentAnalysis fails, try to fetch the analysis directly
-          if (!foundAnalysis) {
-            console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
-            const directAnalysis = await getAnalysisById(id);
+          console.log(`Failed to set current analysis to ${id}, trying direct fetch`);
+          const directAnalysis = await getAnalysisById(id);
             
-            if (directAnalysis) {
-              console.log(`Successfully fetched analysis ${id} directly`);
-              setStableAnalysis(directAnalysis);
-              return;
-            }
+          if (directAnalysis) {
+            console.log(`Successfully fetched analysis ${id} directly`);
+            setStableAnalysis(directAnalysis);
+            return;
+          }
             
-            // Try last resort direct fetch from Supabase
-            const supabaseDirectFetch = await fetchAnalysisById(id);
-            if (supabaseDirectFetch) {
-              console.log(`Direct Supabase fetch successful for ${id}`);
-              setDirectlyFetchedAnalysis(supabaseDirectFetch);
-              return;
-            }
+          // Try last resort direct fetch from Supabase
+          const supabaseDirectFetch = await fetchAnalysisById(id);
+          if (supabaseDirectFetch) {
+            console.log(`Direct Supabase fetch successful for ${id}`);
+            setDirectlyFetchedAnalysis(supabaseDirectFetch);
+            return;
           }
           
           // If we failed to load the specified analysis and haven't already attempted to handle this
-          if (!foundAnalysis && !analysis && !stableAnalysis && !directlyFetchedAnalysis && !hasAttemptedToLoadAnalysis) {
+          if (!analysis && !stableAnalysis && !directlyFetchedAnalysis && !hasAttemptedToLoadAnalysis) {
             setHasAttemptedToLoadAnalysis(true);
             
             // Try to load all analyses to make sure we have the complete history
@@ -144,9 +147,9 @@ const ReportPage: React.FC = () => {
             // After loading all analyses, try again to set the current analysis
             if (allAnalyses && allAnalyses.length > 0) {
               console.log(`Loaded ${allAnalyses.length} analyses, trying to find ${id} again`);
-              const secondAttemptSuccess = setCurrentAnalysis(id);
+              const secondAttemptResult = setCurrentAnalysis(id);
               
-              if (secondAttemptSuccess) {
+              if (secondAttemptResult !== null) {
                 console.log(`Successfully set current analysis to ${id} after loading all analyses`);
                 return;
               }
@@ -235,46 +238,49 @@ const ReportPage: React.FC = () => {
     // First try to set the current analysis using the normal method
     const foundAnalysis = setCurrentAnalysis(analysisId);
     
-    // If that fails, try to fetch it directly
-    if (!foundAnalysis) {
-      console.log(`Failed to set current analysis to ${analysisId}, trying direct fetch`);
-      const directAnalysis = await getAnalysisById(analysisId);
-      
-      if (directAnalysis) {
-        console.log(`Successfully fetched analysis ${analysisId} directly`);
-        setStableAnalysis(directAnalysis);
-        navigate(`/report/${analysisId}`, { replace: false });
-      } else {
-        // Try direct Supabase fetch
-        const supabaseDirectFetch = await fetchAnalysisById(analysisId);
-        
-        if (supabaseDirectFetch) {
-          console.log(`Direct Supabase fetch successful for ${analysisId}`);
-          setDirectlyFetchedAnalysis(supabaseDirectFetch);
-          navigate(`/report/${analysisId}`, { replace: false });
-          setIsChangingAnalysis(false);
-          return;
-        }
-        
-        // Try to load all analyses as a last resort
-        await loadAllAnalysesFromSupabase();
-        
-        // Try one more time to set the current analysis
-        const secondAttemptSuccess = setCurrentAnalysis(analysisId);
-        
-        if (secondAttemptSuccess) {
-          console.log(`Successfully set current analysis to ${analysisId} after loading all analyses`);
-          navigate(`/report/${analysisId}`, { replace: false });
-        } else {
-          toast.error("Could not load the selected analysis", {
-            description: "Please try again or select a different report",
-            duration: 3000
-          });
-          setIsChangingAnalysis(false);
-        }
-      }
-    } else {
+    // Handle the result properly instead of checking truthiness
+    if (foundAnalysis !== null) {
       navigate(`/report/${analysisId}`, { replace: false });
+      return;
+    }
+    
+    // If that fails, try to fetch it directly
+    console.log(`Failed to set current analysis to ${analysisId}, trying direct fetch`);
+    const directAnalysis = await getAnalysisById(analysisId);
+    
+    if (directAnalysis) {
+      console.log(`Successfully fetched analysis ${analysisId} directly`);
+      setStableAnalysis(directAnalysis);
+      navigate(`/report/${analysisId}`, { replace: false });
+      return;
+    }
+    
+    // Try direct Supabase fetch
+    const supabaseDirectFetch = await fetchAnalysisById(analysisId);
+    
+    if (supabaseDirectFetch) {
+      console.log(`Direct Supabase fetch successful for ${analysisId}`);
+      setDirectlyFetchedAnalysis(supabaseDirectFetch);
+      navigate(`/report/${analysisId}`, { replace: false });
+      setIsChangingAnalysis(false);
+      return;
+    }
+    
+    // Try to load all analyses as a last resort
+    await loadAllAnalysesFromSupabase();
+    
+    // Try one more time to set the current analysis
+    const secondAttemptResult = setCurrentAnalysis(analysisId);
+    
+    if (secondAttemptResult !== null) {
+      console.log(`Successfully set current analysis to ${analysisId} after loading all analyses`);
+      navigate(`/report/${analysisId}`, { replace: false });
+    } else {
+      toast.error("Could not load the selected analysis", {
+        description: "Please try again or select a different report",
+        duration: 3000
+      });
+      setIsChangingAnalysis(false);
     }
   }, [id, setCurrentAnalysis, navigate, getAnalysisById, loadAllAnalysesFromSupabase, fetchAnalysisById]);
 

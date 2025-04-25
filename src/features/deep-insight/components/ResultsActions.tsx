@@ -9,6 +9,7 @@ import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { Json } from "@/utils/types";
+import { toJsonObject } from "@/hooks/aiAnalysis/utils";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -16,32 +17,8 @@ interface ResultsActionsProps {
   analysis: AnalysisData;
 }
 
-// Convert object to JSON compatible format for Supabase
-const toJsonObject = (obj: any): Json => {
-  if (obj === null || obj === undefined) {
-    return null;
-  }
-  
-  // Handle arrays
-  if (Array.isArray(obj)) {
-    return obj.map(item => toJsonObject(item)) as Json[];
-  }
-  
-  // Handle objects
-  if (typeof obj === 'object' && obj !== null) {
-    const result: Record<string, Json> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      result[key] = toJsonObject(value);
-    }
-    return result;
-  }
-  
-  // Handle primitive values
-  return obj as Json;
-};
-
 // Prepare typed analysis data for database insertion
-const prepareAnalysisData = (analysis: AnalysisData, userId: string): Record<string, any> => {
+const prepareAnalysisData = (analysis: AnalysisData, userId: string) => {
   const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
   
   // Convert all complex objects to Json type
@@ -119,7 +96,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           // Insert new analysis
           const { error } = await supabase
             .from('analyses')
-            .insert(analysisData);
+            .insert([analysisData]); // Changed to array to match expected type
 
           if (error) {
             throw new Error(`Failed to save analysis: ${error.message}`);
