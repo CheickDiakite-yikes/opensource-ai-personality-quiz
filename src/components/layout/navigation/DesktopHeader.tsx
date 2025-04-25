@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import NotificationCenter from "../../notifications/NotificationCenter";
 
 const DesktopHeader: React.FC = () => {
   const location = useLocation();
@@ -35,9 +34,6 @@ const DesktopHeader: React.FC = () => {
             alt="Who Am I Logo" 
             className="h-6 w-auto" 
           />
-        </div>
-        <div>
-          <NotificationCenter />
         </div>
       </div>
     </header>

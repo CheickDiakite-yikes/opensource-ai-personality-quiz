@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -5,35 +6,28 @@ import {
   Routes,
   Navigate
 } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { ActivityProvider } from "./contexts/ActivityContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
-import AssessmentPage from "./pages/AssessmentPage";
-import TraitsPage from "./components/traits/TraitsPage";
-import ActivitiesPage from "./pages/ActivitiesPage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import UpdateProfilePage from "./pages/UpdateProfilePage";
-import NotificationsPage from "./pages/NotificationsPage";
-import PublicProfilePage from "./pages/PublicProfilePage";
-import DeepInsightPage from "./features/deep-insight/DeepInsightPage";
-import DeepInsightResultsPage from "./features/deep-insight/DeepInsightResultsPage";
-import { useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./components/ui/theme-provider";
 import { Toaster } from "sonner";
-import "./App.css";
 import EnhancedReportPage from "./components/report/EnhancedReportPage";
+import Auth from "./pages/Auth";
+import Layout from "./components/layout/Layout";
+import HomePage from "./pages/HomePage";
+import DeepInsight from "./pages/DeepInsight";
+import DeepInsightQuiz from "./pages/DeepInsightQuiz";
+import DeepInsightResults from "./pages/DeepInsightResults";
+import NotFound from "./pages/NotFound";
+import "./App.css";
 
 function AppRouter() {
-  const { currentUser, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [showApp, setShowApp] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
+    if (!isLoading) {
       setShowApp(true);
     }
-  }, [loading]);
+  }, [isLoading]);
 
   if (!showApp) {
     return <div>Loading...</div>;
@@ -44,28 +38,11 @@ function AppRouter() {
       <Route
         path="/"
         element={
-          currentUser ? <Dashboard /> : <Navigate to="/login" />
+          user ? <HomePage /> : <Navigate to="/auth" />
         }
       />
+      <Route path="/auth" element={<Auth />} />
       <Route
-        path="/assessment"
-        element={
-          currentUser ? <AssessmentPage /> : <Navigate to="/login" />
-        }
-      />
-      <Route
-        path="/traits/:id"
-        element={
-          currentUser ? <TraitsPage /> : <Navigate to="/login" />
-        }
-      />
-      <Route
-        path="/activities"
-        element={
-          currentUser ? <ActivitiesPage /> : <Navigate to="/login" />
-        }
-      />
-       <Route
         path="/report"
         element={<EnhancedReportPage />}
       />
@@ -73,48 +50,39 @@ function AppRouter() {
         path="/report/:id"
         element={<EnhancedReportPage />}
       />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route
-        path="/update-profile"
-        element={
-          currentUser ? <UpdateProfilePage /> : <Navigate to="/login" />
-        }
-      />
-      <Route
-        path="/notifications"
-        element={
-          currentUser ? <NotificationsPage /> : <Navigate to="/login" />
-        }
-      />
-      <Route path="/public-profile/:userId" element={<PublicProfilePage />} />
       <Route
         path="/deep-insight"
         element={
-          currentUser ? <DeepInsightPage /> : <Navigate to="/login" />
+          user ? <DeepInsight /> : <Navigate to="/auth" />
+        }
+      />
+      <Route
+        path="/deep-insight/quiz"
+        element={
+          user ? <DeepInsightQuiz /> : <Navigate to="/auth" />
         }
       />
       <Route
         path="/deep-insight/results"
         element={
-          currentUser ? <DeepInsightResultsPage /> : <Navigate to="/login" />
+          user ? <DeepInsightResults /> : <Navigate to="/auth" />
         }
       />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
 function App() {
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <AuthProvider>
-        <ActivityProvider>
-          <Router>
+        <Router>
+          <Layout>
             <AppRouter />
-          </Router>
+          </Layout>
           <Toaster richColors />
-        </ActivityProvider>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );
