@@ -1,14 +1,16 @@
+
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
 import TraitsDetail from "./TraitsDetail";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const TraitsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,17 +18,22 @@ const TraitsPage: React.FC = () => {
     analysis, 
     isLoading, 
     fetchAnalysisById,
-    forceFetchAllAnalyses // New function from our updated hook
+    forceFetchAllAnalyses
   } = useAIAnalysis();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [directAnalysis, setDirectAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempts, setLoadAttempts] = useState(0);
   
   // Log current route and analysis ID for debugging
   useEffect(() => {
     console.log(`[TraitsPage] Route analysis ID: ${id}`);
     console.log(`[TraitsPage] Current analysis: ${analysis?.id || 'none'}`);
+    
+    // Reset error state when ID changes
+    setLoadError(null);
   }, [id, analysis]);
   
   // Try to load the analysis directly if we have an ID but no analysis
@@ -34,6 +41,7 @@ const TraitsPage: React.FC = () => {
     if (id && !analysis && !directAnalysis && !isLoading) {
       const loadAnalysisDirectly = async () => {
         console.log(`[TraitsPage] Attempting to load analysis directly with ID: ${id}`);
+        setLoadAttempts(prev => prev + 1);
         
         try {
           // First try the direct fetch
@@ -42,6 +50,7 @@ const TraitsPage: React.FC = () => {
           if (fetchedAnalysis) {
             console.log(`[TraitsPage] Successfully loaded analysis with ID: ${id}`);
             setDirectAnalysis(fetchedAnalysis);
+            setLoadError(null);
             return;
           }
           
@@ -59,6 +68,7 @@ const TraitsPage: React.FC = () => {
             if (matchingAnalysis) {
               console.log(`[TraitsPage] Found matching analysis in force fetch results`);
               setDirectAnalysis(matchingAnalysis);
+              setLoadError(null);
               return;
             }
             
@@ -66,6 +76,12 @@ const TraitsPage: React.FC = () => {
             console.log(`[TraitsPage] No matching analysis found, redirecting to first analysis`);
             toast.info("Redirecting to available analysis");
             navigate(`/traits/${allAnalyses[0].id}`);
+            return;
+          }
+          
+          // If we've tried multiple times and failed, show an error
+          if (loadAttempts >= 2) {
+            setLoadError("Could not find the requested analysis after multiple attempts");
             return;
           }
           
@@ -77,16 +93,13 @@ const TraitsPage: React.FC = () => {
           navigate("/assessment");
         } catch (error) {
           console.error(`[TraitsPage] Error loading analysis:`, error);
-          toast.error("Error loading analysis", {
-            description: "Please try again later or take a new assessment"
-          });
-          navigate("/assessment");
+          setLoadError(`Error loading analysis: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
       };
       
       loadAnalysisDirectly();
     }
-  }, [id, analysis, directAnalysis, isLoading, fetchAnalysisById, navigate, forceFetchAllAnalyses]);
+  }, [id, analysis, directAnalysis, isLoading, fetchAnalysisById, navigate, forceFetchAllAnalyses, loadAttempts]);
   
   // Handle manual refresh
   const handleRefresh = async () => {
@@ -103,6 +116,7 @@ const TraitsPage: React.FC = () => {
         setDirectAnalysis(refreshedAnalysis);
         toast.success("Analysis data refreshed", { id: "traits-refresh" });
         setIsRefreshing(false);
+        setLoadError(null);
         return;
       }
       
@@ -115,6 +129,7 @@ const TraitsPage: React.FC = () => {
         
         if (matchingAnalysis) {
           setDirectAnalysis(matchingAnalysis);
+          setLoadError(null);
           toast.success("Analysis data refreshed", { id: "traits-refresh" });
         } else {
           toast.error("Could not find this specific analysis", { 
@@ -130,10 +145,12 @@ const TraitsPage: React.FC = () => {
           id: "traits-refresh",
           description: "Please try again later"
         });
+        setLoadError("Could not refresh analysis data. Please try again later.");
       }
     } catch (error) {
       console.error("Error refreshing analysis:", error);
       toast.error("Error refreshing data", { id: "traits-refresh" });
+      setLoadError(`Error refreshing data: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsRefreshing(false);
     }
@@ -141,6 +158,42 @@ const TraitsPage: React.FC = () => {
   
   // Use direct analysis if available, otherwise use the one from the hook
   const displayAnalysis = directAnalysis || analysis;
+  
+  // Show error state if we have an error and no analysis
+  if (loadError && !displayAnalysis && !isLoading) {
+    return (
+      <div className="container max-w-5xl py-4 md:py-8 px-3 md:px-4">
+        <div className="flex items-center justify-between mb-3 md:mb-6">
+          <Button 
+            variant="ghost" 
+            className="-ml-2" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+        </div>
+        
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertTitle>Error Loading Analysis</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+        
+        <div className="space-y-4">
+          <p>We couldn't load the requested analysis. You can:</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/assessment")}>
+              Take New Assessment
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Redirect if no analysis is available
   if (!displayAnalysis && !isLoading) {

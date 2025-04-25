@@ -1,7 +1,7 @@
+
 import { useState } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
-import { saveAssessmentToStorage } from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { v4 as uuidv4 } from "uuid";
@@ -105,10 +105,11 @@ export const useAnalyzeResponses = (
       }
 
       // Enhanced error handling and retry logic for edge function calls
-      const MAX_RETRIES = 2;
-      const functionTimeout = 180000; // 3 minutes timeout for analysis
+      const MAX_RETRIES = 3; // Increased from 2 to 3 for better reliability
+      const functionTimeout = 240000; // 4 minutes timeout for analysis (increased from 3 minutes)
       let result = null;
       let lastError = null;
+      let retryDelay = 1000; // Base delay of 1 second
       
       for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
         try {
@@ -116,14 +117,16 @@ export const useAnalyzeResponses = (
             console.log(`Retry attempt ${retryCount}/${MAX_RETRIES} for analysis function call...`);
             toast.loading(`Retry ${retryCount}/${MAX_RETRIES}: Analyzing your responses...`, { 
               id: "analyze-responses",
-              duration: 30000
+              duration: 60000 // Increased from 30000 to 60000
             });
-            // Exponential backoff
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+            
+            // Enhanced exponential backoff with jitter
+            const jitter = Math.random() * 1000;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * retryDelay + jitter));
           } else {
             toast.loading("Analyzing your responses with AI...", { 
               id: "analyze-responses",
-              duration: 30000
+              duration: 60000 // Increased from 30000 to 60000
             });
           }
 
@@ -136,20 +139,28 @@ export const useAnalyzeResponses = (
             }, functionTimeout);
           });
           
-          // Call Supabase function with detailed request info
-          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
+          // Track request start time for detailed metrics
+          const startTime = Date.now();
+          
+          // Call Supabase function with detailed request info and performance tracking
+          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
           
           const functionPromise = supabase.functions.invoke("analyze-responses", {
             body: { 
               responses, 
               assessmentId,
-              retryCount // Pass retry count for logging purposes
+              retryCount, // Pass retry count for logging purposes
+              previousError: lastError ? lastError.message : null // Pass previous error for debugging
             }
           });
           
           // Race between function call and timeout
           result = await Promise.race([functionPromise, timeoutPromise]);
+          const endTime = Date.now();
+          const duration = endTime - startTime;
+          
           console.timeEnd(`analyze-responses-call-${retryCount}`);
+          console.log(`Request duration: ${duration}ms`);
           
           // Validate the response before proceeding
           if (!result) {
@@ -164,12 +175,22 @@ export const useAnalyzeResponses = (
             throw new Error("Invalid response structure from analysis function - missing analysis data");
           }
           
-          console.log(`Analysis successful on attempt ${retryCount+1}`);
+          console.log(`Analysis successful on attempt ${retryCount+1} after ${duration}ms`);
           toast.success("Analysis complete!", { id: "analyze-responses" });
           break;
         } catch (error) {
           lastError = error;
-          console.error(`Analysis attempt ${retryCount+1} failed:`, error);
+          console.error(`Analysis attempt ${retryCount+1} failed after ${Date.now() - (retryCount > 0 ? Math.pow(2, retryCount) * retryDelay : 0)}ms:`, error);
+          
+          // Capture detailed error information
+          const errorDetails = {
+            attempt: retryCount + 1,
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+            assessmentId
+          };
+          
+          console.warn("Analysis error details:", errorDetails);
           
           if (retryCount === MAX_RETRIES) {
             // All retries exhausted
@@ -241,25 +262,26 @@ export const useAnalyzeResponses = (
             overviewLength: insertObject.overview ? insertObject.overview.length : 0
           });
           
-          // Try up to 3 times to save to the database
+          // Try up to 3 times to save to the database with progressive delay
           let saveSuccess = false;
           for (let i = 0; i < 3; i++) {
             try {
+              const saveStartTime = Date.now();
               const { error: analysisError } = await supabase
                 .from('analyses')
                 .insert(insertObject);
                 
               if (analysisError) {
-                console.error(`Save attempt ${i+1} failed:`, analysisError);
-                if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
+                console.error(`Save attempt ${i+1} failed after ${Date.now() - saveStartTime}ms:`, analysisError);
+                if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1) * 2)); // Progressive delay
               } else {
-                console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
+                console.log(`Successfully saved analysis to Supabase with ID: ${result.data.analysis.id} in ${Date.now() - saveStartTime}ms`);
                 saveSuccess = true;
                 break;
               }
             } catch (err) {
               console.error(`Save attempt ${i+1} exception:`, err);
-              if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
+              if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1) * 2));
             }
           }
           
@@ -424,4 +446,13 @@ export const useAnalyzeResponses = (
     isAnalyzing,
     analyzeResponses
   };
+};
+
+// Helper function to save assessment to localStorage
+const saveAssessmentToStorage = (responses: AssessmentResponse[]): void => {
+  try {
+    localStorage.setItem("assessment_responses", JSON.stringify(responses));
+  } catch (error) {
+    console.error("Error saving assessment to localStorage:", error);
+  }
 };
