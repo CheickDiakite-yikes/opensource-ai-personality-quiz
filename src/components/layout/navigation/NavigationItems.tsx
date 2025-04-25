@@ -1,5 +1,5 @@
 
-import { User, BarChart, ClipboardList, Home, LogOut, Brain } from "lucide-react";
+import { User, BarChart, ClipboardList, Home, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export interface NavigationItem {
@@ -21,7 +21,7 @@ export const useNavigationItems = () => {
     { name: "Assessment", path: "/assessment", icon: ClipboardList, requiresAuth: true },
     { name: "Report", path: "/report", icon: BarChart, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
-    { name: "Deep Insight", path: "/deep-insight", icon: Brain, requiresAuth: true },
+    // Deep Insight link removed
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
   ];
 

@@ -15,7 +15,6 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
-// Removed deep insight imports
 
 // Loading fallback component
 const PageLoader = () => (
@@ -111,7 +110,8 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* Removed deep insight routes */}
+          {/* Add a redirect for the deep-insight route to home */}
+          <Route path="deep-insight/*" element={<Navigate to="/" replace />} />
           
           <Route path="*" element={
             <Suspense fallback={<PageLoader />}>
