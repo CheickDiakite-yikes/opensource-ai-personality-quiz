@@ -10,7 +10,7 @@ interface ReportErrorProps {
   title?: string;
   description?: string;
   showRetryButton?: boolean;
-  onRetry?: () => void;
+  onRetry?: () => Promise<void>;  // Updated to match the return type
   errorDetails?: string;
 }
 
@@ -48,7 +48,7 @@ const ReportError: React.FC<ReportErrorProps> = ({
       
       <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
         {showRetryButton && onRetry && (
-          <Button onClick={onRetry} className="flex items-center gap-2">
+          <Button onClick={() => onRetry()} className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" /> Retry Loading
           </Button>
         )}

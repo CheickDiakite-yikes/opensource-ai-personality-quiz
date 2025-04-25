@@ -146,8 +146,8 @@ export function useReportData(reportId?: string) {
     }
   }, [reportId, setCurrentAnalysis, fetchAnalysisById, forceFetchAllAnalyses]);
 
-  // Manual refresh function
-  const handleManualRefresh = useCallback(async () => {
+  // Manual refresh function - Modified to return Promise<void> instead of Promise<boolean>
+  const handleManualRefresh = useCallback(async (): Promise<void> => {
     toast.loading("Refreshing your analyses...", { id: "refresh-toast" });
     setErrorMessage(null);
     
@@ -168,15 +168,12 @@ export function useReportData(reportId?: string) {
             }
           }
         }
-        return true;
       } else {
         toast.error("No analyses found", { id: "refresh-toast" });
-        return false;
       }
     } catch (error) {
       console.error("Error manually refreshing analyses:", error);
       toast.error("Failed to refresh analyses", { id: "refresh-toast" });
-      return false;
     }
   }, [reportId, stableAnalysis, directlyFetchedAnalysis, forceFetchAllAnalyses, fetchAnalysisById, setCurrentAnalysis]);
 
