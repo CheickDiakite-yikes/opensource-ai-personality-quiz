@@ -15,9 +15,12 @@ Deno.serve(async (req) => {
   try {
     let id: string | null = null;
     
+    // Enhanced error logging
     console.log(`[get-public-analysis] Processing request, method: ${req.method}, url: ${req.url}`);
     
-    // First try to get ID from URL parameters
+    // Support multiple ways of getting the ID parameter - with better error handling
+    
+    // 1. Check URL parameters first
     try {
       const url = new URL(req.url);
       id = url.searchParams.get('id');
@@ -28,7 +31,7 @@ Deno.serve(async (req) => {
       console.error("[get-public-analysis] Error parsing URL:", e);
     }
     
-    // If not found in URL, try to get from request body
+    // 2. If not found in URL, try to get from request body
     if (!id && (req.method === 'POST' || req.method === 'GET')) {
       try {
         const body = await req.json().catch(() => ({}));
@@ -41,117 +44,117 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Log the ID that was found
     console.log(`[get-public-analysis] Processing request for analysis ID: ${id || 'none'}`);
 
     if (!id) {
       console.error("[get-public-analysis] No ID provided in request");
-      
-      // If no ID provided, get the most recent analysis as fallback
-      console.log("[get-public-analysis] Getting most recent analysis as fallback");
-      const { data: mostRecentData, error: mostRecentError } = await supabase
-        .from('analyses')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (mostRecentError) {
-        throw new Error(`Failed to get most recent analysis: ${mostRecentError.message}`);
-      }
-      
-      if (mostRecentData && mostRecentData.length > 0) {
-        console.log(`[get-public-analysis] Returning most recent analysis: ${mostRecentData[0].id}`);
-        return new Response(
-          JSON.stringify(mostRecentData[0]),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
       return new Response(
-        JSON.stringify({ error: 'No analyses found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Analysis ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log(`[get-public-analysis] Getting public analysis with ID: ${id}`);
 
-    // Try direct table access first
-    const { data: analysisData, error: analysisError } = await supabase
-      .from('analyses')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    
-    if (analysisError) {
-      console.error("[get-public-analysis] Error fetching analysis by ID:", analysisError);
-    } else if (analysisData) {
-      console.log(`[get-public-analysis] Found analysis by direct ID lookup: ${analysisData.id}`);
-      return new Response(
-        JSON.stringify(analysisData),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Try direct table access first with improved error handling
+    try {
+      const { data: analysisData, error: analysisError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (analysisError) {
+        console.error("[get-public-analysis] Error fetching analysis by ID:", analysisError);
+        // Continue to next approach instead of returning error immediately
+      } else if (analysisData) {
+        console.log(`[get-public-analysis] Found analysis by direct ID lookup: ${analysisData.id}`);
+        return new Response(
+          JSON.stringify(analysisData),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error("[get-public-analysis] Exception in direct ID lookup:", e);
+      // Continue to next approach
     }
     
     // If not found by id, try looking by assessment_id
-    console.log("[get-public-analysis] Analysis not found by ID, trying assessment_id");
-    const { data: assessmentData, error: assessmentError } = await supabase
-      .from('analyses')
-      .select('*')
-      .eq('assessment_id', id)
-      .maybeSingle();
-      
-    if (assessmentError) {
-      console.error("[get-public-analysis] Error fetching by assessment_id:", assessmentError);
-    } else if (assessmentData) {
-      console.log(`[get-public-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
-      return new Response(
-        JSON.stringify(assessmentData),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    try {
+      console.log("[get-public-analysis] Analysis not found by ID, trying assessment_id");
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('assessment_id', id)
+        .maybeSingle();
+        
+      if (assessmentError) {
+        console.error("[get-public-analysis] Error fetching by assessment_id:", assessmentError);
+        // Continue to next approach
+      } else if (assessmentData) {
+        console.log(`[get-public-analysis] Found analysis by assessment_id: ${assessmentData.id}`);
+        return new Response(
+          JSON.stringify(assessmentData),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error("[get-public-analysis] Exception in assessment_id lookup:", e);
+      // Continue to next approach
     }
-    
-    // If still not found, try a more flexible search
-    console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
-    const { data: flexData, error: flexError } = await supabase
-      .from('analyses')
-      .select('*')
-      .filter('id', 'ilike', `%${id.slice(-8)}%`)
-      .order('created_at', { ascending: false })
-      .limit(1);
       
-    if (flexError) {
-      console.error("[get-public-analysis] Error in flexible search:", flexError);
-    } else if (flexData && flexData.length > 0) {
-      console.log(`[get-public-analysis] Found analysis via flexible search: ${flexData[0].id}`);
-      return new Response(
-        JSON.stringify(flexData[0]),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // If still not found, try a more flexible search
+    try {
+      console.log("[get-public-analysis] Analysis not found by assessment_id, trying partial match");
+      const { data: flexData, error: flexError } = await supabase
+        .from('analyses')
+        .select('*')
+        .filter('id', 'ilike', `%${id.slice(-8)}%`)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (flexError) {
+        console.error("[get-public-analysis] Error in flexible search:", flexError);
+      } else if (flexData && flexData.length > 0) {
+        console.log(`[get-public-analysis] Found analysis via flexible search: ${flexData[0].id}`);
+        return new Response(
+          JSON.stringify(flexData[0]),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error("[get-public-analysis] Exception in flexible search:", e);
+      // Continue to next approach
     }
 
-    // Try one last approach - get the most recent analysis
-    console.log("[get-public-analysis] No matching analysis found, getting most recent analysis");
-    const { data: recentData, error: recentError } = await supabase
-      .from('analyses')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1);
-      
-    if (recentError) {
-      console.error("[get-public-analysis] Error fetching recent analysis:", recentError);
-      throw new Error(`Failed to get analysis: ${recentError.message}`);
+    // Try one last approach - get the most recent analysis, if any
+    try {
+      console.log("[get-public-analysis] No matching analysis found, getting most recent analysis");
+      const { data: recentData, error: recentError } = await supabase
+        .from('analyses')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (recentError) {
+        console.error("[get-public-analysis] Error fetching recent analysis:", recentError);
+      } else if (recentData && recentData.length > 0) {
+        console.log(`[get-public-analysis] Found most recent analysis as fallback: ${recentData[0].id}`);
+        return new Response(
+          JSON.stringify({ 
+            ...recentData[0],
+            message: "Requested analysis not found, returning most recent analysis instead" 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error("[get-public-analysis] Exception in recent analysis lookup:", e);
     }
     
-    if (recentData && recentData.length > 0) {
-      console.log(`[get-public-analysis] Found most recent analysis as fallback: ${recentData[0].id}`);
-      return new Response(
-        JSON.stringify({ 
-          ...recentData[0],
-          message: "Requested analysis not found, returning most recent analysis instead" 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
+    // If all approaches failed, return a 404
+    console.error(`[get-public-analysis] Analysis not found after all lookup attempts for ID: ${id}`);
     return new Response(
       JSON.stringify({ 
         error: 'Analysis not found',
@@ -164,7 +167,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to get analysis',
-        stack: Deno.env.get('NODE_ENV') === 'development' ? error.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

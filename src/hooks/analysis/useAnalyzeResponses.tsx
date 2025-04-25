@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AssessmentResponse, PersonalityAnalysis } from "@/utils/types";
 import { toast } from "sonner";
@@ -106,11 +105,10 @@ export const useAnalyzeResponses = (
       }
 
       // Enhanced error handling and retry logic for edge function calls
-      const MAX_RETRIES = 3; // Increased from 2 to 3 for more retries
-      const functionTimeout = 240000; // 4 minutes timeout for analysis (increased from 3 mins)
+      const MAX_RETRIES = 2;
+      const functionTimeout = 180000; // 3 minutes timeout for analysis
       let result = null;
       let lastError = null;
-      let successfulRetry = -1;
       
       for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
         try {
@@ -118,14 +116,14 @@ export const useAnalyzeResponses = (
             console.log(`Retry attempt ${retryCount}/${MAX_RETRIES} for analysis function call...`);
             toast.loading(`Retry ${retryCount}/${MAX_RETRIES}: Analyzing your responses...`, { 
               id: "analyze-responses",
-              duration: 60000 // Increased duration
+              duration: 30000
             });
             // Exponential backoff
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1500));
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
           } else {
             toast.loading("Analyzing your responses with AI...", { 
               id: "analyze-responses",
-              duration: 60000
+              duration: 30000
             });
           }
 
@@ -139,14 +137,13 @@ export const useAnalyzeResponses = (
           });
           
           // Call Supabase function with detailed request info
-          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId} (retry: ${retryCount})`);
+          console.log(`Calling Supabase analyze-responses function with assessment ID ${assessmentId}`);
           
           const functionPromise = supabase.functions.invoke("analyze-responses", {
             body: { 
               responses, 
               assessmentId,
-              retryCount, // Pass retry count for logging purposes
-              timestamp: Date.now() // Add timestamp for tracing
+              retryCount // Pass retry count for logging purposes
             }
           });
           
@@ -167,7 +164,6 @@ export const useAnalyzeResponses = (
             throw new Error("Invalid response structure from analysis function - missing analysis data");
           }
           
-          successfulRetry = retryCount;
           console.log(`Analysis successful on attempt ${retryCount+1}`);
           toast.success("Analysis complete!", { id: "analyze-responses" });
           break;
@@ -192,7 +188,7 @@ export const useAnalyzeResponses = (
         throw new Error("Failed to get valid analysis after all attempts");
       }
       
-      console.log(`Analysis complete on retry ${successfulRetry} with ID: ${result?.data?.analysis?.id}`);
+      console.log("Received AI analysis:", result?.data?.analysis?.id);
       console.log("Analysis overview length:", result?.data?.analysis?.overview?.length || 0);
       console.log("Analysis traits count:", result?.data?.analysis?.traits?.length || 0);
       
@@ -233,14 +229,7 @@ export const useAnalyzeResponses = (
             relationship_patterns: jsonCompatibleAnalysis.relationshipPatterns || null,
             career_suggestions: jsonCompatibleAnalysis.careerSuggestions || [],
             learning_pathways: jsonCompatibleAnalysis.learningPathways || [],
-            roadmap: result.data.analysis.roadmap || "",
-            // Add any additional fields that might be in the new analysis structure
-            response_patterns: jsonCompatibleAnalysis.responsePatterns || null,
-            core_traits: jsonCompatibleAnalysis.coreTraits || null,
-            cognitive_patterning: jsonCompatibleAnalysis.cognitivePatterning || null,
-            emotional_architecture: jsonCompatibleAnalysis.emotionalArchitecture || null,
-            interpersonal_dynamics: jsonCompatibleAnalysis.interpersonalDynamics || null,
-            growth_potential: jsonCompatibleAnalysis.growthPotential || null
+            roadmap: result.data.analysis.roadmap || ""
           };
           
           // Log what we're about to save
@@ -252,54 +241,29 @@ export const useAnalyzeResponses = (
             overviewLength: insertObject.overview ? insertObject.overview.length : 0
           });
           
-          // Try up to 4 times to save to the database (increased from 3)
+          // Try up to 3 times to save to the database
           let saveSuccess = false;
-          for (let i = 0; i < 4; i++) {
+          for (let i = 0; i < 3; i++) {
             try {
-              // First check if analysis already exists (to avoid duplicate errors)
-              const { data: existingAnalysis } = await supabase
+              const { error: analysisError } = await supabase
                 .from('analyses')
-                .select('id')
-                .eq('id', result.data.analysis.id)
-                .maybeSingle();
+                .insert(insertObject);
                 
-              if (existingAnalysis) {
-                console.log(`Analysis ${result.data.analysis.id} already exists, updating instead of inserting`);
-                const { error: updateError } = await supabase
-                  .from('analyses')
-                  .update(insertObject)
-                  .eq('id', result.data.analysis.id);
-                  
-                if (updateError) {
-                  console.error(`Update attempt ${i+1} failed:`, updateError);
-                  if (i < 3) await new Promise(resolve => setTimeout(resolve, 1500 * (i+1)));
-                } else {
-                  console.log("Successfully updated analysis in Supabase with ID:", result.data.analysis.id);
-                  saveSuccess = true;
-                  break;
-                }
+              if (analysisError) {
+                console.error(`Save attempt ${i+1} failed:`, analysisError);
+                if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
               } else {
-                // Try to insert
-                const { error: insertError } = await supabase
-                  .from('analyses')
-                  .insert(insertObject);
-                  
-                if (insertError) {
-                  console.error(`Insert attempt ${i+1} failed:`, insertError);
-                  if (i < 3) await new Promise(resolve => setTimeout(resolve, 1500 * (i+1)));
-                } else {
-                  console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
-                  saveSuccess = true;
-                  break;
-                }
+                console.log("Successfully saved analysis to Supabase with ID:", result.data.analysis.id);
+                saveSuccess = true;
+                break;
               }
             } catch (err) {
               console.error(`Save attempt ${i+1} exception:`, err);
-              if (i < 3) await new Promise(resolve => setTimeout(resolve, 1500 * (i+1)));
+              if (i < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (i+1)));
             }
           }
           
-          // Final verification that the analysis was saved
+          // If saving failed, let's try to check if the analysis already exists
           if (!saveSuccess) {
             const { data: existingAnalysis } = await supabase
               .from('analyses')
@@ -312,19 +276,6 @@ export const useAnalyzeResponses = (
               saveSuccess = true;
             } else {
               console.warn("Failed to save analysis to Supabase after multiple attempts");
-              // Attempt one last upsert as a fallback
-              try {
-                const { error: upsertError } = await supabase
-                  .from('analyses')
-                  .upsert(insertObject);
-                
-                if (!upsertError) {
-                  console.log("Successfully upserted analysis as final fallback");
-                  saveSuccess = true;
-                }
-              } catch (e) {
-                console.error("Final upsert attempt failed:", e);
-              }
             }
           }
         } catch (err) {
@@ -387,7 +338,7 @@ export const useAnalyzeResponses = (
       
       // Create a simple fallback analysis with some basic traits
       return {
-        id: fallbackId,
+        id: `fallback-${uuidv4()}`,
         createdAt: new Date().toISOString(),
         overview: "This is a fallback analysis created when the AI analysis couldn't be completed.",
         traits: [

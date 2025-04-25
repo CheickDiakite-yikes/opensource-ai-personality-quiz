@@ -5,39 +5,28 @@ import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import MobileHeader from "./navigation/MobileHeader";
 import DesktopSidebar from "./navigation/DesktopSidebar";
-import DesktopHeader from "./navigation/DesktopHeader";
-import Footer from "./Footer";
+import MainContent from "./navigation/MainContent";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen flex-col w-full">
-        {/* Mobile Header - Only visible on mobile */}
-        <MobileHeader />
-        
-        {/* Desktop Sidebar with Content */}
-        <div className="flex flex-1">
-          {/* Sidebar for desktop and tablet */}
-          <DesktopSidebar />
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <SidebarProvider>
+        <div className="flex min-h-screen flex-col w-full">
+          {/* Mobile Header - Only visible on mobile */}
+          <MobileHeader />
           
-          {/* Main content area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <DesktopHeader />
+          {/* Desktop Sidebar with Content */}
+          <div className="flex flex-1">
+            {/* Sidebar for desktop and tablet */}
+            <DesktopSidebar />
             
-            <main className="flex-1 overflow-x-hidden max-w-[100vw]">
-              {children}
-            </main>
-            
-            <Footer />
+            {/* Main content area */}
+            <MainContent />
           </div>
         </div>
-      </div>
-      <Toaster position="top-center" />
-    </SidebarProvider>
+        <Toaster position="top-center" />
+      </SidebarProvider>
+    </ThemeProvider>
   );
 };
 

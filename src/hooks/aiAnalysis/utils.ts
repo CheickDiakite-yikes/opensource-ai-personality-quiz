@@ -1,69 +1,79 @@
 
-import { PersonalityAnalysis, Json } from '@/utils/types';
+import { PersonalityAnalysis } from '@/utils/types';
 
-// Convert Supabase row data to PersonalityAnalysis object
-export const convertToPersonalityAnalysis = (data: any): PersonalityAnalysis | null => {
-  if (!data) return null;
-
-  try {
-    // Handle case where result contains the full analysis
-    if (data.result && typeof data.result === 'object') {
-      const result = data.result;
-      
-      return {
-        id: data.id || result.id,
-        createdAt: data.created_at || result.createdAt || new Date().toISOString(),
-        overview: data.overview || result.overview || '',
-        traits: data.traits || result.traits || [],
-        intelligence: data.intelligence || result.intelligence || {},
-        intelligenceScore: data.intelligence_score || result.intelligenceScore || 0,
-        emotionalIntelligenceScore: data.emotional_intelligence_score || result.emotionalIntelligenceScore || 0,
-        cognitiveStyle: data.cognitive_style || result.cognitiveStyle || '',
-        valueSystem: data.value_system || result.valueSystem || [],
-        motivators: data.motivators || result.motivators || [],
-        inhibitors: data.inhibitors || result.inhibitors || [],
-        weaknesses: data.weaknesses || result.weaknesses || [],
-        growthAreas: data.growth_areas || result.growthAreas || [],
-        shadowAspects: data.shadow_aspects || result.shadowAspects || [],
-        relationshipPatterns: data.relationship_patterns || result.relationshipPatterns || [],
-        careerSuggestions: data.career_suggestions || result.careerSuggestions || [],
-        learningPathways: data.learning_pathways || result.learningPathways || [],
-        roadmap: data.roadmap || result.roadmap || '',
-        userId: data.user_id || result.userId,
-        assessmentId: data.assessment_id || result.assessmentId,
-      };
+/**
+ * Converts a Supabase analysis record to the PersonalityAnalysis type
+ */
+export const convertToPersonalityAnalysis = (data: any): PersonalityAnalysis => {
+  if (!data) return null as any;
+  
+  console.log("Converting analysis data:", data.id);
+  
+  // Handle the relationship patterns being either an object or array
+  let relationshipPatterns = data.relationship_patterns;
+  
+  // If relationship_patterns is a string, try to parse it
+  if (typeof relationshipPatterns === 'string') {
+    try {
+      relationshipPatterns = JSON.parse(relationshipPatterns);
+    } catch (e) {
+      // If parsing fails, treat it as an array of strings
+      relationshipPatterns = [relationshipPatterns];
     }
-
-    // Handle direct data format
-    return {
-      id: data.id,
-      createdAt: data.created_at || new Date().toISOString(),
-      overview: data.overview || '',
-      traits: data.traits || [],
-      intelligence: data.intelligence || {},
-      intelligenceScore: data.intelligence_score || 0,
-      emotionalIntelligenceScore: data.emotional_intelligence_score || 0,
-      cognitiveStyle: data.cognitive_style || '',
-      valueSystem: data.value_system || [],
-      motivators: data.motivators || [],
-      inhibitors: data.inhibitors || [],
-      weaknesses: data.weaknesses || [],
-      growthAreas: data.growth_areas || [],
-      shadowAspects: data.shadow_aspects || [],
-      relationshipPatterns: data.relationship_patterns || [],
-      careerSuggestions: data.career_suggestions || [],
-      learningPathways: data.learning_pathways || [],
-      roadmap: data.roadmap || '',
-      userId: data.user_id,
-      assessmentId: data.assessment_id,
-    };
-  } catch (error) {
-    console.error("Error converting analysis data:", error, data);
-    return null;
   }
+  
+  // If it's neither an object with the expected structure nor an array, default to an empty object
+  if (!relationshipPatterns || 
+      (typeof relationshipPatterns !== 'object' && !Array.isArray(relationshipPatterns))) {
+    relationshipPatterns = {
+      strengths: [],
+      challenges: [],
+      compatibleTypes: []
+    };
+  }
+  
+  // Ensure traits is an array
+  const traits = Array.isArray(data.traits) ? data.traits : [];
+  
+  // Ensure value system is an array
+  const valueSystem = Array.isArray(data.value_system) ? data.value_system : 
+                     (data.value_system ? [data.value_system] : []);
+  
+  // Normalize array fields
+  const ensureArray = (field: any) => Array.isArray(field) ? field : (field ? [field] : []);
+  
+  return {
+    id: data.id,
+    createdAt: data.created_at || new Date().toISOString(),
+    userId: data.user_id,
+    assessmentId: data.assessment_id,
+    overview: data.overview || '',
+    traits: traits,
+    intelligence: data.intelligence || {
+      type: 'General',
+      score: 0.5,
+      description: 'No intelligence data available',
+      domains: []
+    },
+    intelligenceScore: data.intelligence_score || 50,
+    emotionalIntelligenceScore: data.emotional_intelligence_score || 50,
+    cognitiveStyle: data.cognitive_style || 'Balanced',
+    valueSystem: valueSystem,
+    motivators: ensureArray(data.motivators),
+    inhibitors: ensureArray(data.inhibitors),
+    weaknesses: ensureArray(data.weaknesses),
+    growthAreas: ensureArray(data.growth_areas),
+    shadowAspects: ensureArray(data.shadow_aspects),
+    relationshipPatterns: relationshipPatterns,
+    careerSuggestions: ensureArray(data.career_suggestions),
+    learningPathways: ensureArray(data.learning_pathways),
+    roadmap: data.roadmap || ''
+  };
 };
 
-// Function to sort analyses by date, with newest first
+/**
+ * Sorts an array of analyses by date, with newest first
+ */
 export const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): PersonalityAnalysis[] => {
   if (!analyses || !Array.isArray(analyses)) return [];
   
@@ -74,26 +84,31 @@ export const sortAnalysesByDate = (analyses: PersonalityAnalysis[]): Personality
   });
 };
 
-// Convert any object to JSON-compatible format for Supabase
-export const toJsonObject = (obj: any): Json => {
-  if (obj === null || obj === undefined) {
-    return null;
+/**
+ * Converts a PersonalityAnalysis to a JSON-compatible format for Supabase
+ */
+export const toJsonObject = (analysis: any): Record<string, any> => {
+  // First convert the entire object to a string and back to handle circular references
+  const jsonString = JSON.stringify(analysis);
+  const jsonObject = JSON.parse(jsonString);
+  
+  // Process specific fields that need conversion
+  if (analysis.traits && Array.isArray(analysis.traits)) {
+    jsonObject.traits = analysis.traits.map((trait: any) => {
+      if (typeof trait === 'object') {
+        return { ...trait };
+      }
+      return trait;
+    });
   }
   
-  // Handle arrays
-  if (Array.isArray(obj)) {
-    return obj.map(item => toJsonObject(item)) as Json[];
-  }
-  
-  // Handle objects
-  if (typeof obj === 'object' && obj !== null) {
-    const result: Record<string, Json> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      result[key] = toJsonObject(value);
+  // Ensure all fields are JSON compatible
+  Object.keys(jsonObject).forEach(key => {
+    const value = jsonObject[key];
+    if (typeof value === 'undefined') {
+      jsonObject[key] = null;
     }
-    return result;
-  }
+  });
   
-  // Handle primitive values
-  return obj as Json;
+  return jsonObject;
 };

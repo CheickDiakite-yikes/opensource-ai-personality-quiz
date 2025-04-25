@@ -9,7 +9,6 @@ import { AnalysisData } from "../utils/analysis/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { Json } from "@/utils/types";
-import { toJsonObject } from "@/hooks/aiAnalysis/utils";
 
 interface ResultsActionsProps {
   onSave: () => void;
@@ -17,49 +16,28 @@ interface ResultsActionsProps {
   analysis: AnalysisData;
 }
 
-// Prepare typed analysis data for database insertion
-const prepareAnalysisData = (analysis: AnalysisData, userId: string) => {
-  if (!analysis) {
-    console.error("Cannot prepare analysis data: Analysis is null or undefined");
+// Convert object to JSON compatible format for Supabase
+const toJsonObject = (obj: any): any => {
+  if (obj === null || obj === undefined) {
     return null;
   }
   
-  const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
-  
-  try {
-    // Convert all complex objects to Json type
-    return {
-      id: analysisId,
-      user_id: userId,
-      assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
-      overview: analysis.overview || "",
-      traits: toJsonObject(analysis.traits || []),
-      intelligence: toJsonObject(analysis.intelligence || {}),
-      intelligence_score: analysis.intelligenceScore || 0,
-      emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
-      cognitive_style: toJsonObject(analysis.cognitiveStyle || {}),
-      value_system: toJsonObject(analysis.valueSystem || []),
-      motivators: toJsonObject(analysis.motivators || []),
-      inhibitors: toJsonObject(analysis.inhibitors || []),
-      weaknesses: toJsonObject(analysis.weaknesses || []),
-      growth_areas: toJsonObject(analysis.growthAreas || []),
-      relationship_patterns: toJsonObject(analysis.relationshipPatterns || {}),
-      career_suggestions: toJsonObject(analysis.careerSuggestions || []),
-      learning_pathways: toJsonObject(analysis.learningPathways || []),
-      roadmap: analysis.roadmap || "",
-      result: toJsonObject(analysis),
-      // Deep Insight specific fields
-      response_patterns: toJsonObject(analysis.responsePatterns || {}),
-      core_traits: toJsonObject(analysis.coreTraits || {}),
-      cognitive_patterning: toJsonObject(analysis.cognitivePatterning || {}),
-      emotional_architecture: toJsonObject(analysis.emotionalArchitecture || {}),
-      interpersonal_dynamics: toJsonObject(analysis.interpersonalDynamics || {}),
-      growth_potential: toJsonObject(analysis.growthPotential || {})
-    };
-  } catch (error) {
-    console.error("Error preparing analysis data:", error);
-    return null;
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => toJsonObject(item));
   }
+  
+  // Handle objects
+  if (typeof obj === 'object' && obj !== null) {
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = toJsonObject(value);
+    }
+    return result;
+  }
+  
+  // Handle primitive values
+  return obj;
 };
 
 export const ResultsActions: React.FC<ResultsActionsProps> = ({ 
@@ -80,30 +58,55 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
 
     try {
       if (user) {
+        // Store the analysis in Supabase
+        const analysisId = analysis.id || `deep-insight-${uuidv4()}`;
+        
+        // Convert analysis to JSON-compatible object
+        const jsonAnalysis = toJsonObject(analysis);
+        
         // Prepare analysis data in the format required by the database
-        const analysisData = prepareAnalysisData(analysis, user.id);
-        
-        if (!analysisData) {
-          throw new Error("Failed to prepare analysis data");
-        }
-        
+        const analysisData = {
+          id: analysisId,
+          user_id: user.id,
+          assessment_id: analysis.assessmentId || `assessment-${Date.now()}`,
+          overview: analysis.overview,
+          traits: jsonAnalysis.traits as Json,
+          intelligence: jsonAnalysis.intelligence as Json,
+          intelligence_score: analysis.intelligenceScore || 0,
+          emotional_intelligence_score: analysis.emotionalIntelligenceScore || 0,
+          cognitive_style: jsonAnalysis.cognitiveStyle as Json,
+          value_system: jsonAnalysis.valueSystem as Json,
+          motivators: jsonAnalysis.motivators as Json,
+          inhibitors: jsonAnalysis.inhibitors as Json,
+          weaknesses: jsonAnalysis.weaknesses as Json,
+          growth_areas: jsonAnalysis.growthAreas as Json,
+          relationship_patterns: jsonAnalysis.relationshipPatterns as Json,
+          career_suggestions: jsonAnalysis.careerSuggestions as Json,
+          learning_pathways: jsonAnalysis.learningPathways as Json,
+          roadmap: analysis.roadmap || "",
+          result: jsonAnalysis as Json,
+          // New Deep Insight specific fields
+          response_patterns: jsonAnalysis.responsePatterns as Json,
+          core_traits: jsonAnalysis.coreTraits as Json,
+          cognitive_patterning: jsonAnalysis.cognitivePatterning as Json,
+          emotional_architecture: jsonAnalysis.emotionalArchitecture as Json,
+          interpersonal_dynamics: jsonAnalysis.interpersonalDynamics as Json,
+          growth_potential: jsonAnalysis.growthPotential as Json
+        };
+
         // Check if the analysis already exists
-        const { data: existingData, error: checkError } = await supabase
+        const { data: existingData } = await supabase
           .from('analyses')
           .select('id')
-          .eq('id', analysisData.id)
+          .eq('id', analysisId)
           .maybeSingle();
-
-        if (checkError) {
-          console.error("Error checking for existing analysis:", checkError);
-        }
 
         if (existingData) {
           // Update existing analysis
           const { error } = await supabase
             .from('analyses')
             .update(analysisData)
-            .eq('id', analysisData.id);
+            .eq('id', analysisId);
 
           if (error) {
             throw new Error(`Failed to update analysis: ${error.message}`);
@@ -114,7 +117,7 @@ export const ResultsActions: React.FC<ResultsActionsProps> = ({
           // Insert new analysis
           const { error } = await supabase
             .from('analyses')
-            .insert([analysisData]); // Changed to array to match expected type
+            .insert(analysisData);
 
           if (error) {
             throw new Error(`Failed to save analysis: ${error.message}`);
