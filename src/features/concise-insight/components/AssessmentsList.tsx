@@ -14,12 +14,14 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
   const { user } = useAuth();
   const navigate = useNavigate();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to force re-fetch
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
-  // Use refreshKey as a dependency to trigger re-fetches
+  // Use refreshCounter as a dependency to trigger re-fetches
   useEffect(() => {
-    fetchAnalyses();
-  }, [user, refreshKey]);
+    if (user) {
+      fetchAnalyses();
+    }
+  }, [user, refreshCounter]);
   
   const fetchAnalyses = async () => {
     if (!user) return;
@@ -27,10 +29,10 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     try {
       setLoading(true);
       const data = await fetchAllAnalysesByUserId(user.id);
-      console.log("Fetched analyses:", data?.length || 0);
+      console.log("[AssessmentsList] Fetched analyses:", data?.length || 0);
       setAnalyses(data || []);
     } catch (err) {
-      console.error("Error fetching analyses:", err);
+      console.error("[AssessmentsList] Error fetching analyses:", err);
       toast.error("Failed to load your analyses");
     } finally {
       setLoading(false);
@@ -54,17 +56,16 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
       const success = await deleteAnalysisFromDatabase(analysisId);
       
       if (success) {
-        // Update local state to remove the deleted item
+        // Remove the deleted item from local state
         setAnalyses(prev => prev.filter(a => a.id !== analysisId));
-        toast.success("Analysis deleted successfully");
         
         // Force a refresh of the data after deletion
-        setTimeout(() => setRefreshKey(prev => prev + 1), 300);
+        setRefreshCounter(prev => prev + 1);
       } else {
         throw new Error("Delete operation failed");
       }
     } catch (err) {
-      console.error("Error deleting analysis:", err);
+      console.error("[AssessmentsList] Error deleting analysis:", err);
       toast.error("Failed to delete analysis");
     } finally {
       // Remove from deleting state
@@ -102,7 +103,7 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
         <div className="grid gap-4">
           {analyses.map((analysis) => (
             <AssessmentCard 
-              key={`${analysis.id}-${refreshKey}`} 
+              key={`${analysis.id}-${refreshCounter}`} 
               analysis={analysis}
               onSelect={onSelect}
               onDelete={handleDeleteAnalysis}

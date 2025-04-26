@@ -106,60 +106,26 @@ export const saveAnalysisToDatabase = async (
 
 export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<boolean> => {
   try {
-    console.log(`[deleteAnalysisFromDatabase] Deleting analysis with ID: ${analysisId}`);
+    console.log(`[deleteAnalysisFromDatabase] Attempting to delete analysis with ID: ${analysisId}`);
     
-    // First check if the analysis exists
-    const { data: checkData, error: checkError } = await supabase
-      .from('concise_analyses')
-      .select('id')
-      .eq('id', analysisId)
-      .single();
-      
-    if (checkError) {
-      console.error("[deleteAnalysisFromDatabase] Error checking analysis:", checkError);
-      // Continue with deletion attempt anyway
-    }
-    
-    if (!checkData) {
-      console.log("[deleteAnalysisFromDatabase] Analysis not found, may have been already deleted");
-    }
-    
-    // Proceed with deletion
+    // Use proper error handling and explicitly check for errors
     const { error } = await supabase
       .from('concise_analyses')
       .delete()
       .eq('id', analysisId);
     
     if (error) {
-      console.error("[deleteAnalysisFromDatabase] Error:", error);
-      toast.error("Failed to delete analysis");
+      console.error("[deleteAnalysisFromDatabase] Deletion error:", error);
+      toast.error("Failed to delete analysis: " + error.message);
       return false;
     }
     
-    // Also delete any related assessment data if needed
-    try {
-      const { data: assessmentData } = await supabase
-        .from('concise_assessments')
-        .select('id')
-        .eq('id', analysisId)
-        .maybeSingle();
-        
-      if (assessmentData) {
-        await supabase
-          .from('concise_assessments')
-          .delete()
-          .eq('id', assessmentData.id);
-      }
-    } catch (err) {
-      // Non-critical error, just log it
-      console.warn("[deleteAnalysisFromDatabase] Error cleaning up assessment:", err);
-    }
-    
-    console.log("[deleteAnalysisFromDatabase] Analysis deleted successfully");
+    console.log("[deleteAnalysisFromDatabase] Analysis deleted successfully from database");
+    toast.success("Analysis deleted successfully");
     return true;
   } catch (err: any) {
     console.error("[deleteAnalysisFromDatabase] Error:", err);
-    toast.error("Failed to delete analysis");
+    toast.error("Failed to delete analysis: " + (err.message || "Unknown error"));
     return false;
   }
 };

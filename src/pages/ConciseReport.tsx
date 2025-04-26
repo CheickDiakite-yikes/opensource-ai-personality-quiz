@@ -70,7 +70,6 @@ const ConciseReport: React.FC = () => {
   // Handle manual refresh
   const handleManualRefresh = useCallback(() => {
     refreshData();
-    window.location.reload();
   }, [refreshData]);
 
   // Handle deletion of current analysis
@@ -87,9 +86,8 @@ const ConciseReport: React.FC = () => {
       
       if (success) {
         toast.success("Analysis deleted successfully");
-        // Navigate to the reports list and trigger a refresh
+        // Navigate to the reports list
         navigate('/concise-report', { replace: true });
-        setTimeout(refreshData, 300);
       } else {
         throw new Error("Failed to delete analysis");
       }
@@ -99,7 +97,7 @@ const ConciseReport: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [id, navigate, refreshData]);
+  }, [id, navigate]);
 
   // If no assessment ID is provided, show the list of assessments
   if (!id) {
@@ -155,10 +153,7 @@ const ConciseReport: React.FC = () => {
     >
       <div className="mb-6 flex justify-between items-center">
         <button 
-          onClick={() => {
-            navigate('/concise-report');
-            setTimeout(refreshData, 100);
-          }}
+          onClick={() => navigate('/concise-report')}
           className="text-primary hover:underline flex items-center gap-1"
         >
           ← Back to Reports
@@ -167,6 +162,7 @@ const ConciseReport: React.FC = () => {
           <button 
             onClick={handleDeleteCurrent}
             className="px-3 py-1 text-sm text-destructive hover:bg-destructive/10 rounded"
+            disabled={isDeleting}
           >
             Delete Report
           </button>
