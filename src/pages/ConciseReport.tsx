@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   Share2, Download, Save, Brain, HeartHandshake, Users, 
-  Lightbulb, Star, FileText, Clock, Calendar
+  Lightbulb, Star, FileText, Clock, Calendar, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 // Loading component
 const ResultsLoading = () => (
@@ -42,49 +43,128 @@ const ResultsError = ({ error }: { error: string }) => (
   </div>
 );
 
+// Individual Assessment Card Component
+const AssessmentCard = ({ analysis, onSelect, onDelete }: { 
+  analysis: any, 
+  onSelect: (id: string) => void,
+  onDelete: (id: string) => void
+}) => {
+  // Extract title from analysis data if available
+  let title = "Concise Insight Analysis";
+  let description = "";
+  
+  if (analysis.analysis_data) {
+    const data = analysis.analysis_data as Record<string, any>;
+    // Extract a small portion of the overview if available for description
+    if (data.overview) {
+      description = data.overview.substring(0, 60) + "...";
+    }
+    
+    // If there's a primary archetype, include it in the title
+    if (data.coreProfiling && data.coreProfiling.primaryArchetype) {
+      title += `: ${data.coreProfiling.primaryArchetype} Type`;
+    }
+  }
+  
+  return (
+    <Card 
+      className="hover:border-primary/50 transition-colors cursor-pointer group relative"
+      onClick={() => onSelect(analysis.id)}
+    >
+      <CardHeader className="py-4 pr-12">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <div className="flex flex-col">
+              <span className="font-medium">{title}</span>
+              {description && (
+                <span className="text-xs text-muted-foreground hidden md:inline">{description}</span>
+              )}
+            </div>
+          </div>
+          <Badge variant="outline">
+            <Calendar className="h-3 w-3 mr-1" />
+            {format(new Date(analysis.created_at), 'MMM d, yyyy')}
+          </Badge>
+        </div>
+      </CardHeader>
+      
+      <div 
+        className="absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(analysis.id);
+        }}
+      >
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
 // Assessment List component
 const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
-  const [assessments, setAssessments] = useState<any[]>([]);
+  const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchAssessments = async () => {
-      if (!user) return;
-      
-      try {
-        setLoading(true);
-        // Get unique analysis entries (not just assessment IDs)
-        const { data, error } = await supabase
-          .from('concise_analyses')
-          .select('id, assessment_id, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        // Log for debugging
-        console.log(`[AssessmentsList] Loaded ${data?.length || 0} unique analyses`);
-        if (data && data.length > 0) {
-          data.forEach((a, i) => {
-            console.log(`[AssessmentsList] Analysis ${i+1}: ID=${a.id}, AssessmentID=${a.assessment_id}, Created=${a.created_at}`);
-          });
-        }
-        
-        setAssessments(data || []);
-      } catch (err) {
-        console.error("Error fetching assessments:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAssessments();
+    fetchAnalyses();
   }, [user]);
+  
+  const fetchAnalyses = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      // Get unique analysis entries
+      const { data, error } = await supabase
+        .from('concise_analyses')
+        .select('id, assessment_id, created_at, analysis_data')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      // Log for debugging
+      console.log(`[AssessmentsList] Loaded ${data?.length || 0} unique analyses`);
+      
+      setAnalyses(data || []);
+    } catch (err) {
+      console.error("Error fetching analyses:", err);
+      toast.error("Failed to load your analyses");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const takeNewAssessment = () => {
     navigate('/concise-insight');
+  };
+  
+  const handleDeleteAnalysis = async (analysisId: string) => {
+    if (!confirm("Are you sure you want to delete this analysis? This cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('concise_analyses')
+        .delete()
+        .eq('id', analysisId);
+        
+      if (error) throw error;
+      
+      // Remove from local state
+      setAnalyses(analyses.filter(a => a.id !== analysisId));
+      toast.success("Analysis deleted successfully");
+    } catch (err) {
+      console.error("Error deleting analysis:", err);
+      toast.error("Failed to delete analysis");
+    }
   };
 
   if (loading) {
@@ -102,7 +182,7 @@ const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
         <Button onClick={takeNewAssessment}>Take New Assessment</Button>
       </div>
       
-      {assessments.length === 0 ? (
+      {analyses.length === 0 ? (
         <Card className="text-center py-10">
           <CardContent>
             <p className="mb-4 text-muted-foreground">You haven't completed any Concise Insight assessments yet.</p>
@@ -111,25 +191,13 @@ const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {assessments.map((analysis) => (
-            <Card 
+          {analyses.map((analysis) => (
+            <AssessmentCard 
               key={analysis.id} 
-              className="hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => onSelect(analysis.id)}
-            >
-              <CardHeader className="py-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Concise Insight Analysis</span>
-                  </div>
-                  <Badge variant="outline">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {format(new Date(analysis.created_at), 'MMM d, yyyy')}
-                  </Badge>
-                </div>
-              </CardHeader>
-            </Card>
+              analysis={analysis}
+              onSelect={onSelect}
+              onDelete={handleDeleteAnalysis}
+            />
           ))}
         </div>
       )}

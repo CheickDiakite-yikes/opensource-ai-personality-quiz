@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 
-export const useConciseInsightResults = (assessmentId?: string) => {
+export const useConciseInsightResults = (analysisId?: string) => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +21,8 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         setLoading(true);
         setError(null);
         
-        if (!assessmentId) {
-          setError("No assessment ID provided");
+        if (!analysisId) {
+          setError("No analysis ID provided");
           setLoading(false);
           return;
         }
@@ -33,17 +33,17 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        console.log(`[useConciseInsightResults] Fetching analysis for ID: ${assessmentId}`);
+        console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
 
         // First check if this is a direct analysis ID (UUID format)
-        if (assessmentId.includes('-') && assessmentId.length > 30) {
-          console.log(`[useConciseInsightResults] This appears to be a direct analysis ID: ${assessmentId}`);
+        if (analysisId.includes('-') && analysisId.length > 30) {
+          console.log(`[useConciseInsightResults] This appears to be a direct analysis ID: ${analysisId}`);
           
           // Fetch the specific analysis by its ID
           const { data: specificAnalysis, error: specificError } = await supabase
             .from('concise_analyses')
             .select('*')
-            .eq('id', assessmentId)
+            .eq('id', analysisId)
             .single();
             
           if (specificError) {
@@ -56,37 +56,34 @@ export const useConciseInsightResults = (assessmentId?: string) => {
             
             // Handle type safely
             if (specificAnalysis.analysis_data) {
+              // Ensure we're working with an object
               const analysisData = specificAnalysis.analysis_data as Record<string, any>;
-              console.log(`[useConciseInsightResults] Analysis overview: ${analysisData.overview?.substring(0, 40)}...`);
-              setAnalysis(specificAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+              
+              console.log(`[useConciseInsightResults] Analysis overview: ${
+                typeof analysisData.overview === 'string' 
+                  ? analysisData.overview.substring(0, 40) + "..." 
+                  : "No overview available"
+              }`);
+              
+              // Set the analysis data
+              setAnalysis(analysisData as unknown as ConciseAnalysisResult);
+              setLoading(false);
+              return;
+            } else {
+              console.error("[useConciseInsightResults] Analysis data is missing or invalid");
+              throw new Error("Analysis data is missing or invalid");
             }
-            
-            setLoading(false);
-            return;
           }
         }
         
-        // For debugging - log all analyses that match this assessment ID
-        const { data: allMatchingAnalyses } = await supabase
-          .from('concise_analyses')
-          .select('id, created_at, assessment_id')
-          .eq('assessment_id', assessmentId)
-          .order('created_at', { ascending: false });
-          
-        console.log(`[useConciseInsightResults] Found ${allMatchingAnalyses?.length || 0} analyses matching assessment ID: ${assessmentId}`);
+        // If no analysis is found by direct ID, try to treat it as an assessment ID
+        console.log(`[useConciseInsightResults] Trying to find analysis by assessment ID: ${analysisId}`);
         
-        if (allMatchingAnalyses && allMatchingAnalyses.length > 0) {
-          // Log the IDs to help debug
-          allMatchingAnalyses.forEach((a, i) => {
-            console.log(`[useConciseInsightResults] Analysis ${i+1}: ID=${a.id}, created=${a.created_at}`);
-          });
-        }
-        
-        // Get only the specific analysis that matches EXACTLY this assessment ID and user ID
-        const { data: exactAnalyses, error: fetchError } = await supabase
+        // Get the specific analysis that matches this assessment ID and user ID
+        const { data: matchingAnalyses, error: fetchError } = await supabase
           .from('concise_analyses')
           .select('*')
-          .eq('assessment_id', assessmentId)
+          .eq('assessment_id', analysisId)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
@@ -96,30 +93,34 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         }
         
         // If we found matching analyses, use the most recent one
-        if (exactAnalyses && exactAnalyses.length > 0) {
-          const targetAnalysis = exactAnalyses[0]; // Most recent due to sorting
-          console.log(`[useConciseInsightResults] Found exact match, using analysis with ID: ${targetAnalysis.id} from ${targetAnalysis.created_at}`);
+        if (matchingAnalyses && matchingAnalyses.length > 0) {
+          const targetAnalysis = matchingAnalyses[0]; // Most recent due to sorting
+          console.log(`[useConciseInsightResults] Found match by assessment ID, using analysis with ID: ${targetAnalysis.id}`);
           
-          // Debug - log the first part of the analysis data to confirm it's unique
+          // Ensure we're working with an object
           if (targetAnalysis.analysis_data) {
-            // Fix: Type check the analysis_data to ensure it's an object with an overview property
             const analysisData = targetAnalysis.analysis_data as Record<string, any>;
-            const overview = analysisData.overview || 'No overview';
-            console.log(`[useConciseInsightResults] Analysis overview starts with: ${overview.substring(0, 40)}...`);
+            
+            // Log for debugging
+            if (typeof analysisData.overview === 'string') {
+              console.log(`[useConciseInsightResults] Analysis overview starts with: ${analysisData.overview.substring(0, 40)}...`);
+            }
+            
+            setAnalysis(analysisData as unknown as ConciseAnalysisResult);
+            setLoading(false);
+            return;
           }
-          
-          setAnalysis(targetAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-          setLoading(false);
-          return;
         } else {
-          console.log(`[useConciseInsightResults] No exact analysis match found for ID: ${assessmentId}`);
+          console.log(`[useConciseInsightResults] No analysis matches found for assessment ID: ${analysisId}`);
         }
         
-        // Only if no valid analysis exists, get the assessment responses and generate a new one
+        // If no valid analysis found, get the assessment responses and generate a new one
+        console.log(`[useConciseInsightResults] Attempting to find and generate analysis for assessment: ${analysisId}`);
+        
         const { data: assessment, error: responseError } = await supabase
           .from('concise_assessments')
           .select('*')
-          .eq('id', assessmentId)
+          .eq('id', analysisId)
           .eq('user_id', user.id)
           .single();
           
@@ -134,14 +135,14 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        console.log(`[useConciseInsightResults] Found assessment, calling edge function for ID: ${assessmentId}`);
+        console.log(`[useConciseInsightResults] Found assessment, calling edge function for ID: ${analysisId}`);
         
-        // Call edge function to get analysis - only if no existing analysis was found
+        // Call edge function to generate new analysis
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
           'analyze-concise-responses',
           {
             body: { 
-              assessmentId,
+              assessmentId: analysisId,
               responses: assessment.responses,
               userId: user.id
             }
@@ -172,7 +173,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           const { error: saveError } = await supabase
             .from('concise_analyses')
             .insert({
-              assessment_id: assessmentId,
+              assessment_id: analysisId,
               user_id: user.id,
               analysis_data: enrichedResult as unknown as Json
             });
@@ -193,17 +194,33 @@ export const useConciseInsightResults = (assessmentId?: string) => {
       }
     };
     
-    if (assessmentId) {
+    if (analysisId) {
       fetchAnalysis();
     } else {
       setLoading(false);
     }
-  }, [assessmentId, navigate, user]);
+  }, [analysisId, navigate, user]);
   
   const saveAnalysis = async () => {
-    if (!analysis || !user || !assessmentId) return;
+    if (!analysis || !user || !analysisId) return;
     
     try {
+      // Check if this is a UUID (direct analysis ID) or an assessment ID
+      let assessmentId = analysisId;
+      
+      // If it's a UUID, we need to find the associated assessment ID
+      if (analysisId.includes('-') && analysisId.length > 30) {
+        const { data } = await supabase
+          .from('concise_analyses')
+          .select('assessment_id')
+          .eq('id', analysisId)
+          .single();
+          
+        if (data && data.assessment_id) {
+          assessmentId = data.assessment_id;
+        }
+      }
+      
       const { error } = await supabase
         .from('concise_analyses')
         .insert({
