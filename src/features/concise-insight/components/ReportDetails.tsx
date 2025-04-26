@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Share2, Download, Save, Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
+import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,10 +11,9 @@ import { ConciseAnalysisResult } from '../types';
 
 interface ReportDetailsProps {
   analysis: ConciseAnalysisResult;
-  saveAnalysis: () => Promise<void>;
 }
 
-export const ReportDetails = ({ analysis, saveAnalysis }: ReportDetailsProps) => {
+export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
   return (
     <div className="flex flex-col gap-8">
       <header className="text-center">
@@ -75,9 +74,6 @@ export const ReportDetails = ({ analysis, saveAnalysis }: ReportDetailsProps) =>
       </Tabs>
       
       <div className="flex flex-wrap gap-4 justify-center">
-        <Button onClick={saveAnalysis} className="flex items-center gap-2">
-          <Save className="h-4 w-4" /> Save Analysis
-        </Button>
         <Button variant="outline" className="flex items-center gap-2">
           <Download className="h-4 w-4" /> Download PDF
         </Button>

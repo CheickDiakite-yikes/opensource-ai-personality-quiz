@@ -10,7 +10,6 @@ import {
   saveAnalysisToDatabase
 } from "../utils/analysisHelpers";
 import { useAnalysisState } from "./useAnalysisState";
-import { useAnalysisSave } from "./useAnalysisSave";
 
 export const useConciseInsightResults = (analysisId?: string) => {
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
     error, 
     setError 
   } = useAnalysisState();
-  const { saveAnalysis } = useAnalysisSave(analysisId);
   
   const fetchAnalysis = useCallback(async (signal?: AbortSignal) => {
     if (!analysisId || !user) {
@@ -112,11 +110,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
     analysis, 
     loading, 
     error, 
-    refreshAnalysis, // Include the refresh function in the return object
-    saveAnalysis: async () => {
-      if (user && analysis) {
-        await saveAnalysis(analysis, user.id);
-      }
-    }
+    refreshAnalysis
   };
 };

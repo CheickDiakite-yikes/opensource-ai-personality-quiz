@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -50,7 +49,7 @@ const ConciseReport: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { analysis, loading, error, saveAnalysis, refreshAnalysis } = useConciseInsightResults(id);
+  const { analysis, loading, error, refreshAnalysis } = useConciseInsightResults(id);
   const [isDeleting, setIsDeleting] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [navigatingAfterDelete, setNavigatingAfterDelete] = useState(false);
@@ -196,7 +195,7 @@ const ConciseReport: React.FC = () => {
         </div>
       </div>
       
-      <ReportDetails analysis={analysis} saveAnalysis={saveAnalysis} />
+      <ReportDetails analysis={analysis!} />
     </motion.div>
   );
 };
