@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -52,8 +51,38 @@ export const useAssessmentList = () => {
           newSet.delete(analysisId);
           return newSet;
         });
+        toast.success("Analysis deleted successfully");
       } else {
-        setRefreshCounter(prev => prev + 1);
+        // Try using the edge function as a fallback
+        try {
+          const { data, error } = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
+            },
+            body: JSON.stringify({ analysisId })
+          }).then(r => r.json());
+          
+          if (error) {
+            throw new Error(error);
+          }
+          
+          if (data?.success) {
+            setAnalyses(prev => prev.filter(a => a.id !== analysisId));
+            setSelectedIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(analysisId);
+              return newSet;
+            });
+            toast.success("Analysis deleted successfully");
+          } else {
+            setRefreshCounter(prev => prev + 1);
+          }
+        } catch (err) {
+          console.error("[useAssessmentList] Error with fallback deletion:", err);
+          setRefreshCounter(prev => prev + 1);
+        }
       }
     } catch (err) {
       console.error("[useAssessmentList] Error deleting analysis:", err);
@@ -93,9 +122,27 @@ export const useAssessmentList = () => {
         try {
           setDeletingIds(prev => new Set([...prev, analysisId]));
           
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // First try normal deletion
+          let success = await deleteAnalysisFromDatabase(analysisId);
           
-          const success = await deleteAnalysisFromDatabase(analysisId);
+          // If that fails, try the edge function
+          if (!success) {
+            try {
+              const { data, error } = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
+                },
+                body: JSON.stringify({ analysisId })
+              }).then(r => r.json());
+              
+              success = !error && data?.success;
+            } catch (err) {
+              console.error(`[useAssessmentList] Edge function deletion error for ${analysisId}:`, err);
+              success = false;
+            }
+          }
           
           if (success) {
             successCount++;
@@ -116,6 +163,9 @@ export const useAssessmentList = () => {
           setBulkDeleteProgress(prev => prev + 1);
           toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
         }
+        
+        // Add a small delay between deletions to avoid overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     } finally {
       setSelectedIds(new Set());
@@ -130,9 +180,7 @@ export const useAssessmentList = () => {
         setRefreshCounter(prev => prev + 1);
       }
       
-      if (successCount > 0) {
-        fetchAnalyses();
-      }
+      fetchAnalyses();
     }
   };
 

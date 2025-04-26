@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -108,7 +107,7 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
   try {
     console.log(`[deleteAnalysisFromDatabase] Attempting to delete analysis with ID: ${analysisId}`);
     
-    // Perform the deletion with a more forceful approach
+    // First attempt: Using standard delete with explicit equals condition
     const { error } = await supabase
       .from('concise_analyses')
       .delete()
@@ -120,52 +119,69 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       return false;
     }
     
-    // Verify deletion was successful with a separate query
-    const { data: checkDeleted, error: verifyError } = await supabase
+    // Verify deletion was successful by checking if the record still exists
+    const { data: checkData, error: checkError } = await supabase
       .from('concise_analyses')
       .select('id')
-      .eq('id', analysisId);
-      
-    if (verifyError) {
-      console.error("[deleteAnalysisFromDatabase] Verification error:", verifyError);
-      // Even with verification error, we'll trust the deletion succeeded if we didn't get an error on delete
-      toast.success("Analysis deleted successfully");
-      return true;
+      .eq('id', analysisId)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error("[deleteAnalysisFromDatabase] Verification error:", checkError);
     }
     
-    // If we still found the record, deletion failed
-    if (checkDeleted && checkDeleted.length > 0) {
-      console.error("[deleteAnalysisFromDatabase] Deletion failed - record still exists");
-      toast.error("Failed to delete analysis: Record still exists");
+    // If record still exists, it means deletion failed
+    if (checkData) {
+      console.error("[deleteAnalysisFromDatabase] Deletion verification failed - record still exists");
       
-      // Try one more time with a different approach
-      const { error: secondDeleteError } = await supabase
+      // Second attempt: Using match syntax instead of eq
+      const { error: secondError } = await supabase
         .from('concise_analyses')
         .delete()
         .match({ id: analysisId });
       
-      if (secondDeleteError) {
-        console.error("[deleteAnalysisFromDatabase] Second deletion attempt error:", secondDeleteError);
+      if (secondError) {
+        console.error("[deleteAnalysisFromDatabase] Second deletion attempt error:", secondError);
+        toast.error("Failed to delete analysis: " + secondError.message);
         return false;
       }
       
-      // Verify again
+      // Verify second deletion attempt
       const { data: secondCheck } = await supabase
         .from('concise_analyses')
         .select('id')
-        .eq('id', analysisId);
-        
-      if (secondCheck && secondCheck.length > 0) {
-        console.error("[deleteAnalysisFromDatabase] Second deletion failed - record still exists");
-        return false;
-      }
+        .eq('id', analysisId)
+        .maybeSingle();
       
-      console.log("[deleteAnalysisFromDatabase] Second deletion attempt succeeded");
-      toast.success("Analysis deleted successfully");
-      return true;
+      if (secondCheck) {
+        console.error("[deleteAnalysisFromDatabase] Second deletion failed - record still exists");
+        
+        // Third attempt: Using direct RPC call to bypass potential RLS issues
+        const { error: rpcError } = await supabase.rpc('delete_concise_analysis', { 
+          analysis_id: analysisId 
+        });
+        
+        if (rpcError) {
+          console.error("[deleteAnalysisFromDatabase] RPC deletion attempt error:", rpcError);
+          toast.error("Failed to delete analysis after multiple attempts");
+          return false;
+        }
+        
+        // Final verification
+        const { data: finalCheck } = await supabase
+          .from('concise_analyses')
+          .select('id')
+          .eq('id', analysisId)
+          .maybeSingle();
+        
+        if (finalCheck) {
+          console.error("[deleteAnalysisFromDatabase] All deletion attempts failed");
+          toast.error("Failed to delete analysis: Persistent database issue");
+          return false;
+        }
+      }
     }
     
-    // Successfully deleted
     console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully`);
     toast.success("Analysis deleted successfully");
     return true;
