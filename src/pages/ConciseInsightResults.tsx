@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Download, Save, Brain, HeartHandshake, Users, Lightbulb, Star } from "lucide-react";
+import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star } from "lucide-react";
 
 // Loading component
 const ResultsLoading = () => (
@@ -38,7 +38,7 @@ const ResultsError = ({ error }: { error: string }) => (
 
 // Main component
 const ConciseInsightResults: React.FC = () => {
-  const { analysis, loading, error, saveAnalysis } = useConciseInsightResults();
+  const { analysis, loading, error } = useConciseInsightResults();
   
   if (loading) {
     return <ResultsLoading />;
@@ -301,9 +301,6 @@ const ConciseInsightResults: React.FC = () => {
         
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
-          <Button onClick={saveAnalysis} className="flex items-center gap-2">
-            <Save className="h-4 w-4" /> Save Analysis
-          </Button>
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" /> Download PDF
           </Button>
