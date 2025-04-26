@@ -6,35 +6,41 @@ export const conciseInsightQuestions: ConciseInsightQuestion[] = [
   {
     id: "core-1",
     category: "core_traits",
-    question: "When faced with a major life decision, which best describes your approach?",
+    question: "When faced with a major life decision, how do you typically approach it?",
     options: [
-      "I methodically analyze all options and potential outcomes before deciding",
-      "I consider how the decision will affect my relationships and emotional well-being",
+      "I methodically analyze all options and consider potential outcomes before deciding",
       "I trust my intuition and inner wisdom to guide me to the right choice",
-      "I weigh the practical implications and immediate benefits of each option"
+      "I seek advice from multiple people and follow what most suggest", // less optimal - external validation dependency
+      "I make quick decisions to avoid overthinking and stress",
+      "I consider how the decision aligns with my values and long-term goals",
+      "I tend to postpone difficult decisions until absolutely necessary" // less optimal - avoidance
     ],
     weight: 1.2
   },
   {
     id: "core-2",
     category: "core_traits",
-    question: "How do you typically respond to unexpected change?",
+    question: "How do you typically respond to unexpected changes in your plans?",
     options: [
-      "I quickly adapt my plans and find new opportunities in the situation",
-      "I resist the change initially but eventually adjust my approach",
-      "I analyze how the change impacts my goals and develop a new strategy",
-      "I seek support from others to help me navigate through the transition"
+      "I quickly adapt and look for new opportunities in the situation",
+      "I take time to process before developing a new approach",
+      "I try to force things back to the original plan", // less optimal - rigidity
+      "I analyze the situation and create multiple backup strategies",
+      "I reach out to others for support and alternative perspectives",
+      "I tend to feel overwhelmed and struggle to move forward" // less optimal - emotional flooding
     ]
   },
   {
     id: "core-3",
     category: "core_traits",
-    question: "Which of these activities would you find most energizing?",
+    question: "Which type of activities do you find most energizing?",
     options: [
-      "Engaging in a deep philosophical conversation with a small group",
-      "Attending a social gathering with many opportunities to meet new people",
-      "Working independently on a creative project that expresses your ideas",
-      "Solving a complex problem that requires focused analytical thinking"
+      "Deep, focused work on complex problems that challenge my mind",
+      "Creative projects that allow for self-expression",
+      "High-pressure situations with tight deadlines", // less optimal - stress seeking
+      "Collaborative projects with shared goals",
+      "Learning and exploring new subjects or skills",
+      "Activities that don't require much mental effort or interaction" // less optimal - avoidance of growth
     ],
     weight: 1.1
   },
@@ -43,21 +49,25 @@ export const conciseInsightQuestions: ConciseInsightQuestion[] = [
     category: "core_traits",
     question: "When you achieve success, what typically matters most to you?",
     options: [
-      "Recognition from others and external validation of my accomplishment",
-      "The personal satisfaction of knowing I've reached my own standards",
-      "How my success contributes to or benefits others around me",
-      "The practical rewards or new opportunities that result from it"
+      "The personal satisfaction of meeting my own standards",
+      "The positive impact my success has on others",
+      "Getting recognition and praise from others", // less optimal - external validation
+      "The practical rewards and opportunities it creates",
+      "The knowledge and growth gained from the experience",
+      "Proving wrong those who doubted me" // less optimal - validation through spite
     ]
   },
   {
     id: "core-5",
     category: "core_traits",
-    question: "Which statement most accurately reflects how you view yourself?",
+    question: "Which statement most accurately reflects your self-perception?",
     options: [
-      "I'm a practical person who values efficiency and tangible results",
-      "I'm a thoughtful person who considers multiple perspectives deeply",
-      "I'm a passionate person driven by core values and authentic expression",
-      "I'm a strategic person who plans carefully for future possibilities"
+      "I'm adaptable and can handle most situations effectively",
+      "I'm growth-oriented and constantly working on self-improvement",
+      "I'm highly dependent on others' approval", // less optimal - external validation
+      "I'm authentic and true to my values regardless of circumstances",
+      "I'm practical and focused on tangible results",
+      "I'm often unsure of my capabilities and direction" // less optimal - low self-efficacy
     ]
   },
   
@@ -65,236 +75,272 @@ export const conciseInsightQuestions: ConciseInsightQuestion[] = [
   {
     id: "emotional-1",
     category: "emotional",
-    question: "When you experience strong emotions, what typically happens?",
+    question: "How do you typically handle strong emotions?",
     options: [
-      "I'm immediately aware of what I'm feeling and why it's happening",
-      "I often need time to process and understand what I'm truly feeling",
-      "I tend to intellectualize or rationalize my emotions rather than feeling them fully",
-      "I'm very expressive and others can easily tell what I'm feeling"
+      "I acknowledge and process them while maintaining perspective",
+      "I express them appropriately and seek understanding",
+      "I try to suppress or ignore them", // less optimal - avoidance
+      "I analyze them logically to understand their source",
+      "I use them as motivation for positive action",
+      "I let them control my reactions and behavior" // less optimal - poor regulation
     ],
     weight: 1.2
   },
   {
     id: "emotional-2",
     category: "emotional",
-    question: "How accurately can you typically predict how your words or actions will make others feel?",
+    question: "When others share their problems with you, how do you usually respond?",
     options: [
-      "Very accurately - I have a natural sense for how others will respond emotionally",
-      "Quite accurately for people I know well, less so with strangers or acquaintances",
-      "Sometimes accurately, but people's emotional responses often surprise me",
-      "I find it challenging to predict emotional responses and focus more on logical impacts"
+      "I listen actively and validate their feelings",
+      "I help them explore possible solutions",
+      "I quickly offer advice to fix their situation", // less optimal - rushing to solutions
+      "I share similar experiences to show understanding",
+      "I ask questions to better understand their perspective",
+      "I feel uncomfortable and try to change the subject" // less optimal - avoidance
     ],
     weight: 1.1
   },
   {
     id: "emotional-3",
     category: "emotional",
-    question: "When someone shares a difficult personal experience with you, your most natural response is to:",
+    question: "How do you typically handle conflicts in relationships?",
     options: [
-      "Listen attentively and validate their feelings without offering solutions",
-      "Ask questions to better understand the situation and how they feel",
-      "Share a similar experience from your life to show you understand",
-      "Offer practical advice or solutions to help resolve their situation"
+      "I address issues directly with empathy and openness",
+      "I seek to understand all perspectives before responding",
+      "I avoid confrontation until tensions explode", // less optimal - avoidance
+      "I focus on finding practical solutions",
+      "I prioritize maintaining harmony while working through issues",
+      "I defend my position and expect others to adjust" // less optimal - rigidity
     ]
   },
   {
     id: "emotional-4",
     category: "emotional",
-    question: "After a significant argument or conflict, you typically:",
+    question: "When receiving criticism, what's your typical first reaction?",
     options: [
-      "Need time alone to process my feelings before addressing the situation",
-      "Want to resolve things immediately and clear the air",
-      "Analyze what went wrong and how to prevent similar conflicts",
-      "Focus on rebuilding the relationship regardless of who was right"
+      "I listen openly and consider how I might grow from it",
+      "I thank them and reflect on the feedback carefully",
+      "I become defensive and justify my actions", // less optimal - defensiveness
+      "I analyze it objectively for valid points",
+      "I ask questions to better understand their perspective",
+      "I take it personally and feel deeply hurt" // less optimal - oversensitivity
     ]
   },
   {
     id: "emotional-5",
     category: "emotional",
-    question: "Which best describes how you handle your emotions during a crisis?",
+    question: "How do you typically support others during their difficult times?",
     options: [
-      "I stay calm and controlled, setting aside emotions to deal with later",
-      "I use my emotional awareness to guide intuitive decision-making",
-      "I allow myself to feel while still taking necessary action",
-      "I focus on supporting others emotionally while managing the situation"
+      "I offer emotional support while respecting their space",
+      "I help them develop practical coping strategies",
+      "I try to fix their problems for them", // less optimal - overstepping
+      "I share my own experiences and what worked for me",
+      "I create a safe space for them to process emotions",
+      "I distance myself to avoid getting emotionally involved" // less optimal - avoidance
     ]
   },
-  
+
   // Cognitive Patterns Questions (5 questions)
   {
     id: "cognitive-1",
     category: "cognitive",
-    question: "When learning something new, you prefer:",
+    question: "When solving complex problems, what's your typical approach?",
     options: [
-      "Understanding the theoretical principles and conceptual framework first",
-      "Jumping in and learning through hands-on experience and experimentation",
-      "Following structured, step-by-step instructions and demonstrations",
-      "Discussing the topic with others to understand different perspectives"
+      "I break them down into smaller, manageable parts",
+      "I look for patterns and connections to known solutions",
+      "I rush to implement the first solution I think of", // less optimal - impulsivity
+      "I collaborate with others to gain different perspectives",
+      "I research thoroughly before developing solutions",
+      "I tend to feel overwhelmed and procrastinate" // less optimal - avoidance
     ]
   },
   {
     id: "cognitive-2",
     category: "cognitive",
-    question: "When solving complex problems, you typically:",
+    question: "How do you typically approach learning new skills?",
     options: [
-      "Break the problem down into smaller, manageable parts to analyze",
-      "Look for patterns and connections to similar situations you've encountered",
-      "Explore multiple creative approaches before settling on the best solution",
-      "Consider how the problem affects people and relationships involved"
-    ],
-    weight: 1.1
+      "I create a structured learning plan with clear goals",
+      "I dive in and learn through hands-on experience",
+      "I stick to what I already know well", // less optimal - comfort zone
+      "I seek guidance from experts and mentors",
+      "I combine different learning methods for better understanding",
+      "I give up quickly if I don't see immediate progress" // less optimal - low persistence
+    ]
   },
   {
     id: "cognitive-3",
     category: "cognitive",
-    question: "Which best describes how you make important decisions?",
+    question: "When faced with a difficult decision, what factors most influence your choice?",
     options: [
-      "I weigh all available evidence and use logical analysis to determine the best choice",
-      "I consider my core values and choose what feels most authentic and meaningful",
-      "I evaluate the practical outcomes and choose what will work best in reality",
-      "I consider the impact on people involved and choose what creates most harmony"
-    ],
-    weight: 1.2
+      "Long-term consequences and alignment with goals",
+      "Impact on myself and others involved",
+      "Whatever will please others most", // less optimal - external validation
+      "Practical considerations and feasibility",
+      "Alignment with my values and principles",
+      "Whatever helps me avoid immediate discomfort" // less optimal - short-term thinking
+    ]
   },
   {
     id: "cognitive-4",
     category: "cognitive",
-    question: "When planning a project, you prefer to:",
+    question: "How do you typically organize your thoughts and ideas?",
     options: [
-      "Create a detailed plan with specific milestones before beginning work",
-      "Start with a general direction and adapt the approach as you progress",
-      "Focus on the end goal and work backward to determine necessary steps",
-      "Ensure everyone involved has input and agrees with the approach"
+      "I use structured systems and tools to capture and organize them",
+      "I visualize connections and create mind maps",
+      "I keep everything in my head", // less optimal - poor organization
+      "I discuss them with others to clarify and refine",
+      "I write them down and revisit them regularly",
+      "I often feel scattered and overwhelmed by them" // less optimal - mental chaos
     ]
   },
   {
     id: "cognitive-5",
     category: "cognitive",
-    question: "When receiving constructive criticism, you typically:",
+    question: "When your beliefs are challenged, how do you typically respond?",
     options: [
-      "Analyze it objectively for validity and useful insights",
-      "Feel emotional initially but later consider its value",
-      "See it as an opportunity for growth and self-improvement",
-      "Consider the relationship with the person giving feedback and their intent"
+      "I consider alternative perspectives with an open mind",
+      "I engage in respectful dialogue to understand differences",
+      "I defend my beliefs without considering alternatives", // less optimal - closed-mindedness
+      "I evaluate evidence on both sides objectively",
+      "I reflect on why I hold these beliefs",
+      "I avoid discussions that challenge my viewpoints" // less optimal - avoidance
     ]
   },
-  
+
   // Social Dynamics Questions (5 questions)
   {
     id: "social-1",
     category: "social",
-    question: "In group settings, you most often find yourself:",
+    question: "In group settings, what role do you typically take on?",
     options: [
-      "Naturally taking charge and directing the group's activities or discussion",
-      "Bringing people together and facilitating connections between others",
-      "Contributing ideas and perspectives while letting others lead",
-      "Observing and analyzing group dynamics before participating fully"
+      "I facilitate collaboration and help the group achieve its goals",
+      "I contribute ideas while supporting others' input",
+      "I try to dominate and control the direction", // less optimal - controlling
+      "I observe and provide thoughtful insights when needed",
+      "I help maintain positive group dynamics",
+      "I stay quiet and avoid drawing attention" // less optimal - withdrawal
     ]
   },
   {
     id: "social-2",
     category: "social",
-    question: "When someone disagrees with you on an important topic, you typically:",
+    question: "How do you typically handle social boundaries?",
     options: [
-      "Engage in debate, presenting logical arguments for your position",
-      "Try to understand their perspective and find common ground",
-      "Consider whether your position needs refining based on their input",
-      "Focus on maintaining the relationship regardless of the disagreement"
-    ],
-    weight: 1.1
+      "I set clear boundaries while respecting others'",
+      "I adapt boundaries based on the relationship and context",
+      "I have difficulty saying no to others", // less optimal - poor boundaries
+      "I maintain consistent boundaries in all relationships",
+      "I communicate boundaries respectfully and directly",
+      "I keep strong walls up to avoid getting hurt" // less optimal - overcautious
+    ]
   },
   {
     id: "social-3",
     category: "social",
-    question: "Which best describes your approach to social boundaries?",
+    question: "When building relationships, what do you value most?",
     options: [
-      "I have clear boundaries and communicate them directly to others",
-      "My boundaries are flexible and depend on the specific relationship",
-      "I sometimes struggle to establish boundaries, especially with close relationships",
-      "I prioritize others' needs and may adjust my boundaries accordingly"
+      "Authentic connection and mutual understanding",
+      "Trust and reliability",
+      "What others can do for me", // less optimal - transactional
+      "Shared values and interests",
+      "Growth and learning from each other",
+      "Avoiding potential rejection or conflict" // less optimal - fear-based
     ]
   },
   {
     id: "social-4",
     category: "social",
-    question: "In your closest relationships, which matters most to you?",
+    question: "How do you typically navigate disagreements?",
     options: [
-      "Deep, authentic connection and emotional intimacy",
-      "Mutual respect and appreciation for each other's autonomy",
-      "Practical support and reliability through life's challenges",
-      "Intellectual stimulation and meaningful conversations"
-    ],
-    weight: 1.2
+      "I seek to understand different perspectives and find common ground",
+      "I focus on solutions that benefit everyone involved",
+      "I insist on my way until others agree", // less optimal - controlling
+      "I use logic and facts to support my position",
+      "I maintain respect while working through differences",
+      "I withdraw to avoid confrontation" // less optimal - avoidance
+    ]
   },
   {
     id: "social-5",
     category: "social",
-    question: "How do you typically respond when someone comes to you with a problem?",
+    question: "How do you typically respond to social support?",
     options: [
-      "Listen and ask questions to help them discover their own solution",
-      "Immediately think of solutions and practical advice to offer",
-      "Share my own similar experiences to normalize what they're going through",
-      "Focus on providing emotional support and validation"
+      "I accept it gratefully and reciprocate when possible",
+      "I appreciate it while maintaining healthy boundaries",
+      "I become overly dependent on it", // less optimal - dependency
+      "I evaluate it carefully before accepting",
+      "I use it as motivation to grow stronger",
+      "I reject it to maintain independence" // less optimal - isolation
     ]
   },
-  
+
   // Values and Motivations Questions (5 questions)
   {
     id: "values-1",
     category: "values",
-    question: "Which of these most strongly drives your major life decisions?",
+    question: "What primarily drives your major life decisions?",
     options: [
-      "Creating meaningful impact and contributing to something larger than myself",
-      "Achieving excellence and recognition in my chosen pursuits",
-      "Building strong relationships and deep connections with others",
-      "Gaining freedom and autonomy to chart my own course"
+      "Alignment with my core values and principles",
+      "Potential for personal growth and development",
+      "Fear of missing out or being left behind", // less optimal - FOMO
+      "Impact on others and the greater good",
+      "Pursuit of meaningful goals and purpose",
+      "Avoiding potential failure or criticism" // less optimal - fear-based
     ],
     weight: 1.3
   },
   {
     id: "values-2",
     category: "values",
-    question: "When you feel most fulfilled and purposeful, you are likely:",
+    question: "What gives you the strongest sense of fulfillment?",
     options: [
-      "Mastering a challenging skill or subject through focused effort",
-      "Helping others overcome obstacles or improve their lives",
-      "Creating or building something innovative or unique",
-      "Experiencing deep connection and authentic exchange with others"
+      "Creating positive impact in others' lives",
+      "Achieving personal growth and mastery",
+      "Receiving recognition and praise", // less optimal - external validation
+      "Contributing to meaningful causes",
+      "Building deep, authentic relationships",
+      "Accumulating status and material success" // less optimal - materialism
     ],
     weight: 1.2
   },
   {
     id: "values-3",
     category: "values",
-    question: "Which statement resonates most strongly with your core values?",
+    question: "How do you typically view challenges and obstacles?",
     options: [
-      "Living authentically according to my inner truth is most important",
-      "Contributing to others' wellbeing and building community matters most",
-      "Continual growth and the pursuit of excellence guide my choices",
-      "Maintaining independence and self-determination is essential"
+      "As opportunities for growth and learning",
+      "As problems to be solved systematically",
+      "As personal attacks or unfair situations", // less optimal - victim mentality
+      "As tests of character and resilience",
+      "As chances to demonstrate capabilities",
+      "As threats to be avoided when possible" // less optimal - avoidance
     ],
     weight: 1.1
   },
   {
     id: "values-4",
     category: "values",
-    question: "What type of recognition or achievement would feel most meaningful to you?",
+    question: "What type of legacy do you most want to leave?",
     options: [
-      "Knowing my work made a positive difference in others' lives",
-      "Receiving acknowledgment for my unique creativity or innovation",
-      "Being respected for my expertise and mastery in my field",
-      "Successfully building something lasting that reflects my values"
+      "Positive impact on others' lives and well-being",
+      "Innovations or improvements that benefit society",
+      "Wealth and status for my family", // less optimal - materialistic
+      "Knowledge and wisdom shared with others",
+      "Inspiration for future generations",
+      "Personal comfort and security" // less optimal - self-focused
     ]
   },
   {
     id: "values-5",
     category: "values",
-    question: "When considering your future, which is most important to you?",
+    question: "What most strongly influences your sense of self-worth?",
     options: [
-      "Having financial security and material comfort",
-      "Finding purpose and meaning in my daily activities",
-      "Building and maintaining deep, authentic relationships",
-      "Having freedom and autonomy to make my own choices"
+      "Living according to my values and principles",
+      "Personal growth and continuous improvement",
+      "Others' opinions and approval", // less optimal - external validation
+      "Achieving meaningful goals",
+      "Making positive contributions to others",
+      "Comparing myself to others' success" // less optimal - social comparison
     ]
   }
 ];
