@@ -201,14 +201,17 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
         <>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Checkbox 
-                checked={selectedIds.size === analyses.length && analyses.length > 0}
-                onClick={toggleSelectAll}
-                disabled={isBulkDeleting}
-              />
-              <span className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-center">
+                <Checkbox 
+                  id="select-all"
+                  checked={selectedIds.size === analyses.length && analyses.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  disabled={isBulkDeleting}
+                />
+              </div>
+              <label htmlFor="select-all" className="text-sm text-muted-foreground cursor-pointer">
                 {selectedIds.size} selected
-              </span>
+              </label>
             </div>
             {selectedIds.size > 0 && (
               <Button 

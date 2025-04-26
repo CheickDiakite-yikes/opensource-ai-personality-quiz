@@ -73,12 +73,15 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
       <CardHeader className="py-4 pr-12">
         <div className="flex justify-between items-center gap-4">
           <div className="flex items-center gap-4">
-            <div onClick={handleCheckboxClick}>
-              <Checkbox 
-                checked={isSelected}
-                className="pointer-events-none"
-              />
-            </div>
+            {onToggleSelect && (
+              <div onClick={handleCheckboxClick} className="flex items-center justify-center">
+                <Checkbox 
+                  checked={isSelected}
+                  className="pointer-events-none"
+                  onCheckedChange={() => {}}
+                />
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
               <div className="flex flex-col">
