@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -108,12 +107,11 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
   try {
     console.log(`[deleteAnalysisFromDatabase] Attempting to delete analysis with ID: ${analysisId}`);
     
-    // Use proper error handling and explicitly check for errors
-    const { error, count } = await supabase
+    // Modify the delete operation to not use count in RETURNING clause
+    const { error } = await supabase
       .from('concise_analyses')
       .delete()
-      .eq('id', analysisId)
-      .select('count');
+      .eq('id', analysisId);
     
     if (error) {
       console.error("[deleteAnalysisFromDatabase] Deletion error:", error);
@@ -121,7 +119,7 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       return false;
     }
     
-    console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully. Affected rows: ${count}`);
+    console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully`);
     toast.success("Analysis deleted successfully");
     return true;
   } catch (err: any) {
