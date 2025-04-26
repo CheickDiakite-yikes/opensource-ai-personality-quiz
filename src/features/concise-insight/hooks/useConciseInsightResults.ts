@@ -32,6 +32,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         }
         
         // Check if analysis already exists
+        console.log("Checking for existing analysis for assessment:", assessmentId);
         const { data: existingAnalysis, error: fetchError } = await supabase
           .from('concise_analyses')
           .select('*')
@@ -39,21 +40,25 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           .single();
           
         if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error("Error fetching existing analysis:", fetchError);
           throw fetchError;
         }
         
         if (existingAnalysis) {
           console.log("Found existing analysis:", existingAnalysis);
-          // Fix the type error by checking if analysis_data exists first
-          if ('analysis_data' in existingAnalysis) {
-            // Cast the JSON data to the expected ConciseAnalysisResult type with type assertion
+          // Check if analysis_data exists and is not null
+          if (existingAnalysis.analysis_data) {
             setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
             setLoading(false);
             return;
+          } else {
+            console.log("Existing analysis found but data is null or invalid");
           }
+        } else {
+          console.log("No existing analysis found. Need to generate a new one.");
         }
         
-        // If no analysis exists, get the assessment responses
+        // If no valid analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
           .from('concise_assessments')
           .select('*')
@@ -62,6 +67,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           .single();
           
         if (responseError) {
+          console.error("Error fetching assessment:", responseError);
           throw responseError;
         }
         
@@ -86,10 +92,15 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         );
         
         if (analysisError) {
+          console.error("Error generating analysis:", analysisError);
           throw analysisError;
         }
         
         console.log("Analysis generated:", analysisResult);
+        if (!analysisResult) {
+          throw new Error("No analysis result returned from the edge function");
+        }
+        
         setAnalysis(analysisResult as ConciseAnalysisResult);
         
         // Save the newly generated analysis to the database
