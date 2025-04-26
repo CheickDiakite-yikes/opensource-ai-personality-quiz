@@ -27,6 +27,21 @@ const ConciseInsight: React.FC = () => {
     }
   };
   
+  const viewReports = () => {
+    try {
+      if (!user && !isLoading) {
+        toast.error("Please sign in to view reports");
+        navigate("/auth");
+        return;
+      }
+      
+      navigate("/concise-report");
+    } catch (e) {
+      console.error("Navigation error:", e);
+      toast.error("An error occurred. Please try again.");
+    }
+  };
+  
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -87,10 +102,20 @@ const ConciseInsight: React.FC = () => {
                 <span>Your responses are kept private and secure. We respect your privacy.</span>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col sm:flex-row gap-3">
               <Button onClick={startAssessment} size="lg" className="w-full sm:w-auto" disabled={isLoading}>
                 {isLoading ? "Loading..." : "Start Quick Assessment"}
                 <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              
+              <Button 
+                onClick={viewReports} 
+                variant="outline" 
+                size="lg" 
+                className="w-full sm:w-auto" 
+                disabled={isLoading}
+              >
+                View Previous Reports
               </Button>
             </CardFooter>
           </Card>

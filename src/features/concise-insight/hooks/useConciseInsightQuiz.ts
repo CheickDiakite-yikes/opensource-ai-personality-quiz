@@ -86,8 +86,8 @@ export const useConciseInsightQuiz = (totalQuestions: number) => {
         
         toast.success("Assessment completed successfully!");
         
-        // Navigate to results page
-        navigate(`/concise-insight/results?id=${assessmentId}`);
+        // Navigate to the concise report page with assessment ID
+        navigate(`/concise-report/${assessmentId}`);
       } catch (err) {
         console.error("Error saving assessment", err);
         toast.error("There was an error saving your assessment. Please try again.");
