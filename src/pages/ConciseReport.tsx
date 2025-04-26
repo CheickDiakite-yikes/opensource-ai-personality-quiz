@@ -11,11 +11,12 @@ import { ReportDetails } from "@/features/concise-insight/components/ReportDetai
 import { AssessmentsList } from "@/features/concise-insight/components/AssessmentsList";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Loader2, AlertTriangle } from "lucide-react";
 
 // Loading component
 const ResultsLoading = () => (
   <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
-    <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4" />
+    <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
     <h2 className="text-2xl font-bold">Loading Analysis</h2>
     <p className="text-muted-foreground max-w-md text-center mt-2">
       Please wait while we retrieve your personality insights...
@@ -27,7 +28,7 @@ const ResultsLoading = () => (
 const ResultsError = ({ error, onRetry }: { error: string, onRetry?: () => void }) => (
   <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
     <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-      <span className="text-destructive text-2xl">!</span>
+      <AlertTriangle className="text-destructive h-6 w-6" />
     </div>
     <h2 className="text-2xl font-bold">Analysis Error</h2>
     <p className="text-muted-foreground max-w-md text-center mt-2">
@@ -52,6 +53,7 @@ const ConciseReport: React.FC = () => {
   const { analysis, loading, error, saveAnalysis, refreshAnalysis } = useConciseInsightResults(id);
   const [isDeleting, setIsDeleting] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [navigatingAfterDelete, setNavigatingAfterDelete] = useState(false);
 
   // Function to refresh data
   const refreshData = useCallback(() => {
@@ -74,7 +76,7 @@ const ConciseReport: React.FC = () => {
 
   // Handle deletion of current analysis
   const handleDeleteCurrent = useCallback(async () => {
-    if (!id) return;
+    if (!id || !user) return;
     
     if (!confirm("Are you sure you want to delete this analysis? This action cannot be undone.")) {
       return;
@@ -88,22 +90,18 @@ const ConciseReport: React.FC = () => {
       
       if (success) {
         toast.success("Analysis deleted successfully", { id: "delete-toast" });
+        setNavigatingAfterDelete(true);
         
         // Check if we have other analyses to navigate to
-        if (user) {
-          const remainingAnalyses = await fetchAllAnalysesByUserId(user.id);
-          
-          if (remainingAnalyses && remainingAnalyses.length > 0) {
-            // Navigate to the first available analysis
-            const newId = remainingAnalyses[0].id;
-            // Use replace to prevent going back to deleted analysis
-            navigate(`/concise-report/${newId}`, { replace: true });
-          } else {
-            // No analyses left, go to the report list view
-            navigate('/concise-report', { replace: true });
-          }
+        const remainingAnalyses = await fetchAllAnalysesByUserId(user.id);
+        
+        if (remainingAnalyses && remainingAnalyses.length > 0) {
+          // Navigate to the first available analysis
+          const newId = remainingAnalyses[0].id;
+          // Use replace to prevent going back to deleted analysis
+          navigate(`/concise-report/${newId}`, { replace: true });
         } else {
-          // If no user, just go to the report list
+          // No analyses left, go to the report list view
           navigate('/concise-report', { replace: true });
         }
       } else {
@@ -115,8 +113,17 @@ const ConciseReport: React.FC = () => {
       toast.error("Failed to delete analysis", { id: "delete-toast" });
     } finally {
       setIsDeleting(false);
+      setNavigatingAfterDelete(false);
     }
   }, [id, navigate, user]);
+
+  // Clear error state if navigating after delete
+  useEffect(() => {
+    if (navigatingAfterDelete && error && error.includes("not found")) {
+      // This is expected behavior after deletion, don't show an error
+      console.log("Ignoring expected error after deletion");
+    }
+  }, [navigatingAfterDelete, error]);
 
   // If no assessment ID is provided, show the list of assessments
   if (!id) {
@@ -146,10 +153,10 @@ const ConciseReport: React.FC = () => {
     return <ResultsLoading />;
   }
   
-  if (isDeleting) {
+  if (isDeleting || navigatingAfterDelete) {
     return (
       <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4" />
+        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
         <h2 className="text-2xl font-bold">Deleting Analysis</h2>
         <p className="text-muted-foreground max-w-md text-center mt-2">
           Please wait while we delete this analysis...
@@ -158,7 +165,8 @@ const ConciseReport: React.FC = () => {
     );
   }
   
-  if (error || !analysis) {
+  // Only show error if not in the process of navigating after delete
+  if ((error && !navigatingAfterDelete) || !analysis) {
     return <ResultsError error={error || "No analysis data found"} onRetry={handleManualRefresh} />;
   }
   

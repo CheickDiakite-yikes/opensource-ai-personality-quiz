@@ -8,16 +8,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AssessmentCard } from './AssessmentCard';
 import { deleteAnalysisFromDatabase, fetchAllAnalysesByUserId } from '../utils/analysisHelpers';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 
 export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState(0);
+  const [bulkDeleteTotal, setBulkDeleteTotal] = useState(0);
 
   // Use refreshCounter as a dependency to trigger re-fetches
   useEffect(() => {
@@ -37,9 +41,11 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
       
       // Clear selected IDs when refreshing to avoid stale selections
       setSelectedIds(new Set());
+      setIsInitialLoad(false);
     } catch (err) {
       console.error("[AssessmentsList] Error fetching analyses:", err);
       toast.error("Failed to load your analyses");
+      setIsInitialLoad(false);
     } finally {
       setLoading(false);
     }
@@ -72,14 +78,17 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
           return newSet;
         });
         
-        // Force a refresh of the data after deletion
-        setRefreshCounter(prev => prev + 1);
+        console.log("[handleDeleteAnalysis] Successfully deleted analysis:", analysisId);
       } else {
-        throw new Error("Delete operation failed");
+        console.error("[handleDeleteAnalysis] Failed to delete analysis:", analysisId);
+        // Force a refresh to get the current state from the database
+        setRefreshCounter(prev => prev + 1);
       }
     } catch (err) {
       console.error("[AssessmentsList] Error deleting analysis:", err);
       toast.error("Failed to delete analysis");
+      // Force a refresh to get the current state from the database
+      setRefreshCounter(prev => prev + 1);
     } finally {
       // Remove from deleting state
       setDeletingIds(prev => {
@@ -101,69 +110,75 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     }
 
     setIsBulkDeleting(true);
-    toast.loading(`Deleting ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+    setBulkDeleteTotal(selectedIds.size);
+    setBulkDeleteProgress(0);
+    toast.loading(`Starting deletion of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
 
     let successCount = 0;
     let failCount = 0;
-
+    const selectedIdsArray = Array.from(selectedIds);
+    const deletedIds = new Set<string>();
+    
     try {
-      const selectedIdsArray = Array.from(selectedIds);
+      // Process deletions in batches of 3 to avoid overwhelming the database
+      const batchSize = 3;
       
-      // Process deletions in batches of 5 to avoid overwhelming the database
-      const batchSize = 5;
       for (let i = 0; i < selectedIdsArray.length; i += batchSize) {
         const batch = selectedIdsArray.slice(i, i + batchSize);
         
-        // Process batch in parallel
-        const results = await Promise.all(
-          batch.map(async (analysisId) => {
-            try {
-              setDeletingIds(prev => new Set([...prev, analysisId]));
-              const success = await deleteAnalysisFromDatabase(analysisId);
-              
-              if (success) {
-                successCount++;
-                return { success: true, id: analysisId };
-              } else {
-                failCount++;
-                return { success: false, id: analysisId };
-              }
-            } catch (err) {
-              console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
+        // Process batch in sequence to avoid race conditions
+        for (const analysisId of batch) {
+          try {
+            setDeletingIds(prev => new Set([...prev, analysisId]));
+            
+            // Short delay to prevent database overload
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            const success = await deleteAnalysisFromDatabase(analysisId);
+            
+            if (success) {
+              deletedIds.add(analysisId);
+              successCount++;
+            } else {
               failCount++;
-              return { success: false, id: analysisId };
-            } finally {
-              setDeletingIds(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(analysisId);
-                return newSet;
-              });
             }
-          })
-        );
-        
-        // Update progress
-        toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+          } catch (err) {
+            console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
+            failCount++;
+          } finally {
+            setDeletingIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(analysisId);
+              return newSet;
+            });
+            
+            // Update progress
+            setBulkDeleteProgress(prev => prev + 1);
+            toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+          }
+        }
       }
     } catch (error) {
       console.error("[AssessmentsList] Bulk deletion error:", error);
     } finally {
-      setIsBulkDeleting(false);
-    }
-
-    // Update UI after all deletions
-    if (successCount > 0) {
-      // Full refresh to ensure UI is in sync with database
-      setRefreshCounter(prev => prev + 1);
+      // Update UI by removing successfully deleted items
+      if (deletedIds.size > 0) {
+        setAnalyses(prev => prev.filter(a => !deletedIds.has(a.id)));
+      }
       
       // Clear selection
       setSelectedIds(new Set());
+      setIsBulkDeleting(false);
       
-      toast.success(`Successfully deleted ${successCount} analyses`, { id: "bulk-delete" });
-    }
-    
-    if (failCount > 0) {
-      toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} analyses`, { id: "bulk-delete" });
+      }
+      
+      if (failCount > 0) {
+        toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
+        // Force a complete refresh to ensure UI is in sync with database
+        setRefreshCounter(prev => prev + 1);
+      }
     }
   };
 
@@ -175,7 +190,7 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     }
   };
 
-  if (loading) {
+  if (loading && isInitialLoad) {
     return (
       <div className="py-10 flex justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -221,16 +236,23 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
                 className="flex items-center gap-2"
               >
                 {isBulkDeleting && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>
+                      {bulkDeleteProgress}/{bulkDeleteTotal}
+                    </span>
+                  </>
                 )}
-                Delete Selected ({selectedIds.size})
+                {!isBulkDeleting && (
+                  <span>Delete Selected ({selectedIds.size})</span>
+                )}
               </Button>
             )}
           </div>
           <div className="grid gap-4">
             {analyses.map((analysis) => (
               <AssessmentCard 
-                key={`${analysis.id}-${refreshCounter}`} 
+                key={`analysis-${analysis.id}-${refreshCounter}`} 
                 analysis={analysis}
                 onSelect={onSelect}
                 onDelete={handleDeleteAnalysis}

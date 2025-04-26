@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -107,7 +108,20 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
   try {
     console.log(`[deleteAnalysisFromDatabase] Attempting to delete analysis with ID: ${analysisId}`);
     
-    // Modify the delete operation to not use count in RETURNING clause
+    // First verify the analysis exists to delete
+    const { data: existingAnalysis, error: checkError } = await supabase
+      .from('concise_analyses')
+      .select('id')
+      .eq('id', analysisId)
+      .single();
+      
+    if (checkError || !existingAnalysis) {
+      console.error("[deleteAnalysisFromDatabase] Analysis not found:", checkError || "No data returned");
+      toast.error("Analysis not found");
+      return false;
+    }
+    
+    // Perform the deletion
     const { error } = await supabase
       .from('concise_analyses')
       .delete()
@@ -119,9 +133,27 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       return false;
     }
     
-    console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully`);
-    toast.success("Analysis deleted successfully");
-    return true;
+    // Verify deletion was successful
+    const { data: checkDeleted, error: verifyError } = await supabase
+      .from('concise_analyses')
+      .select('id')
+      .eq('id', analysisId);
+      
+    if (verifyError) {
+      console.error("[deleteAnalysisFromDatabase] Verification error:", verifyError);
+    }
+    
+    const isDeleted = !checkDeleted || checkDeleted.length === 0;
+    
+    if (isDeleted) {
+      console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully`);
+      toast.success("Analysis deleted successfully");
+      return true;
+    } else {
+      console.error("[deleteAnalysisFromDatabase] Deletion failed - record still exists");
+      toast.error("Failed to delete analysis: Record still exists");
+      return false;
+    }
   } catch (err: any) {
     console.error("[deleteAnalysisFromDatabase] Error:", err);
     toast.error("Failed to delete analysis: " + (err.message || "Unknown error"));

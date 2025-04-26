@@ -77,8 +77,9 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
               <div onClick={handleCheckboxClick} className="flex items-center justify-center">
                 <Checkbox 
                   checked={isSelected}
-                  className="pointer-events-none"
-                  onCheckedChange={() => {}}
+                  onCheckedChange={() => {
+                    if (onToggleSelect) onToggleSelect();
+                  }}
                 />
               </div>
             )}
