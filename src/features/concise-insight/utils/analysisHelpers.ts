@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -100,5 +101,46 @@ export const saveAnalysisToDatabase = async (
     console.error("[saveAnalysisToDatabase] Error:", err);
     toast.error("Analysis generated but couldn't be saved for future use");
     throw err;
+  }
+};
+
+export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<boolean> => {
+  try {
+    console.log(`[deleteAnalysisFromDatabase] Deleting analysis with ID: ${analysisId}`);
+    
+    const { error } = await supabase
+      .from('concise_analyses')
+      .delete()
+      .eq('id', analysisId);
+    
+    if (error) {
+      console.error("[deleteAnalysisFromDatabase] Error:", error);
+      toast.error("Failed to delete analysis");
+      return false;
+    }
+    
+    console.log("[deleteAnalysisFromDatabase] Analysis deleted successfully");
+    return true;
+  } catch (err: any) {
+    console.error("[deleteAnalysisFromDatabase] Error:", err);
+    toast.error("Failed to delete analysis");
+    return false;
+  }
+};
+
+export const fetchAllAnalysesByUserId = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('concise_analyses')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (err: any) {
+    console.error("[fetchAllAnalysesByUserId] Error:", err);
+    toast.error("Failed to fetch analyses");
+    return [];
   }
 };

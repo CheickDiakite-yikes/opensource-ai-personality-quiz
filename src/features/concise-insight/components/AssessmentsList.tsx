@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AssessmentCard } from './AssessmentCard';
+import { deleteAnalysisFromDatabase, fetchAllAnalysesByUserId } from '../utils/analysisHelpers';
 
 export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAnalyses();
@@ -23,15 +25,8 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('concise_analyses')
-        .select('id, assessment_id, created_at, analysis_data')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      setAnalyses(data || []);
+      const data = await fetchAllAnalysesByUserId(user.id);
+      setAnalyses(data);
     } catch (err) {
       console.error("Error fetching analyses:", err);
       toast.error("Failed to load your analyses");
@@ -50,18 +45,26 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     }
     
     try {
-      const { error } = await supabase
-        .from('concise_analyses')
-        .delete()
-        .eq('id', analysisId);
-        
-      if (error) throw error;
+      // Mark as deleting
+      setDeletingIds(prev => new Set(prev).add(analysisId));
       
-      setAnalyses(analyses.filter(a => a.id !== analysisId));
-      toast.success("Analysis deleted successfully");
+      // Perform deletion
+      const success = await deleteAnalysisFromDatabase(analysisId);
+      
+      if (success) {
+        // Update local state to remove the deleted item
+        setAnalyses(analyses.filter(a => a.id !== analysisId));
+        toast.success("Analysis deleted successfully");
+      }
     } catch (err) {
       console.error("Error deleting analysis:", err);
-      toast.error("Failed to delete analysis");
+    } finally {
+      // Remove from deleting state
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(analysisId);
+        return newSet;
+      });
     }
   };
 
@@ -95,6 +98,7 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
               analysis={analysis}
               onSelect={onSelect}
               onDelete={handleDeleteAnalysis}
+              isDeleting={deletingIds.has(analysis.id)}
             />
           ))}
         </div>

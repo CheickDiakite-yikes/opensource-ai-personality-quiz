@@ -1,19 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useConciseInsightResults } from "@/features/concise-insight/hooks/useConciseInsightResults";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { 
-  Share2, Download, Save, Brain, HeartHandshake, Users, 
-  Lightbulb, Star, FileText, Clock, Calendar, Trash2
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+  fetchAllAnalysesByUserId,
+  deleteAnalysisFromDatabase
+} from "@/features/concise-insight/utils/analysisHelpers";
+import { ReportDetails } from "@/features/concise-insight/components/ReportDetails";
+import { AssessmentsList } from "@/features/concise-insight/components/AssessmentsList";
 import { useAuth } from "@/contexts/AuthContext";
-import { format } from "date-fns";
 import { toast } from "sonner";
 
 // Loading component
@@ -28,7 +24,7 @@ const ResultsLoading = () => (
 );
 
 // Error component
-const ResultsError = ({ error }: { error: string }) => (
+const ResultsError = ({ error, onRetry }: { error: string, onRetry?: () => void }) => (
   <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
     <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
       <span className="text-destructive text-2xl">!</span>
@@ -37,185 +33,59 @@ const ResultsError = ({ error }: { error: string }) => (
     <p className="text-muted-foreground max-w-md text-center mt-2">
       {error || "There was an error retrieving your analysis. Please try again."}
     </p>
-    <Button className="mt-6" onClick={() => window.location.reload()}>
-      Try Again
-    </Button>
+    {onRetry && (
+      <button 
+        className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+        onClick={onRetry}
+      >
+        Try Again
+      </button>
+    )}
   </div>
 );
-
-// Individual Assessment Card Component
-const AssessmentCard = ({ analysis, onSelect, onDelete }: { 
-  analysis: any, 
-  onSelect: (id: string) => void,
-  onDelete: (id: string) => void
-}) => {
-  // Extract title from analysis data if available
-  let title = "Concise Insight Analysis";
-  let description = "";
-  
-  if (analysis.analysis_data) {
-    const data = analysis.analysis_data as Record<string, any>;
-    // Extract a small portion of the overview if available for description
-    if (data.overview) {
-      description = data.overview.substring(0, 60) + "...";
-    }
-    
-    // If there's a primary archetype, include it in the title
-    if (data.coreProfiling && data.coreProfiling.primaryArchetype) {
-      title += `: ${data.coreProfiling.primaryArchetype} Type`;
-    }
-  }
-  
-  return (
-    <Card 
-      className="hover:border-primary/50 transition-colors cursor-pointer group relative"
-      onClick={() => onSelect(analysis.id)}
-    >
-      <CardHeader className="py-4 pr-12">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <div className="flex flex-col">
-              <span className="font-medium">{title}</span>
-              {description && (
-                <span className="text-xs text-muted-foreground hidden md:inline">{description}</span>
-              )}
-            </div>
-          </div>
-          <Badge variant="outline">
-            <Calendar className="h-3 w-3 mr-1" />
-            {format(new Date(analysis.created_at), 'MMM d, yyyy')}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <div 
-        className="absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(analysis.id);
-        }}
-      >
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </Card>
-  );
-};
-
-// Assessment List component
-const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
-  const [analyses, setAnalyses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchAnalyses();
-  }, [user]);
-  
-  const fetchAnalyses = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      // Get unique analysis entries
-      const { data, error } = await supabase
-        .from('concise_analyses')
-        .select('id, assessment_id, created_at, analysis_data')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      // Log for debugging
-      console.log(`[AssessmentsList] Loaded ${data?.length || 0} unique analyses`);
-      
-      setAnalyses(data || []);
-    } catch (err) {
-      console.error("Error fetching analyses:", err);
-      toast.error("Failed to load your analyses");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const takeNewAssessment = () => {
-    navigate('/concise-insight');
-  };
-  
-  const handleDeleteAnalysis = async (analysisId: string) => {
-    if (!confirm("Are you sure you want to delete this analysis? This cannot be undone.")) {
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('concise_analyses')
-        .delete()
-        .eq('id', analysisId);
-        
-      if (error) throw error;
-      
-      // Remove from local state
-      setAnalyses(analyses.filter(a => a.id !== analysisId));
-      toast.success("Analysis deleted successfully");
-    } catch (err) {
-      console.error("Error deleting analysis:", err);
-      toast.error("Failed to delete analysis");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="py-10 flex justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Your Assessments</h2>
-        <Button onClick={takeNewAssessment}>Take New Assessment</Button>
-      </div>
-      
-      {analyses.length === 0 ? (
-        <Card className="text-center py-10">
-          <CardContent>
-            <p className="mb-4 text-muted-foreground">You haven't completed any Concise Insight assessments yet.</p>
-            <Button onClick={takeNewAssessment}>Take Your First Assessment</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {analyses.map((analysis) => (
-            <AssessmentCard 
-              key={analysis.id} 
-              analysis={analysis}
-              onSelect={onSelect}
-              onDelete={handleDeleteAnalysis}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 // Main component
 const ConciseReport: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { analysis, loading, error, saveAnalysis } = useConciseInsightResults(id);
-  
-  // Handler for selecting an analysis from the list
-  const handleSelectAnalysis = (analysisId: string) => {
-    console.log(`[ConciseReport] Navigating to specific analysis ID: ${analysisId}`);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Handle navigation to a specific analysis 
+  const handleSelectAnalysis = useCallback((analysisId: string) => {
     navigate(`/concise-report/${analysisId}`);
-  };
+  }, [navigate]);
+
+  // Handle manual refresh
+  const handleManualRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  // Handle deletion of current analysis
+  const handleDeleteCurrent = useCallback(async () => {
+    if (!id) return;
+    
+    if (!confirm("Are you sure you want to delete this analysis? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      const success = await deleteAnalysisFromDatabase(id);
+      
+      if (success) {
+        toast.success("Analysis deleted successfully");
+        // Navigate to the reports list
+        navigate('/concise-report');
+      }
+    } catch (err) {
+      console.error("Error deleting analysis:", err);
+      toast.error("Failed to delete analysis");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [id, navigate]);
 
   // If no assessment ID is provided, show the list of assessments
   if (!id) {
@@ -244,8 +114,20 @@ const ConciseReport: React.FC = () => {
     return <ResultsLoading />;
   }
   
+  if (isDeleting) {
+    return (
+      <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4" />
+        <h2 className="text-2xl font-bold">Deleting Analysis</h2>
+        <p className="text-muted-foreground max-w-md text-center mt-2">
+          Please wait while we delete this analysis...
+        </p>
+      </div>
+    );
+  }
+  
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} />;
+    return <ResultsError error={error || "No analysis data found"} onRetry={handleManualRefresh} />;
   }
   
   return (
@@ -255,269 +137,24 @@ const ConciseReport: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="flex flex-col gap-8">
-        <header className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Your Personality Analysis</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover insights about your personality traits, cognitive patterns, and emotional architecture
-          </p>
-        </header>
-        
-        {/* Overview Card */}
-        <Card className="border-2 border-primary/10">
-          <CardHeader>
-            <CardTitle className="text-2xl">Personal Overview</CardTitle>
-            <CardDescription>A summary of your core personality traits and patterns</CardDescription>
-          </CardHeader>
-          <CardContent className="prose dark:prose-invert max-w-none">
-            <p>{analysis.overview}</p>
-          </CardContent>
-        </Card>
-        
-        {/* Core Archetype */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary" />
-              Your Core Archetype
-            </CardTitle>
-            <CardDescription>Your dominant personality pattern</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold mb-2">
-                  Primary: <Badge variant="outline" className="ml-2">{analysis.coreProfiling.primaryArchetype}</Badge>
-                </h3>
-                <h4 className="text-lg font-medium mb-2">
-                  Secondary: <Badge variant="outline" className="ml-2">{analysis.coreProfiling.secondaryArchetype}</Badge>
-                </h4>
-              </div>
-            </div>
-            <p className="text-muted-foreground">{analysis.coreProfiling.description}</p>
-          </CardContent>
-        </Card>
-        
-        {/* Main Tabs */}
-        <Tabs defaultValue="cognitive">
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="cognitive" className="flex items-center gap-1">
-              <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">Cognitive</span>
-            </TabsTrigger>
-            <TabsTrigger value="emotional" className="flex items-center gap-1">
-              <HeartHandshake className="h-4 w-4" />
-              <span className="hidden sm:inline">Emotional</span>
-            </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Social</span>
-            </TabsTrigger>
-            <TabsTrigger value="growth" className="flex items-center gap-1">
-              <Lightbulb className="h-4 w-4" />
-              <span className="hidden sm:inline">Growth</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="cognitive" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cognitive Profile</CardTitle>
-                <CardDescription>How you think, learn, and process information</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="font-medium mb-2">Cognitive Style</h3>
-                  <p>{analysis.cognitiveProfile.style}</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Cognitive Strengths</h3>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.cognitiveProfile.strengths.map((strength, i) => (
-                        <li key={i}>{strength}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Potential Blind Spots</h3>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.cognitiveProfile.blindSpots.map((blindSpot, i) => (
-                        <li key={i}>{blindSpot}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-muted-foreground">{analysis.cognitiveProfile.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="emotional" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Emotional Insights</CardTitle>
-                <CardDescription>How you experience and manage emotions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Emotional Awareness</h3>
-                    <p className="text-muted-foreground">{analysis.emotionalInsights.awareness}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Emotional Regulation</h3>
-                    <p className="text-muted-foreground">{analysis.emotionalInsights.regulation}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Empathic Capacity</h3>
-                  <div className="w-full bg-muted rounded-full h-2.5 mb-1">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full" 
-                      style={{ width: `${analysis.emotionalInsights.empathy * 10}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span>Self-focused</span>
-                    <span>Balanced</span>
-                    <span>Other-focused</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-muted-foreground">{analysis.emotionalInsights.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="social" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Interpersonal Dynamics</CardTitle>
-                <CardDescription>How you interact and connect with others</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Communication Style</h3>
-                    <Badge variant="outline">{analysis.interpersonalDynamics.communicationStyle}</Badge>
-                    
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Relationship Pattern</h3>
-                    <Badge variant="outline">{analysis.interpersonalDynamics.relationshipPattern}</Badge>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Conflict Approach</h3>
-                    <Badge variant="outline">{analysis.interpersonalDynamics.conflictApproach}</Badge>
-                  </div>
-                </div>
-                
-                {/* Relationship Strengths & Challenges */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                  <Card className="border-muted bg-card/50">
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-base">Relationship Strengths</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                        {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.strengths).slice(0, 3).map((strength, i) => (
-                          <li key={i}>{strength}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-muted bg-card/50">
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-base">Relationship Challenges</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                        {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
-                          <li key={i}>{challenge}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="growth" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Growth & Development</CardTitle>
-                <CardDescription>Your potential for growth and personal development</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="font-medium mb-2">Areas for Development</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.growthPotential.areasOfDevelopment.map((area, i) => (
-                      <li key={i}>{area}</li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Key Strengths to Leverage</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.growthPotential.keyStrengthsToLeverage.map((strength, i) => (
-                      <li key={i}>{strength}</li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Personalized Recommendations</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.growthPotential.personalizedRecommendations.map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Career Insights</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {analysis.careerInsights.map((career, i) => (
-                      <Badge key={i} variant="secondary">{career}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Button onClick={saveAnalysis} className="flex items-center gap-2">
-            <Save className="h-4 w-4" /> Save Analysis
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" /> Download PDF
-          </Button>
-          <Button variant="secondary" className="flex items-center gap-2">
-            <Share2 className="h-4 w-4" /> Share Results
-          </Button>
-        </div>
-        
-        <div className="text-center">
-          <Button variant="link" onClick={() => navigate('/concise-report')}>
-            Back to All Reports
-          </Button>
+      <div className="mb-6 flex justify-between items-center">
+        <button 
+          onClick={() => navigate('/concise-report')}
+          className="text-primary hover:underline flex items-center gap-1"
+        >
+          ← Back to Reports
+        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleDeleteCurrent}
+            className="px-3 py-1 text-sm text-destructive hover:bg-destructive/10 rounded"
+          >
+            Delete Report
+          </button>
         </div>
       </div>
+      
+      <ReportDetails analysis={analysis} saveAnalysis={saveAnalysis} />
     </motion.div>
   );
 };

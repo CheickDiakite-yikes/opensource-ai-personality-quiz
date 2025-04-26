@@ -1,31 +1,36 @@
 
 import React from 'react';
+import { FileText, Calendar, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { FileText, Calendar, Trash2 } from 'lucide-react';
-import { Card, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader } from '@/components/ui/card';
 
 interface AssessmentCardProps {
-  analysis: {
-    id: string;
-    created_at: string;
-    analysis_data: Record<string, any>;
-  };
+  analysis: any;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-export const AssessmentCard = ({ analysis, onSelect, onDelete }: AssessmentCardProps) => {
+export const AssessmentCard: React.FC<AssessmentCardProps> = ({ 
+  analysis, 
+  onSelect, 
+  onDelete,
+  isDeleting = false
+}) => {
+  // Extract title from analysis data if available
   let title = "Concise Insight Analysis";
   let description = "";
   
   if (analysis.analysis_data) {
     const data = analysis.analysis_data as Record<string, any>;
+    // Extract a small portion of the overview if available for description
     if (data.overview) {
       description = data.overview.substring(0, 60) + "...";
     }
     
+    // If there's a primary archetype, include it in the title
     if (data.coreProfiling && data.coreProfiling.primaryArchetype) {
       title += `: ${data.coreProfiling.primaryArchetype} Type`;
     }
@@ -33,8 +38,8 @@ export const AssessmentCard = ({ analysis, onSelect, onDelete }: AssessmentCardP
   
   return (
     <Card 
-      className="hover:border-primary/50 transition-colors cursor-pointer group relative"
-      onClick={() => onSelect(analysis.id)}
+      className={`hover:border-primary/50 transition-colors cursor-pointer group relative ${isDeleting ? 'opacity-50' : ''}`}
+      onClick={() => !isDeleting && onSelect(analysis.id)}
     >
       <CardHeader className="py-4 pr-12">
         <div className="flex justify-between items-center">
@@ -58,11 +63,22 @@ export const AssessmentCard = ({ analysis, onSelect, onDelete }: AssessmentCardP
         className="absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={(e) => {
           e.stopPropagation();
-          onDelete(analysis.id);
+          if (!isDeleting) {
+            onDelete(analysis.id);
+          }
         }}
       >
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </Card>
