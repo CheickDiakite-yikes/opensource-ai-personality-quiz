@@ -49,8 +49,18 @@ const ConciseReport: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { analysis, loading, error, saveAnalysis } = useConciseInsightResults(id);
+  const { analysis, loading, error, saveAnalysis, refreshAnalysis } = useConciseInsightResults(id);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Function to refresh data
+  const refreshData = useCallback(() => {
+    console.log("Triggering data refresh");
+    setRefreshTrigger(prev => prev + 1);
+    if (refreshAnalysis) {
+      refreshAnalysis();
+    }
+  }, [refreshAnalysis]);
 
   // Handle navigation to a specific analysis 
   const handleSelectAnalysis = useCallback((analysisId: string) => {
@@ -59,8 +69,9 @@ const ConciseReport: React.FC = () => {
 
   // Handle manual refresh
   const handleManualRefresh = useCallback(() => {
+    refreshData();
     window.location.reload();
-  }, []);
+  }, [refreshData]);
 
   // Handle deletion of current analysis
   const handleDeleteCurrent = useCallback(async () => {
@@ -76,8 +87,11 @@ const ConciseReport: React.FC = () => {
       
       if (success) {
         toast.success("Analysis deleted successfully");
-        // Navigate to the reports list
-        navigate('/concise-report');
+        // Navigate to the reports list and trigger a refresh
+        navigate('/concise-report', { replace: true });
+        setTimeout(refreshData, 300);
+      } else {
+        throw new Error("Failed to delete analysis");
       }
     } catch (err) {
       console.error("Error deleting analysis:", err);
@@ -85,7 +99,7 @@ const ConciseReport: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, refreshData]);
 
   // If no assessment ID is provided, show the list of assessments
   if (!id) {
@@ -95,6 +109,7 @@ const ConciseReport: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        key={`list-view-${refreshTrigger}`}
       >
         <div className="flex flex-col gap-8">
           <header className="text-center">
@@ -136,10 +151,14 @@ const ConciseReport: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      key={`detail-view-${id}`}
     >
       <div className="mb-6 flex justify-between items-center">
         <button 
-          onClick={() => navigate('/concise-report')}
+          onClick={() => {
+            navigate('/concise-report');
+            setTimeout(refreshData, 100);
+          }}
           className="text-primary hover:underline flex items-center gap-1"
         >
           ← Back to Reports

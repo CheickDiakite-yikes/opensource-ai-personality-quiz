@@ -108,6 +108,23 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
   try {
     console.log(`[deleteAnalysisFromDatabase] Deleting analysis with ID: ${analysisId}`);
     
+    // First check if the analysis exists
+    const { data: checkData, error: checkError } = await supabase
+      .from('concise_analyses')
+      .select('id')
+      .eq('id', analysisId)
+      .single();
+      
+    if (checkError) {
+      console.error("[deleteAnalysisFromDatabase] Error checking analysis:", checkError);
+      // Continue with deletion attempt anyway
+    }
+    
+    if (!checkData) {
+      console.log("[deleteAnalysisFromDatabase] Analysis not found, may have been already deleted");
+    }
+    
+    // Proceed with deletion
     const { error } = await supabase
       .from('concise_analyses')
       .delete()
@@ -117,6 +134,25 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       console.error("[deleteAnalysisFromDatabase] Error:", error);
       toast.error("Failed to delete analysis");
       return false;
+    }
+    
+    // Also delete any related assessment data if needed
+    try {
+      const { data: assessmentData } = await supabase
+        .from('concise_assessments')
+        .select('id')
+        .eq('id', analysisId)
+        .maybeSingle();
+        
+      if (assessmentData) {
+        await supabase
+          .from('concise_assessments')
+          .delete()
+          .eq('id', assessmentData.id);
+      }
+    } catch (err) {
+      // Non-critical error, just log it
+      console.warn("[deleteAnalysisFromDatabase] Error cleaning up assessment:", err);
     }
     
     console.log("[deleteAnalysisFromDatabase] Analysis deleted successfully");
@@ -130,13 +166,20 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
 
 export const fetchAllAnalysesByUserId = async (userId: string) => {
   try {
+    console.log(`[fetchAllAnalysesByUserId] Fetching analyses for user: ${userId}`);
+    
     const { data, error } = await supabase
       .from('concise_analyses')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error("[fetchAllAnalysesByUserId] Error:", error);
+      throw error;
+    }
+    
+    console.log(`[fetchAllAnalysesByUserId] Found ${data?.length || 0} analyses`);
     return data || [];
   } catch (err: any) {
     console.error("[fetchAllAnalysesByUserId] Error:", err);

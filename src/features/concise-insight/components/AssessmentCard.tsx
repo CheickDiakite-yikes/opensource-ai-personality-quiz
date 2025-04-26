@@ -36,10 +36,27 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
     }
   }
   
+  // Handle card click, but only if not in deleting state
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isDeleting) {
+      onSelect(analysis.id);
+    }
+  };
+
+  // Handle delete button click, stop propagation to prevent card click
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isDeleting) {
+      onDelete(analysis.id);
+    }
+  };
+  
   return (
     <Card 
-      className={`hover:border-primary/50 transition-colors cursor-pointer group relative ${isDeleting ? 'opacity-50' : ''}`}
-      onClick={() => !isDeleting && onSelect(analysis.id)}
+      className={`hover:border-primary/50 transition-colors cursor-pointer group relative ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+      onClick={handleCardClick}
+      data-analysis-id={analysis.id}
     >
       <CardHeader className="py-4 pr-12">
         <div className="flex justify-between items-center">
@@ -61,18 +78,14 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
       
       <div 
         className="absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!isDeleting) {
-            onDelete(analysis.id);
-          }
-        }}
+        onClick={handleDeleteClick}
       >
         <Button 
           variant="ghost" 
           size="icon" 
           className="h-7 w-7 text-destructive hover:bg-destructive/10"
           disabled={isDeleting}
+          aria-label="Delete assessment"
         >
           {isDeleting ? (
             <Loader2 className="h-4 w-4 animate-spin" />

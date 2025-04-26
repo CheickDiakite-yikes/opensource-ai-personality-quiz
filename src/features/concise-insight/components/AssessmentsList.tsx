@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -15,10 +14,12 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
   const { user } = useAuth();
   const navigate = useNavigate();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to force re-fetch
 
+  // Use refreshKey as a dependency to trigger re-fetches
   useEffect(() => {
     fetchAnalyses();
-  }, [user]);
+  }, [user, refreshKey]);
   
   const fetchAnalyses = async () => {
     if (!user) return;
@@ -26,7 +27,8 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     try {
       setLoading(true);
       const data = await fetchAllAnalysesByUserId(user.id);
-      setAnalyses(data);
+      console.log("Fetched analyses:", data?.length || 0);
+      setAnalyses(data || []);
     } catch (err) {
       console.error("Error fetching analyses:", err);
       toast.error("Failed to load your analyses");
@@ -46,18 +48,24 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     
     try {
       // Mark as deleting
-      setDeletingIds(prev => new Set(prev).add(analysisId));
+      setDeletingIds(prev => new Set([...prev, analysisId]));
       
       // Perform deletion
       const success = await deleteAnalysisFromDatabase(analysisId);
       
       if (success) {
         // Update local state to remove the deleted item
-        setAnalyses(analyses.filter(a => a.id !== analysisId));
+        setAnalyses(prev => prev.filter(a => a.id !== analysisId));
         toast.success("Analysis deleted successfully");
+        
+        // Force a refresh of the data after deletion
+        setTimeout(() => setRefreshKey(prev => prev + 1), 300);
+      } else {
+        throw new Error("Delete operation failed");
       }
     } catch (err) {
       console.error("Error deleting analysis:", err);
+      toast.error("Failed to delete analysis");
     } finally {
       // Remove from deleting state
       setDeletingIds(prev => {
@@ -94,7 +102,7 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
         <div className="grid gap-4">
           {analyses.map((analysis) => (
             <AssessmentCard 
-              key={analysis.id} 
+              key={`${analysis.id}-${refreshKey}`} 
               analysis={analysis}
               onSelect={onSelect}
               onDelete={handleDeleteAnalysis}
