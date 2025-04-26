@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -25,66 +25,71 @@ export const useConciseInsightResults = (analysisId?: string) => {
   } = useAnalysisState();
   const { saveAnalysis } = useAnalysisSave(analysisId);
   
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        if (!analysisId) {
-          setError("No analysis ID provided");
-          setLoading(false);
-          return;
-        }
-        
-        if (!user) {
-          setError("You must be signed in to view results");
-          navigate("/auth");
-          return;
-        }
-        
-        console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
-        let result;
-
-        // Try to fetch by direct UUID first
-        if (isUUID(analysisId)) {
-          try {
-            result = await fetchAnalysisByDirectId(analysisId);
-          } catch (err) {
-            console.log("[useConciseInsightResults] Not found by direct ID, trying assessment ID");
-          }
-        }
-
-        // If not found by UUID, try assessment ID
-        if (!result) {
-          result = await fetchAnalysisByAssessmentId(analysisId, user.id);
-        }
-
-        // If still not found, generate new analysis
-        if (!result) {
-          console.log(`[useConciseInsightResults] Generating new analysis for assessment: ${analysisId}`);
-          result = await generateNewAnalysis(analysisId, user.id);
-          
-          // Save the newly generated analysis
-          await saveAnalysisToDatabase(result, analysisId, user.id);
-        }
-
-        setAnalysis(result);
-        
-      } catch (err: any) {
-        console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
-        setError(err.message || "An error occurred while fetching analysis");
-      } finally {
+  const fetchAnalysis = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!analysisId) {
+        setError("No analysis ID provided");
         setLoading(false);
+        return;
       }
-    };
-    
+      
+      if (!user) {
+        setError("You must be signed in to view results");
+        navigate("/auth");
+        return;
+      }
+      
+      console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
+      let result;
+
+      // Try to fetch by direct UUID first
+      if (isUUID(analysisId)) {
+        try {
+          result = await fetchAnalysisByDirectId(analysisId);
+        } catch (err) {
+          console.log("[useConciseInsightResults] Not found by direct ID, trying assessment ID");
+        }
+      }
+
+      // If not found by UUID, try assessment ID
+      if (!result) {
+        result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+      }
+
+      // If still not found, generate new analysis
+      if (!result) {
+        console.log(`[useConciseInsightResults] Generating new analysis for assessment: ${analysisId}`);
+        result = await generateNewAnalysis(analysisId, user.id);
+        
+        // Save the newly generated analysis
+        await saveAnalysisToDatabase(result, analysisId, user.id);
+      }
+
+      setAnalysis(result);
+      
+    } catch (err: any) {
+      console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
+      setError(err.message || "An error occurred while fetching analysis");
+    } finally {
+      setLoading(false);
+    }
+  }, [analysisId, navigate, user, setAnalysis, setError, setLoading]);
+  
+  // Add a refreshAnalysis function that re-fetches the analysis
+  const refreshAnalysis = useCallback(() => {
+    return fetchAnalysis();
+  }, [fetchAnalysis]);
+  
+  useEffect(() => {
     if (analysisId) {
       fetchAnalysis();
     } else {
       setLoading(false);
     }
-  }, [analysisId, navigate, user]);
+  }, [analysisId, fetchAnalysis, setLoading]);
   
   return { 
     analysis, 
@@ -94,7 +99,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
       if (user) {
         await saveAnalysis(analysis!, user.id);
       }
-    }
+    },
+    refreshAnalysis
   };
 };
-
