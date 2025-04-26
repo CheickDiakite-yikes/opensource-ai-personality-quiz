@@ -80,7 +80,8 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: (assessment as any).responses 
+              responses: (assessment as any).responses,
+              userId: user.id  // Pass the user ID to the edge function
             }
           }
         );

@@ -11,6 +11,7 @@ const corsHeaders = {
 interface RequestPayload {
   assessmentId: string;
   responses: Record<string, string>;
+  userId?: string; // Add userId parameter to be passed from the frontend
 }
 
 serve(async (req) => {
@@ -24,7 +25,7 @@ serve(async (req) => {
     
     // Get the request payload
     const payload: RequestPayload = await req.json();
-    const { assessmentId, responses } = payload;
+    const { assessmentId, responses, userId } = payload;
     console.log(`Processing ${Object.keys(responses).length} responses for assessment ID: ${assessmentId}`);
     
     if (!responses || Object.keys(responses).length === 0) {
@@ -98,25 +99,32 @@ serve(async (req) => {
         throw new Error("Analysis data incomplete");
       }
       
-      // Add metadata
+      // Add metadata and ensure valid user ID
       const finalAnalysis = {
         ...analysisData,
+        // Use the provided userId if available, otherwise use the analysis ID as a placeholder
+        userId: userId || analysisData.id,
         createdAt: new Date().toISOString()
       };
       
-      // Save to database
-      const { error } = await supabaseAdmin
-        .from('concise_analyses')
-        .upsert({
-          assessment_id: assessmentId,
-          user_id: finalAnalysis.userId,
-          analysis_data: finalAnalysis
-        });
-      
-      if (error) {
-        console.error("Error saving analysis to database:", error);
+      // Only save to database if we have a valid user ID
+      if (userId) {
+        // Save to database
+        const { error } = await supabaseAdmin
+          .from('concise_analyses')
+          .upsert({
+            assessment_id: assessmentId,
+            user_id: userId,
+            analysis_data: finalAnalysis
+          });
+        
+        if (error) {
+          console.error("Error saving analysis to database:", error);
+        } else {
+          console.log("Analysis saved to database");
+        }
       } else {
-        console.log("Analysis saved to database");
+        console.log("No valid user ID provided, skipping database save");
       }
       
       return new Response(JSON.stringify(finalAnalysis), {
