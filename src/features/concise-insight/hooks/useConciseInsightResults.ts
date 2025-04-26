@@ -25,22 +25,15 @@ export const useConciseInsightResults = (analysisId?: string) => {
   } = useAnalysisState();
   const { saveAnalysis } = useAnalysisSave(analysisId);
   
-  const fetchAnalysis = useCallback(async () => {
+  const fetchAnalysis = useCallback(async (signal?: AbortSignal) => {
+    if (!analysisId || !user) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
-      
-      if (!analysisId) {
-        setError("No analysis ID provided");
-        setLoading(false);
-        return;
-      }
-      
-      if (!user) {
-        setError("You must be signed in to view results");
-        navigate("/auth");
-        return;
-      }
       
       console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
       let result;
@@ -50,45 +43,63 @@ export const useConciseInsightResults = (analysisId?: string) => {
         try {
           result = await fetchAnalysisByDirectId(analysisId);
         } catch (err) {
+          if (signal?.aborted) return;
           console.log("[useConciseInsightResults] Not found by direct ID, trying assessment ID");
         }
       }
 
       // If not found by UUID, try assessment ID
-      if (!result) {
+      if (!result && !signal?.aborted) {
         result = await fetchAnalysisByAssessmentId(analysisId, user.id);
       }
 
       // If still not found, generate new analysis
-      if (!result) {
+      if (!result && !signal?.aborted) {
         console.log(`[useConciseInsightResults] Generating new analysis for assessment: ${analysisId}`);
         result = await generateNewAnalysis(analysisId, user.id);
         
         // Save the newly generated analysis
-        await saveAnalysisToDatabase(result, analysisId, user.id);
+        try {
+          await saveAnalysisToDatabase(result, analysisId, user.id);
+        } catch (err: any) {
+          // If we get a unique constraint violation, it means another request already created the analysis
+          // In this case, try to fetch it one last time
+          if (err.message?.includes('unique_user_assessment_analysis')) {
+            result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+          } else {
+            throw err;
+          }
+        }
       }
 
-      setAnalysis(result);
+      if (!signal?.aborted) {
+        setAnalysis(result);
+      }
       
     } catch (err: any) {
-      console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
-      setError(err.message || "An error occurred while fetching analysis");
+      if (!signal?.aborted) {
+        console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
+        setError(err.message || "An error occurred while fetching analysis");
+      }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
-  }, [analysisId, navigate, user, setAnalysis, setError, setLoading]);
-  
-  // Add a refreshAnalysis function that re-fetches the analysis
-  const refreshAnalysis = useCallback(() => {
-    return fetchAnalysis();
-  }, [fetchAnalysis]);
+  }, [analysisId, user, setAnalysis, setError, setLoading]);
   
   useEffect(() => {
+    const abortController = new AbortController();
+    
     if (analysisId) {
-      fetchAnalysis();
+      fetchAnalysis(abortController.signal);
     } else {
       setLoading(false);
     }
+    
+    return () => {
+      abortController.abort();
+    };
   }, [analysisId, fetchAnalysis, setLoading]);
   
   return { 
@@ -99,7 +110,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
       if (user) {
         await saveAnalysis(analysis!, user.id);
       }
-    },
-    refreshAnalysis
+    }
   };
 };

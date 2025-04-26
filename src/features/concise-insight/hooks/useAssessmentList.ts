@@ -18,20 +18,35 @@ export const useAssessmentList = () => {
   const fetchAnalyses = useCallback(async () => {
     if (!user) return;
     
+    let isCancelled = false;
+    
     try {
       setLoading(true);
       const data = await fetchAllAnalysesByUserId(user.id);
-      console.log("[useAssessmentList] Fetched analyses:", data?.length || 0);
-      setAnalyses(data || []);
-      setSelectedIds(new Set());
-      setIsInitialLoad(false);
+      
+      // Only update state if the component is still mounted
+      if (!isCancelled) {
+        console.log("[useAssessmentList] Fetched analyses:", data?.length || 0);
+        setAnalyses(data || []);
+        setSelectedIds(new Set());
+        setIsInitialLoad(false);
+      }
     } catch (err) {
-      console.error("[useAssessmentList] Error fetching analyses:", err);
-      toast.error("Failed to load your analyses");
-      setIsInitialLoad(false);
+      if (!isCancelled) {
+        console.error("[useAssessmentList] Error fetching analyses:", err);
+        toast.error("Failed to load your analyses");
+        setIsInitialLoad(false);
+      }
     } finally {
-      setLoading(false);
+      if (!isCancelled) {
+        setLoading(false);
+      }
     }
+
+    // Return cleanup function
+    return () => {
+      isCancelled = true;
+    };
   }, [user]);
 
   const handleDeleteAnalysis = async (analysisId: string) => {
@@ -85,36 +100,17 @@ export const useAssessmentList = () => {
     let successCount = 0;
     let failCount = 0;
     const selectedIdsArray = Array.from(selectedIds);
+    let isCancelled = false;
     
     try {
-      for (let i = 0; i < selectedIdsArray.length; i++) {
+      for (let i = 0; i < selectedIdsArray.length && !isCancelled; i++) {
         const analysisId = selectedIdsArray[i];
         try {
           setDeletingIds(prev => new Set([...prev, analysisId]));
           
-          // First try normal deletion
           let success = await deleteAnalysisFromDatabase(analysisId);
           
-          // If that fails, try the edge function
-          if (!success) {
-            try {
-              const { data, error } = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
-                },
-                body: JSON.stringify({ analysisId })
-              }).then(r => r.json());
-              
-              success = !error && data?.success;
-            } catch (err) {
-              console.error(`[useAssessmentList] Edge function deletion error for ${analysisId}:`, err);
-              success = false;
-            }
-          }
-          
-          if (success) {
+          if (success && !isCancelled) {
             successCount++;
             setAnalyses(prev => prev.filter(a => a.id !== analysisId));
           } else {
@@ -124,34 +120,45 @@ export const useAssessmentList = () => {
           console.error(`[useAssessmentList] Error deleting analysis ${analysisId}:`, err);
           failCount++;
         } finally {
-          setDeletingIds(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(analysisId);
-            return newSet;
-          });
-          
-          setBulkDeleteProgress(prev => prev + 1);
-          toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+          if (!isCancelled) {
+            setDeletingIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(analysisId);
+              return newSet;
+            });
+            
+            setBulkDeleteProgress(prev => prev + 1);
+            toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+          }
         }
         
-        // Add a small delay between deletions to avoid overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Add a small delay between deletions
+        if (!isCancelled) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
     } finally {
-      setSelectedIds(new Set());
-      setIsBulkDeleting(false);
-      
-      if (successCount > 0) {
-        toast.success(`Successfully deleted ${successCount} analyses`, { id: "bulk-delete" });
+      if (!isCancelled) {
+        setSelectedIds(new Set());
+        setIsBulkDeleting(false);
+        
+        if (successCount > 0) {
+          toast.success(`Successfully deleted ${successCount} analyses`, { id: "bulk-delete" });
+        }
+        
+        if (failCount > 0) {
+          toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
+          setRefreshCounter(prev => prev + 1);
+        }
+        
+        fetchAnalyses();
       }
-      
-      if (failCount > 0) {
-        toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
-        setRefreshCounter(prev => prev + 1);
-      }
-      
-      fetchAnalyses();
     }
+
+    // Return cleanup function
+    return () => {
+      isCancelled = true;
+    };
   };
 
   const toggleSelectAll = () => {
