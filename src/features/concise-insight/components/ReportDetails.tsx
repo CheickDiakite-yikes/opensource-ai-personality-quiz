@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Share2, Download, Save } from 'lucide-react';
+import { Share2, Download, Save, Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
