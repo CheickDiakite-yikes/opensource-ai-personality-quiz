@@ -60,7 +60,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are an expert psychological profiler specializing in creating insightful personality analyses based on assessment responses. Your analyses are nuanced, balanced, and actionable. Avoid stereotypes or overgeneralization."
+            content: "You are an expert psychological profiler specializing in creating insightful personality analyses based on assessment responses. Your analyses are nuanced, balanced, and actionable. Avoid stereotypes or overgeneralization. Return only valid JSON without any markdown formatting."
           },
           {
             role: "user",
@@ -81,9 +81,14 @@ serve(async (req) => {
       throw new Error("Failed to generate analysis");
     }
     
-    const analysisText = data.choices[0].message.content;
+    let analysisText = data.choices[0].message.content;
     
     try {
+      // Clean the response text by removing any markdown code block indicators
+      analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      console.log("Cleaned analysis text for parsing");
+      
       // Parse the JSON response from OpenAI
       const analysisData = JSON.parse(analysisText);
       console.log("Successfully parsed analysis JSON");
@@ -99,7 +104,7 @@ serve(async (req) => {
         createdAt: new Date().toISOString()
       };
       
-      // Optional: Save to database
+      // Save to database
       const { error } = await supabaseAdmin
         .from('concise_analyses')
         .upsert({
@@ -210,7 +215,7 @@ RESPONSE DATA:
 ${formattedResponses}
 
 INSTRUCTIONS:
-Create a detailed personality analysis in JSON format with the following structure:
+Create a detailed personality analysis in pure JSON format (no markdown code blocks) with the following structure:
 
 {
   "id": "${crypto.randomUUID()}",
@@ -261,6 +266,7 @@ IMPORTANT:
 - Make insights specific and actionable.
 - For the scores (trait scores, empathy score), use realistic values based on response patterns, not overly high values.
 - Use the seed value ${seed} to ensure consistency if the analysis is regenerated.
+- Return valid JSON without any markdown code block formatting (no \`\`\`json tags).
 - Ensure all JSON is properly formatted with no errors.
 `;
 }
