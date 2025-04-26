@@ -166,7 +166,7 @@ const ConciseReport: React.FC = () => {
             </p>
           </header>
           
-          <AssessmentsList onSelect={handleSelectAssessment} />
+          <AssessmentsList onSelect={handleSelectAnalysis} />
         </div>
       </motion.div>
     );
