@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types";
 
 export const useConciseInsightResults = () => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
@@ -36,26 +35,28 @@ export const useConciseInsightResults = () => {
         
         // Check if analysis already exists
         const { data: existingAnalysis, error: fetchError } = await supabase
-          .from('concise_analyses')
+          .from('concise_analyses' as any)
           .select('*')
           .eq('assessment_id', assessmentId)
-          .eq('user_id', user.id) // Add user_id check
           .single();
           
         if (fetchError && fetchError.code !== 'PGRST116') {
           throw fetchError;
         }
         
-        if (existingAnalysis?.analysis_data) {
-          // Fix #1: Add type assertion with 'as unknown' first
-          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-          setLoading(false);
-          return;
+        if (existingAnalysis) {
+          console.log("Found existing analysis:", existingAnalysis);
+          // Fix the type error by checking if analysis_data exists first
+          if ('analysis_data' in existingAnalysis) {
+            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+            setLoading(false);
+            return;
+          }
         }
         
         // If no analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
-          .from('concise_assessments')
+          .from('concise_assessments' as any)
           .select('*')
           .eq('id', assessmentId)
           .eq('user_id', user.id)
@@ -79,8 +80,8 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: assessment.responses,
-              userId: user.id
+              responses: (assessment as any).responses,
+              userId: user.id  // Pass the user ID to the edge function
             }
           }
         );
@@ -90,8 +91,7 @@ export const useConciseInsightResults = () => {
         }
         
         console.log("Analysis generated:", analysisResult);
-        // Fix: Add type assertion here as well for consistency
-        setAnalysis(analysisResult as unknown as ConciseAnalysisResult);
+        setAnalysis(analysisResult);
         setLoading(false);
         
       } catch (err: any) {
@@ -116,14 +116,13 @@ export const useConciseInsightResults = () => {
         return;
       }
       
-      // Fix #2: Convert analysis to Json type with type assertion
       const { error } = await supabase
-        .from('concise_analyses')
+        .from('concise_analyses' as any)
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis as unknown as Json
-        });
+          analysis_data: analysis
+        } as any);
         
       if (error) throw error;
       
