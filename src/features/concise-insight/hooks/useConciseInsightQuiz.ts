@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ConciseInsightResponses } from "../types";
 import { conciseInsightQuestions } from "../data/questions";

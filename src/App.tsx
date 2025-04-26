@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -142,7 +143,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* New Concise Insight Routes */}
+          {/* Concise Insight Routes */}
           <Route path="concise-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
