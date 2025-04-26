@@ -88,6 +88,12 @@ export const useConciseInsightResults = (analysisId?: string) => {
     }
   }, [analysisId, user, setAnalysis, setError, setLoading]);
   
+  // Add the refreshAnalysis function to manually trigger a re-fetch
+  const refreshAnalysis = useCallback(() => {
+    console.log("[useConciseInsightResults] Manually refreshing analysis");
+    fetchAnalysis();
+  }, [fetchAnalysis]);
+  
   useEffect(() => {
     const abortController = new AbortController();
     
@@ -106,9 +112,10 @@ export const useConciseInsightResults = (analysisId?: string) => {
     analysis, 
     loading, 
     error, 
+    refreshAnalysis, // Include the refresh function in the return object
     saveAnalysis: async () => {
-      if (user) {
-        await saveAnalysis(analysis!, user.id);
+      if (user && analysis) {
+        await saveAnalysis(analysis, user.id);
       }
     }
   };
