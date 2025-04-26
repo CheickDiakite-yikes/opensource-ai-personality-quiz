@@ -64,7 +64,9 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           
           // Debug - log the first part of the analysis data to confirm it's unique
           if (targetAnalysis.analysis_data) {
-            const overview = targetAnalysis.analysis_data.overview || 'No overview';
+            // Fix: Type check the analysis_data to ensure it's an object with an overview property
+            const analysisData = targetAnalysis.analysis_data as Record<string, any>;
+            const overview = analysisData.overview || 'No overview';
             console.log(`[useConciseInsightResults] Analysis overview starts with: ${overview.substring(0, 40)}...`);
           }
           
