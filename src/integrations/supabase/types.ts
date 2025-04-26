@@ -183,6 +183,59 @@ export type Database = {
         }
         Relationships: []
       }
+      concise_analyses: {
+        Row: {
+          analysis_data: Json
+          assessment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          assessment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concise_analyses_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "concise_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      concise_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          responses: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          responses: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          responses?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       deep_analyses: {
         Row: {
           analysis_data: Json

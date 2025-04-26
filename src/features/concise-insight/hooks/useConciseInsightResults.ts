@@ -35,7 +35,7 @@ export const useConciseInsightResults = () => {
         
         // Check if analysis already exists
         const { data: existingAnalysis, error: fetchError } = await supabase
-          .from('concise_analyses')
+          .from('concise_analyses' as any)
           .select('*')
           .eq('assessment_id', assessmentId)
           .single();
@@ -53,7 +53,7 @@ export const useConciseInsightResults = () => {
         
         // If no analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
-          .from('concise_assessments')
+          .from('concise_assessments' as any)
           .select('*')
           .eq('id', assessmentId)
           .eq('user_id', user.id)
@@ -77,7 +77,7 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: assessment.responses 
+              responses: (assessment as any).responses 
             }
           }
         );
@@ -113,12 +113,12 @@ export const useConciseInsightResults = () => {
       }
       
       const { error } = await supabase
-        .from('concise_analyses')
+        .from('concise_analyses' as any)
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
           analysis_data: analysis
-        });
+        } as any);
         
       if (error) throw error;
       
