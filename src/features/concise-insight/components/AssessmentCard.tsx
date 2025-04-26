@@ -5,19 +5,24 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface AssessmentCardProps {
   analysis: any;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   isDeleting?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 export const AssessmentCard: React.FC<AssessmentCardProps> = ({ 
   analysis, 
   onSelect, 
   onDelete,
-  isDeleting = false
+  isDeleting = false,
+  isSelected = false,
+  onToggleSelect
 }) => {
   // Extract title from analysis data if available
   let title = "Concise Insight Analysis";
@@ -51,6 +56,13 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
       onDelete(analysis.id);
     }
   };
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleSelect) {
+      onToggleSelect();
+    }
+  };
   
   return (
     <Card 
@@ -59,14 +71,22 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
       data-analysis-id={analysis.id}
     >
       <CardHeader className="py-4 pr-12">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <div className="flex flex-col">
-              <span className="font-medium">{title}</span>
-              {description && (
-                <span className="text-xs text-muted-foreground hidden md:inline">{description}</span>
-              )}
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div onClick={handleCheckboxClick}>
+              <Checkbox 
+                checked={isSelected}
+                className="pointer-events-none"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <div className="flex flex-col">
+                <span className="font-medium">{title}</span>
+                {description && (
+                  <span className="text-xs text-muted-foreground hidden md:inline">{description}</span>
+                )}
+              </div>
             </div>
           </div>
           <Badge variant="outline">
