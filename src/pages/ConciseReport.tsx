@@ -82,22 +82,41 @@ const ConciseReport: React.FC = () => {
     
     try {
       setIsDeleting(true);
+      toast.loading("Deleting analysis...", { id: "delete-toast" });
+      
       const success = await deleteAnalysisFromDatabase(id);
       
       if (success) {
-        toast.success("Analysis deleted successfully");
-        // Navigate to the reports list
-        navigate('/concise-report', { replace: true });
+        toast.success("Analysis deleted successfully", { id: "delete-toast" });
+        
+        // Check if we have other analyses to navigate to
+        if (user) {
+          const remainingAnalyses = await fetchAllAnalysesByUserId(user.id);
+          
+          if (remainingAnalyses && remainingAnalyses.length > 0) {
+            // Navigate to the first available analysis
+            const newId = remainingAnalyses[0].id;
+            // Use replace to prevent going back to deleted analysis
+            navigate(`/concise-report/${newId}`, { replace: true });
+          } else {
+            // No analyses left, go to the report list view
+            navigate('/concise-report', { replace: true });
+          }
+        } else {
+          // If no user, just go to the report list
+          navigate('/concise-report', { replace: true });
+        }
       } else {
+        toast.error("Failed to delete analysis", { id: "delete-toast" });
         throw new Error("Failed to delete analysis");
       }
     } catch (err) {
       console.error("Error deleting analysis:", err);
-      toast.error("Failed to delete analysis");
+      toast.error("Failed to delete analysis", { id: "delete-toast" });
     } finally {
       setIsDeleting(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
   // If no assessment ID is provided, show the list of assessments
   if (!id) {
@@ -164,7 +183,7 @@ const ConciseReport: React.FC = () => {
             className="px-3 py-1 text-sm text-destructive hover:bg-destructive/10 rounded"
             disabled={isDeleting}
           >
-            Delete Report
+            {isDeleting ? 'Deleting...' : 'Delete Report'}
           </button>
         </div>
       </div>

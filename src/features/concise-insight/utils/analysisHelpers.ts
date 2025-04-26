@@ -109,10 +109,11 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
     console.log(`[deleteAnalysisFromDatabase] Attempting to delete analysis with ID: ${analysisId}`);
     
     // Use proper error handling and explicitly check for errors
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('concise_analyses')
       .delete()
-      .eq('id', analysisId);
+      .eq('id', analysisId)
+      .select('count');
     
     if (error) {
       console.error("[deleteAnalysisFromDatabase] Deletion error:", error);
@@ -120,7 +121,7 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       return false;
     }
     
-    console.log("[deleteAnalysisFromDatabase] Analysis deleted successfully from database");
+    console.log(`[deleteAnalysisFromDatabase] Analysis deleted successfully. Affected rows: ${count}`);
     toast.success("Analysis deleted successfully");
     return true;
   } catch (err: any) {

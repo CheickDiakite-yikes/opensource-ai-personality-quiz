@@ -17,6 +17,7 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Use refreshCounter as a dependency to trigger re-fetches
   useEffect(() => {
@@ -33,6 +34,9 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
       const data = await fetchAllAnalysesByUserId(user.id);
       console.log("[AssessmentsList] Fetched analyses:", data?.length || 0);
       setAnalyses(data || []);
+      
+      // Clear selected IDs when refreshing to avoid stale selections
+      setSelectedIds(new Set());
     } catch (err) {
       console.error("[AssessmentsList] Error fetching analyses:", err);
       toast.error("Failed to load your analyses");
@@ -96,41 +100,70 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
       return;
     }
 
+    setIsBulkDeleting(true);
+    toast.loading(`Deleting ${selectedIds.size} analyses...`, { id: "bulk-delete" });
+
     let successCount = 0;
     let failCount = 0;
 
-    for (const analysisId of selectedIds) {
-      try {
-        setDeletingIds(prev => new Set([...prev, analysisId]));
-        const success = await deleteAnalysisFromDatabase(analysisId);
+    try {
+      const selectedIdsArray = Array.from(selectedIds);
+      
+      // Process deletions in batches of 5 to avoid overwhelming the database
+      const batchSize = 5;
+      for (let i = 0; i < selectedIdsArray.length; i += batchSize) {
+        const batch = selectedIdsArray.slice(i, i + batchSize);
         
-        if (success) {
-          successCount++;
-        } else {
-          failCount++;
-        }
-      } catch (err) {
-        console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
-        failCount++;
-      } finally {
-        setDeletingIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(analysisId);
-          return newSet;
-        });
+        // Process batch in parallel
+        const results = await Promise.all(
+          batch.map(async (analysisId) => {
+            try {
+              setDeletingIds(prev => new Set([...prev, analysisId]));
+              const success = await deleteAnalysisFromDatabase(analysisId);
+              
+              if (success) {
+                successCount++;
+                return { success: true, id: analysisId };
+              } else {
+                failCount++;
+                return { success: false, id: analysisId };
+              }
+            } catch (err) {
+              console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
+              failCount++;
+              return { success: false, id: analysisId };
+            } finally {
+              setDeletingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(analysisId);
+                return newSet;
+              });
+            }
+          })
+        );
+        
+        // Update progress
+        toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
       }
+    } catch (error) {
+      console.error("[AssessmentsList] Bulk deletion error:", error);
+    } finally {
+      setIsBulkDeleting(false);
     }
 
     // Update UI after all deletions
     if (successCount > 0) {
-      setAnalyses(prev => prev.filter(a => !selectedIds.has(a.id)));
-      setSelectedIds(new Set());
+      // Full refresh to ensure UI is in sync with database
       setRefreshCounter(prev => prev + 1);
-      toast.success(`Successfully deleted ${successCount} analyses`);
+      
+      // Clear selection
+      setSelectedIds(new Set());
+      
+      toast.success(`Successfully deleted ${successCount} analyses`, { id: "bulk-delete" });
     }
     
     if (failCount > 0) {
-      toast.error(`Failed to delete ${failCount} analyses`);
+      toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
     }
   };
 
@@ -169,8 +202,9 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Checkbox 
-                checked={selectedIds.size === analyses.length}
+                checked={selectedIds.size === analyses.length && analyses.length > 0}
                 onClick={toggleSelectAll}
+                disabled={isBulkDeleting}
               />
               <span className="text-sm text-muted-foreground">
                 {selectedIds.size} selected
@@ -180,8 +214,12 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
               <Button 
                 variant="destructive" 
                 onClick={handleBulkDelete}
-                disabled={selectedIds.size === 0}
+                disabled={selectedIds.size === 0 || isBulkDeleting}
+                className="flex items-center gap-2"
               >
+                {isBulkDeleting && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                )}
                 Delete Selected ({selectedIds.size})
               </Button>
             )}
@@ -193,9 +231,10 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
                 analysis={analysis}
                 onSelect={onSelect}
                 onDelete={handleDeleteAnalysis}
-                isDeleting={deletingIds.has(analysis.id)}
+                isDeleting={deletingIds.has(analysis.id) || isBulkDeleting}
                 isSelected={selectedIds.has(analysis.id)}
                 onToggleSelect={() => {
+                  if (isBulkDeleting) return;
                   setSelectedIds(prev => {
                     const newSet = new Set(prev);
                     if (newSet.has(analysis.id)) {
