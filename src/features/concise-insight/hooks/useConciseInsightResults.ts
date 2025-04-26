@@ -46,7 +46,8 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           console.log("Found existing analysis:", existingAnalysis);
           // Fix the type error by checking if analysis_data exists first
           if ('analysis_data' in existingAnalysis) {
-            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+            // Cast the JSON data to the expected ConciseAnalysisResult type with type assertion
+            setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
             setLoading(false);
             return;
           }
@@ -89,7 +90,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         }
         
         console.log("Analysis generated:", analysisResult);
-        setAnalysis(analysisResult);
+        setAnalysis(analysisResult as ConciseAnalysisResult);
         setLoading(false);
         
       } catch (err: any) {
@@ -120,7 +121,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis as Json
+          analysis_data: analysis as unknown as Json
         });
         
       if (error) throw error;
