@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { ConciseAnalysisResult } from "../types";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types"; // Import Json type from Supabase types
 
 export const useConciseInsightResults = () => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
@@ -98,7 +98,7 @@ export const useConciseInsightResults = () => {
     
     fetchAnalysis();
   }, [assessmentId, navigate, user]);
-  
+
   const saveAnalysis = async () => {
     if (!analysis || !user) return;
     
@@ -113,7 +113,7 @@ export const useConciseInsightResults = () => {
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis as unknown as Json
+          analysis_data: analysis as unknown as Json // Use the imported Json type
         });
         
       if (error) throw error;
