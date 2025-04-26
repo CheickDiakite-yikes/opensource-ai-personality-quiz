@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -131,68 +130,45 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       console.error("[deleteAnalysisFromDatabase] Verification error:", checkError);
     }
     
-    // If record still exists, it means deletion failed
+    // If record still exists, try alternative deletion methods
     if (checkData) {
       console.error("[deleteAnalysisFromDatabase] Deletion verification failed - record still exists");
       
-      // Second attempt: Using match syntax instead of eq
-      const { error: secondError } = await supabase
-        .from('concise_analyses')
-        .delete()
-        .match({ id: analysisId });
-      
-      if (secondError) {
-        console.error("[deleteAnalysisFromDatabase] Second deletion attempt error:", secondError);
-        toast.error("Failed to delete analysis: " + secondError.message);
-        return false;
-      }
-      
-      // Verify second deletion attempt
-      const { data: secondCheck } = await supabase
-        .from('concise_analyses')
-        .select('id')
-        .eq('id', analysisId)
-        .maybeSingle();
-      
-      if (secondCheck) {
-        console.error("[deleteAnalysisFromDatabase] Second deletion failed - record still exists");
+      // Second attempt: Use the edge function we created for this purpose
+      try {
+        const response = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
+          },
+          body: JSON.stringify({ analysisId })
+        });
         
-        // Third attempt: Use the edge function we created for this purpose
-        try {
-          const response = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
-            },
-            body: JSON.stringify({ analysisId })
-          });
-          
-          const result = await response.json();
-          
-          if (!response.ok || !result.success) {
-            console.error("[deleteAnalysisFromDatabase] Edge function deletion failed:", result);
-            toast.error("Failed to delete analysis after multiple attempts");
-            return false;
-          }
-          
-          // Final verification
-          const { data: finalCheck } = await supabase
-            .from('concise_analyses')
-            .select('id')
-            .eq('id', analysisId)
-            .maybeSingle();
-          
-          if (finalCheck) {
-            console.error("[deleteAnalysisFromDatabase] All deletion attempts failed");
-            toast.error("Failed to delete analysis: Persistent database issue");
-            return false;
-          }
-        } catch (err) {
-          console.error("[deleteAnalysisFromDatabase] Edge function error:", err);
-          toast.error("Failed to delete analysis via edge function");
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          console.error("[deleteAnalysisFromDatabase] Edge function deletion failed:", result);
+          toast.error("Failed to delete analysis after multiple attempts");
           return false;
         }
+        
+        // Final verification
+        const { data: finalCheck } = await supabase
+          .from('concise_analyses')
+          .select('id')
+          .eq('id', analysisId)
+          .maybeSingle();
+        
+        if (finalCheck) {
+          console.error("[deleteAnalysisFromDatabase] All deletion attempts failed");
+          toast.error("Failed to delete analysis: Persistent database issue");
+          return false;
+        }
+      } catch (err) {
+        console.error("[deleteAnalysisFromDatabase] Edge function error:", err);
+        toast.error("Failed to delete analysis via edge function");
+        return false;
       }
     }
     

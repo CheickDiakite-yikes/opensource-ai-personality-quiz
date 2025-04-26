@@ -51,36 +51,8 @@ export const useAssessmentList = () => {
           newSet.delete(analysisId);
           return newSet;
         });
-        toast.success("Analysis deleted successfully");
       } else {
-        // Try using the edge function as a fallback
-        try {
-          const response = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
-            },
-            body: JSON.stringify({ analysisId })
-          });
-          
-          const result = await response.json();
-          
-          if (response.ok && result.success) {
-            setAnalyses(prev => prev.filter(a => a.id !== analysisId));
-            setSelectedIds(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(analysisId);
-              return newSet;
-            });
-            toast.success("Analysis deleted successfully");
-          } else {
-            setRefreshCounter(prev => prev + 1);
-          }
-        } catch (err) {
-          console.error("[useAssessmentList] Error with fallback deletion:", err);
-          setRefreshCounter(prev => prev + 1);
-        }
+        setRefreshCounter(prev => prev + 1);
       }
     } catch (err) {
       console.error("[useAssessmentList] Error deleting analysis:", err);
