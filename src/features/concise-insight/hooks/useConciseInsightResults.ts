@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { ConciseAnalysisResult } from "../types";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ export const useConciseInsightResults = () => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const location = useLocation();
+  const { assessmentId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -18,8 +18,6 @@ export const useConciseInsightResults = () => {
     const fetchAnalysis = async () => {
       try {
         setLoading(true);
-        const params = new URLSearchParams(location.search);
-        const assessmentId = params.get('id');
         
         if (!assessmentId) {
           setError("No assessment ID provided");
@@ -35,7 +33,7 @@ export const useConciseInsightResults = () => {
         
         // Check if analysis already exists
         const { data: existingAnalysis, error: fetchError } = await supabase
-          .from('concise_analyses' as any)
+          .from('concise_analyses')
           .select('*')
           .eq('assessment_id', assessmentId)
           .single();
@@ -46,17 +44,14 @@ export const useConciseInsightResults = () => {
         
         if (existingAnalysis) {
           console.log("Found existing analysis:", existingAnalysis);
-          // Fix the type error by checking if analysis_data exists first
-          if ('analysis_data' in existingAnalysis) {
-            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
-            setLoading(false);
-            return;
-          }
+          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+          setLoading(false);
+          return;
         }
         
         // If no analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
-          .from('concise_assessments' as any)
+          .from('concise_assessments')
           .select('*')
           .eq('id', assessmentId)
           .eq('user_id', user.id)
@@ -80,8 +75,8 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: (assessment as any).responses,
-              userId: user.id  // Pass the user ID to the edge function
+              responses: assessment.responses,
+              userId: user.id
             }
           }
         );
@@ -91,7 +86,7 @@ export const useConciseInsightResults = () => {
         }
         
         console.log("Analysis generated:", analysisResult);
-        setAnalysis(analysisResult);
+        setAnalysis(analysisResult as unknown as ConciseAnalysisResult);
         setLoading(false);
         
       } catch (err: any) {
@@ -102,27 +97,24 @@ export const useConciseInsightResults = () => {
     };
     
     fetchAnalysis();
-  }, [location.search, navigate, user]);
+  }, [assessmentId, navigate, user]);
   
   const saveAnalysis = async () => {
     if (!analysis || !user) return;
     
     try {
-      const params = new URLSearchParams(location.search);
-      const assessmentId = params.get('id');
-      
       if (!assessmentId) {
         toast.error("No assessment ID available");
         return;
       }
       
       const { error } = await supabase
-        .from('concise_analyses' as any)
+        .from('concise_analyses')
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis
-        } as any);
+          analysis_data: analysis as unknown as Json
+        });
         
       if (error) throw error;
       
