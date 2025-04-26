@@ -36,26 +36,38 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         // Check if analysis already exists - improved logging
         console.log(`[useConciseInsightResults] Fetching existing analysis for ID: ${assessmentId}`);
         
-        const { data: existingAnalysis, error: fetchError } = await supabase
+        // Use select() and filter() instead of maybeSingle() which was causing the error
+        const { data: existingAnalyses, error: fetchError } = await supabase
           .from('concise_analyses')
           .select('*')
           .eq('assessment_id', assessmentId)
-          .maybeSingle(); // Using maybeSingle instead of single to avoid errors when no record found
+          .eq('user_id', user.id); // Added user_id filter to ensure we get only this user's analyses
           
         if (fetchError) {
-          console.error("[useConciseInsightResults] Error fetching existing analysis:", fetchError);
+          console.error("[useConciseInsightResults] Error fetching existing analyses:", fetchError);
           throw fetchError;
         }
         
-        // If analysis exists and has valid data, use it
-        if (existingAnalysis && existingAnalysis.analysis_data) {
-          console.log(`[useConciseInsightResults] Found existing analysis for ID ${assessmentId}:`, existingAnalysis.id);
-          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-          setLoading(false);
-          return;
+        // If analyses exist and we found at least one valid result, use the most recent one
+        if (existingAnalyses && existingAnalyses.length > 0) {
+          console.log(`[useConciseInsightResults] Found ${existingAnalyses.length} existing analyses for ID ${assessmentId}`);
+          
+          // Sort by created_at to get the most recent analysis
+          const mostRecentAnalysis = existingAnalyses.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0];
+          
+          if (mostRecentAnalysis && mostRecentAnalysis.analysis_data) {
+            console.log(`[useConciseInsightResults] Using most recent analysis (${mostRecentAnalysis.id}) from ${mostRecentAnalysis.created_at}`);
+            setAnalysis(mostRecentAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+            setLoading(false);
+            return;
+          } else {
+            console.log(`[useConciseInsightResults] Found analyses but none had valid data`);
+          }
+        } else {
+          console.log(`[useConciseInsightResults] No existing analyses found for ID ${assessmentId}`);
         }
-        
-        console.log(`[useConciseInsightResults] No valid analysis found for ID ${assessmentId}, generating new analysis`);
         
         // Only if no valid analysis exists, get the assessment responses and generate a new one
         const { data: assessment, error: responseError } = await supabase
@@ -106,7 +118,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         try {
           const { error: saveError } = await supabase
             .from('concise_analyses')
-            .upsert({
+            .insert({
               assessment_id: assessmentId,
               user_id: user.id,
               analysis_data: analysisResult as unknown as Json
@@ -141,7 +153,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
     try {
       const { error } = await supabase
         .from('concise_analyses')
-        .upsert({
+        .insert({
           assessment_id: assessmentId,
           user_id: user.id,
           analysis_data: analysis as unknown as Json
