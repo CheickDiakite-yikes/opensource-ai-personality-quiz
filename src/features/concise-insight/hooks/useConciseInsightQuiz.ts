@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ConciseInsightResponses } from "../types";
 import { conciseInsightQuestions } from "../data/questions";
@@ -78,11 +77,14 @@ export const useConciseInsightQuiz = (totalQuestions: number) => {
             id: assessmentId,
             user_id: user.id,
             responses: updatedResponses
-          } as any); // Type assertion to bypass TS errors
+          } as any);
           
         if (saveError) {
           throw saveError;
         }
+        
+        // Clear local storage after successful submission
+        localStorage.removeItem(STORAGE_KEY);
         
         toast.success("Assessment completed successfully!");
         

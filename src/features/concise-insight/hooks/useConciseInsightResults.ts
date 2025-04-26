@@ -35,28 +35,25 @@ export const useConciseInsightResults = () => {
         
         // Check if analysis already exists
         const { data: existingAnalysis, error: fetchError } = await supabase
-          .from('concise_analyses' as any)
+          .from('concise_analyses')
           .select('*')
           .eq('assessment_id', assessmentId)
+          .eq('user_id', user.id) // Add user_id check
           .single();
           
         if (fetchError && fetchError.code !== 'PGRST116') {
           throw fetchError;
         }
         
-        if (existingAnalysis) {
-          console.log("Found existing analysis:", existingAnalysis);
-          // Fix the type error by checking if analysis_data exists first
-          if ('analysis_data' in existingAnalysis) {
-            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
-            setLoading(false);
-            return;
-          }
+        if (existingAnalysis?.analysis_data) {
+          setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+          setLoading(false);
+          return;
         }
         
         // If no analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
-          .from('concise_assessments' as any)
+          .from('concise_assessments')
           .select('*')
           .eq('id', assessmentId)
           .eq('user_id', user.id)
@@ -80,8 +77,8 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: (assessment as any).responses,
-              userId: user.id  // Pass the user ID to the edge function
+              responses: assessment.responses,
+              userId: user.id
             }
           }
         );
@@ -117,12 +114,12 @@ export const useConciseInsightResults = () => {
       }
       
       const { error } = await supabase
-        .from('concise_analyses' as any)
+        .from('concise_analyses')
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
           analysis_data: analysis
-        } as any);
+        });
         
       if (error) throw error;
       
