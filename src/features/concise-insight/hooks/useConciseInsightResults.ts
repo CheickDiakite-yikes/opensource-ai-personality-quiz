@@ -33,40 +33,46 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        // Check if analysis already exists - improved logging
-        console.log(`[useConciseInsightResults] Fetching existing analysis for ID: ${assessmentId}`);
+        console.log(`[useConciseInsightResults] Fetching specific analysis for assessment ID: ${assessmentId}`);
         
-        // Use select() and filter() instead of maybeSingle() which was causing the error
-        const { data: existingAnalyses, error: fetchError } = await supabase
+        // For debugging - log all analyses that match this assessment ID
+        const { data: allMatchingAnalyses } = await supabase
+          .from('concise_analyses')
+          .select('id, created_at, assessment_id')
+          .eq('assessment_id', assessmentId)
+          .order('created_at', { ascending: false });
+          
+        console.log(`[useConciseInsightResults] Found ${allMatchingAnalyses?.length || 0} total analyses matching assessment ID: ${assessmentId}`);
+        
+        // Get only the specific analysis that matches EXACTLY this assessment ID and user ID
+        const { data: exactAnalyses, error: fetchError } = await supabase
           .from('concise_analyses')
           .select('*')
           .eq('assessment_id', assessmentId)
-          .eq('user_id', user.id); // Added user_id filter to ensure we get only this user's analyses
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
           
         if (fetchError) {
-          console.error("[useConciseInsightResults] Error fetching existing analyses:", fetchError);
+          console.error("[useConciseInsightResults] Error fetching analyses:", fetchError);
           throw fetchError;
         }
         
-        // If analyses exist and we found at least one valid result, use the most recent one
-        if (existingAnalyses && existingAnalyses.length > 0) {
-          console.log(`[useConciseInsightResults] Found ${existingAnalyses.length} existing analyses for ID ${assessmentId}`);
+        // If we found matching analyses, use the most recent one
+        if (exactAnalyses && exactAnalyses.length > 0) {
+          const targetAnalysis = exactAnalyses[0]; // Most recent due to sorting
+          console.log(`[useConciseInsightResults] Found exact match, using analysis with ID: ${targetAnalysis.id} from ${targetAnalysis.created_at}`);
           
-          // Sort by created_at to get the most recent analysis
-          const mostRecentAnalysis = existingAnalyses.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0];
-          
-          if (mostRecentAnalysis && mostRecentAnalysis.analysis_data) {
-            console.log(`[useConciseInsightResults] Using most recent analysis (${mostRecentAnalysis.id}) from ${mostRecentAnalysis.created_at}`);
-            setAnalysis(mostRecentAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-            setLoading(false);
-            return;
-          } else {
-            console.log(`[useConciseInsightResults] Found analyses but none had valid data`);
+          // Debug - log the first part of the analysis data to confirm it's unique
+          if (targetAnalysis.analysis_data) {
+            const overview = targetAnalysis.analysis_data.overview || 'No overview';
+            console.log(`[useConciseInsightResults] Analysis overview starts with: ${overview.substring(0, 40)}...`);
           }
+          
+          setAnalysis(targetAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+          setLoading(false);
+          return;
         } else {
-          console.log(`[useConciseInsightResults] No existing analyses found for ID ${assessmentId}`);
+          console.log(`[useConciseInsightResults] No exact analysis match found for ID: ${assessmentId}`);
         }
         
         // Only if no valid analysis exists, get the assessment responses and generate a new one
@@ -112,7 +118,14 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         }
         
         console.log("[useConciseInsightResults] Analysis generated successfully");
-        setAnalysis(analysisResult as ConciseAnalysisResult);
+        
+        // Add a unique timestamp marker to ensure this analysis is distinguishable
+        const enrichedResult = {
+          ...analysisResult,
+          _generatedAt: new Date().toISOString()
+        } as ConciseAnalysisResult;
+        
+        setAnalysis(enrichedResult);
         
         // Save the newly generated analysis to the database
         try {
@@ -121,7 +134,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
             .insert({
               assessment_id: assessmentId,
               user_id: user.id,
-              analysis_data: analysisResult as unknown as Json
+              analysis_data: enrichedResult as unknown as Json
             });
             
           if (saveError) throw saveError;
