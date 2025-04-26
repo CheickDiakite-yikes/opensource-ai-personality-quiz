@@ -55,20 +55,18 @@ export const useAssessmentList = () => {
       } else {
         // Try using the edge function as a fallback
         try {
-          const { data, error } = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
+          const response = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
             },
             body: JSON.stringify({ analysisId })
-          }).then(r => r.json());
+          });
           
-          if (error) {
-            throw new Error(error);
-          }
+          const result = await response.json();
           
-          if (data?.success) {
+          if (response.ok && result.success) {
             setAnalyses(prev => prev.filter(a => a.id !== analysisId));
             setSelectedIds(prev => {
               const newSet = new Set(prev);
