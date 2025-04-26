@@ -46,9 +46,12 @@ export const useConciseInsightResults = () => {
         
         if (existingAnalysis) {
           console.log("Found existing analysis:", existingAnalysis);
-          setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
-          setLoading(false);
-          return;
+          // Fix the type error by checking if analysis_data exists first
+          if ('analysis_data' in existingAnalysis) {
+            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+            setLoading(false);
+            return;
+          }
         }
         
         // If no analysis exists, get the assessment responses
