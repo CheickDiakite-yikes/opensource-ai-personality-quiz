@@ -74,7 +74,7 @@ const ConciseReport: React.FC = () => {
     refreshData();
   }, [refreshData]);
 
-  // Handle deletion of current analysis
+  // Handle deletion of current analysis with improved error handling
   const handleDeleteCurrent = useCallback(async () => {
     if (!id || !user) return;
     

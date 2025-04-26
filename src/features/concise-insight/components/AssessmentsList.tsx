@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -120,52 +119,44 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
     const deletedIds = new Set<string>();
     
     try {
-      // Process deletions in batches of 3 to avoid overwhelming the database
-      const batchSize = 3;
-      
-      for (let i = 0; i < selectedIdsArray.length; i += batchSize) {
-        const batch = selectedIdsArray.slice(i, i + batchSize);
-        
-        // Process batch in sequence to avoid race conditions
-        for (const analysisId of batch) {
-          try {
-            setDeletingIds(prev => new Set([...prev, analysisId]));
+      // Process deletions sequentially to avoid race conditions
+      for (let i = 0; i < selectedIdsArray.length; i++) {
+        const analysisId = selectedIdsArray[i];
+        try {
+          setDeletingIds(prev => new Set([...prev, analysisId]));
+          
+          // Small delay to prevent database overload
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const success = await deleteAnalysisFromDatabase(analysisId);
+          
+          if (success) {
+            deletedIds.add(analysisId);
+            successCount++;
             
-            // Short delay to prevent database overload
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            const success = await deleteAnalysisFromDatabase(analysisId);
-            
-            if (success) {
-              deletedIds.add(analysisId);
-              successCount++;
-            } else {
-              failCount++;
-            }
-          } catch (err) {
-            console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
+            // Update local state immediately after each successful deletion
+            setAnalyses(prev => prev.filter(a => a.id !== analysisId));
+          } else {
             failCount++;
-          } finally {
-            setDeletingIds(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(analysisId);
-              return newSet;
-            });
-            
-            // Update progress
-            setBulkDeleteProgress(prev => prev + 1);
-            toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
           }
+        } catch (err) {
+          console.error(`[AssessmentsList] Error deleting analysis ${analysisId}:`, err);
+          failCount++;
+        } finally {
+          setDeletingIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(analysisId);
+            return newSet;
+          });
+          
+          // Update progress
+          setBulkDeleteProgress(prev => prev + 1);
+          toast.loading(`Deleted ${successCount} of ${selectedIds.size} analyses...`, { id: "bulk-delete" });
         }
       }
     } catch (error) {
       console.error("[AssessmentsList] Bulk deletion error:", error);
     } finally {
-      // Update UI by removing successfully deleted items
-      if (deletedIds.size > 0) {
-        setAnalyses(prev => prev.filter(a => !deletedIds.has(a.id)));
-      }
-      
       // Clear selection
       setSelectedIds(new Set());
       setIsBulkDeleting(false);
@@ -178,6 +169,11 @@ export const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }
         toast.error(`Failed to delete ${failCount} analyses`, { id: "bulk-delete" });
         // Force a complete refresh to ensure UI is in sync with database
         setRefreshCounter(prev => prev + 1);
+      }
+      
+      // Final refresh to ensure we're showing the current state
+      if (successCount > 0) {
+        fetchAnalyses();
       }
     }
   };
