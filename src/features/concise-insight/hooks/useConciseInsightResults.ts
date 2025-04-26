@@ -17,7 +17,9 @@ export const useConciseInsightResults = (assessmentId?: string) => {
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
+        // Reset state at the start of each fetch
         setLoading(true);
+        setError(null);
         
         if (!assessmentId) {
           setError("No assessment ID provided");
@@ -31,34 +33,31 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        // Check if analysis already exists
-        console.log("Checking for existing analysis for assessment:", assessmentId);
+        // Check if analysis already exists - improved logging
+        console.log(`[useConciseInsightResults] Fetching existing analysis for ID: ${assessmentId}`);
+        
         const { data: existingAnalysis, error: fetchError } = await supabase
           .from('concise_analyses')
           .select('*')
           .eq('assessment_id', assessmentId)
-          .single();
+          .maybeSingle(); // Using maybeSingle instead of single to avoid errors when no record found
           
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error("Error fetching existing analysis:", fetchError);
+        if (fetchError) {
+          console.error("[useConciseInsightResults] Error fetching existing analysis:", fetchError);
           throw fetchError;
         }
         
-        if (existingAnalysis) {
-          console.log("Found existing analysis:", existingAnalysis);
-          // Check if analysis_data exists and is not null
-          if (existingAnalysis.analysis_data) {
-            setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-            setLoading(false);
-            return;
-          } else {
-            console.log("Existing analysis found but data is null or invalid");
-          }
-        } else {
-          console.log("No existing analysis found. Need to generate a new one.");
+        // If analysis exists and has valid data, use it
+        if (existingAnalysis && existingAnalysis.analysis_data) {
+          console.log(`[useConciseInsightResults] Found existing analysis for ID ${assessmentId}:`, existingAnalysis.id);
+          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+          setLoading(false);
+          return;
         }
         
-        // If no valid analysis exists, get the assessment responses
+        console.log(`[useConciseInsightResults] No valid analysis found for ID ${assessmentId}, generating new analysis`);
+        
+        // Only if no valid analysis exists, get the assessment responses and generate a new one
         const { data: assessment, error: responseError } = await supabase
           .from('concise_assessments')
           .select('*')
@@ -67,7 +66,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           .single();
           
         if (responseError) {
-          console.error("Error fetching assessment:", responseError);
+          console.error("[useConciseInsightResults] Error fetching assessment:", responseError);
           throw responseError;
         }
         
@@ -77,7 +76,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        console.log("Generating analysis for assessment:", assessmentId);
+        console.log(`[useConciseInsightResults] Found assessment, calling edge function for ID: ${assessmentId}`);
         
         // Call edge function to get analysis - only if no existing analysis was found
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
@@ -85,22 +84,22 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           {
             body: { 
               assessmentId,
-              responses: (assessment as any).responses,
-              userId: user.id  // Pass the user ID to the edge function
+              responses: assessment.responses,
+              userId: user.id
             }
           }
         );
         
         if (analysisError) {
-          console.error("Error generating analysis:", analysisError);
+          console.error("[useConciseInsightResults] Error generating analysis:", analysisError);
           throw analysisError;
         }
         
-        console.log("Analysis generated:", analysisResult);
         if (!analysisResult) {
           throw new Error("No analysis result returned from the edge function");
         }
         
+        console.log("[useConciseInsightResults] Analysis generated successfully");
         setAnalysis(analysisResult as ConciseAnalysisResult);
         
         // Save the newly generated analysis to the database
@@ -114,16 +113,16 @@ export const useConciseInsightResults = (assessmentId?: string) => {
             });
             
           if (saveError) throw saveError;
-          console.log("Newly generated analysis saved to database");
+          console.log("[useConciseInsightResults] Newly generated analysis saved to database");
         } catch (saveErr: any) {
-          console.error("Error saving new analysis", saveErr);
+          console.error("[useConciseInsightResults] Error saving new analysis", saveErr);
           toast.error("Analysis generated but couldn't be saved for future use");
         }
         
         setLoading(false);
         
       } catch (err: any) {
-        console.error("Error fetching analysis", err);
+        console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
         setError(err.message || "An error occurred while fetching analysis");
         setLoading(false);
       }
@@ -137,14 +136,9 @@ export const useConciseInsightResults = (assessmentId?: string) => {
   }, [assessmentId, navigate, user]);
   
   const saveAnalysis = async () => {
-    if (!analysis || !user) return;
+    if (!analysis || !user || !assessmentId) return;
     
     try {
-      if (!assessmentId) {
-        toast.error("No assessment ID available");
-        return;
-      }
-      
       const { error } = await supabase
         .from('concise_analyses')
         .upsert({
@@ -157,7 +151,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
       
       toast.success("Analysis saved successfully");
     } catch (err: any) {
-      console.error("Error saving analysis", err);
+      console.error("[useConciseInsightResults] Error saving analysis", err);
       toast.error("Failed to save analysis");
     }
   };
