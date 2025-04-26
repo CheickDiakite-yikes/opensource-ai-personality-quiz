@@ -33,7 +33,38 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           return;
         }
         
-        console.log(`[useConciseInsightResults] Fetching specific analysis for assessment ID: ${assessmentId}`);
+        console.log(`[useConciseInsightResults] Fetching analysis for ID: ${assessmentId}`);
+
+        // First check if this is a direct analysis ID (UUID format)
+        if (assessmentId.includes('-') && assessmentId.length > 30) {
+          console.log(`[useConciseInsightResults] This appears to be a direct analysis ID: ${assessmentId}`);
+          
+          // Fetch the specific analysis by its ID
+          const { data: specificAnalysis, error: specificError } = await supabase
+            .from('concise_analyses')
+            .select('*')
+            .eq('id', assessmentId)
+            .single();
+            
+          if (specificError) {
+            console.error("[useConciseInsightResults] Error fetching specific analysis:", specificError);
+            throw specificError;
+          }
+          
+          if (specificAnalysis) {
+            console.log(`[useConciseInsightResults] Found specific analysis with ID: ${specificAnalysis.id}`);
+            
+            // Handle type safely
+            if (specificAnalysis.analysis_data) {
+              const analysisData = specificAnalysis.analysis_data as Record<string, any>;
+              console.log(`[useConciseInsightResults] Analysis overview: ${analysisData.overview?.substring(0, 40)}...`);
+              setAnalysis(specificAnalysis.analysis_data as unknown as ConciseAnalysisResult);
+            }
+            
+            setLoading(false);
+            return;
+          }
+        }
         
         // For debugging - log all analyses that match this assessment ID
         const { data: allMatchingAnalyses } = await supabase
@@ -42,7 +73,14 @@ export const useConciseInsightResults = (assessmentId?: string) => {
           .eq('assessment_id', assessmentId)
           .order('created_at', { ascending: false });
           
-        console.log(`[useConciseInsightResults] Found ${allMatchingAnalyses?.length || 0} total analyses matching assessment ID: ${assessmentId}`);
+        console.log(`[useConciseInsightResults] Found ${allMatchingAnalyses?.length || 0} analyses matching assessment ID: ${assessmentId}`);
+        
+        if (allMatchingAnalyses && allMatchingAnalyses.length > 0) {
+          // Log the IDs to help debug
+          allMatchingAnalyses.forEach((a, i) => {
+            console.log(`[useConciseInsightResults] Analysis ${i+1}: ID=${a.id}, created=${a.created_at}`);
+          });
+        }
         
         // Get only the specific analysis that matches EXACTLY this assessment ID and user ID
         const { data: exactAnalyses, error: fetchError } = await supabase

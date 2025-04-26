@@ -55,13 +55,22 @@ const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
       
       try {
         setLoading(true);
+        // Get unique analysis entries (not just assessment IDs)
         const { data, error } = await supabase
           .from('concise_analyses')
-          .select('assessment_id, created_at')
+          .select('id, assessment_id, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
+        
+        // Log for debugging
+        console.log(`[AssessmentsList] Loaded ${data?.length || 0} unique analyses`);
+        if (data && data.length > 0) {
+          data.forEach((a, i) => {
+            console.log(`[AssessmentsList] Analysis ${i+1}: ID=${a.id}, AssessmentID=${a.assessment_id}, Created=${a.created_at}`);
+          });
+        }
         
         setAssessments(data || []);
       } catch (err) {
@@ -102,11 +111,11 @@ const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {assessments.map((assessment) => (
+          {assessments.map((analysis) => (
             <Card 
-              key={assessment.assessment_id} 
+              key={analysis.id} 
               className="hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => onSelect(assessment.assessment_id)}
+              onClick={() => onSelect(analysis.id)}
             >
               <CardHeader className="py-4">
                 <div className="flex justify-between items-center">
@@ -116,7 +125,7 @@ const AssessmentsList = ({ onSelect }: { onSelect: (id: string) => void }) => {
                   </div>
                   <Badge variant="outline">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {format(new Date(assessment.created_at), 'MMM d, yyyy')}
+                    {format(new Date(analysis.created_at), 'MMM d, yyyy')}
                   </Badge>
                 </div>
               </CardHeader>
@@ -134,9 +143,10 @@ const ConciseReport: React.FC = () => {
   const navigate = useNavigate();
   const { analysis, loading, error, saveAnalysis } = useConciseInsightResults(id);
   
-  // Handler for selecting an assessment from the list
-  const handleSelectAssessment = (assessmentId: string) => {
-    navigate(`/concise-report/${assessmentId}`);
+  // Handler for selecting an analysis from the list
+  const handleSelectAnalysis = (analysisId: string) => {
+    console.log(`[ConciseReport] Navigating to specific analysis ID: ${analysisId}`);
+    navigate(`/concise-report/${analysisId}`);
   };
 
   // If no assessment ID is provided, show the list of assessments
