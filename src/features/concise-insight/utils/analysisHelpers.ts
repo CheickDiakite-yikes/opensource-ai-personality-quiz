@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
+import { toast } from "sonner";
 
 export const isUUID = (str: string): boolean => {
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -102,4 +102,3 @@ export const saveAnalysisToDatabase = async (
     throw err;
   }
 };
-
