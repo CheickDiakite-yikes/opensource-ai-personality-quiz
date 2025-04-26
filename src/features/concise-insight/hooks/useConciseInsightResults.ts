@@ -73,7 +73,7 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         
         console.log("Generating analysis for assessment:", assessmentId);
         
-        // Call edge function to get analysis
+        // Call edge function to get analysis - only if no existing analysis was found
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
           'analyze-concise-responses',
           {
@@ -91,6 +91,24 @@ export const useConciseInsightResults = (assessmentId?: string) => {
         
         console.log("Analysis generated:", analysisResult);
         setAnalysis(analysisResult as ConciseAnalysisResult);
+        
+        // Save the newly generated analysis to the database
+        try {
+          const { error: saveError } = await supabase
+            .from('concise_analyses')
+            .upsert({
+              assessment_id: assessmentId,
+              user_id: user.id,
+              analysis_data: analysisResult as unknown as Json
+            });
+            
+          if (saveError) throw saveError;
+          console.log("Newly generated analysis saved to database");
+        } catch (saveErr: any) {
+          console.error("Error saving new analysis", saveErr);
+          toast.error("Analysis generated but couldn't be saved for future use");
+        }
+        
         setLoading(false);
         
       } catch (err: any) {
