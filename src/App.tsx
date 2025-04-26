@@ -143,7 +143,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* Concise Insight Routes */}
+          {/* New Concise Insight Routes */}
           <Route path="concise-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
@@ -158,7 +158,7 @@ function App() {
               </Suspense>
             </PrivateRoute>
           } />
-          <Route path="concise-insight/report/:assessmentId" element={
+          <Route path="concise-insight/results" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ConciseInsightResults />

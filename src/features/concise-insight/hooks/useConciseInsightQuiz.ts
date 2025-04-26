@@ -71,7 +71,7 @@ export const useConciseInsightQuiz = (totalQuestions: number) => {
         }
         
         // Save responses to Supabase
-        const assessmentId = crypto.randomUUID();
+        const assessmentId = `concise-${Date.now()}`;
         const { error: saveError } = await supabase
           .from('concise_assessments')
           .insert({
@@ -86,8 +86,8 @@ export const useConciseInsightQuiz = (totalQuestions: number) => {
         
         toast.success("Assessment completed successfully!");
         
-        // Navigate to results page with assessmentId
-        navigate(`/concise-insight/report/${assessmentId}`);
+        // Navigate to results page
+        navigate(`/concise-insight/results?id=${assessmentId}`);
       } catch (err) {
         console.error("Error saving assessment", err);
         toast.error("There was an error saving your assessment. Please try again.");

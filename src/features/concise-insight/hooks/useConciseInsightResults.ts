@@ -1,17 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { ConciseAnalysisResult } from "../types";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types"; // Import Json type from Supabase types
 
 export const useConciseInsightResults = () => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { assessmentId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -19,6 +18,8 @@ export const useConciseInsightResults = () => {
     const fetchAnalysis = async () => {
       try {
         setLoading(true);
+        const params = new URLSearchParams(location.search);
+        const assessmentId = params.get('id');
         
         if (!assessmentId) {
           setError("No assessment ID provided");
@@ -34,7 +35,7 @@ export const useConciseInsightResults = () => {
         
         // Check if analysis already exists
         const { data: existingAnalysis, error: fetchError } = await supabase
-          .from('concise_analyses')
+          .from('concise_analyses' as any)
           .select('*')
           .eq('assessment_id', assessmentId)
           .single();
@@ -45,14 +46,17 @@ export const useConciseInsightResults = () => {
         
         if (existingAnalysis) {
           console.log("Found existing analysis:", existingAnalysis);
-          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
-          setLoading(false);
-          return;
+          // Fix the type error by checking if analysis_data exists first
+          if ('analysis_data' in existingAnalysis) {
+            setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+            setLoading(false);
+            return;
+          }
         }
         
         // If no analysis exists, get the assessment responses
         const { data: assessment, error: responseError } = await supabase
-          .from('concise_assessments')
+          .from('concise_assessments' as any)
           .select('*')
           .eq('id', assessmentId)
           .eq('user_id', user.id)
@@ -76,8 +80,8 @@ export const useConciseInsightResults = () => {
           {
             body: { 
               assessmentId,
-              responses: assessment.responses,
-              userId: user.id
+              responses: (assessment as any).responses,
+              userId: user.id  // Pass the user ID to the edge function
             }
           }
         );
@@ -87,7 +91,7 @@ export const useConciseInsightResults = () => {
         }
         
         console.log("Analysis generated:", analysisResult);
-        setAnalysis(analysisResult as unknown as ConciseAnalysisResult);
+        setAnalysis(analysisResult);
         setLoading(false);
         
       } catch (err: any) {
@@ -98,24 +102,27 @@ export const useConciseInsightResults = () => {
     };
     
     fetchAnalysis();
-  }, [assessmentId, navigate, user]);
-
+  }, [location.search, navigate, user]);
+  
   const saveAnalysis = async () => {
     if (!analysis || !user) return;
     
     try {
+      const params = new URLSearchParams(location.search);
+      const assessmentId = params.get('id');
+      
       if (!assessmentId) {
         toast.error("No assessment ID available");
         return;
       }
       
       const { error } = await supabase
-        .from('concise_analyses')
+        .from('concise_analyses' as any)
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis as unknown as Json // Use the imported Json type
-        });
+          analysis_data: analysis
+        } as any);
         
       if (error) throw error;
       
