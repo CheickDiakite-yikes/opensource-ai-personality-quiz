@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 export const useConciseInsightResults = () => {
   const [analysis, setAnalysis] = useState<ConciseAnalysisResult | null>(null);
@@ -46,7 +47,8 @@ export const useConciseInsightResults = () => {
         }
         
         if (existingAnalysis?.analysis_data) {
-          setAnalysis(existingAnalysis.analysis_data as ConciseAnalysisResult);
+          // Fix #1: Add type assertion with 'as unknown' first
+          setAnalysis(existingAnalysis.analysis_data as unknown as ConciseAnalysisResult);
           setLoading(false);
           return;
         }
@@ -88,7 +90,8 @@ export const useConciseInsightResults = () => {
         }
         
         console.log("Analysis generated:", analysisResult);
-        setAnalysis(analysisResult);
+        // Fix: Add type assertion here as well for consistency
+        setAnalysis(analysisResult as unknown as ConciseAnalysisResult);
         setLoading(false);
         
       } catch (err: any) {
@@ -113,12 +116,13 @@ export const useConciseInsightResults = () => {
         return;
       }
       
+      // Fix #2: Convert analysis to Json type with type assertion
       const { error } = await supabase
         .from('concise_analyses')
         .upsert({
           assessment_id: assessmentId,
           user_id: user.id,
-          analysis_data: analysis
+          analysis_data: analysis as unknown as Json
         });
         
       if (error) throw error;
