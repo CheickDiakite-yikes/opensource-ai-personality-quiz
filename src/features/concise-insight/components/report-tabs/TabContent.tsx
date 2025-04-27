@@ -2,13 +2,130 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
+import { Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, Info } from 'lucide-react';
 import { ConciseAnalysisResult } from '../../types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 
 interface TabContentProps {
   tabValue: string;
   analysis: ConciseAnalysisResult;
 }
+
+// Helper to parse score strings like "85/100 - Strong: description" 
+const parseScoreString = (scoreString: string | number): { 
+  score: number; 
+  label: string; 
+  description: string;
+} => {
+  // Handle numeric values
+  if (typeof scoreString === 'number') {
+    let label = "Average";
+    if (scoreString >= 90) label = "Exceptional";
+    else if (scoreString >= 80) label = "Very High";
+    else if (scoreString >= 70) label = "High";
+    else if (scoreString >= 60) label = "Above Average";
+    else if (scoreString <= 30) label = "Developing";
+    else if (scoreString <= 20) label = "Emerging";
+    
+    return { score: scoreString, label, description: label };
+  }
+  
+  // Handle string format like "85/100 - Strong: description"
+  try {
+    const scoreMatch = scoreString.match(/(\d+)\/100\s*-\s*([^:]+)(?::?\s*(.*))?/);
+    if (scoreMatch) {
+      return {
+        score: parseInt(scoreMatch[1]),
+        label: scoreMatch[2].trim(),
+        description: scoreMatch[3] ? scoreMatch[3].trim() : scoreMatch[2].trim()
+      };
+    }
+    
+    // Try to extract just the number
+    const numericMatch = scoreString.match(/(\d+)/);
+    if (numericMatch) {
+      const score = parseInt(numericMatch[1]);
+      let label = "Average";
+      if (score >= 90) label = "Exceptional";
+      else if (score >= 80) label = "Very High";
+      else if (score >= 70) label = "High";
+      else if (score >= 60) label = "Above Average";
+      else if (score <= 30) label = "Developing";
+      else if (score <= 20) label = "Emerging";
+      
+      return { score, label, description: scoreString };
+    }
+    
+    // Return a default for strings without recognizable scores
+    return { score: 50, label: "Balanced", description: scoreString };
+  } catch (e) {
+    console.error("Error parsing score string:", e);
+    return { score: 50, label: "Balanced", description: String(scoreString) };
+  }
+};
+
+// Format Helper Component for Empathy Score
+const EmpathyScoreDisplay = ({ empathy }: { empathy: string | number }) => {
+  const parsedScore = parseScoreString(empathy);
+  
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <h3 className="font-medium">Empathic Capacity</h3>
+        <Badge variant="outline">{parsedScore.label}</Badge>
+      </div>
+      
+      <div className="w-full bg-muted rounded-full h-2.5 mb-1">
+        <div 
+          className="bg-primary h-2.5 rounded-full" 
+          style={{ width: `${parsedScore.score}%` }}
+        />
+      </div>
+      
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>Developing</span>
+        <span>Balanced</span>
+        <span>Advanced</span>
+      </div>
+      
+      <p className="text-sm text-muted-foreground mt-1">
+        {parsedScore.description}
+      </p>
+    </div>
+  );
+};
+
+// Render list with heading
+const RenderList = ({ 
+  items, 
+  title, 
+  emptyMessage = "No data available" 
+}: { 
+  items: string[] | undefined; 
+  title: string; 
+  emptyMessage?: string; 
+}) => {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return (
+      <div>
+        <h3 className="font-medium mb-2">{title}</h3>
+        <p className="text-muted-foreground">{emptyMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h3 className="font-medium mb-2">{title}</h3>
+      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
   // Helper function to render the career insights section based on type
@@ -111,7 +228,9 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
     if (analysis.uniquenessMarkers && Array.isArray(analysis.uniquenessMarkers) && analysis.uniquenessMarkers.length > 0) {
       return (
         <div className="mb-4">
-          <h3 className="font-medium mb-2">What Makes You Distinctive</h3>
+          <h3 className="flex items-center gap-2 text-lg font-medium border-b pb-1">
+            <Sparkles className="h-5 w-5 text-primary" /> What Makes You Distinctive
+          </h3>
           <ul className="list-disc list-inside space-y-1 text-muted-foreground">
             {analysis.uniquenessMarkers.map((marker, i) => (
               <li key={i}>{marker}</li>
@@ -128,32 +247,28 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>Cognitive Profile</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              Cognitive Profile
+            </CardTitle>
             <CardDescription>How you think, learn, and process information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <h3 className="font-medium mb-2">Cognitive Style</h3>
-              <p>{analysis.cognitiveProfile.style}</p>
+              <p className="text-muted-foreground">{analysis.cognitiveProfile.style}</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">Cognitive Strengths</h3>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  {analysis.cognitiveProfile.strengths.map((strength, i) => (
-                    <li key={i}>{strength}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-medium mb-2">Potential Blind Spots</h3>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  {analysis.cognitiveProfile.blindSpots.map((blindSpot, i) => (
-                    <li key={i}>{blindSpot}</li>
-                  ))}
-                </ul>
-              </div>
+              <RenderList 
+                title="Cognitive Strengths" 
+                items={analysis.cognitiveProfile.strengths}
+              />
+              
+              <RenderList 
+                title="Potential Blind Spots" 
+                items={analysis.cognitiveProfile.blindSpots}
+              />
             </div>
             
             {analysis.cognitiveProfile.learningStyle && (
@@ -181,35 +296,51 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>Emotional Insights</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <HeartHandshake className="h-5 w-5 text-primary" />
+              Emotional Insights
+            </CardTitle>
             <CardDescription>How you experience and manage emotions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">Emotional Awareness</h3>
-                <p className="text-muted-foreground">{analysis.emotionalInsights.awareness}</p>
+              <div className="space-y-2">
+                <h3 className="font-medium">Emotional Awareness</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground cursor-help">
+                        <Info className="h-3.5 w-3.5" />
+                        <span>Understanding your own emotions</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Emotional awareness reflects your ability to recognize and understand your emotions as they occur</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {typeof analysis.emotionalInsights.awareness === 'string' ? (
+                  <p className="text-muted-foreground">{analysis.emotionalInsights.awareness}</p>
+                ) : (
+                  // If it's just a number, display with progress bar
+                  <div className="space-y-1">
+                    <Progress value={analysis.emotionalInsights.awareness as number * 10} className="h-2" />
+                    <div className="flex justify-between text-xs">
+                      <span>Developing</span>
+                      <span>Advanced</span>
+                    </div>
+                  </div>
+                )}
               </div>
+              
               <div>
                 <h3 className="font-medium mb-2">Emotional Regulation</h3>
                 <p className="text-muted-foreground">{analysis.emotionalInsights.regulation}</p>
               </div>
             </div>
             
-            <div>
-              <h3 className="font-medium mb-2">Empathic Capacity</h3>
-              <div className="w-full bg-muted rounded-full h-2.5 mb-1">
-                <div 
-                  className="bg-primary h-2.5 rounded-full" 
-                  style={{ width: `${analysis.emotionalInsights.empathy * 10}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-xs">
-                <span>Self-focused</span>
-                <span>Balanced</span>
-                <span>Other-focused</span>
-              </div>
-            </div>
+            <EmpathyScoreDisplay empathy={analysis.emotionalInsights.empathy} />
             
             {analysis.emotionalInsights.stressResponse && (
               <div>
@@ -220,22 +351,15 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
             
             {analysis.emotionalInsights.emotionalTriggersAndCoping && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-medium mb-2">Potential Triggers</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.emotionalInsights.emotionalTriggersAndCoping.triggers.map((trigger, i) => (
-                      <li key={i}>{trigger}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-medium mb-2">Effective Coping Strategies</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.emotionalInsights.emotionalTriggersAndCoping.copingStrategies.map((strategy, i) => (
-                      <li key={i}>{strategy}</li>
-                    ))}
-                  </ul>
-                </div>
+                <RenderList 
+                  title="Potential Triggers" 
+                  items={analysis.emotionalInsights.emotionalTriggersAndCoping.triggers}
+                />
+                
+                <RenderList 
+                  title="Effective Coping Strategies" 
+                  items={analysis.emotionalInsights.emotionalTriggersAndCoping.copingStrategies}
+                />
               </div>
             )}
             
@@ -250,22 +374,42 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>Interpersonal Dynamics</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Interpersonal Dynamics
+            </CardTitle>
             <CardDescription>How you interact and connect with others</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">Communication Style</h3>
-                <Badge variant="outline">{analysis.interpersonalDynamics.communicationStyle}</Badge>
+              <div className="space-y-1">
+                <h3 className="font-medium mb-1">Communication Style</h3>
+                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.communicationStyle.split(':')[0]}</Badge>
+                <p className="text-sm text-muted-foreground">
+                  {analysis.interpersonalDynamics.communicationStyle.includes(':') 
+                    ? analysis.interpersonalDynamics.communicationStyle.split(':')[1].trim()
+                    : ''}
+                </p>
               </div>
-              <div>
-                <h3 className="font-medium mb-2">Relationship Pattern</h3>
-                <Badge variant="outline">{analysis.interpersonalDynamics.relationshipPattern}</Badge>
+              
+              <div className="space-y-1">
+                <h3 className="font-medium mb-1">Relationship Pattern</h3>
+                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.relationshipPattern.split(':')[0]}</Badge>
+                <p className="text-sm text-muted-foreground">
+                  {analysis.interpersonalDynamics.relationshipPattern.includes(':') 
+                    ? analysis.interpersonalDynamics.relationshipPattern.split(':')[1].trim() 
+                    : ''}
+                </p>
               </div>
-              <div>
-                <h3 className="font-medium mb-2">Conflict Approach</h3>
-                <Badge variant="outline">{analysis.interpersonalDynamics.conflictApproach}</Badge>
+              
+              <div className="space-y-1">
+                <h3 className="font-medium mb-1">Conflict Approach</h3>
+                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.conflictApproach.split(':')[0]}</Badge>
+                <p className="text-sm text-muted-foreground">
+                  {analysis.interpersonalDynamics.conflictApproach.includes(':') 
+                    ? analysis.interpersonalDynamics.conflictApproach.split(':')[1].trim() 
+                    : ''}
+                </p>
               </div>
             </div>
             
@@ -313,7 +457,12 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
                   </CardHeader>
                   <CardContent>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
+                      {analysis.traits.filter(t => 
+                        t.trait.includes("Social") || 
+                        t.trait.includes("Empathy") || 
+                        t.trait.includes("Communication") || 
+                        t.trait.includes("Interpersonal")
+                      ).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
                         <li key={i}>{challenge}</li>
                       ))}
                     </ul>
@@ -330,7 +479,12 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
                   </CardHeader>
                   <CardContent>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.strengths).slice(0, 3).map((strength, i) => (
+                      {analysis.traits.filter(t => 
+                        t.trait.includes("Social") || 
+                        t.trait.includes("Empathy") || 
+                        t.trait.includes("Communication") || 
+                        t.trait.includes("Interpersonal")
+                      ).flatMap(t => t.strengths).slice(0, 3).map((strength, i) => (
                         <li key={i}>{strength}</li>
                       ))}
                     </ul>
@@ -343,7 +497,12 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
                   </CardHeader>
                   <CardContent>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
+                      {analysis.traits.filter(t => 
+                        t.trait.includes("Social") || 
+                        t.trait.includes("Empathy") || 
+                        t.trait.includes("Communication") || 
+                        t.trait.includes("Interpersonal")
+                      ).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
                         <li key={i}>{challenge}</li>
                       ))}
                     </ul>
@@ -359,29 +518,24 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>Growth & Development</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              Growth & Development
+            </CardTitle>
             <CardDescription>Your potential for growth and personal development</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {renderUniquenessMarkers()}
             
-            <div>
-              <h3 className="font-medium mb-2">Areas for Development</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                {analysis.growthPotential.areasOfDevelopment.map((area, i) => (
-                  <li key={i}>{area}</li>
-                ))}
-              </ul>
-            </div>
+            <RenderList 
+              title="Areas for Development" 
+              items={analysis.growthPotential.areasOfDevelopment}
+            />
             
-            <div>
-              <h3 className="font-medium mb-2">Key Strengths to Leverage</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                {analysis.growthPotential.keyStrengthsToLeverage.map((strength, i) => (
-                  <li key={i}>{strength}</li>
-                ))}
-              </ul>
-            </div>
+            <RenderList 
+              title="Key Strengths to Leverage" 
+              items={analysis.growthPotential.keyStrengthsToLeverage}
+            />
             
             <div>
               <h3 className="font-medium mb-2">Personalized Recommendations</h3>
@@ -420,26 +574,32 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
               </div>
             )}
             
+            {/* Conditionally render value system if available */}
             {analysis.valueSystem && (
               <div className="pt-2">
                 <h3 className="font-medium mb-2">Value System</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Core Values</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {analysis.valueSystem.coreValues.map((value, i) => (
-                        <Badge key={i} variant="outline">{value}</Badge>
-                      ))}
+                  {analysis.valueSystem.coreValues && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">Core Values</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {analysis.valueSystem.coreValues.map((value, i) => (
+                          <Badge key={i} variant="outline">{value}</Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Key Motivators</h4>
-                    <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-                      {analysis.valueSystem.motivationSources.map((source, i) => (
-                        <li key={i}>{source}</li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
+                  
+                  {analysis.valueSystem.motivationSources && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">Key Motivators</h4>
+                      <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
+                        {analysis.valueSystem.motivationSources.map((source, i) => (
+                          <li key={i}>{source}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

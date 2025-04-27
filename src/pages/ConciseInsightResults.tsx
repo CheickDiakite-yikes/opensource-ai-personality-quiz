@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles } from "lucide-react";
+import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, RefreshCw } from "lucide-react";
 import { TabContent } from "@/features/concise-insight/components/report-tabs/TabContent";
+import { toast } from "sonner";
 
 // Loading component
 const ResultsLoading = () => (
@@ -22,7 +23,7 @@ const ResultsLoading = () => (
 );
 
 // Error component
-const ResultsError = ({ error }: { error: string }) => (
+const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
     <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
       <span className="text-destructive text-2xl">!</span>
@@ -31,58 +32,27 @@ const ResultsError = ({ error }: { error: string }) => (
     <p className="text-muted-foreground max-w-md text-center mt-2">
       {error || "There was an error generating your analysis. Please try again."}
     </p>
-    <Button className="mt-6" onClick={() => window.location.reload()}>
+    <Button className="mt-6" onClick={onRetry}>
       Try Again
     </Button>
   </div>
 );
 
-// Helper function to render career insights
-const renderCareerInsights = (careerInsights: string[] | {
-  environmentFit?: string;
-  challengeAreas?: string;
-  roleAlignments: string[];
-  workStyles?: {
-    collaboration: string;
-    autonomy: string;
-    structure: string;
-  };
-}) => {
-  if (Array.isArray(careerInsights)) {
-    return (
-      <div>
-        <h3 className="font-medium mb-2">Career Insights</h3>
-        <div className="flex flex-wrap gap-2">
-          {careerInsights.map((career, i) => (
-            <Badge key={i} variant="secondary">{career}</Badge>
-          ))}
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div>
-        <h3 className="font-medium mb-2">Career Insights</h3>
-        <div className="flex flex-wrap gap-2">
-          {careerInsights.roleAlignments.map((role, i) => (
-            <Badge key={i} variant="secondary">{role}</Badge>
-          ))}
-        </div>
-      </div>
-    );
-  }
-};
-
 // Main component
 const ConciseInsightResults: React.FC = () => {
   const { analysis, loading, error, refreshAnalysis } = useConciseInsightResults();
+  
+  const handleRefresh = () => {
+    toast.loading("Refreshing your analysis...");
+    refreshAnalysis();
+  };
   
   if (loading) {
     return <ResultsLoading />;
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} />;
+    return <ResultsError error={error || "No analysis data found"} onRetry={refreshAnalysis} />;
   }
   
   return (
@@ -103,7 +73,10 @@ const ConciseInsightResults: React.FC = () => {
         {/* Overview Card */}
         <Card className="border-2 border-primary/10">
           <CardHeader>
-            <CardTitle className="text-2xl">Personal Overview</CardTitle>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Star className="h-6 w-6 text-primary" />
+              Personal Overview
+            </CardTitle>
             <CardDescription>A summary of your core personality traits and patterns</CardDescription>
           </CardHeader>
           <CardContent className="prose dark:prose-invert max-w-none space-y-4">
@@ -195,8 +168,8 @@ const ConciseInsightResults: React.FC = () => {
           <Button variant="secondary" className="flex items-center gap-2">
             <Share2 className="h-4 w-4" /> Share Results
           </Button>
-          <Button variant="ghost" className="flex items-center gap-2" onClick={refreshAnalysis}>
-            Refresh Analysis
+          <Button variant="ghost" className="flex items-center gap-2" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4" /> Refresh Analysis
           </Button>
         </div>
       </div>

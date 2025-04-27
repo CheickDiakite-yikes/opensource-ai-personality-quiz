@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.8.0';
@@ -106,97 +105,222 @@ const cleanJsonString = (str: string): string => {
   }
 };
 
-// More flexible structure validation with default values for missing fields
+// More flexible structure validation with enhanced default values and formatting requirements
 const validateAndRepairAnalysisData = (data: any): any => {
   if (!data) {
     console.error("Data is null or undefined");
     return false;
   }
   
-  // Create minimal default values for required objects if missing
+  // Create rich default values with proper context and explanations
   if (!data.coreProfiling) {
     console.log("Adding missing coreProfiling field");
     data.coreProfiling = {
       primaryArchetype: "Complex Individual",
       secondaryArchetype: "Adaptive Persona",
-      description: "A unique personality with multifaceted traits.",
-      compatibilityInsights: ["Values authentic connections", "Appreciates depth in relationships"]
+      description: "A unique personality with multifaceted traits that blend analytical thinking with emotional intelligence. Your personality doesn't fit neatly into common categories, showcasing your individuality.",
+      compatibilityInsights: [
+        "Values authentic connections where both parties can be their genuine selves",
+        "Appreciates depth in relationships over superficial interactions",
+        "Thrives with partners who respect both your need for closeness and independence"
+      ]
     };
+  } else if (data.coreProfiling.description && data.coreProfiling.description.length < 60) {
+    // Ensure descriptions are sufficiently detailed
+    data.coreProfiling.description += " This archetype represents a dynamic blend of traits that form your unique personality signature, influencing how you interact with the world around you.";
   }
   
   if (!data.cognitiveProfile) {
     console.log("Adding missing cognitiveProfile field");
     data.cognitiveProfile = {
-      style: "Balanced Thinker",
-      strengths: ["Pattern recognition", "Analytical processing"],
-      blindSpots: ["May overlook details when focused on the big picture"],
-      learningStyle: "Adaptable to various learning approaches",
-      decisionMakingProcess: "Combines analytical and intuitive elements"
+      style: "Balanced Thinker (combines analytical and intuitive approaches)",
+      strengths: [
+        "Pattern recognition across diverse domains of knowledge",
+        "Analytical processing that helps solve complex problems methodically"
+      ],
+      blindSpots: [
+        "May overlook details when focused on the big picture, requiring occasional reminders to ground your thinking"
+      ],
+      learningStyle: "Adaptable to various learning approaches, with a preference for connecting new information to existing knowledge frameworks",
+      decisionMakingProcess: "Combines analytical evaluation of facts with intuitive judgment, creating a balanced approach to choices"
     };
   }
   
   if (!data.emotionalInsights) {
     console.log("Adding missing emotionalInsights field");
     data.emotionalInsights = {
-      awareness: 75,
-      regulation: "Balanced emotional regulation",
-      empathy: 80,
-      description: "Demonstrates good emotional awareness and empathy",
-      stressResponse: "Uses various coping mechanisms to manage stress",
+      awareness: "75/100 - Strong awareness: You recognize emotions as they arise and understand their origins",
+      regulation: "Balanced emotional regulation with effective coping mechanisms for most situations",
+      empathy: "80/100 - High empathy: You naturally attune to others' emotional states and perspectives",
+      description: "Your emotional landscape demonstrates a well-developed awareness of both your own feelings and those of others, creating nuanced interpersonal understanding.",
+      stressResponse: "Under stress, you tend to process internally before responding, using various coping mechanisms to manage emotional intensity",
       emotionalTriggersAndCoping: {
-        triggers: ["Perceived injustice", "Feeling misunderstood"],
-        copingStrategies: ["Self-reflection", "Seeking perspective"]
+        triggers: [
+          "Perceived injustice or unfairness in social situations",
+          "Feeling misunderstood when expressing authentic opinions"
+        ],
+        copingStrategies: [
+          "Self-reflection through journaling or quiet contemplation",
+          "Seeking perspective through conversations with trusted confidants"
+        ]
       }
     };
+  } else {
+    // Convert numeric awareness to descriptive format if needed
+    if (typeof data.emotionalInsights.awareness === 'number') {
+      const score = data.emotionalInsights.awareness;
+      let description = "";
+      
+      if (score >= 90) description = "Exceptional awareness: You have profound insight into emotions and their complexities";
+      else if (score >= 75) description = "Strong awareness: You recognize emotions as they arise and understand their origins";
+      else if (score >= 60) description = "Good awareness: You generally notice and identify emotions effectively";
+      else if (score >= 45) description = "Developing awareness: You recognize stronger emotions but may miss subtle feelings";
+      else description = "Emerging awareness: You're beginning to recognize the importance of emotional signals";
+      
+      data.emotionalInsights.awareness = `${score}/100 - ${description}`;
+    }
+    
+    // Convert numeric empathy to descriptive format if needed
+    if (typeof data.emotionalInsights.empathy === 'number') {
+      const score = data.emotionalInsights.empathy;
+      let description = "";
+      
+      if (score >= 90) description = "Exceptional empathy: You have a remarkable ability to understand others' perspectives";
+      else if (score >= 75) description = "High empathy: You naturally attune to others' emotional states and perspectives";
+      else if (score >= 60) description = "Good empathy: You regularly consider others' feelings in your interactions";
+      else if (score >= 45) description = "Developing empathy: You recognize others' emotions in clear situations";
+      else description = "Emerging empathy: You're building awareness of others' emotional experiences";
+      
+      data.emotionalInsights.empathy = `${score}/100 - ${description}`;
+    }
   }
   
   if (!data.interpersonalDynamics) {
     console.log("Adding missing interpersonalDynamics field");
     data.interpersonalDynamics = {
-      communicationStyle: "Thoughtful communicator",
-      relationshipPattern: "Values authentic connections",
-      conflictApproach: "Seeks resolution through understanding",
-      socialNeeds: "Balance of social connection and personal space",
-      leadershipStyle: "Leads through inspiration and empathy",
-      teamRole: "Contributes unique perspectives to group settings"
+      communicationStyle: "Thoughtful communicator who balances sharing ideas with active listening",
+      relationshipPattern: "Values authentic connections with depth and meaning over quantity",
+      conflictApproach: "Seeks resolution through understanding multiple perspectives and finding common ground",
+      socialNeeds: "Balance of meaningful social connection and quality personal space for reflection",
+      leadershipStyle: "Leads through inspiration, empathy, and thoughtful guidance rather than authority",
+      teamRole: "Contributes unique perspectives while supporting group cohesion and positive dynamics"
     };
+  } else {
+    // Ensure communication style is detailed enough
+    if (data.interpersonalDynamics.communicationStyle?.length < 15) {
+      data.interpersonalDynamics.communicationStyle += " - a style that balances expression with receptivity";
+    }
+    
+    // Ensure relationship pattern is detailed enough
+    if (data.interpersonalDynamics.relationshipPattern?.length < 15) {
+      data.interpersonalDynamics.relationshipPattern += " - reflecting your approach to building connections";
+    }
+    
+    // Ensure conflict approach is detailed enough
+    if (data.interpersonalDynamics.conflictApproach?.length < 15) {
+      data.interpersonalDynamics.conflictApproach += " - showing how you navigate disagreements";
+    }
   }
   
   if (!data.growthPotential) {
     console.log("Adding missing growthPotential field");
     data.growthPotential = {
-      areasOfDevelopment: ["Enhancing self-awareness", "Developing resilience"],
+      areasOfDevelopment: [
+        "Enhancing self-awareness through regular reflection practices",
+        "Developing resilience in the face of unexpected challenges"
+      ],
       personalizedRecommendations: [{
-        area: "Self-reflection",
-        why: "To deepen understanding of personal patterns",
-        action: "Regular journaling practice",
-        resources: "Mindfulness and reflection guides"
+        area: "Self-reflection practices",
+        why: "To deepen understanding of personal patterns and reactions",
+        action: "Implement a regular journaling practice focusing on emotional responses",
+        resources: "Guided mindfulness and reflection exercises from established sources"
       }],
-      keyStrengthsToLeverage: ["Analytical thinking", "Empathy"],
+      keyStrengthsToLeverage: [
+        "Analytical thinking that helps solve complex problems methodically",
+        "Empathy that enables meaningful connections with diverse individuals"
+      ],
       developmentTimeline: {
-        shortTerm: "Focus on immediate self-awareness",
-        mediumTerm: "Develop consistent personal growth habits",
-        longTerm: "Integrate insights into sustained personal evolution"
+        shortTerm: "Focus on immediate self-awareness through daily reflection",
+        mediumTerm: "Develop consistent personal growth habits through practice",
+        longTerm: "Integrate insights into sustained personal evolution and deeper connections"
       }
     };
   }
   
-  // Ensure traits array exists and has at least one item
+  // Ensure traits array exists and has detailed entries
   if (!data.traits || !Array.isArray(data.traits) || data.traits.length === 0) {
     console.log("Adding missing or empty traits array");
-    data.traits = [{
-      trait: "Adaptability",
-      score: 75,
-      description: "Shows flexibility in changing circumstances",
-      strengths: ["Quick to adjust to new situations", "Open to different perspectives"],
-      challenges: ["May sometimes struggle with maintaining consistency"]
-    }];
+    data.traits = [
+      {
+        trait: "Adaptability",
+        score: 75,
+        description: "You show remarkable flexibility in changing circumstances, adjusting your approach based on new information and shifting contexts.",
+        strengths: [
+          "Quick to adjust to new situations without unnecessary resistance",
+          "Open to different perspectives that might challenge existing views"
+        ],
+        challenges: [
+          "May sometimes struggle with maintaining consistency across changing environments",
+          "Could benefit from establishing more stable routines in some areas"
+        ]
+      },
+      {
+        trait: "Analytical Thinking",
+        score: 82,
+        description: "You approach problems with logical reasoning and careful consideration of different factors and potential outcomes.",
+        strengths: [
+          "Effectively breaks down complex issues into manageable parts",
+          "Makes decisions based on evidence and rational evaluation"
+        ],
+        challenges: [
+          "May occasionally overanalyze situations that require intuitive responses",
+          "Could benefit from integrating emotional factors more fully in some analyses"
+        ]
+      }
+    ];
+  } else {
+    // Ensure each trait has sufficient detail
+    data.traits.forEach((trait: any) => {
+      // Expand short descriptions
+      if (trait.description && trait.description.length < 40) {
+        trait.description += ` This quality influences how you interact with the world and others around you, shaping your unique personal style.`;
+      }
+      
+      // Ensure numeric scores have contextual meaning
+      if (typeof trait.score === 'number') {
+        // Format scores consistently as out of 100 if they appear to be percentages
+        if (trait.score > 0 && trait.score <= 1) {
+          trait.score = Math.round(trait.score * 100);
+        }
+        // Ensure score is reasonable
+        if (trait.score > 100) trait.score = 100;
+        if (trait.score < 0) trait.score = 0;
+      }
+      
+      // Ensure strengths and challenges have at least two items
+      if (!Array.isArray(trait.strengths) || trait.strengths.length === 0) {
+        trait.strengths = ["Shows flexibility in diverse situations", "Adapts effectively to changing circumstances"];
+      } else if (trait.strengths.length === 1) {
+        trait.strengths.push("Uses this trait effectively in both personal and professional contexts");
+      }
+      
+      if (!Array.isArray(trait.challenges) || trait.challenges.length === 0) {
+        trait.challenges = ["May occasionally overuse this trait in inappropriate contexts", "Could benefit from balancing this quality with complementary approaches"];
+      } else if (trait.challenges.length === 1) {
+        trait.challenges.push("May need to adjust this trait in certain social situations");
+      }
+    });
   }
   
-  // Ensure uniquenessMarkers array exists
-  if (!data.uniquenessMarkers || !Array.isArray(data.uniquenessMarkers)) {
-    console.log("Adding missing uniquenessMarkers array");
-    data.uniquenessMarkers = ["Unique perspective", "Thoughtful approach to challenges"];
+  // Ensure uniquenessMarkers array exists with meaningful content
+  if (!data.uniquenessMarkers || !Array.isArray(data.uniquenessMarkers) || data.uniquenessMarkers.length < 2) {
+    console.log("Adding or enhancing uniquenessMarkers array");
+    data.uniquenessMarkers = [
+      "Unique perspective that blends analytical and emotional intelligence",
+      "Thoughtful approach to challenges that considers multiple angles",
+      "Distinctive communication style that adapts to different audiences",
+      "Particular combination of traits that creates your individual signature"
+    ];
   }
   
   // Set ID if missing
@@ -206,9 +330,9 @@ const validateAndRepairAnalysisData = (data: any): any => {
   }
   
   // Set overview if missing or too short
-  if (!data.overview || data.overview.length < 100) {
+  if (!data.overview || data.overview.length < 150) {
     console.log("Adding missing or too short overview");
-    data.overview = "This personality analysis highlights a multifaceted individual with a unique combination of traits, cognitive patterns, and emotional responses. The analysis explores various dimensions of personality, revealing both strengths and growth opportunities.";
+    data.overview = "This personality analysis highlights a multifaceted individual with a unique combination of traits, cognitive patterns, and emotional responses. The profile reveals a blend of analytical abilities and interpersonal skills that create a distinctive approach to life's challenges. Throughout the analysis, we explore various dimensions of personality, revealing both strengths to leverage and growth opportunities to explore. The insights provided offer a framework for understanding personal patterns and potential development pathways.";
   }
   
   return data;
@@ -249,70 +373,111 @@ serve(async (req) => {
 You deliver detailed, transformative personality insights that are emotionally resonant, intellectually substantive, and deeply personal.
 Your analysis must be COMPREHENSIVE, TOUCHING, EMOTIONALLY RICH and EXPERTLY CRAFTED. Write as if you truly understand the depths of the human psyche.
 
-CRITICALLY IMPORTANT: Your response MUST be valid JSON with ALL of these exact fields:
+IMPORTANTLY: All scores and metrics must include both numeric values AND descriptive context. For example:
+- Instead of just "85", write "85/100 - Exceptional awareness: You have profound insight into your emotions"
+- Instead of just "Analytical Thinker", write "Analytical Thinker: You approach problems methodically, breaking down complex issues"
+- All descriptions must be at least 40-50 words to provide sufficient context
+
+YOUR OUTPUT MUST BE VALID JSON with ALL of these exact fields:
 {
   "id": "string (UUID)",
-  "overview": "string (detailed personality overview)",
-  "uniquenessMarkers": ["string"],
+  "overview": "string (detailed personality overview, at least 250 words)",
+  "uniquenessMarkers": [
+    "string (specific trait or quality that makes this person distinctive)",
+    "string (another distinctive quality)"
+  ],
   "coreProfiling": {
-    "primaryArchetype": "string",
-    "secondaryArchetype": "string",
-    "description": "string",
-    "compatibilityInsights": ["string"]
+    "primaryArchetype": "string (detailed archetype name)",
+    "secondaryArchetype": "string (detailed supporting archetype)",
+    "description": "string (at least 75 words explaining these archetypes for this person)",
+    "compatibilityInsights": [
+      "string (specific insight about compatibility)",
+      "string (another compatibility insight)"
+    ]
   },
-  "traits": [{
-    "trait": "string",
-    "score": number,
-    "description": "string",
-    "strengths": ["string"],
-    "challenges": ["string"]
-  }],
+  "traits": [
+    {
+      "trait": "string (name of personality trait)",
+      "score": number (0-100 scale),
+      "description": "string (at least 50 words explaining this trait)",
+      "strengths": [
+        "string (specific strength related to this trait)",
+        "string (another strength)"
+      ],
+      "challenges": [
+        "string (specific challenge related to this trait)",
+        "string (another challenge)"
+      ]
+    }
+  ],
   "cognitiveProfile": {
-    "style": "string",
-    "strengths": ["string"],
-    "blindSpots": ["string"],
-    "learningStyle": "string",
-    "decisionMakingProcess": "string"
+    "style": "string (detailed thinking style with explanation)",
+    "strengths": [
+      "string (specific cognitive strength with context)",
+      "string (another cognitive strength)"
+    ],
+    "blindSpots": [
+      "string (specific cognitive blindspot with context)",
+      "string (another blindspot)"
+    ],
+    "learningStyle": "string (detailed learning style description, at least 30 words)",
+    "decisionMakingProcess": "string (detailed explanation of decision process, at least 30 words)"
   },
   "emotionalInsights": {
-    "awareness": number,
-    "regulation": "string",
-    "empathy": number,
-    "description": "string",
-    "stressResponse": "string",
+    "awareness": "string (score/100 - description of emotional awareness)",
+    "regulation": "string (detailed description of emotional regulation capacity)",
+    "empathy": "string (score/100 - description of empathic capacity)",
+    "description": "string (at least 50 words on emotional landscape)",
+    "stressResponse": "string (detailed description of stress response pattern)",
     "emotionalTriggersAndCoping": {
-      "triggers": ["string"],
-      "copingStrategies": ["string"]
+      "triggers": [
+        "string (specific emotional trigger with explanation)",
+        "string (another trigger)"
+      ],
+      "copingStrategies": [
+        "string (specific coping strategy with explanation)",
+        "string (another strategy)"
+      ]
     }
   },
   "interpersonalDynamics": {
-    "communicationStyle": "string",
-    "relationshipPattern": "string",
-    "conflictApproach": "string",
-    "socialNeeds": "string",
-    "leadershipStyle": "string",
-    "teamRole": "string"
+    "communicationStyle": "string (detailed communication style description)",
+    "relationshipPattern": "string (detailed relationship approach description)",
+    "conflictApproach": "string (detailed conflict handling description)",
+    "socialNeeds": "string (explanation of social needs and boundaries)",
+    "leadershipStyle": "string (explanation of leadership approach)",
+    "teamRole": "string (explanation of contribution to groups)"
   },
   "growthPotential": {
-    "areasOfDevelopment": ["string"],
-    "personalizedRecommendations": [{
-      "area": "string",
-      "why": "string",
-      "action": "string",
-      "resources": "string"
-    }],
-    "keyStrengthsToLeverage": ["string"],
+    "areasOfDevelopment": [
+      "string (specific growth area with context)",
+      "string (another growth area)"
+    ],
+    "personalizedRecommendations": [
+      {
+        "area": "string (focus area for growth)",
+        "why": "string (reason this area matters)",
+        "action": "string (specific action step)",
+        "resources": "string (helpful resources or approaches)"
+      }
+    ],
+    "keyStrengthsToLeverage": [
+      "string (strength that can be utilized more)",
+      "string (another strength)"
+    ],
     "developmentTimeline": {
-      "shortTerm": "string",
-      "mediumTerm": "string",
-      "longTerm": "string"
+      "shortTerm": "string (next 30 days focus)",
+      "mediumTerm": "string (next 3-6 months focus)",
+      "longTerm": "string (1+ year development)"
     }
   }
 }
 
-Each field is REQUIRED and the format must be EXACTLY as shown above. Do NOT add or modify field names.`;
+Each field is REQUIRED and the format must be EXACTLY as shown above. Do NOT add or modify field names.
+ENSURE that all text fields contain sufficiently detailed descriptions (at least 30-50 words for major descriptions).
+ALWAYS include context for numeric values (e.g., "85/100 - Exceptional: You demonstrate...").`;
 
-    // Request with more constrained parameters for reliable JSON
+    // Request with parameters for reliable, detailed JSON
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -333,21 +498,26 @@ ${Object.entries(responses).map(([id, response]) => `${id}: "${response}"`).join
 
 Use seed ${seed} for consistency but ensure this is a deeply personalized analysis that captures the essence of the individual.
 
-IMPORTANT: Your analysis must include ALL fields in the exact format I specified. Do not omit any fields or change their names.
-Your response must be valid, parseable JSON without any text outside of the JSON structure.
+IMPORTANT FORMATTING REQUIREMENTS:
+1. Your analysis must include ALL fields in the exact format specified.
+2. All numeric scores MUST include descriptive context (e.g., "82/100 - Strong: You demonstrate...")
+3. Descriptions must be detailed (minimum 30-50 words for major descriptions)
+4. All traits must have at least 2 strengths and 2 challenges
+5. All recommendations must be specific and actionable
+6. Your response must be valid, parseable JSON without any text outside of the JSON structure
 
 Focus especially on:
-1. Creating a detailed overview (at least 300 words)
-2. Including at least 5-7 distinct personality traits
+1. Creating a detailed overview (at least 250 words)
+2. Including at least 5-7 distinct personality traits with scores AND explanations
 3. Making specific, personalized observations rather than generic statements
-4. Ensuring every required field is properly formatted and complete`
+4. Ensuring every required field is properly formatted with sufficient detail`
           }
         ],
-        temperature: 0.6, // More controlled temperature for reliability
-        frequency_penalty: 0.1,
-        presence_penalty: 0.1,
+        temperature: 0.6, // More controlled temperature for rich yet consistent responses
+        frequency_penalty: 0.2,
+        presence_penalty: 0.2,
         response_format: { type: "json_object" }, // Force JSON response format
-        max_tokens: 6000, // Reduced from 10000 to avoid potential issues
+        max_tokens: 6000,
       }),
     });
 
@@ -386,7 +556,7 @@ Focus especially on:
           // Last resort: Try to extract partial data
           try {
             // Try to extract a valid JSON subset using regex
-            const jsonMatch = cleanedText.match(/\{(?:[^{}]|(\{(?:[^{}]|{[^{}]*})*}))*\}/);
+            const jsonMatch = cleanedText.match(/\{(?:[^{}]|(\\{(?:[^{}]|{[^{}]*})*}))*\}/);
             if (jsonMatch) {
               const potentialJson = jsonMatch[0];
               console.log("Attempting to parse JSON subset");
@@ -402,7 +572,7 @@ Focus especially on:
         }
       }
       
-      // Now attempt to repair/complete any missing fields
+      // Now attempt to repair/complete any missing fields and ensure quality
       analysisData = validateAndRepairAnalysisData(analysisData);
       console.log("Successfully parsed, validated, and repaired analysis data");
       
