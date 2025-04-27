@@ -1,12 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useConciseInsightResults } from "@/features/concise-insight/hooks/useConciseInsightResults";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, RefreshCw } from "lucide-react";
+import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import { TabContent } from "@/features/concise-insight/components/report-tabs/TabContent";
 import { toast } from "sonner";
 
@@ -22,37 +22,79 @@ const ResultsLoading = () => (
   </div>
 );
 
-// Error component
-const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
-  <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
-    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-      <span className="text-destructive text-2xl">!</span>
+// Error component with more detailed error display and retry capabilities
+const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
+  // Parse error message to provide more user-friendly feedback
+  const isNetworkError = error.includes("Failed to fetch") || error.includes("Network") || error.includes("Edge Function");
+  const isTimeoutError = error.includes("timeout") || error.includes("Timed out");
+  
+  let errorTitle = "Analysis Error";
+  let errorMessage = error || "There was an error generating your analysis. Please try again.";
+  let actionText = "Try Again";
+  
+  if (isNetworkError) {
+    errorTitle = "Connection Error";
+    errorMessage = "We couldn't connect to our analysis service. This might be due to network issues or our service may be temporarily unavailable.";
+    actionText = "Retry Connection";
+  } else if (isTimeoutError) {
+    errorTitle = "Analysis Timeout";
+    errorMessage = "The analysis is taking longer than expected. Our AI system might be busy.";
+    actionText = "Try Again";
+  }
+  
+  return (
+    <div className="container max-w-4xl py-12 px-4 flex flex-col items-center justify-center min-h-[400px]">
+      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+        <AlertTriangle className="text-destructive h-6 w-6" />
+      </div>
+      <h2 className="text-2xl font-bold">{errorTitle}</h2>
+      <p className="text-muted-foreground max-w-md text-center mt-2">
+        {errorMessage}
+      </p>
+      <div className="mt-6 space-y-2">
+        <Button onClick={onRetry} className="px-6">
+          {actionText}
+        </Button>
+        {isNetworkError && (
+          <p className="text-xs text-center text-muted-foreground pt-4">
+            Error details: {error?.substring(0, 100)}...
+          </p>
+        )}
+      </div>
     </div>
-    <h2 className="text-2xl font-bold">Analysis Error</h2>
-    <p className="text-muted-foreground max-w-md text-center mt-2">
-      {error || "There was an error generating your analysis. Please try again."}
-    </p>
-    <Button className="mt-6" onClick={onRetry}>
-      Try Again
-    </Button>
-  </div>
-);
+  );
+};
 
 // Main component
 const ConciseInsightResults: React.FC = () => {
   const { analysis, loading, error, refreshAnalysis } = useConciseInsightResults();
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   
   const handleRefresh = () => {
     toast.loading("Refreshing your analysis...");
     refreshAnalysis();
   };
   
-  if (loading) {
+  // Enhanced retry handler with exponential backoff
+  const handleRetry = () => {
+    setIsRetrying(true);
+    toast.loading(`Retrying analysis... Attempt ${retryCount + 1}`);
+    
+    // Add a small delay before retry to avoid rapid API hammering
+    setTimeout(() => {
+      refreshAnalysis();
+      setRetryCount(prevCount => prevCount + 1);
+      setIsRetrying(false);
+    }, Math.min(1000 * Math.pow(1.5, retryCount), 8000)); // Exponential backoff with 8s max
+  };
+  
+  if (loading || isRetrying) {
     return <ResultsLoading />;
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} onRetry={refreshAnalysis} />;
+    return <ResultsError error={error || "No analysis data found"} onRetry={handleRetry} />;
   }
   
   return (
