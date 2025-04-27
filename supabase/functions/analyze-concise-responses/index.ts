@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.8.0';
@@ -480,42 +479,42 @@ YOUR OUTPUT MUST BE VALID JSON with these fields:
     }
   ],
   "cognitiveProfile": {
-    "style": "string (detailed thinking style with explanation)",
+    "style": "string (detailed thinking style explanation, at least 150 words)",
     "strengths": [
-      "string (specific cognitive strength with context)",
-      "string (another cognitive strength)"
+      "string (specific cognitive strength with detailed context and examples)",
+      "string (another cognitive strength with real-world applications)"
     ],
     "blindSpots": [
-      "string (specific cognitive blindspot with context)",
-      "string (another blindspot)"
+      "string (specific cognitive blindspot with detailed examples)",
+      "string (another blindspot with mitigation strategies)"
     ],
-    "learningStyle": "string (detailed learning style description, at least 30 words)",
-    "decisionMakingProcess": "string (detailed explanation of decision process, at least 30 words)"
+    "learningStyle": "string (detailed learning style description, at least 100 words)",
+    "decisionMakingProcess": "string (comprehensive explanation of decision process, at least 150 words)"
   },
   "emotionalInsights": {
-    "awareness": "string (score/100 - description of emotional awareness)",
-    "regulation": "string (detailed description of emotional regulation capacity)",
-    "empathy": "string (score/100 - description of empathic capacity)",
-    "description": "string (at least 50 words on emotional landscape)",
-    "stressResponse": "string (detailed description of stress response pattern)",
+    "awareness": "string (score/100 - detailed description with examples)",
+    "regulation": "string (detailed description of emotional regulation capacity with specific scenarios)",
+    "empathy": "string (score/100 - detailed description with examples)",
+    "description": "string (at least 200 words on emotional landscape)",
+    "stressResponse": "string (detailed description of stress response pattern with specific examples)",
     "emotionalTriggersAndCoping": {
       "triggers": [
-        "string (specific emotional trigger with explanation)",
-        "string (another trigger)"
+        "string (specific emotional trigger with detailed context)",
+        "string (another trigger with explanation of impact)"
       ],
       "copingStrategies": [
-        "string (specific coping strategy with explanation)",
-        "string (another strategy)"
+        "string (specific coping strategy with detailed implementation steps)",
+        "string (another strategy with examples of effectiveness)"
       ]
     }
   },
   "interpersonalDynamics": {
-    "communicationStyle": "string (detailed communication style description)",
-    "relationshipPattern": "string (detailed relationship approach description)",
-    "conflictApproach": "string (detailed conflict handling description)",
-    "socialNeeds": "string (explanation of social needs and boundaries)",
-    "leadershipStyle": "string (explanation of leadership approach)",
-    "teamRole": "string (explanation of contribution to groups)"
+    "communicationStyle": "string (detailed communication style description, at least 150 words)",
+    "relationshipPattern": "string (detailed relationship approach description, at least 150 words)",
+    "conflictApproach": "string (detailed conflict handling description with examples)",
+    "socialNeeds": "string (comprehensive explanation of social needs and boundaries, at least 100 words)",
+    "leadershipStyle": "string (detailed explanation of leadership approach with examples)",
+    "teamRole": "string (comprehensive explanation of contribution to groups with scenarios)"
   },
   "growthPotential": {
     "areasOfDevelopment": [
