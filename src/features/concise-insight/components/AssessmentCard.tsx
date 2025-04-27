@@ -45,6 +45,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isDeleting) {
+      console.log("Selected analysis with ID:", analysis.id);
       onSelect(analysis.id);
     }
   };

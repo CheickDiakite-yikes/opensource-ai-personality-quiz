@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,22 +35,25 @@ export const useConciseInsightResults = (analysisId?: string) => {
       console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
       let result;
 
-      // Try to fetch by direct UUID first
+      // Check if it's a UUID (direct analysis ID)
       if (isUUID(analysisId)) {
         try {
           result = await fetchAnalysisByDirectId(analysisId);
+          if (!signal?.aborted) {
+            setAnalysis(result);
+          }
+          return;
         } catch (err) {
           if (signal?.aborted) return;
-          console.log("[useConciseInsightResults] Not found by direct ID, trying assessment ID");
+          console.error("[useConciseInsightResults] Error fetching by direct ID:", err);
+          throw err;
         }
       }
 
-      // If not found by UUID, try assessment ID
-      if (!result && !signal?.aborted) {
-        result = await fetchAnalysisByAssessmentId(analysisId, user.id);
-      }
-
-      // If still not found, generate new analysis
+      // If not a UUID, treat as assessment ID
+      result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+      
+      // If not found by assessment ID, generate new analysis
       if (!result && !signal?.aborted) {
         console.log(`[useConciseInsightResults] Generating new analysis for assessment: ${analysisId}`);
         result = await generateNewAnalysis(analysisId, user.id);
@@ -60,8 +62,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
         try {
           await saveAnalysisToDatabase(result, analysisId, user.id);
         } catch (err: any) {
-          // If we get a unique constraint violation, it means another request already created the analysis
-          // In this case, try to fetch it one last time
           if (err.message?.includes('unique_user_assessment_analysis')) {
             result = await fetchAnalysisByAssessmentId(analysisId, user.id);
           } else {
@@ -85,7 +85,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
       }
     }
   }, [analysisId, user, setAnalysis, setError, setLoading]);
-  
+
   // Add the refreshAnalysis function to manually trigger a re-fetch
   const refreshAnalysis = useCallback(() => {
     console.log("[useConciseInsightResults] Manually refreshing analysis");

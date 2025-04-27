@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -8,6 +9,8 @@ export const isUUID = (str: string): boolean => {
 };
 
 export const fetchAnalysisByDirectId = async (analysisId: string) => {
+  console.log("[fetchAnalysisByDirectId] Fetching analysis:", analysisId);
+  
   const { data: specificAnalysis, error: specificError } = await supabase
     .from('concise_analyses')
     .select('*')
@@ -27,6 +30,8 @@ export const fetchAnalysisByDirectId = async (analysisId: string) => {
 };
 
 export const fetchAnalysisByAssessmentId = async (assessmentId: string, userId: string) => {
+  console.log("[fetchAnalysisByAssessmentId] Fetching analysis for assessment:", assessmentId);
+  
   const { data: matchingAnalyses, error: fetchError } = await supabase
     .from('concise_analyses')
     .select('*')
