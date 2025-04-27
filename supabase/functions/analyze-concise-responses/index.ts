@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.8.0';
@@ -571,7 +572,7 @@ REMEMBER:
 4. Document score distribution in the description fields`
           }
         ],
-        temperature: 0.8, // Increased for more variation
+        temperature: 0.65, // Lowered for better consistency
         frequency_penalty: 0.2,
         presence_penalty: 0.3,
         response_format: { type: "json_object" },
