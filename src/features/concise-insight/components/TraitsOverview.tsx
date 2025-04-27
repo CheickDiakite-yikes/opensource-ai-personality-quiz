@@ -21,6 +21,9 @@ export const TraitsOverview = ({ traits }: TraitsOverviewProps) => {
     );
   }
 
+  // Log traits data for debugging
+  console.log('TraitsOverview rendering with traits:', traits);
+
   return (
     <div className="space-y-6">
       {traits.map((trait, index) => (
@@ -34,7 +37,10 @@ export const TraitsOverview = ({ traits }: TraitsOverviewProps) => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Progress value={trait.score} className="h-2" />
+              <Progress 
+                value={typeof trait.score === 'number' ? trait.score : parseInt(String(trait.score))} 
+                className="h-2" 
+              />
               <div className="flex justify-between mt-1">
                 <span className="text-xs text-muted-foreground">0</span>
                 <span className="text-xs text-muted-foreground">100</span>
@@ -45,7 +51,7 @@ export const TraitsOverview = ({ traits }: TraitsOverviewProps) => {
               <div>
                 <h4 className="text-sm font-medium mb-2">Strengths</h4>
                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                  {trait.strengths.map((strength, idx) => (
+                  {trait.strengths && trait.strengths.map((strength, idx) => (
                     <li key={idx}>{strength}</li>
                   ))}
                 </ul>
@@ -54,7 +60,7 @@ export const TraitsOverview = ({ traits }: TraitsOverviewProps) => {
               <div>
                 <h4 className="text-sm font-medium mb-2">Areas for Growth</h4>
                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                  {trait.challenges.map((challenge, idx) => (
+                  {trait.challenges && trait.challenges.map((challenge, idx) => (
                     <li key={idx}>{challenge}</li>
                   ))}
                 </ul>

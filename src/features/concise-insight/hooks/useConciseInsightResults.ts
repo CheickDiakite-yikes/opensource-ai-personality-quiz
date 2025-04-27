@@ -11,6 +11,46 @@ import {
 } from "../utils/analysisHelpers";
 import { useAnalysisState } from "./useAnalysisState";
 import { toast } from "sonner";
+import { ConciseAnalysisResult } from "../types";
+
+// Helper function to normalize and validate traits data
+const normalizeTraitsData = (analysis: ConciseAnalysisResult | null): ConciseAnalysisResult | null => {
+  if (!analysis) return null;
+  
+  // Deep clone to avoid mutating the original
+  const normalizedAnalysis = JSON.parse(JSON.stringify(analysis));
+  
+  // Ensure traits array exists and has valid format
+  if (!normalizedAnalysis.traits || !Array.isArray(normalizedAnalysis.traits)) {
+    console.warn("Traits data is missing or invalid", normalizedAnalysis);
+    normalizedAnalysis.traits = [];
+  } else {
+    // Normalize each trait object
+    normalizedAnalysis.traits = normalizedAnalysis.traits.map(trait => {
+      // Ensure score is a number
+      if (typeof trait.score === 'string') {
+        const numericMatch = trait.score.match(/\d+/);
+        trait.score = numericMatch ? parseInt(numericMatch[0]) : 50;
+      }
+      
+      // Ensure strengths and challenges are arrays
+      if (!trait.strengths || !Array.isArray(trait.strengths)) {
+        trait.strengths = [];
+      }
+      
+      if (!trait.challenges || !Array.isArray(trait.challenges)) {
+        trait.challenges = [];
+      }
+      
+      return trait;
+    });
+  }
+  
+  // Log the normalized data for debugging
+  console.log("Normalized analysis data:", normalizedAnalysis);
+  
+  return normalizedAnalysis;
+};
 
 export const useConciseInsightResults = (analysisId?: string) => {
   const navigate = useNavigate();
@@ -26,6 +66,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
   
   const [retryAttempt, setRetryAttempt] = useState(0);
   const MAX_RETRIES = 3;
+  const [isProcessingComplete, setIsProcessingComplete] = useState(false);
   
   const fetchAnalysis = useCallback(async (signal?: AbortSignal) => {
     if (!analysisId || !user) {
@@ -36,6 +77,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
     try {
       setLoading(true);
       setError(null);
+      setIsProcessingComplete(false);
       
       console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
       let result;
@@ -43,9 +85,14 @@ export const useConciseInsightResults = (analysisId?: string) => {
       // Check if it's a UUID (direct analysis ID)
       if (isUUID(analysisId)) {
         try {
+          console.log(`[useConciseInsightResults] Fetching by direct UUID: ${analysisId}`);
           result = await fetchAnalysisByDirectId(analysisId);
+          
           if (!signal?.aborted) {
-            setAnalysis(result);
+            // Normalize and validate the data before setting
+            const normalizedResult = normalizeTraitsData(result);
+            setAnalysis(normalizedResult);
+            setIsProcessingComplete(true);
           }
           return;
         } catch (err) {
@@ -56,16 +103,27 @@ export const useConciseInsightResults = (analysisId?: string) => {
       }
 
       // If not a UUID, try to find existing analysis first
-      result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+      try {
+        console.log(`[useConciseInsightResults] Fetching by assessment ID: ${analysisId}`);
+        result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+      } catch (err) {
+        console.error("[useConciseInsightResults] Error fetching by assessment ID:", err);
+        // Continue execution - we'll try generating new if needed
+      }
       
       // If not found by assessment ID, generate new analysis
       if (!result && !signal?.aborted) {
         console.log(`[useConciseInsightResults] No existing analysis found, generating new for assessment: ${analysisId}`);
         
         try {
+          // Show toast at start of generation
+          const toastId = toast.loading("Generating your personality analysis...", {
+            duration: 120000, // 2 minute timeout just in case
+          });
+          
           // Add a timeout promise to handle edge function timeouts
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Analysis generation timed out")), 60000); // 60-second timeout
+            setTimeout(() => reject(new Error("Analysis generation timed out")), 120000); // 2-minute timeout
           });
           
           // Race between the actual operation and the timeout
@@ -74,11 +132,15 @@ export const useConciseInsightResults = (analysisId?: string) => {
             timeoutPromise
           ]);
           
+          // Dismiss the toast
+          toast.dismiss(toastId);
+          
           // Save the newly generated analysis
           try {
             await saveAnalysisToDatabase(result, analysisId, user.id);
             toast.success("Analysis generated successfully!");
           } catch (err: any) {
+            console.error("[useConciseInsightResults] Error saving to database:", err);
             // If we get a duplicate error, fetch the existing analysis
             if (err.code === '23505' || err.message?.includes('unique_user_assessment_analysis')) {
               result = await fetchAnalysisByAssessmentId(analysisId, user.id);
@@ -120,9 +182,12 @@ export const useConciseInsightResults = (analysisId?: string) => {
       }
 
       if (!signal?.aborted) {
-        setAnalysis(result);
+        // Normalize and validate the data before setting
+        const normalizedResult = normalizeTraitsData(result);
+        setAnalysis(normalizedResult);
         // Reset retry count on success
         setRetryAttempt(0);
+        setIsProcessingComplete(true);
       }
       
     } catch (err: any) {
@@ -138,11 +203,16 @@ export const useConciseInsightResults = (analysisId?: string) => {
           errorMessage = "There was an error with the edge function. Please try again in a few moments.";
         } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
           errorMessage = "Network error. Please check your connection and try again.";
+        } else if (err.message?.includes('parse') || err.message?.includes('JSON')) {
+          errorMessage = "There was an error processing the analysis data. Please try again.";
+          // Log more details for JSON parsing errors
+          console.error("[useConciseInsightResults] JSON parsing error details:", err);
         } else {
           errorMessage = err.message || "An error occurred while fetching analysis";
         }
         
         setError(errorMessage);
+        setIsProcessingComplete(true);
         
         // Show toast notification for the error
         toast.error("Analysis Error", {
@@ -183,6 +253,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
     error, 
     refreshAnalysis,
     retryAttempt,
-    maxRetries: MAX_RETRIES
+    maxRetries: MAX_RETRIES,
+    isProcessingComplete
   };
 };

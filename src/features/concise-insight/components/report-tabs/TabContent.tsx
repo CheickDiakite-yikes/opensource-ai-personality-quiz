@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,7 @@ import { Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, Info } from 'l
 import { ConciseAnalysisResult } from '../../types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
+import { TraitsOverview } from '../TraitsOverview';
 
 interface TabContentProps {
   tabValue: string;
@@ -127,6 +129,8 @@ const RenderList = ({
 };
 
 export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
+  console.log(`TabContent rendering for tab: ${tabValue}`, analysis);
+  
   // Helper function to render the career insights section based on type
   const renderCareerInsights = () => {
     if (Array.isArray(analysis.careerInsights)) {
@@ -242,6 +246,29 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
   };
   
   switch (tabValue) {
+    case 'traits':
+      // Add the missing traits tab case
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-primary" />
+              Personality Traits
+            </CardTitle>
+            <CardDescription>Your core personality traits and characteristics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {analysis.traits && analysis.traits.length > 0 ? (
+              <TraitsOverview traits={analysis.traits} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No trait data available for this analysis
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      );
+      
     case 'cognitive':
       return (
         <Card>

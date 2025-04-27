@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +8,40 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { TabContent } from './report-tabs/TabContent';
 import { ConciseAnalysisResult } from '../types';
+import { toast } from 'sonner';
 
 interface ReportDetailsProps {
   analysis: ConciseAnalysisResult;
 }
 
 export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
-  console.log('Analysis data received:', analysis);
+  useEffect(() => {
+    console.log('Analysis data received in ReportDetails:', analysis);
+    
+    // Check for potential issues with the analysis data
+    if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length === 0) {
+      console.warn('No trait data available in analysis');
+    }
+    
+    if (!analysis.coreProfiling) {
+      console.warn('No core profiling data available in analysis');
+    }
+  }, [analysis]);
+  
+  // Handle missing core data
+  if (!analysis.coreProfiling) {
+    return (
+      <div className="flex flex-col gap-8">
+        <Card className="border-2 border-destructive/10 p-6">
+          <CardTitle className="text-2xl mb-4">Analysis Data Issue</CardTitle>
+          <CardDescription>
+            This analysis appears to be missing core profiling data. This might be due to an error during analysis generation.
+            Please try refreshing the page or generating a new analysis.
+          </CardDescription>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <div className="flex flex-col gap-8">
@@ -51,7 +79,10 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
                       <span className="text-sm font-medium">{trait.trait}</span>
                       <span className="text-xs text-muted-foreground">{trait.score}%</span>
                     </div>
-                    <Progress value={trait.score} className="h-1.5" />
+                    <Progress 
+                      value={typeof trait.score === 'number' ? trait.score : parseInt(String(trait.score))} 
+                      className="h-1.5" 
+                    />
                   </div>
                 ))}
               </div>
@@ -64,16 +95,26 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
       
       <Tabs defaultValue="traits">
         <TabsList className="grid grid-cols-5 mb-4">
-          {['traits', 'cognitive', 'emotional', 'social', 'growth'].map((tab) => (
-            <TabsTrigger key={tab} value={tab} className="flex items-center gap-1">
-              {tab === 'traits' && <Star className="h-4 w-4" />}
-              {tab === 'cognitive' && <Brain className="h-4 w-4" />}
-              {tab === 'emotional' && <HeartHandshake className="h-4 w-4" />}
-              {tab === 'social' && <Users className="h-4 w-4" />}
-              {tab === 'growth' && <Lightbulb className="h-4 w-4" />}
-              <span className="hidden sm:inline">{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="traits" className="flex items-center gap-1">
+            <Star className="h-4 w-4" />
+            <span className="hidden sm:inline">Traits</span>
+          </TabsTrigger>
+          <TabsTrigger value="cognitive" className="flex items-center gap-1">
+            <Brain className="h-4 w-4" />
+            <span className="hidden sm:inline">Cognitive</span>
+          </TabsTrigger>
+          <TabsTrigger value="emotional" className="flex items-center gap-1">
+            <HeartHandshake className="h-4 w-4" />
+            <span className="hidden sm:inline">Emotional</span>
+          </TabsTrigger>
+          <TabsTrigger value="social" className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Social</span>
+          </TabsTrigger>
+          <TabsTrigger value="growth" className="flex items-center gap-1">
+            <Lightbulb className="h-4 w-4" />
+            <span className="hidden sm:inline">Growth</span>
+          </TabsTrigger>
         </TabsList>
         
         {['traits', 'cognitive', 'emotional', 'social', 'growth'].map((tab) => (
