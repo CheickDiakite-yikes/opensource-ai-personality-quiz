@@ -11,6 +11,101 @@ interface TabContentProps {
 }
 
 export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
+  // Helper function to render the career insights section based on type
+  const renderCareerInsights = () => {
+    if (Array.isArray(analysis.careerInsights)) {
+      return (
+        <div>
+          <h3 className="font-medium mb-2">Career Insights</h3>
+          <div className="flex flex-wrap gap-2">
+            {analysis.careerInsights.map((career, i) => (
+              <Badge key={i} variant="secondary">{career}</Badge>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (typeof analysis.careerInsights === 'object') {
+      return (
+        <div className="space-y-4">
+          {analysis.careerInsights.environmentFit && (
+            <div>
+              <h3 className="font-medium mb-2">Ideal Work Environment</h3>
+              <p className="text-muted-foreground">{analysis.careerInsights.environmentFit}</p>
+            </div>
+          )}
+          
+          {analysis.careerInsights.challengeAreas && (
+            <div>
+              <h3 className="font-medium mb-2">Potential Challenges</h3>
+              <p className="text-muted-foreground">{analysis.careerInsights.challengeAreas}</p>
+            </div>
+          )}
+          
+          <div>
+            <h3 className="font-medium mb-2">Aligned Roles</h3>
+            <div className="flex flex-wrap gap-2">
+              {analysis.careerInsights.roleAlignments.map((role, i) => (
+                <Badge key={i} variant="secondary">{role}</Badge>
+              ))}
+            </div>
+          </div>
+          
+          {analysis.careerInsights.workStyles && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div>
+                <h4 className="text-sm font-medium">Collaboration Style</h4>
+                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.collaboration}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Autonomy Needs</h4>
+                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.autonomy}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Structure Preference</h4>
+                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.structure}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+  
+  // Helper function to render personalized recommendations
+  const renderRecommendations = () => {
+    if (Array.isArray(analysis.growthPotential.personalizedRecommendations) && 
+        typeof analysis.growthPotential.personalizedRecommendations[0] === 'string') {
+      return (
+        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+          {(analysis.growthPotential.personalizedRecommendations as string[]).map((rec, i) => (
+            <li key={i}>{rec}</li>
+          ))}
+        </ul>
+      );
+    } else {
+      return (
+        <div className="space-y-3">
+          {(analysis.growthPotential.personalizedRecommendations as {
+            area: string;
+            why: string;
+            action: string;
+            resources: string;
+          }[]).map((rec, i) => (
+            <div key={i} className="p-3 border rounded-lg">
+              <h4 className="font-medium">{rec.area}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{rec.why}</p>
+              <div className="mt-2 flex flex-col gap-1">
+                <div className="text-sm"><span className="font-medium">Action:</span> {rec.action}</div>
+                <div className="text-sm"><span className="font-medium">Resource:</span> {rec.resources}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  };
+  
   switch (tabValue) {
     case 'cognitive':
       return (
@@ -43,6 +138,20 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
                 </ul>
               </div>
             </div>
+            
+            {analysis.cognitiveProfile.learningStyle && (
+              <div>
+                <h3 className="font-medium mb-2">Learning Style</h3>
+                <p className="text-muted-foreground">{analysis.cognitiveProfile.learningStyle}</p>
+              </div>
+            )}
+            
+            {analysis.cognitiveProfile.decisionMakingProcess && (
+              <div>
+                <h3 className="font-medium mb-2">Decision Making Process</h3>
+                <p className="text-muted-foreground">{analysis.cognitiveProfile.decisionMakingProcess}</p>
+              </div>
+            )}
             
             <div>
               <p className="text-muted-foreground">{analysis.cognitiveProfile.description}</p>
@@ -85,6 +194,34 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
               </div>
             </div>
             
+            {analysis.emotionalInsights.stressResponse && (
+              <div>
+                <h3 className="font-medium mb-2">Stress Response</h3>
+                <p className="text-muted-foreground">{analysis.emotionalInsights.stressResponse}</p>
+              </div>
+            )}
+            
+            {analysis.emotionalInsights.emotionalTriggersAndCoping && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium mb-2">Potential Triggers</h3>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    {analysis.emotionalInsights.emotionalTriggersAndCoping.triggers.map((trigger, i) => (
+                      <li key={i}>{trigger}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-2">Effective Coping Strategies</h3>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    {analysis.emotionalInsights.emotionalTriggersAndCoping.copingStrategies.map((strategy, i) => (
+                      <li key={i}>{strategy}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            
             <div>
               <p className="text-muted-foreground">{analysis.emotionalInsights.description}</p>
             </div>
@@ -115,41 +252,89 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <Card className="border-muted bg-card/50">
-                <CardHeader className="py-3">
-                  <CardTitle className="text-base">Relationship Strengths</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.traits
-                      .filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication"))
-                      .flatMap(t => t.strengths)
-                      .slice(0, 3)
-                      .map((strength, i) => (
-                        <li key={i}>{strength}</li>
-                      ))}
-                  </ul>
-                </CardContent>
-              </Card>
+            {analysis.interpersonalDynamics.socialNeeds && (
+              <div>
+                <h3 className="font-medium mb-2">Social Needs</h3>
+                <p className="text-muted-foreground">{analysis.interpersonalDynamics.socialNeeds}</p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {analysis.interpersonalDynamics.leadershipStyle && (
+                <div>
+                  <h3 className="font-medium mb-2">Leadership Style</h3>
+                  <p className="text-muted-foreground">{analysis.interpersonalDynamics.leadershipStyle}</p>
+                </div>
+              )}
               
-              <Card className="border-muted bg-card/50">
-                <CardHeader className="py-3">
-                  <CardTitle className="text-base">Relationship Challenges</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.traits
-                      .filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication"))
-                      .flatMap(t => t.challenges)
-                      .slice(0, 3)
-                      .map((challenge, i) => (
+              {analysis.interpersonalDynamics.teamRole && (
+                <div>
+                  <h3 className="font-medium mb-2">Team Role</h3>
+                  <p className="text-muted-foreground">{analysis.interpersonalDynamics.teamRole}</p>
+                </div>
+              )}
+            </div>
+            
+            {analysis.coreProfiling.compatibilityInsights && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <Card className="border-muted bg-card/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base">Compatibility Insights</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {analysis.coreProfiling.compatibilityInsights.map((insight, i) => (
+                        <li key={i}>{insight}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-muted bg-card/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base">Relationship Challenges</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
                         <li key={i}>{challenge}</li>
                       ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {!analysis.coreProfiling.compatibilityInsights && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <Card className="border-muted bg-card/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base">Relationship Strengths</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.strengths).slice(0, 3).map((strength, i) => (
+                        <li key={i}>{strength}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-muted bg-card/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base">Relationship Challenges</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {analysis.traits.filter(t => t.trait.includes("Social") || t.trait.includes("Empathy") || t.trait.includes("Communication")).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
+                        <li key={i}>{challenge}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
           </CardContent>
         </Card>
       );
@@ -182,20 +367,67 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
             
             <div>
               <h3 className="font-medium mb-2">Personalized Recommendations</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                {analysis.growthPotential.personalizedRecommendations.map((rec, i) => (
-                  <li key={i}>{rec}</li>
-                ))}
-              </ul>
+              {renderRecommendations()}
             </div>
             
-            <div>
-              <h3 className="font-medium mb-2">Career Insights</h3>
-              <div className="flex flex-wrap gap-2">
-                {analysis.careerInsights.map((career, i) => (
-                  <Badge key={i} variant="secondary">{career}</Badge>
-                ))}
+            {analysis.growthPotential.developmentTimeline && (
+              <div className="pt-2">
+                <h3 className="font-medium mb-2">Development Timeline</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-muted bg-card/50">
+                    <CardHeader className="py-2">
+                      <CardTitle className="text-sm">Short Term (30 days)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.shortTerm}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-muted bg-card/50">
+                    <CardHeader className="py-2">
+                      <CardTitle className="text-sm">Medium Term (3-6 months)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.mediumTerm}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-muted bg-card/50">
+                    <CardHeader className="py-2">
+                      <CardTitle className="text-sm">Long Term</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.longTerm}</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
+            )}
+            
+            {analysis.valueSystem && (
+              <div className="pt-2">
+                <h3 className="font-medium mb-2">Value System</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Core Values</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {analysis.valueSystem.coreValues.map((value, i) => (
+                        <Badge key={i} variant="outline">{value}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Key Motivators</h4>
+                    <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
+                      {analysis.valueSystem.motivationSources.map((source, i) => (
+                        <li key={i}>{source}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div>
+              {renderCareerInsights()}
             </div>
           </CardContent>
         </Card>

@@ -26,6 +26,7 @@ export interface ConciseAnalysisResult {
     primaryArchetype: string;
     secondaryArchetype: string;
     description: string;
+    compatibilityInsights?: string[];
   };
   traits: {
     trait: string;
@@ -33,28 +34,64 @@ export interface ConciseAnalysisResult {
     description: string;
     strengths: string[];
     challenges: string[];
+    developmentStrategies?: string[];
   }[];
   cognitiveProfile: {
     style: string;
     strengths: string[];
     blindSpots: string[];
     description: string;
+    learningStyle?: string;
+    decisionMakingProcess?: string;
   };
   emotionalInsights: {
     awareness: string;
     regulation: string;
     empathy: number;
     description: string;
+    stressResponse?: string;
+    emotionalTriggersAndCoping?: {
+      triggers: string[];
+      copingStrategies: string[];
+    };
   };
   interpersonalDynamics: {
     communicationStyle: string;
     relationshipPattern: string;
     conflictApproach: string;
+    socialNeeds?: string;
+    leadershipStyle?: string;
+    teamRole?: string;
+  };
+  valueSystem?: {
+    coreValues: string[];
+    motivationSources: string[];
+    meaningMakers: string[];
+    culturalConsiderations: string;
   };
   growthPotential: {
     areasOfDevelopment: string[];
-    personalizedRecommendations: string[];
+    personalizedRecommendations: string[] | {
+      area: string;
+      why: string;
+      action: string;
+      resources: string;
+    }[];
     keyStrengthsToLeverage: string[];
+    developmentTimeline?: {
+      shortTerm: string;
+      mediumTerm: string;
+      longTerm: string;
+    };
   };
-  careerInsights: string[];
+  careerInsights: string[] | {
+    environmentFit?: string;
+    challengeAreas?: string;
+    roleAlignments: string[];
+    workStyles?: {
+      collaboration: string;
+      autonomy: string;
+      structure: string;
+    };
+  };
 }
