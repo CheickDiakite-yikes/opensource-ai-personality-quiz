@@ -1,11 +1,10 @@
-
 import React from 'react';
-import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { TabContent } from './report-tabs/TabContent';
 import { ConciseAnalysisResult } from '../types';
 
@@ -41,35 +40,33 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
               </h4>
             </div>
           </div>
+          
+          {analysis.traits && analysis.traits.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <h4 className="text-lg font-medium">Key Trait Summary</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {analysis.traits.slice(0, 4).map((trait, index) => (
+                  <div key={index} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{trait.trait}</span>
+                      <span className="text-xs text-muted-foreground">{trait.score}%</span>
+                    </div>
+                    <Progress value={trait.score} className="h-1.5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <p className="text-muted-foreground">{analysis.coreProfiling.description}</p>
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" /> 
-            Cognitive & Behavioral Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium mb-2">Cognitive Style</h3>
-              <p className="text-muted-foreground">{analysis.cognitiveProfile.style}</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">Learning Approach</h3>
-              <p className="text-muted-foreground">{analysis.cognitiveProfile.learningStyle}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Tabs defaultValue="cognitive">
-        <TabsList className="grid grid-cols-4 mb-4">
-          {['cognitive', 'emotional', 'social', 'growth'].map((tab) => (
+      <Tabs defaultValue="traits">
+        <TabsList className="grid grid-cols-5 mb-4">
+          {['traits', 'cognitive', 'emotional', 'social', 'growth'].map((tab) => (
             <TabsTrigger key={tab} value={tab} className="flex items-center gap-1">
+              {tab === 'traits' && <Star className="h-4 w-4" />}
               {tab === 'cognitive' && <Brain className="h-4 w-4" />}
               {tab === 'emotional' && <HeartHandshake className="h-4 w-4" />}
               {tab === 'social' && <Users className="h-4 w-4" />}
@@ -79,7 +76,7 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
           ))}
         </TabsList>
         
-        {['cognitive', 'emotional', 'social', 'growth'].map((tab) => (
+        {['traits', 'cognitive', 'emotional', 'social', 'growth'].map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-0">
             <TabContent tabValue={tab} analysis={analysis} />
           </TabsContent>
