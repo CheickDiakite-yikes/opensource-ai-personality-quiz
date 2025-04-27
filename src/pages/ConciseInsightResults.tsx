@@ -36,6 +36,42 @@ const ResultsError = ({ error }: { error: string }) => (
   </div>
 );
 
+// Helper function to render career insights
+const renderCareerInsights = (careerInsights: string[] | {
+  environmentFit?: string;
+  challengeAreas?: string;
+  roleAlignments: string[];
+  workStyles?: {
+    collaboration: string;
+    autonomy: string;
+    structure: string;
+  };
+}) => {
+  if (Array.isArray(careerInsights)) {
+    return (
+      <div>
+        <h3 className="font-medium mb-2">Career Insights</h3>
+        <div className="flex flex-wrap gap-2">
+          {careerInsights.map((career, i) => (
+            <Badge key={i} variant="secondary">{career}</Badge>
+          ))}
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div>
+        <h3 className="font-medium mb-2">Career Insights</h3>
+        <div className="flex flex-wrap gap-2">
+          {careerInsights.roleAlignments.map((role, i) => (
+            <Badge key={i} variant="secondary">{role}</Badge>
+          ))}
+        </div>
+      </div>
+    );
+  }
+};
+
 // Main component
 const ConciseInsightResults: React.FC = () => {
   const { analysis, loading, error } = useConciseInsightResults();
@@ -280,19 +316,26 @@ const ConciseInsightResults: React.FC = () => {
                 <div>
                   <h3 className="font-medium mb-2">Personalized Recommendations</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {analysis.growthPotential.personalizedRecommendations.map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))}
+                    {Array.isArray(analysis.growthPotential.personalizedRecommendations) && 
+                     typeof analysis.growthPotential.personalizedRecommendations[0] === 'string' ? 
+                      (analysis.growthPotential.personalizedRecommendations as string[]).map((rec, i) => (
+                        <li key={i}>{rec}</li>
+                      )) : 
+                      (analysis.growthPotential.personalizedRecommendations as {
+                        area: string;
+                        why: string;
+                        action: string;
+                        resources: string;
+                      }[]).map((rec, i) => (
+                        <li key={i}>{rec.area}: {rec.action}</li>
+                      ))
+                    }
                   </ul>
                 </div>
                 
                 <div>
                   <h3 className="font-medium mb-2">Career Insights</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {analysis.careerInsights.map((career, i) => (
-                      <Badge key={i} variant="secondary">{career}</Badge>
-                    ))}
-                  </div>
+                  {renderCareerInsights(analysis.careerInsights)}
                 </div>
               </CardContent>
             </Card>
