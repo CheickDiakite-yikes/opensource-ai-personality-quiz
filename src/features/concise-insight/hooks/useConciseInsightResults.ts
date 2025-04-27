@@ -20,34 +20,54 @@ const normalizeTraitsData = (analysis: ConciseAnalysisResult | null): ConciseAna
   // Deep clone to avoid mutating the original
   const normalizedAnalysis = JSON.parse(JSON.stringify(analysis));
   
-  // Ensure traits array exists and has valid format
+  // Validate and normalize traits array
   if (!normalizedAnalysis.traits || !Array.isArray(normalizedAnalysis.traits)) {
     console.warn("Traits data is missing or invalid", normalizedAnalysis);
     normalizedAnalysis.traits = [];
+  }
+  
+  // Validate growth potential data
+  if (!normalizedAnalysis.growthPotential) {
+    console.warn("Growth potential data is missing, initializing with default structure");
+    normalizedAnalysis.growthPotential = {
+      areasOfDevelopment: [],
+      personalizedRecommendations: [],
+      keyStrengthsToLeverage: [],
+      developmentTimeline: {
+        shortTerm: "",
+        mediumTerm: "",
+        longTerm: ""
+      }
+    };
   } else {
-    // Normalize each trait object
-    normalizedAnalysis.traits = normalizedAnalysis.traits.map(trait => {
-      // Ensure score is a number
-      if (typeof trait.score === 'string') {
-        const numericMatch = trait.score.match(/\d+/);
-        trait.score = numericMatch ? parseInt(numericMatch[0]) : 50;
-      }
-      
-      // Ensure strengths and challenges are arrays
-      if (!trait.strengths || !Array.isArray(trait.strengths)) {
-        trait.strengths = [];
-      }
-      
-      if (!trait.challenges || !Array.isArray(trait.challenges)) {
-        trait.challenges = [];
-      }
-      
-      return trait;
-    });
+    // Ensure all required growth potential fields exist
+    if (!Array.isArray(normalizedAnalysis.growthPotential.areasOfDevelopment)) {
+      normalizedAnalysis.growthPotential.areasOfDevelopment = [];
+    }
+    if (!Array.isArray(normalizedAnalysis.growthPotential.personalizedRecommendations)) {
+      normalizedAnalysis.growthPotential.personalizedRecommendations = [];
+    }
+    if (!Array.isArray(normalizedAnalysis.growthPotential.keyStrengthsToLeverage)) {
+      normalizedAnalysis.growthPotential.keyStrengthsToLeverage = [];
+    }
+    if (!normalizedAnalysis.growthPotential.developmentTimeline) {
+      normalizedAnalysis.growthPotential.developmentTimeline = {
+        shortTerm: "",
+        mediumTerm: "",
+        longTerm: ""
+      };
+    }
   }
   
   // Log the normalized data for debugging
-  console.log("Normalized analysis data:", normalizedAnalysis);
+  console.log("Normalized analysis data:", {
+    traits: normalizedAnalysis.traits?.length || 0,
+    growthPotential: {
+      areasOfDevelopment: normalizedAnalysis.growthPotential.areasOfDevelopment?.length || 0,
+      recommendations: normalizedAnalysis.growthPotential.personalizedRecommendations?.length || 0,
+      strengths: normalizedAnalysis.growthPotential.keyStrengthsToLeverage?.length || 0
+    }
+  });
   
   return normalizedAnalysis;
 };

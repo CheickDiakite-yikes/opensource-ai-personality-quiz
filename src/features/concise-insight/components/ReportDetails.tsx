@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Share2, Download, Brain, HeartHandshake, Users, Lightbulb, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,13 +17,23 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
   useEffect(() => {
     console.log('Analysis data received in ReportDetails:', analysis);
     
-    // Check for potential issues with the analysis data
+    // Enhanced data validation logging
     if (!analysis.traits || !Array.isArray(analysis.traits) || analysis.traits.length === 0) {
       console.warn('No trait data available in analysis');
     }
     
     if (!analysis.coreProfiling) {
       console.warn('No core profiling data available in analysis');
+    }
+    
+    if (!analysis.growthPotential) {
+      console.warn('No growth potential data available in analysis');
+    } else {
+      console.log('Growth potential data:', {
+        areas: analysis.growthPotential.areasOfDevelopment?.length || 0,
+        recommendations: analysis.growthPotential.personalizedRecommendations?.length || 0,
+        strengths: analysis.growthPotential.keyStrengthsToLeverage?.length || 0
+      });
     }
   }, [analysis]);
   

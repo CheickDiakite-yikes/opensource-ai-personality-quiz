@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -124,6 +123,124 @@ const RenderList = ({
           <li key={i}>{item}</li>
         ))}
       </ul>
+    </div>
+  );
+};
+
+const renderGrowthSection = (growthPotential: any) => {
+  if (!growthPotential) {
+    console.warn("Growth potential data is missing");
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No growth potential data available
+      </div>
+    );
+  }
+
+  console.log("Rendering growth section with data:", {
+    areas: growthPotential.areasOfDevelopment?.length,
+    recommendations: growthPotential.personalizedRecommendations?.length,
+    strengths: growthPotential.keyStrengthsToLeverage?.length
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Render areas of development */}
+      {growthPotential.areasOfDevelopment && growthPotential.areasOfDevelopment.length > 0 && (
+        <div>
+          <h3 className="font-medium mb-2">Areas for Development</h3>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            {growthPotential.areasOfDevelopment.map((area: string, i: number) => (
+              <li key={i}>{area}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Render recommendations */}
+      {growthPotential.personalizedRecommendations && growthPotential.personalizedRecommendations.length > 0 && (
+        <div>
+          <h3 className="font-medium mb-2">Personalized Recommendations</h3>
+          {Array.isArray(growthPotential.personalizedRecommendations) && 
+            growthPotential.personalizedRecommendations[0] && 
+            typeof growthPotential.personalizedRecommendations[0] === 'string' ? (
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              {(growthPotential.personalizedRecommendations as string[]).map((rec, i) => (
+                <li key={i}>{rec}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="space-y-3">
+              {(growthPotential.personalizedRecommendations as {
+                area: string;
+                why: string;
+                action: string;
+                resources: string;
+              }[]).map((rec, i) => (
+                <div key={i} className="p-3 border rounded-lg">
+                  <h4 className="font-medium">{rec.area}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">{rec.why}</p>
+                  <div className="mt-2 flex flex-col gap-1">
+                    <div className="text-sm"><span className="font-medium">Action:</span> {rec.action}</div>
+                    <div className="text-sm"><span className="font-medium">Resource:</span> {rec.resources}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Render key strengths */}
+      {growthPotential.keyStrengthsToLeverage && growthPotential.keyStrengthsToLeverage.length > 0 && (
+        <div>
+          <h3 className="font-medium mb-2">Key Strengths to Leverage</h3>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            {growthPotential.keyStrengthsToLeverage.map((strength: string, i: number) => (
+              <li key={i}>{strength}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Render development timeline if available */}
+      {growthPotential.developmentTimeline && (
+        <div className="pt-2">
+          <h3 className="font-medium mb-2">Development Timeline</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-muted bg-card/50">
+              <CardHeader className="py-2">
+                <CardTitle className="text-sm">Short Term (30 days)</CardTitle>
+              </CardHeader>
+              <CardContent className="py-2">
+                <p className="text-xs text-muted-foreground">
+                  {growthPotential.developmentTimeline.shortTerm}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-muted bg-card/50">
+              <CardHeader className="py-2">
+                <CardTitle className="text-sm">Medium Term (3-6 months)</CardTitle>
+              </CardHeader>
+              <CardContent className="py-2">
+                <p className="text-xs text-muted-foreground">
+                  {growthPotential.developmentTimeline.mediumTerm}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-muted bg-card/50">
+              <CardHeader className="py-2">
+                <CardTitle className="text-sm">Long Term</CardTitle>
+              </CardHeader>
+              <CardContent className="py-2">
+                <p className="text-xs text-muted-foreground">
+                  {growthPotential.developmentTimeline.longTerm}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -551,88 +668,7 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
             <CardDescription>Your potential for growth and personal development</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {renderUniquenessMarkers()}
-            
-            <RenderList 
-              title="Areas for Development" 
-              items={analysis.growthPotential.areasOfDevelopment}
-            />
-            
-            <RenderList 
-              title="Key Strengths to Leverage" 
-              items={analysis.growthPotential.keyStrengthsToLeverage}
-            />
-            
-            <div>
-              <h3 className="font-medium mb-2">Personalized Recommendations</h3>
-              {renderRecommendations()}
-            </div>
-            
-            {analysis.growthPotential.developmentTimeline && (
-              <div className="pt-2">
-                <h3 className="font-medium mb-2">Development Timeline</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="border-muted bg-card/50">
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-sm">Short Term (30 days)</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.shortTerm}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-muted bg-card/50">
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-sm">Medium Term (3-6 months)</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.mediumTerm}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-muted bg-card/50">
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-sm">Long Term</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <p className="text-xs text-muted-foreground">{analysis.growthPotential.developmentTimeline.longTerm}</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-            
-            {/* Conditionally render value system if available */}
-            {analysis.valueSystem && (
-              <div className="pt-2">
-                <h3 className="font-medium mb-2">Value System</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {analysis.valueSystem.coreValues && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Core Values</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {analysis.valueSystem.coreValues.map((value, i) => (
-                          <Badge key={i} variant="outline">{value}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {analysis.valueSystem.motivationSources && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Key Motivators</h4>
-                      <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-                        {analysis.valueSystem.motivationSources.map((source, i) => (
-                          <li key={i}>{source}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            <div>
-              {renderCareerInsights()}
-            </div>
+            {renderGrowthSection(analysis.growthPotential)}
           </CardContent>
         </Card>
       );
