@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useConciseInsightResults } from "@/features/concise-insight/hooks/useConciseInsightResults";
@@ -22,8 +21,13 @@ const ResultsLoading = () => (
   </div>
 );
 
-// Error component with more detailed error display and retry capabilities
-const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
+// Enhanced error component with more retry information
+const ResultsError = ({ error, onRetry, retryAttempt, maxRetries }: { 
+  error: string; 
+  onRetry: () => void;
+  retryAttempt: number;
+  maxRetries: number;
+}) => {
   // Parse error message to provide more user-friendly feedback
   const isNetworkError = error.includes("Failed to fetch") || error.includes("Network") || error.includes("Edge Function");
   const isTimeoutError = error.includes("timeout") || error.includes("Timed out");
@@ -53,7 +57,7 @@ const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }
       </p>
       <div className="mt-6 space-y-2">
         <Button onClick={onRetry} className="px-6">
-          {actionText}
+          {actionText} {retryAttempt > 0 ? `(Attempt ${retryAttempt}/${maxRetries})` : ""}
         </Button>
         {isNetworkError && (
           <p className="text-xs text-center text-muted-foreground pt-4">
@@ -67,8 +71,7 @@ const ResultsError = ({ error, onRetry }: { error: string; onRetry: () => void }
 
 // Main component
 const ConciseInsightResults: React.FC = () => {
-  const { analysis, loading, error, refreshAnalysis } = useConciseInsightResults();
-  const [retryCount, setRetryCount] = useState(0);
+  const { analysis, loading, error, refreshAnalysis, retryAttempt, maxRetries } = useConciseInsightResults();
   const [isRetrying, setIsRetrying] = useState(false);
   
   const handleRefresh = () => {
@@ -76,17 +79,16 @@ const ConciseInsightResults: React.FC = () => {
     refreshAnalysis();
   };
   
-  // Enhanced retry handler with exponential backoff
+  // Enhanced retry handler with visual feedback
   const handleRetry = () => {
     setIsRetrying(true);
-    toast.loading(`Retrying analysis... Attempt ${retryCount + 1}`);
+    toast.loading(`Retrying analysis... Attempt ${retryAttempt + 1}`);
     
     // Add a small delay before retry to avoid rapid API hammering
     setTimeout(() => {
       refreshAnalysis();
-      setRetryCount(prevCount => prevCount + 1);
       setIsRetrying(false);
-    }, Math.min(1000 * Math.pow(1.5, retryCount), 8000)); // Exponential backoff with 8s max
+    }, 1000);
   };
   
   if (loading || isRetrying) {
@@ -94,7 +96,12 @@ const ConciseInsightResults: React.FC = () => {
   }
   
   if (error || !analysis) {
-    return <ResultsError error={error || "No analysis data found"} onRetry={handleRetry} />;
+    return <ResultsError 
+      error={error || "No analysis data found"} 
+      onRetry={handleRetry}
+      retryAttempt={retryAttempt}
+      maxRetries={maxRetries}
+    />;
   }
   
   return (

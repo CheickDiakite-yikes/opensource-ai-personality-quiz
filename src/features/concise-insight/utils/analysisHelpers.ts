@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ConciseAnalysisResult } from "../types";
 import { toast } from "sonner";
@@ -46,43 +45,78 @@ export const fetchAnalysisByAssessmentId = async (assessmentId: string, userId: 
   
   if (!matchingAnalyses?.length) return null;
   
+  console.log(`[fetchAnalysisByAssessmentId] Found existing analysis for assessment: ${assessmentId}`);
   return matchingAnalyses[0].analysis_data as unknown as ConciseAnalysisResult;
 };
 
 export const generateNewAnalysis = async (assessmentId: string, userId: string) => {
-  const { data: assessment, error: responseError } = await supabase
-    .from('concise_assessments')
-    .select('*')
-    .eq('id', assessmentId)
-    .eq('user_id', userId)
-    .single();
-    
-  if (responseError) {
-    console.error("[generateNewAnalysis] Error:", responseError);
-    throw responseError;
-  }
-  
-  if (!assessment) {
-    throw new Error("Assessment not found");
-  }
-  
-  const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
-    'analyze-concise-responses',
-    {
-      body: { 
-        assessmentId,
-        responses: assessment.responses,
-        userId
-      }
+  try {
+    // First check if the assessment exists
+    const { data: assessment, error: responseError } = await supabase
+      .from('concise_assessments')
+      .select('*')
+      .eq('id', assessmentId)
+      .eq('user_id', userId)
+      .single();
+      
+    if (responseError) {
+      console.error("[generateNewAnalysis] Error fetching assessment:", responseError);
+      throw responseError;
     }
-  );
-  
-  if (analysisError) {
-    console.error("[generateNewAnalysis] Error:", analysisError);
-    throw analysisError;
+    
+    if (!assessment) {
+      throw new Error("Assessment not found");
+    }
+    
+    console.log(`[generateNewAnalysis] Starting analysis generation for assessment: ${assessmentId}`);
+    console.log(`[generateNewAnalysis] Found ${Object.keys(assessment.responses).length} responses to analyze`);
+    
+    // Implement a timeout for the edge function call
+    const timeoutDuration = 120000; // 2 minutes
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Analysis generation timed out after ${timeoutDuration/1000} seconds`));
+      }, timeoutDuration);
+    });
+    
+    const functionPromise = supabase.functions.invoke(
+      'analyze-concise-responses',
+      {
+        body: { 
+          assessmentId,
+          responses: assessment.responses,
+          userId
+        }
+      }
+    );
+    
+    // Race between the actual function call and the timeout
+    const result = await Promise.race([functionPromise, timeoutPromise]);
+    
+    if (!result?.data) {
+      console.error("[generateNewAnalysis] Edge function returned no data:", result);
+      throw new Error("Edge function returned empty response");
+    }
+    
+    console.log(`[generateNewAnalysis] Successfully generated analysis for assessment: ${assessmentId}`);
+    return result.data as ConciseAnalysisResult;
+  } catch (error: any) {
+    // Enhanced error logging with more context
+    console.error("[generateNewAnalysis] Error:", error);
+    
+    // Check if it's an edge function error and extract more details
+    if (error?.message?.includes('FunctionsHttpError')) {
+      console.error("[generateNewAnalysis] Edge function error details:", {
+        message: error.message,
+        context: error.context || {},
+        name: error.name,
+      });
+      throw new Error(`Edge function error: ${error.message}`);
+    }
+    
+    throw error;
   }
-  
-  return analysisResult as ConciseAnalysisResult;
 };
 
 export const saveAnalysisToDatabase = async (
@@ -91,6 +125,19 @@ export const saveAnalysisToDatabase = async (
   userId: string
 ) => {
   try {
+    // Check if an analysis already exists to avoid duplicates
+    const { data: existingAnalysis } = await supabase
+      .from('concise_analyses')
+      .select('id')
+      .eq('assessment_id', assessmentId)
+      .eq('user_id', userId)
+      .maybeSingle();
+      
+    if (existingAnalysis) {
+      console.log(`[saveAnalysisToDatabase] Analysis already exists for assessment ${assessmentId}, skipping save`);
+      return;
+    }
+      
     const { error: saveError } = await supabase
       .from('concise_analyses')
       .insert({

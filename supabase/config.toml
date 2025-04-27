@@ -2,6 +2,7 @@
 project_id = "fhmvdprcmhkolyzuecrr"
 [functions.analyze-concise-responses]
 verify_jwt = true
+timeout_seconds = 120
 [functions.analyze-responses]
 verify_jwt = true
 [functions.generate-activity]
