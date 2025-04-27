@@ -22,6 +22,7 @@ export interface ConciseAnalysisResult {
   createdAt: string;
   userId: string;
   overview: string;
+  uniquenessMarkers?: string[]; // New field for displaying distinctive traits
   coreProfiling: {
     primaryArchetype: string;
     secondaryArchetype: string;

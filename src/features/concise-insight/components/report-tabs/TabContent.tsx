@@ -106,6 +106,23 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
     }
   };
   
+  // Display unique markers if they exist in the analysis
+  const renderUniquenessMarkers = () => {
+    if (analysis.uniquenessMarkers && Array.isArray(analysis.uniquenessMarkers) && analysis.uniquenessMarkers.length > 0) {
+      return (
+        <div className="mb-4">
+          <h3 className="font-medium mb-2">What Makes You Distinctive</h3>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            {analysis.uniquenessMarkers.map((marker, i) => (
+              <li key={i}>{marker}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    return null;
+  };
+  
   switch (tabValue) {
     case 'cognitive':
       return (
@@ -334,7 +351,6 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
                 </Card>
               </div>
             )}
-            
           </CardContent>
         </Card>
       );
@@ -347,6 +363,8 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
             <CardDescription>Your potential for growth and personal development</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {renderUniquenessMarkers()}
+            
             <div>
               <h3 className="font-medium mb-2">Areas for Development</h3>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">

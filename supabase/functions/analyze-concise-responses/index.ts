@@ -61,14 +61,16 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are an expert psychological profiler with deep expertise in cognitive psychology, personality theory, emotional intelligence, and human development. Your analyses demonstrate clinical precision while remaining accessible and actionable. You provide nuanced, evidence-based personality insights that avoid stereotypes or overgeneralizations. Return only valid JSON without any markdown formatting."
+            content: "You are an expert psychological profiler with deep expertise in cognitive psychology, personality theory, emotional intelligence, and human development. Your analyses are insightful, nuanced, and personally meaningful. You excel at identifying unique combinations of traits and patterns that make each individual distinctive. Focus on creating highly personalized, evidence-based insights that avoid stereotypes and demonstrate deep understanding of the complexities of human personality. Return only valid JSON without any markdown formatting."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.5, // Reduced temperature for more consistent results
+        temperature: 0.7, // Increased temperature for more creative and diverse outputs
+        frequency_penalty: 0.3, // Added to reduce repetition in language
+        presence_penalty: 0.2, // Added to encourage exploration of different topics/traits
         max_tokens: 4000,
       }),
     });
@@ -152,75 +154,140 @@ serve(async (req) => {
   }
 });
 
-// Enhanced question weighting system for more nuanced analysis
-const questionWeights: Record<string, number> = {
-  // Core traits questions - highest weights as they define fundamental patterns
-  "core-1": 1.5, // Approach to major life decisions - highly predictive
-  "core-2": 1.3, // Response to unexpected change - reveals adaptability
-  "core-3": 1.4, // Most energizing activities - shows core motivations
-  "core-4": 1.2, // What matters most in success - reveals values
-  "core-5": 1.5, // Self-perception - fundamental to identity
+// Enhanced dynamic question weighting system
+const getQuestionWeight = (questionId: string, allResponses: Record<string, string>): number => {
+  // Base weights from question importance
+  const baseWeights: Record<string, number> = {
+    // Core traits questions - highest weights as they define fundamental patterns
+    "core-1": 1.5, // Approach to major life decisions - highly predictive
+    "core-2": 1.3, // Response to unexpected change - reveals adaptability
+    "core-3": 1.4, // Most energizing activities - shows core motivations
+    "core-4": 1.2, // What matters most in success - reveals values
+    "core-5": 1.5, // Self-perception - fundamental to identity
+    
+    // Emotional intelligence questions - moderate-high weights
+    "emotional-1": 1.2, // Experience of strong emotions - emotional awareness
+    "emotional-2": 1.3, // Predicting others' responses - empathy indicator
+    "emotional-3": 1.1, // Response to others' difficult experiences
+    "emotional-4": 1.0, // Behavior after conflict - recovery pattern
+    "emotional-5": 1.2, // Handling emotions during crisis - regulation
+    
+    // Cognitive pattern questions - moderate weights
+    "cognitive-1": 1.1, // Learning style preference
+    "cognitive-2": 1.2, // Problem-solving approach - key cognitive indicator
+    "cognitive-3": 1.3, // Decision-making process - highly relevant
+    "cognitive-4": 0.9, // Project planning preference
+    "cognitive-5": 1.0, // Response to criticism - growth mindset indicator
+    
+    // Social interaction questions - moderate weights
+    "social-1": 1.1, // Role in group settings
+    "social-2": 1.2, // Handling disagreement - conflict style
+    "social-3": 0.9, // Approach to social boundaries
+    "social-4": 1.0, // Priorities in close relationships
+    "social-5": 1.1, // Response to others' problems - support style
+    
+    // Values questions - high weights for deeper meaning
+    "values-1": 1.4, // Main driver of life decisions - core values
+    "values-2": 1.3, // Source of fulfillment and purpose
+    "values-3": 1.2, // Core values resonance
+    "values-4": 1.0, // Meaningful recognition type
+    "values-5": 1.3  // Future priorities - aspirational direction
+  };
 
-  // Emotional intelligence questions - moderate-high weights
-  "emotional-1": 1.2, // Experience of strong emotions - emotional awareness
-  "emotional-2": 1.3, // Predicting others' responses - empathy indicator
-  "emotional-3": 1.1, // Response to others' difficult experiences
-  "emotional-4": 1.0, // Behavior after conflict - recovery pattern
-  "emotional-5": 1.2, // Handling emotions during crisis - regulation
+  // Get base weight or default to 1.0
+  const baseWeight = baseWeights[questionId] || 1.0;
+  
+  // DYNAMIC WEIGHT ADJUSTMENT: Check for unusual response patterns
+  
+  // 1. Check for outlier responses compared to the category average
+  const category = questionId.split('-')[0];
+  const categoryResponses = Object.entries(allResponses)
+    .filter(([qId]) => qId.startsWith(category + '-'))
+    .map(([_, answer]) => answer);
+  
+  // Calculate if this response is different from other responses in the same category
+  const isOutlier = categoryResponses.filter(r => r === allResponses[questionId]).length <= 1;
+  
+  // 2. Check for contrasting responses across categories (cognitive vs emotional)
+  let hasContrastingPatterns = false;
+  
+  if (category === 'cognitive' || category === 'emotional') {
+    const otherCategory = category === 'cognitive' ? 'emotional' : 'cognitive';
+    const thisResponse = allResponses[questionId];
+    const otherCategoryResponses = Object.entries(allResponses)
+      .filter(([qId]) => qId.startsWith(otherCategory + '-'))
+      .map(([_, answer]) => answer);
+      
+    // Simple check: if this response is notably different from other category responses
+    if (otherCategoryResponses.length > 0) {
+      const differentResponses = otherCategoryResponses.filter(r => r !== thisResponse).length;
+      hasContrastingPatterns = differentResponses >= otherCategoryResponses.length / 2;
+    }
+  }
+  
+  // 3. Add weight for potentially insightful combinations
+  let insightWeight = 1.0;
+  
+  // Example: Decision making style (cognitive-3) combined with emotional regulation (emotional-5)
+  // can reveal important patterns about how the person handles stress
+  if ((questionId === 'cognitive-3' && allResponses['emotional-5']) || 
+      (questionId === 'emotional-5' && allResponses['cognitive-3'])) {
+    insightWeight = 1.2;
+  }
+  
+  // Example: Core values (values-3) combined with social behavior (social-4)
+  // can reveal authenticity vs social adaptation patterns
+  if ((questionId === 'values-3' && allResponses['social-4']) || 
+      (questionId === 'social-4' && allResponses['values-3'])) {
+    insightWeight = 1.15;
+  }
+  
+  // Combine all factors for final weight
+  let finalWeight = baseWeight;
+  
+  if (isOutlier) finalWeight *= 1.3; // Increase weight for outlier responses
+  if (hasContrastingPatterns) finalWeight *= 1.2; // Increase for contrasting patterns
+  finalWeight *= insightWeight; // Apply additional insight weight
+  
+  return Math.round(finalWeight * 100) / 100; // Round to 2 decimal places
+};
 
-  // Cognitive pattern questions - moderate weights
-  "cognitive-1": 1.1, // Learning style preference
-  "cognitive-2": 1.2, // Problem-solving approach - key cognitive indicator
-  "cognitive-3": 1.3, // Decision-making process - highly relevant
-  "cognitive-4": 0.9, // Project planning preference
-  "cognitive-5": 1.0, // Response to criticism - growth mindset indicator
-
-  // Social interaction questions - moderate weights
-  "social-1": 1.1, // Role in group settings
-  "social-2": 1.2, // Handling disagreement - conflict style
-  "social-3": 0.9, // Approach to social boundaries
-  "social-4": 1.0, // Priorities in close relationships
-  "social-5": 1.1, // Response to others' problems - support style
-
-  // Values questions - high weights for deeper meaning
-  "values-1": 1.4, // Main driver of life decisions - core values
-  "values-2": 1.3, // Source of fulfillment and purpose
-  "values-3": 1.2, // Core values resonance
-  "values-4": 1.0, // Meaningful recognition type
-  "values-5": 1.3  // Future priorities - aspirational direction
+// Enhanced question descriptions for better context
+const getQuestionDescription = (questionId: string): string => {
+  const questionDescriptions: Record<string, string> = {
+    "core-1": "Approach to major life decisions and change",
+    "core-2": "Response pattern to unexpected challenges",
+    "core-3": "Sources of energy and engagement",
+    "core-4": "Core values in measuring success and achievement",
+    "core-5": "Self-perception and identity formation",
+    "emotional-1": "Emotional awareness and processing style",
+    "emotional-2": "Empathic accuracy and perspective-taking",
+    "emotional-3": "Emotional support approach with others",
+    "emotional-4": "Conflict resolution and emotional recovery",
+    "emotional-5": "Emotional regulation in crisis situations",
+    "cognitive-1": "Information processing and learning preferences",
+    "cognitive-2": "Problem-solving style and approach",
+    "cognitive-3": "Decision-making framework and process",
+    "cognitive-4": "Planning and organization tendencies",
+    "cognitive-5": "Response to feedback and criticism",
+    "social-1": "Social positioning and group dynamics",
+    "social-2": "Conflict management in social settings",
+    "social-3": "Boundary-setting in relationships",
+    "social-4": "Priority framework in close relationships",
+    "social-5": "Helping behavior and support style",
+    "values-1": "Foundational decision-making drivers",
+    "values-2": "Sources of meaning and fulfillment",
+    "values-3": "Core value system architecture",
+    "values-4": "Recognition and validation needs",
+    "values-5": "Future-oriented goals and aspirations"
+  };
+  
+  return questionDescriptions[questionId] || questionId;
 };
 
 // Helper function to generate the enhanced analysis prompt
 function generateEnhancedAnalysisPrompt(responses: Record<string, string>, seed: number): string {
   // Convert responses to more readable format with enhanced descriptions
-  const questionDescriptions: Record<string, string> = {
-    "core-1": "Approach to major life decisions",
-    "core-2": "Response to unexpected change",
-    "core-3": "Most energizing activities",
-    "core-4": "What matters most in success",
-    "core-5": "Self-perception",
-    "emotional-1": "Experience of strong emotions",
-    "emotional-2": "Predicting others' emotional responses",
-    "emotional-3": "Response to others' difficult experiences",
-    "emotional-4": "Behavior after conflict",
-    "emotional-5": "Handling emotions during crisis",
-    "cognitive-1": "Learning style preference",
-    "cognitive-2": "Problem-solving approach",
-    "cognitive-3": "Decision-making process",
-    "cognitive-4": "Project planning preference",
-    "cognitive-5": "Response to criticism",
-    "social-1": "Role in group settings",
-    "social-2": "Handling disagreement",
-    "social-3": "Approach to social boundaries",
-    "social-4": "Priorities in close relationships",
-    "social-5": "Response to others' problems",
-    "values-1": "Main driver of life decisions",
-    "values-2": "Source of fulfillment and purpose",
-    "values-3": "Core values resonance",
-    "values-4": "Meaningful recognition type",
-    "values-5": "Future priorities"
-  };
-
   const optionMappings: Record<string, Record<string, number>> = {
     "core-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
     "core-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
@@ -249,40 +316,91 @@ function generateEnhancedAnalysisPrompt(responses: Record<string, string>, seed:
     "values-5": { "a": 1, "b": 2, "c": 3, "d": 4 }
   };
   
-  // Format responses for the prompt with weights
+  // Format responses with enhanced weights and descriptions
   const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
-    const questionDesc = questionDescriptions[questionId] || questionId;
+    const questionDesc = getQuestionDescription(questionId);
     const optionNumber = optionMappings[questionId]?.[answer] || answer;
-    const weight = questionWeights[questionId] || 1.0;
-    return `${questionDesc}: Option ${optionNumber} (Weight: ${weight.toFixed(1)})`;
+    const dynamicWeight = getQuestionWeight(questionId, responses);
+    return `${questionDesc}: Option ${optionNumber} (Weight: ${dynamicWeight.toFixed(1)})`;
   }).join("\n");
   
+  // Identify pattern connections and contradictions
+  interface CategoryScore {
+    total: number;
+    count: number;
+    responses: number[];
+  }
+  
   // Calculate category scores for pattern detection
-  const categoryScores: Record<string, {total: number, count: number}> = {
-    "core": {total: 0, count: 0},
-    "emotional": {total: 0, count: 0},
-    "cognitive": {total: 0, count: 0},
-    "social": {total: 0, count: 0},
-    "values": {total: 0, count: 0}
+  const categoryScores: Record<string, CategoryScore> = {
+    "core": {total: 0, count: 0, responses: []},
+    "emotional": {total: 0, count: 0, responses: []},
+    "cognitive": {total: 0, count: 0, responses: []},
+    "social": {total: 0, count: 0, responses: []},
+    "values": {total: 0, count: 0, responses: []}
   };
   
   Object.entries(responses).forEach(([questionId, answer]) => {
     const category = questionId.split('-')[0];
     const optionNumber = optionMappings[questionId]?.[answer] || parseInt(answer);
-    const weight = questionWeights[questionId] || 1.0;
+    const weight = getQuestionWeight(questionId, responses);
     
     if (categoryScores[category]) {
       categoryScores[category].total += optionNumber * weight;
       categoryScores[category].count += weight;
+      categoryScores[category].responses.push(optionNumber);
+    }
+  });
+
+  // Find unusual patterns
+  const patternFindings: string[] = [];
+  
+  // Look for contradictions within categories
+  Object.entries(categoryScores).forEach(([category, data]) => {
+    if (data.responses.length < 2) return;
+    
+    // Check for high variance in responses (contradictory answers in same category)
+    const mean = data.responses.reduce((sum, val) => sum + val, 0) / data.responses.length;
+    const variance = data.responses.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.responses.length;
+    
+    if (variance > 1.2) {
+      patternFindings.push(`High variance in ${category} responses (${variance.toFixed(2)}) suggests complex or potentially contradictory patterns`);
     }
   });
   
+  // Cross-category comparisons for interesting combinations
+  if (categoryScores.cognitive.count > 0 && categoryScores.emotional.count > 0) {
+    const cognitiveAvg = categoryScores.cognitive.total / categoryScores.cognitive.count;
+    const emotionalAvg = categoryScores.emotional.total / categoryScores.emotional.count;
+    
+    const diff = Math.abs(cognitiveAvg - emotionalAvg);
+    if (diff > 1.0) {
+      patternFindings.push(`Notable difference (${diff.toFixed(2)}) between cognitive and emotional domains may indicate distinctive cognitive-emotional processing style`);
+    }
+  }
+
+  if (categoryScores.core.count > 0 && categoryScores.values.count > 0) {
+    const coreAvg = categoryScores.core.total / categoryScores.core.count;
+    const valuesAvg = categoryScores.values.total / categoryScores.values.count;
+    
+    const diff = Math.abs(coreAvg - valuesAvg);
+    if (diff > 1.0) {
+      patternFindings.push(`Significant difference (${diff.toFixed(2)}) between core traits and values systems may suggest evolving or aspirational identity`);
+    }
+  }
+  
+  // Format category averages for more context
   const categoryAverages = Object.entries(categoryScores).map(([category, {total, count}]) => {
     return `${category.charAt(0).toUpperCase() + category.slice(1)} average: ${count > 0 ? (total/count).toFixed(2) : 'N/A'}`;
   }).join(", ");
-
+  
+  // Add patterns found
+  const patternAnalysis = patternFindings.length > 0 
+    ? "Distinctive patterns detected:\n" + patternFindings.join("\n")
+    : "No strong distinctive patterns detected in response distribution";
+  
   return `
-Analyze the following 25 personality assessment responses and create a comprehensive, evidence-based personality profile. These questions cover core traits, emotional intelligence, cognitive patterns, social dynamics, and values/motivations.
+Analyze the following 25 personality assessment responses and create a HIGHLY PERSONALIZED, evidence-based personality profile that highlights what makes this individual UNIQUE and DISTINCTIVE. These questions cover core traits, emotional intelligence, cognitive patterns, social dynamics, and values/motivations.
 
 RESPONSE DATA:
 ${formattedResponses}
@@ -290,83 +408,90 @@ ${formattedResponses}
 RESPONSE PATTERNS:
 ${categoryAverages}
 
+PATTERN ANALYSIS:
+${patternAnalysis}
+
 INSTRUCTIONS:
-Create a detailed personality analysis in pure JSON format (no markdown code blocks) with the following enhanced structure:
+Create a detailed personality analysis in pure JSON format (no markdown code blocks) with the following enhanced structure. Focus on UNIQUENESS and DISTINCT PERSONALITY ELEMENTS throughout the analysis:
 
 {
   "id": "${crypto.randomUUID()}",
   "userId": "system-generated",
-  "overview": "A 2-3 paragraph overview of the individual's psychological profile, highlighting distinctive patterns, key strengths, potential blindspots, and unique personality dynamics. Focus on the interaction between traits rather than isolated characteristics.",
+  "overview": "A 2-3 paragraph overview of the individual's psychological profile that highlights what makes them UNIQUE. Identify distinctive patterns, unexpected trait combinations, and particularly notable aspects of their personality. Focus on what differentiates this person rather than general statements.",
+  "uniquenessMarkers": [
+    "3-5 specific traits, patterns, or characteristics that make this person distinctive",
+    "Focus on unexpected combinations and contradictions that reveal complex personality architecture"
+  ],
   "coreProfiling": {
-    "primaryArchetype": "The dominant personality archetype (e.g., 'Analytical Strategist', 'Empathic Connector', 'Adaptive Problem-Solver', etc.)",
-    "secondaryArchetype": "A secondary influence on their personality",
-    "description": "A paragraph explaining how these archetypes manifest in their personality with specific behavioral examples",
+    "primaryArchetype": "A distinctive and specific archetype that reflects their unique pattern - avoid generic terms like 'Analytical Strategist' - instead use more specific descriptors like 'Adaptive Systems Architect' or 'Empathic Problem Detective'",
+    "secondaryArchetype": "A complementary or contrasting influence specific to this individual",
+    "description": "A paragraph explaining how these archetypes combine in a UNIQUE way for this person with specific behavioral examples",
     "compatibilityInsights": ["3-4 types of people they likely work well with", "2-3 types of people they might find challenging"]
   },
   "traits": [
     {
       "trait": "A specific personality trait (5-7 traits total)",
       "score": A number between 1-10 indicating strength of this trait,
-      "description": "Brief description of how this trait manifests with specific behavioral examples",
+      "description": "Brief description of how this trait manifests in UNIQUE ways with specific behavioral examples",
       "strengths": ["3-4 strengths associated with this trait"],
       "challenges": ["2-3 challenges or growth areas associated with this trait"],
-      "developmentStrategies": ["2 specific, actionable strategies to leverage or develop this trait"]
+      "developmentStrategies": ["2 specific, actionable strategies tailored to leverage or develop this trait"]
     }
   ],
   "cognitiveProfile": {
-    "style": "A description of their cognitive/thinking style",
-    "strengths": ["3-4 cognitive strengths"],
-    "blindSpots": ["2-3 cognitive blind spots or challenges"],
-    "description": "A paragraph explaining their cognitive patterns in more depth",
-    "learningStyle": "Their preferred approach to learning new information",
-    "decisionMakingProcess": "How they typically approach important decisions"
+    "style": "A description of their cognitive/thinking style that highlights UNIQUE aspects",
+    "strengths": ["3-4 cognitive strengths with specific examples"],
+    "blindSpots": ["2-3 cognitive blind spots or challenges with specific examples"],
+    "description": "A paragraph explaining their cognitive patterns with emphasis on DISTINCTIVE elements",
+    "learningStyle": "Their preferred approach to learning new information with personalized examples",
+    "decisionMakingProcess": "How they typically approach important decisions with personalized examples"
   },
   "emotionalInsights": {
-    "awareness": "Description of their emotional self-awareness",
-    "regulation": "Description of their emotional regulation approach",
+    "awareness": "Description of their emotional self-awareness with personalized examples",
+    "regulation": "Description of their emotional regulation approach with personalized examples",
     "empathy": A number between 1-10 indicating empathic capacity,
-    "description": "A paragraph about their emotional landscape and patterns",
-    "stressResponse": "How they typically respond under significant stress or pressure",
+    "description": "A paragraph about their emotional landscape emphasizing DISTINCTIVE patterns",
+    "stressResponse": "How they typically respond under significant stress with personalized examples",
     "emotionalTriggersAndCoping": {
-      "triggers": ["2-3 situations that might trigger emotional reactions"],
-      "copingStrategies": ["2-3 effective coping strategies for this individual"]
+      "triggers": ["2-3 situations that might trigger emotional reactions for this specific individual"],
+      "copingStrategies": ["2-3 effective coping strategies tailored for this individual"]
     }
   },
   "interpersonalDynamics": {
-    "communicationStyle": "Their primary communication style",
-    "relationshipPattern": "Their typical approach to relationships",
-    "conflictApproach": "Their typical approach to handling conflict",
-    "socialNeeds": "Description of their social needs and boundaries",
-    "leadershipStyle": "Their natural approach to leadership roles",
-    "teamRole": "Their most effective role in collaborative settings"
+    "communicationStyle": "Their primary communication style with personalized examples",
+    "relationshipPattern": "Their typical approach to relationships with personalized examples",
+    "conflictApproach": "Their typical approach to handling conflict with personalized examples",
+    "socialNeeds": "Description of their social needs with personalized examples",
+    "leadershipStyle": "Their natural approach to leadership roles with personalized examples",
+    "teamRole": "Their most effective role in collaborative settings with personalized examples"
   },
   "valueSystem": {
     "coreValues": ["3-5 fundamental values that guide their decisions"],
-    "motivationSources": ["2-3 primary sources of motivation"],
-    "meaningMakers": ["2-3 things that provide a sense of purpose"],
+    "motivationSources": ["2-3 primary sources of motivation specific to this individual"],
+    "meaningMakers": ["2-3 things that provide a sense of purpose for this specific individual"],
     "culturalConsiderations": "How their values might manifest across different cultural contexts"
   },
   "growthPotential": {
-    "areasOfDevelopment": ["3-4 primary areas for growth and development"],
+    "areasOfDevelopment": ["3-4 SPECIFIC primary areas for growth and development"],
     "personalizedRecommendations": [
       {
-        "area": "Name of development area",
-        "why": "Brief explanation of why this matters for them",
+        "area": "Name of development area specific to this individual",
+        "why": "Brief explanation of why this matters for them specifically",
         "action": "A specific, personalized action they can take",
-        "resources": "Suggested resource (book, practice, etc.)"
+        "resources": "Suggested resource (book, practice, etc.) tailored to them"
       }
     ],
     "keyStrengthsToLeverage": ["3 key strengths they can leverage for growth"],
     "developmentTimeline": {
-      "shortTerm": "Focus for next 30 days",
-      "mediumTerm": "Focus for next 3-6 months",
-      "longTerm": "Focus for ongoing development"
+      "shortTerm": "Focus for next 30 days specific to them",
+      "mediumTerm": "Focus for next 3-6 months specific to them",
+      "longTerm": "Focus for ongoing development specific to them"
     }
   },
   "careerInsights": {
-    "environmentFit": "Description of work environments where they're likely to thrive",
-    "challengeAreas": "Types of work situations that might be more difficult",
-    "roleAlignments": ["5-7 career fields or roles that might align well with their profile"],
+    "environmentFit": "Description of work environments where they're likely to thrive with specific examples",
+    "challengeAreas": "Types of work situations that might be more difficult with specific examples",
+    "roleAlignments": ["5-7 specific career fields or roles that might align well with their profile"],
     "workStyles": {
       "collaboration": "How they tend to collaborate with others",
       "autonomy": "Their need for independence and self-direction",
@@ -376,14 +501,16 @@ Create a detailed personality analysis in pure JSON format (no markdown code blo
 }
 
 IMPORTANT:
-- Use the weighted response patterns to identify genuine insights - avoid generic statements.
-- Balance positive attributes with genuine growth areas - be honest but constructive.
-- Make insights specific, actionable, and evidence-based from the response patterns.
-- For any scores (trait scores, empathy score), use realistic values based on response patterns, not overly high values.
-- Look for meaningful correlations between different response areas, e.g., how cognitive patterns influence emotional responses.
-- Provide personalized, practical recommendations that acknowledge the individual's unique profile.
-- Use the seed value ${seed} to ensure consistency if the analysis is regenerated.
-- Return valid JSON without any markdown code block formatting (no \`\`\`json tags).
-- Ensure all JSON is properly formatted with no errors.
+- Create a TRULY UNIQUE profile for this individual - avoid generic statements at all costs
+- Highlight DISTINCTIVE combinations of traits that make this person different from others
+- Identify any paradoxical or contradictory elements that add complexity and depth to their profile
+- Focus on SPECIFIC behaviors and examples rather than generic descriptions
+- For any scores (trait scores, empathy score), use realistic values based on response patterns
+- Look for meaningful correlations between different response areas
+- Provide personalized, practical recommendations that acknowledge their unique profile
+- Use the seed value ${seed} to ensure consistency if the analysis is regenerated
+- Return valid JSON without any markdown code block formatting (no \`\`\`json tags)
+- Ensure all JSON is properly formatted with no errors
 `;
 }
+
