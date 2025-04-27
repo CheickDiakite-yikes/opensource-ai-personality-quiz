@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -15,11 +14,6 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
-
-// New Deep Insight pages
-const DeepInsight = lazy(() => import("@/pages/DeepInsight"));
-const DeepInsightQuiz = lazy(() => import("@/pages/DeepInsightQuiz"));
-const DeepInsightResults = lazy(() => import("@/pages/DeepInsightResults"));
 
 // New Concise Insight pages
 const ConciseInsight = lazy(() => import("@/pages/ConciseInsight"));
@@ -84,6 +78,8 @@ function App() {
               </Suspense>
             )
           } />
+          
+          {/* Protected Routes */}
           <Route path="assessment" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
@@ -120,30 +116,7 @@ function App() {
             </PrivateRoute>
           } />
           
-          {/* Deep Insight Routes */}
-          <Route path="deep-insight" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsight />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="deep-insight/quiz" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightQuiz />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="deep-insight/results" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <DeepInsightResults />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          
-          {/* Concise Insight Routes - Updated structure */}
+          {/* Concise Insight Routes */}
           <Route path="concise-insight" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
