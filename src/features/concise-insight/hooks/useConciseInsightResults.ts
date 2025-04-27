@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,17 +57,7 @@ const normalizeTraitsData = (analysis: ConciseAnalysisResult | null): ConciseAna
       };
     }
   }
-  
-  // Log the normalized data for debugging
-  console.log("Normalized analysis data:", {
-    traits: normalizedAnalysis.traits?.length || 0,
-    growthPotential: {
-      areasOfDevelopment: normalizedAnalysis.growthPotential.areasOfDevelopment?.length || 0,
-      recommendations: normalizedAnalysis.growthPotential.personalizedRecommendations?.length || 0,
-      strengths: normalizedAnalysis.growthPotential.keyStrengthsToLeverage?.length || 0
-    }
-  });
-  
+
   return normalizedAnalysis;
 };
 
@@ -102,66 +91,58 @@ export const useConciseInsightResults = (analysisId?: string) => {
       console.log(`[useConciseInsightResults] Fetching analysis for ID: ${analysisId}`);
       let result;
 
-      // Check if it's a UUID (direct analysis ID)
+      // First try: Get existing analysis by direct ID or assessment ID
       if (isUUID(analysisId)) {
         try {
           console.log(`[useConciseInsightResults] Fetching by direct UUID: ${analysisId}`);
           result = await fetchAnalysisByDirectId(analysisId);
           
           if (!signal?.aborted) {
-            // Normalize and validate the data before setting
             const normalizedResult = normalizeTraitsData(result);
             setAnalysis(normalizedResult);
             setIsProcessingComplete(true);
+            console.log("[useConciseInsightResults] Successfully loaded existing analysis:", normalizedResult);
           }
           return;
         } catch (err) {
           if (signal?.aborted) return;
           console.error("[useConciseInsightResults] Error fetching by direct ID:", err);
-          throw err;
         }
       }
 
-      // If not a UUID, try to find existing analysis first
+      // Second try: Get by assessment ID
       try {
         console.log(`[useConciseInsightResults] Fetching by assessment ID: ${analysisId}`);
         result = await fetchAnalysisByAssessmentId(analysisId, user.id);
+        
+        if (result) {
+          const normalizedResult = normalizeTraitsData(result);
+          setAnalysis(normalizedResult);
+          setIsProcessingComplete(true);
+          console.log("[useConciseInsightResults] Successfully loaded existing analysis by assessment ID");
+          return;
+        }
       } catch (err) {
         console.error("[useConciseInsightResults] Error fetching by assessment ID:", err);
-        // Continue execution - we'll try generating new if needed
       }
       
-      // If not found by assessment ID, generate new analysis
+      // If no existing analysis found, generate new one
       if (!result && !signal?.aborted) {
         console.log(`[useConciseInsightResults] No existing analysis found, generating new for assessment: ${analysisId}`);
         
         try {
-          // Show toast at start of generation
-          const toastId = toast.loading("Generating your personality analysis...", {
-            duration: 120000, // 2 minute timeout just in case
-          });
+          const toastId = toast.loading("Generating your personality analysis...");
           
-          // Add a timeout promise to handle edge function timeouts
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Analysis generation timed out")), 120000); // 2-minute timeout
-          });
+          result = await generateNewAnalysis(analysisId, user.id);
           
-          // Race between the actual operation and the timeout
-          result = await Promise.race([
-            generateNewAnalysis(analysisId, user.id),
-            timeoutPromise
-          ]);
-          
-          // Dismiss the toast
           toast.dismiss(toastId);
           
-          // Save the newly generated analysis
           try {
             await saveAnalysisToDatabase(result, analysisId, user.id);
             toast.success("Analysis generated successfully!");
           } catch (err: any) {
             console.error("[useConciseInsightResults] Error saving to database:", err);
-            // If we get a duplicate error, fetch the existing analysis
+            // If we get a duplicate error, try fetching the existing analysis
             if (err.code === '23505' || err.message?.includes('unique_user_assessment_analysis')) {
               result = await fetchAnalysisByAssessmentId(analysisId, user.id);
               if (result) {
@@ -174,19 +155,14 @@ export const useConciseInsightResults = (analysisId?: string) => {
         } catch (genErr: any) {
           console.error("[useConciseInsightResults] Error generating analysis:", genErr);
           
-          // Check if we should retry
           if (retryAttempt < MAX_RETRIES) {
             setRetryAttempt(prev => prev + 1);
             
-            // Exponential backoff delay
             const backoffDelay = Math.pow(2, retryAttempt) * 1000;
             console.log(`[useConciseInsightResults] Retrying in ${backoffDelay/1000} seconds (attempt ${retryAttempt + 1}/${MAX_RETRIES})`);
             
-            toast.loading(`Analysis in progress, retrying in ${backoffDelay/1000} seconds...`, {
-              duration: backoffDelay + 1000
-            });
+            toast.loading(`Analysis in progress, retrying in ${backoffDelay/1000} seconds...`);
             
-            // Wait for backoff period then try again
             setTimeout(() => {
               if (!signal?.aborted) {
                 fetchAnalysis(signal);
@@ -196,16 +172,13 @@ export const useConciseInsightResults = (analysisId?: string) => {
             return;
           }
           
-          // Max retries reached, throw error to be handled below
           throw genErr;
         }
       }
 
       if (!signal?.aborted) {
-        // Normalize and validate the data before setting
         const normalizedResult = normalizeTraitsData(result);
         setAnalysis(normalizedResult);
-        // Reset retry count on success
         setRetryAttempt(0);
         setIsProcessingComplete(true);
       }
@@ -214,7 +187,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
       if (!signal?.aborted) {
         console.error("[useConciseInsightResults] Error in fetchAnalysis:", err);
         
-        // Provide more detailed error messages based on the error type
         let errorMessage;
         
         if (err.message?.includes('timeout') || err.message?.includes('timed out')) {
@@ -225,7 +197,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
           errorMessage = "Network error. Please check your connection and try again.";
         } else if (err.message?.includes('parse') || err.message?.includes('JSON')) {
           errorMessage = "There was an error processing the analysis data. Please try again.";
-          // Log more details for JSON parsing errors
           console.error("[useConciseInsightResults] JSON parsing error details:", err);
         } else {
           errorMessage = err.message || "An error occurred while fetching analysis";
@@ -234,7 +205,6 @@ export const useConciseInsightResults = (analysisId?: string) => {
         setError(errorMessage);
         setIsProcessingComplete(true);
         
-        // Show toast notification for the error
         toast.error("Analysis Error", {
           description: errorMessage
         });

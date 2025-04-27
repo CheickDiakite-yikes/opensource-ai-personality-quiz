@@ -1,679 +1,261 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Brain, HeartHandshake, Users, Lightbulb, Star, Sparkles, Info } from 'lucide-react';
 import { ConciseAnalysisResult } from '../../types';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { TraitsOverview } from '../TraitsOverview';
+import { Badge } from '@/components/ui/badge';
 
 interface TabContentProps {
   tabValue: string;
   analysis: ConciseAnalysisResult;
 }
 
-// Helper to parse score strings like "85/100 - Strong: description" 
-const parseScoreString = (scoreString: string | number): { 
-  score: number; 
-  label: string; 
-  description: string;
-} => {
-  // Handle numeric values
-  if (typeof scoreString === 'number') {
-    let label = "Average";
-    if (scoreString >= 90) label = "Exceptional";
-    else if (scoreString >= 80) label = "Very High";
-    else if (scoreString >= 70) label = "High";
-    else if (scoreString >= 60) label = "Above Average";
-    else if (scoreString <= 30) label = "Developing";
-    else if (scoreString <= 20) label = "Emerging";
-    
-    return { score: scoreString, label, description: label };
-  }
-  
-  // Handle string format like "85/100 - Strong: description"
-  try {
-    const scoreMatch = scoreString.match(/(\d+)\/100\s*-\s*([^:]+)(?::?\s*(.*))?/);
-    if (scoreMatch) {
-      return {
-        score: parseInt(scoreMatch[1]),
-        label: scoreMatch[2].trim(),
-        description: scoreMatch[3] ? scoreMatch[3].trim() : scoreMatch[2].trim()
-      };
-    }
-    
-    // Try to extract just the number
-    const numericMatch = scoreString.match(/(\d+)/);
-    if (numericMatch) {
-      const score = parseInt(numericMatch[1]);
-      let label = "Average";
-      if (score >= 90) label = "Exceptional";
-      else if (score >= 80) label = "Very High";
-      else if (score >= 70) label = "High";
-      else if (score >= 60) label = "Above Average";
-      else if (score <= 30) label = "Developing";
-      else if (score <= 20) label = "Emerging";
-      
-      return { score, label, description: scoreString };
-    }
-    
-    // Return a default for strings without recognizable scores
-    return { score: 50, label: "Balanced", description: scoreString };
-  } catch (e) {
-    console.error("Error parsing score string:", e);
-    return { score: 50, label: "Balanced", description: String(scoreString) };
-  }
-};
-
-// Format Helper Component for Empathy Score
-const EmpathyScoreDisplay = ({ empathy }: { empathy: string | number }) => {
-  const parsedScore = parseScoreString(empathy);
-  
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <h3 className="font-medium">Empathic Capacity</h3>
-        <Badge variant="outline">{parsedScore.label}</Badge>
-      </div>
-      
-      <div className="w-full bg-muted rounded-full h-2.5 mb-1">
-        <div 
-          className="bg-primary h-2.5 rounded-full" 
-          style={{ width: `${parsedScore.score}%` }}
-        />
-      </div>
-      
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Developing</span>
-        <span>Balanced</span>
-        <span>Advanced</span>
-      </div>
-      
-      <p className="text-sm text-muted-foreground mt-1">
-        {parsedScore.description}
-      </p>
-    </div>
+export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) => {
+  // Validate growth data before rendering
+  const hasGrowthData = analysis.growthPotential && (
+    (Array.isArray(analysis.growthPotential.areasOfDevelopment) && analysis.growthPotential.areasOfDevelopment.length > 0) ||
+    (Array.isArray(analysis.growthPotential.personalizedRecommendations) && analysis.growthPotential.personalizedRecommendations.length > 0) ||
+    (Array.isArray(analysis.growthPotential.keyStrengthsToLeverage) && analysis.growthPotential.keyStrengthsToLeverage.length > 0)
   );
-};
 
-// Render list with heading
-const RenderList = ({ 
-  items, 
-  title, 
-  emptyMessage = "No data available" 
-}: { 
-  items: string[] | undefined; 
-  title: string; 
-  emptyMessage?: string; 
-}) => {
-  if (!items || !Array.isArray(items) || items.length === 0) {
+  console.log('[TabContent] Rendering tab:', tabValue);
+  console.log('[TabContent] Analysis data:', analysis);
+  console.log('[TabContent] Has growth data:', hasGrowthData);
+  
+  if (tabValue === 'growth' && !hasGrowthData) {
     return (
-      <div>
-        <h3 className="font-medium mb-2">{title}</h3>
-        <p className="text-muted-foreground">{emptyMessage}</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Growth & Development</CardTitle>
+          <CardDescription>
+            No growth and development data available for this analysis.
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
-  return (
-    <div>
-      <h3 className="font-medium mb-2">{title}</h3>
-      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-        {items.map((item, i) => (
-          <li key={i}>{item}</li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-const renderGrowthSection = (growthPotential: any) => {
-  if (!growthPotential) {
-    console.warn("Growth potential data is missing");
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No growth potential data available
-      </div>
-    );
-  }
-
-  console.log("Rendering growth section with data:", {
-    areas: growthPotential.areasOfDevelopment?.length,
-    recommendations: growthPotential.personalizedRecommendations?.length,
-    strengths: growthPotential.keyStrengthsToLeverage?.length
-  });
-
-  return (
-    <div className="space-y-6">
-      {/* Render areas of development */}
-      {growthPotential.areasOfDevelopment && growthPotential.areasOfDevelopment.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-2">Areas for Development</h3>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-            {growthPotential.areasOfDevelopment.map((area: string, i: number) => (
-              <li key={i}>{area}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Render recommendations */}
-      {growthPotential.personalizedRecommendations && growthPotential.personalizedRecommendations.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-2">Personalized Recommendations</h3>
-          {Array.isArray(growthPotential.personalizedRecommendations) && 
-            growthPotential.personalizedRecommendations[0] && 
-            typeof growthPotential.personalizedRecommendations[0] === 'string' ? (
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              {(growthPotential.personalizedRecommendations as string[]).map((rec, i) => (
-                <li key={i}>{rec}</li>
-              ))}
-            </ul>
-          ) : (
-            <div className="space-y-3">
-              {(growthPotential.personalizedRecommendations as {
-                area: string;
-                why: string;
-                action: string;
-                resources: string;
-              }[]).map((rec, i) => (
-                <div key={i} className="p-3 border rounded-lg">
-                  <h4 className="font-medium">{rec.area}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{rec.why}</p>
-                  <div className="mt-2 flex flex-col gap-1">
-                    <div className="text-sm"><span className="font-medium">Action:</span> {rec.action}</div>
-                    <div className="text-sm"><span className="font-medium">Resource:</span> {rec.resources}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Render key strengths */}
-      {growthPotential.keyStrengthsToLeverage && growthPotential.keyStrengthsToLeverage.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-2">Key Strengths to Leverage</h3>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-            {growthPotential.keyStrengthsToLeverage.map((strength: string, i: number) => (
-              <li key={i}>{strength}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Render development timeline if available */}
-      {growthPotential.developmentTimeline && (
-        <div className="pt-2">
-          <h3 className="font-medium mb-2">Development Timeline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-muted bg-card/50">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm">Short Term (30 days)</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <p className="text-xs text-muted-foreground">
-                  {growthPotential.developmentTimeline.shortTerm}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-muted bg-card/50">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm">Medium Term (3-6 months)</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <p className="text-xs text-muted-foreground">
-                  {growthPotential.developmentTimeline.mediumTerm}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-muted bg-card/50">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm">Long Term</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <p className="text-xs text-muted-foreground">
-                  {growthPotential.developmentTimeline.longTerm}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
-  console.log(`TabContent rendering for tab: ${tabValue}`, analysis);
-  
-  // Helper function to render the career insights section based on type
-  const renderCareerInsights = () => {
-    if (Array.isArray(analysis.careerInsights)) {
-      return (
-        <div>
-          <h3 className="font-medium mb-2">Career Insights</h3>
-          <div className="flex flex-wrap gap-2">
-            {analysis.careerInsights.map((career, i) => (
-              <Badge key={i} variant="secondary">{career}</Badge>
-            ))}
-          </div>
-        </div>
-      );
-    } else if (typeof analysis.careerInsights === 'object') {
-      return (
-        <div className="space-y-4">
-          {analysis.careerInsights.environmentFit && (
-            <div>
-              <h3 className="font-medium mb-2">Ideal Work Environment</h3>
-              <p className="text-muted-foreground">{analysis.careerInsights.environmentFit}</p>
-            </div>
-          )}
-          
-          {analysis.careerInsights.challengeAreas && (
-            <div>
-              <h3 className="font-medium mb-2">Potential Challenges</h3>
-              <p className="text-muted-foreground">{analysis.careerInsights.challengeAreas}</p>
-            </div>
-          )}
-          
-          <div>
-            <h3 className="font-medium mb-2">Aligned Roles</h3>
-            <div className="flex flex-wrap gap-2">
-              {analysis.careerInsights.roleAlignments.map((role, i) => (
-                <Badge key={i} variant="secondary">{role}</Badge>
-              ))}
-            </div>
-          </div>
-          
-          {analysis.careerInsights.workStyles && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div>
-                <h4 className="text-sm font-medium">Collaboration Style</h4>
-                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.collaboration}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium">Autonomy Needs</h4>
-                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.autonomy}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium">Structure Preference</h4>
-                <p className="text-xs text-muted-foreground">{analysis.careerInsights.workStyles.structure}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-  
-  // Helper function to render personalized recommendations
-  const renderRecommendations = () => {
-    if (Array.isArray(analysis.growthPotential.personalizedRecommendations) && 
-        typeof analysis.growthPotential.personalizedRecommendations[0] === 'string') {
-      return (
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          {(analysis.growthPotential.personalizedRecommendations as string[]).map((rec, i) => (
-            <li key={i}>{rec}</li>
-          ))}
-        </ul>
-      );
-    } else {
-      return (
-        <div className="space-y-3">
-          {(analysis.growthPotential.personalizedRecommendations as {
-            area: string;
-            why: string;
-            action: string;
-            resources: string;
-          }[]).map((rec, i) => (
-            <div key={i} className="p-3 border rounded-lg">
-              <h4 className="font-medium">{rec.area}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{rec.why}</p>
-              <div className="mt-2 flex flex-col gap-1">
-                <div className="text-sm"><span className="font-medium">Action:</span> {rec.action}</div>
-                <div className="text-sm"><span className="font-medium">Resource:</span> {rec.resources}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-  };
-  
-  // Display unique markers if they exist in the analysis
-  const renderUniquenessMarkers = () => {
-    if (analysis.uniquenessMarkers && Array.isArray(analysis.uniquenessMarkers) && analysis.uniquenessMarkers.length > 0) {
-      return (
-        <div className="mb-4">
-          <h3 className="flex items-center gap-2 text-lg font-medium border-b pb-1">
-            <Sparkles className="h-5 w-5 text-primary" /> What Makes You Distinctive
-          </h3>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-            {analysis.uniquenessMarkers.map((marker, i) => (
-              <li key={i}>{marker}</li>
-            ))}
-          </ul>
-        </div>
-      );
-    }
-    return null;
-  };
-  
   switch (tabValue) {
     case 'traits':
-      // Add the missing traits tab case
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary" />
-              Personality Traits
-            </CardTitle>
-            <CardDescription>Your core personality traits and characteristics</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {analysis.traits && analysis.traits.length > 0 ? (
-              <TraitsOverview traits={analysis.traits} />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No trait data available for this analysis
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Personality Traits</CardTitle>
+              <CardDescription>Your key personality characteristics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {analysis.traits && analysis.traits.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {analysis.traits.map((trait, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{trait.trait}</span>
+                        <Badge variant="outline">{trait.score}%</Badge>
+                      </div>
+                      <Progress value={typeof trait.score === 'number' ? trait.score : parseInt(String(trait.score))} />
+                      <p className="text-sm text-muted-foreground">{trait.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No trait data available for this analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       );
-      
+
     case 'cognitive':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-primary" />
-              Cognitive Profile
-            </CardTitle>
-            <CardDescription>How you think, learn, and process information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-medium mb-2">Cognitive Style</h3>
-              <p className="text-muted-foreground">{analysis.cognitiveProfile.style}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <RenderList 
-                title="Cognitive Strengths" 
-                items={analysis.cognitiveProfile.strengths}
-              />
-              
-              <RenderList 
-                title="Potential Blind Spots" 
-                items={analysis.cognitiveProfile.blindSpots}
-              />
-            </div>
-            
-            {analysis.cognitiveProfile.learningStyle && (
-              <div>
-                <h3 className="font-medium mb-2">Learning Style</h3>
-                <p className="text-muted-foreground">{analysis.cognitiveProfile.learningStyle}</p>
-              </div>
-            )}
-            
-            {analysis.cognitiveProfile.decisionMakingProcess && (
-              <div>
-                <h3 className="font-medium mb-2">Decision Making Process</h3>
-                <p className="text-muted-foreground">{analysis.cognitiveProfile.decisionMakingProcess}</p>
-              </div>
-            )}
-            
-            <div>
-              <p className="text-muted-foreground">{analysis.cognitiveProfile.description}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cognitive Style</CardTitle>
+              <CardDescription>How you process information and make decisions</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.cognitiveStyle ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.cognitiveStyle }} />
+              ) : (
+                <p className="text-muted-foreground">No cognitive style data available for this analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Decision Making</CardTitle>
+              <CardDescription>Your approach to problem-solving and decisions</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.decisionMaking ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.decisionMaking }} />
+              ) : (
+                <p className="text-muted-foreground">No decision making data available for this analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       );
 
     case 'emotional':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HeartHandshake className="h-5 w-5 text-primary" />
-              Emotional Insights
-            </CardTitle>
-            <CardDescription>How you experience and manage emotions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <h3 className="font-medium">Emotional Awareness</h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground cursor-help">
-                        <Info className="h-3.5 w-3.5" />
-                        <span>Understanding your own emotions</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Emotional awareness reflects your ability to recognize and understand your emotions as they occur</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                {typeof analysis.emotionalInsights.awareness === 'string' ? (
-                  <p className="text-muted-foreground">{analysis.emotionalInsights.awareness}</p>
-                ) : (
-                  // If it's just a number, display with progress bar
-                  <div className="space-y-1">
-                    <Progress value={analysis.emotionalInsights.awareness as number * 10} className="h-2" />
-                    <div className="flex justify-between text-xs">
-                      <span>Developing</span>
-                      <span>Advanced</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">Emotional Regulation</h3>
-                <p className="text-muted-foreground">{analysis.emotionalInsights.regulation}</p>
-              </div>
-            </div>
-            
-            <EmpathyScoreDisplay empathy={analysis.emotionalInsights.empathy} />
-            
-            {analysis.emotionalInsights.stressResponse && (
-              <div>
-                <h3 className="font-medium mb-2">Stress Response</h3>
-                <p className="text-muted-foreground">{analysis.emotionalInsights.stressResponse}</p>
-              </div>
-            )}
-            
-            {analysis.emotionalInsights.emotionalTriggersAndCoping && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <RenderList 
-                  title="Potential Triggers" 
-                  items={analysis.emotionalInsights.emotionalTriggersAndCoping.triggers}
-                />
-                
-                <RenderList 
-                  title="Effective Coping Strategies" 
-                  items={analysis.emotionalInsights.emotionalTriggersAndCoping.copingStrategies}
-                />
-              </div>
-            )}
-            
-            <div>
-              <p className="text-muted-foreground">{analysis.emotionalInsights.description}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Emotional Architecture</CardTitle>
+              <CardDescription>How you experience and process emotions</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.emotionalArchitecture ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.emotionalArchitecture }} />
+              ) : (
+                <p className="text-muted-foreground">No emotional architecture data available for this analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Stress Response</CardTitle>
+              <CardDescription>How you typically respond to stress and pressure</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.stressResponse ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.stressResponse }} />
+              ) : (
+                <p className="text-muted-foreground">No stress response data available for this analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       );
 
     case 'social':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Interpersonal Dynamics
-            </CardTitle>
-            <CardDescription>How you interact and connect with others</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-1">
-                <h3 className="font-medium mb-1">Communication Style</h3>
-                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.communicationStyle.split(':')[0]}</Badge>
-                <p className="text-sm text-muted-foreground">
-                  {analysis.interpersonalDynamics.communicationStyle.includes(':') 
-                    ? analysis.interpersonalDynamics.communicationStyle.split(':')[1].trim()
-                    : ''}
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <h3 className="font-medium mb-1">Relationship Pattern</h3>
-                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.relationshipPattern.split(':')[0]}</Badge>
-                <p className="text-sm text-muted-foreground">
-                  {analysis.interpersonalDynamics.relationshipPattern.includes(':') 
-                    ? analysis.interpersonalDynamics.relationshipPattern.split(':')[1].trim() 
-                    : ''}
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <h3 className="font-medium mb-1">Conflict Approach</h3>
-                <Badge variant="outline" className="mb-2">{analysis.interpersonalDynamics.conflictApproach.split(':')[0]}</Badge>
-                <p className="text-sm text-muted-foreground">
-                  {analysis.interpersonalDynamics.conflictApproach.includes(':') 
-                    ? analysis.interpersonalDynamics.conflictApproach.split(':')[1].trim() 
-                    : ''}
-                </p>
-              </div>
-            </div>
-            
-            {analysis.interpersonalDynamics.socialNeeds && (
-              <div>
-                <h3 className="font-medium mb-2">Social Needs</h3>
-                <p className="text-muted-foreground">{analysis.interpersonalDynamics.socialNeeds}</p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {analysis.interpersonalDynamics.leadershipStyle && (
-                <div>
-                  <h3 className="font-medium mb-2">Leadership Style</h3>
-                  <p className="text-muted-foreground">{analysis.interpersonalDynamics.leadershipStyle}</p>
-                </div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Interaction Style</CardTitle>
+              <CardDescription>How you engage with others and navigate social situations</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.socialInteractionStyle ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.socialInteractionStyle }} />
+              ) : (
+                <p className="text-muted-foreground">No social interaction data available for this analysis.</p>
               )}
-              
-              {analysis.interpersonalDynamics.teamRole && (
-                <div>
-                  <h3 className="font-medium mb-2">Team Role</h3>
-                  <p className="text-muted-foreground">{analysis.interpersonalDynamics.teamRole}</p>
-                </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Communication Style</CardTitle>
+              <CardDescription>Your preferred methods of expression and communication</CardDescription>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              {analysis.communicationStyle ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.communicationStyle }} />
+              ) : (
+                <p className="text-muted-foreground">No communication style data available for this analysis.</p>
               )}
-            </div>
-            
-            {analysis.coreProfiling.compatibilityInsights && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                <Card className="border-muted bg-card/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-base">Compatibility Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.coreProfiling.compatibilityInsights.map((insight, i) => (
-                        <li key={i}>{insight}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-muted bg-card/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-base">Relationship Challenges</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => 
-                        t.trait.includes("Social") || 
-                        t.trait.includes("Empathy") || 
-                        t.trait.includes("Communication") || 
-                        t.trait.includes("Interpersonal")
-                      ).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
-                        <li key={i}>{challenge}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            
-            {!analysis.coreProfiling.compatibilityInsights && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                <Card className="border-muted bg-card/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-base">Relationship Strengths</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => 
-                        t.trait.includes("Social") || 
-                        t.trait.includes("Empathy") || 
-                        t.trait.includes("Communication") || 
-                        t.trait.includes("Interpersonal")
-                      ).flatMap(t => t.strengths).slice(0, 3).map((strength, i) => (
-                        <li key={i}>{strength}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-muted bg-card/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-base">Relationship Challenges</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {analysis.traits.filter(t => 
-                        t.trait.includes("Social") || 
-                        t.trait.includes("Empathy") || 
-                        t.trait.includes("Communication") || 
-                        t.trait.includes("Interpersonal")
-                      ).flatMap(t => t.challenges).slice(0, 3).map((challenge, i) => (
-                        <li key={i}>{challenge}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       );
 
     case 'growth':
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-primary" />
-              Growth & Development
-            </CardTitle>
-            <CardDescription>Your potential for growth and personal development</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {renderGrowthSection(analysis.growthPotential)}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {analysis.growthPotential?.areasOfDevelopment && analysis.growthPotential.areasOfDevelopment.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Areas for Development</CardTitle>
+                <CardDescription>Key areas where you can focus your growth</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-6 space-y-2">
+                  {analysis.growthPotential.areasOfDevelopment.map((area, index) => (
+                    <li key={index}>{area}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.growthPotential?.personalizedRecommendations && analysis.growthPotential.personalizedRecommendations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Personalized Recommendations</CardTitle>
+                <CardDescription>Actionable steps for your development</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-6 space-y-2">
+                  {analysis.growthPotential.personalizedRecommendations.map((rec, index) => (
+                    <li key={index}>{rec}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.growthPotential?.keyStrengthsToLeverage && analysis.growthPotential.keyStrengthsToLeverage.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Strengths to Leverage</CardTitle>
+                <CardDescription>Build upon these strengths in your growth journey</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-6 space-y-2">
+                  {analysis.growthPotential.keyStrengthsToLeverage.map((strength, index) => (
+                    <li key={index}>{strength}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.growthPotential?.developmentTimeline && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Development Timeline</CardTitle>
+                <CardDescription>A roadmap for your personal growth</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {analysis.growthPotential.developmentTimeline.shortTerm && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Short Term</h3>
+                    <p className="text-muted-foreground">{analysis.growthPotential.developmentTimeline.shortTerm}</p>
+                  </div>
+                )}
+                
+                {analysis.growthPotential.developmentTimeline.mediumTerm && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Medium Term</h3>
+                    <p className="text-muted-foreground">{analysis.growthPotential.developmentTimeline.mediumTerm}</p>
+                  </div>
+                )}
+                
+                {analysis.growthPotential.developmentTimeline.longTerm && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Long Term</h3>
+                    <p className="text-muted-foreground">{analysis.growthPotential.developmentTimeline.longTerm}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       );
 
     default:
-      return null;
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tab Content</CardTitle>
+            <CardDescription>No content available for this tab.</CardDescription>
+          </CardHeader>
+        </Card>
+      );
   }
 };
