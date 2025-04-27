@@ -14,35 +14,27 @@ interface ReportDetailsProps {
 }
 
 export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
+  console.log('Analysis data received:', analysis);
+  
   return (
     <div className="flex flex-col gap-8">
       <header className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Your Personality Analysis</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Discover insights about your personality traits, cognitive patterns, and emotional architecture
+          {analysis.overview}
         </p>
       </header>
       
       <Card className="border-2 border-primary/10">
         <CardHeader>
-          <CardTitle className="text-2xl">Personal Overview</CardTitle>
-          <CardDescription>A summary of your core personality traits and patterns</CardDescription>
+          <CardTitle className="text-2xl">Core Profiling</CardTitle>
+          <CardDescription>Your personality profile and key characteristics</CardDescription>
         </CardHeader>
-        <CardContent className="prose dark:prose-invert max-w-none">
-          <p>{analysis.overview}</p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">Core Archetype</CardTitle>
-          <CardDescription>Your dominant personality pattern</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="prose dark:prose-invert max-w-none space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <h3 className="text-xl font-semibold mb-2">
-                Primary: <Badge variant="outline" className="ml-2">{analysis.coreProfiling.primaryArchetype}</Badge>
+                Primary Archetype: <Badge variant="outline" className="ml-2">{analysis.coreProfiling.primaryArchetype}</Badge>
               </h3>
               <h4 className="text-lg font-medium mb-2">
                 Secondary: <Badge variant="outline" className="ml-2">{analysis.coreProfiling.secondaryArchetype}</Badge>
@@ -50,6 +42,27 @@ export const ReportDetails = ({ analysis }: ReportDetailsProps) => {
             </div>
           </div>
           <p className="text-muted-foreground">{analysis.coreProfiling.description}</p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" /> 
+            Cognitive & Behavioral Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium mb-2">Cognitive Style</h3>
+              <p className="text-muted-foreground">{analysis.cognitiveProfile.style}</p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Learning Approach</h3>
+              <p className="text-muted-foreground">{analysis.cognitiveProfile.learningStyle}</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
       
