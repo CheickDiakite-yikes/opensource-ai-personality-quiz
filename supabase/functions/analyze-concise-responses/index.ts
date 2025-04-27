@@ -14,32 +14,156 @@ interface RequestPayload {
   userId?: string;
 }
 
-// Helper function to clean and repair JSON strings
+// Advanced JSON cleaning and repair function with progressive repairs
 const cleanJsonString = (str: string): string => {
-  return str
-    .replace(/\\"/g, '"') // Fix escaped quotes
-    .replace(/"\s*"\s*([^"]+)\s*"\s*"/, '"$1"') // Fix double quoted values
-    .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
-    .replace(/([^"'])\s*:\s*"?\s*([^"'\d\[{][^,}\]]*)\s*"?\s*([,}\]])/g, '$1:"$2"$3') // Quote unquoted string values
-    .replace(/"\s*,\s*([}\]])/g, '"$1') // Fix extra commas before closing brackets/braces
-    .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+  console.log("Original JSON length:", str.length);
+  
+  try {
+    // Initial cleaning steps
+    let cleaned = str
+      .replace(/\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, '') // Remove invalid escapes
+      .replace(/\n\s*\n/g, '\n') // Remove empty lines
+      .replace(/,\s*}/g, '}') // Remove trailing commas in objects
+      .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+      .replace(/}\s*{/g, '},{') // Fix object concatenation
+      .replace(/]\s*\[/g, '],[') // Fix array concatenation
+      .replace(/"\s*"/g, '", "'); // Fix adjacent strings
+    
+    // Handle specifically problematic patterns:
+    
+    // Fix double-quoted strings (common OpenAI issue)
+    cleaned = cleaned.replace(/"([^"]*?)\\?"([^"]*?)\\?"([^"]*?)"/g, (match) => {
+      return match.replace(/\\?"/g, '\\"');
+    });
+    
+    // Fix improperly quoted property names
+    cleaned = cleaned.replace(/""([a-zA-Z0-9_]+)""\s*:/g, '"$1":');
+    
+    // Fix improperly quoted property values
+    cleaned = cleaned.replace(/:\s*""([^"]*)?""/g, ':"$1"');
+    
+    // Handle unquoted property values that should be strings
+    cleaned = cleaned.replace(/:(\s*[^0-9\[\{"][^,}\]]*?)([,}\]])/g, ':"$1"$2');
+    
+    // Fix quotes within strings that aren't escaped
+    cleaned = cleaned.replace(/"([^"]*)"([^"]*)"([^"]*)"/g, (match, p1, p2, p3) => {
+      return `"${p1}${p2.replace(/"/g, '\\"')}${p3}"`;
+    });
+    
+    // Fix specific pattern in timeline objects
+    cleaned = cleaned.replace(/"timeline"\s*:\s*{\s*""([^"]+)"\s*:\s*"([^"]+)""([^"]+)"\s*:\s*"([^"]+)""/g, 
+      '"timeline": { "$1": "$2", "$3": "$4"');
+    
+    // Fix extra quote marks in array elements
+    cleaned = cleaned.replace(/"([^"]+)""/g, '"$1"');
+    
+    // Fix broken timeline patterns (from observed errors)
+    const timelinePattern = /"timeline"\s*:\s*{([^}]*)}/g;
+    cleaned = cleaned.replace(timelinePattern, (match) => {
+      let timelineFix = match
+        .replace(/""([^"]+)"\s*:\s*"([^"]+)""/g, '"$1": "$2"')
+        .replace(/:\s*"([^"]*)"([^"]*)""/g, ': "$1$2"')
+        .replace(/":"(\+\d+\s+[^:]+):"/g, '":"$1","');
+      
+      return timelinePattern.test(timelineFix) ? timelineFix : match;
+    });
+    
+    // Try to fix problems with mismatched brackets
+    let bracketBalance = 0;
+    let curlyBalance = 0;
+    
+    for (let i = 0; i < cleaned.length; i++) {
+      if (cleaned[i] === '{') curlyBalance++;
+      if (cleaned[i] === '}') curlyBalance--;
+      if (cleaned[i] === '[') bracketBalance++;
+      if (cleaned[i] === ']') bracketBalance--;
+    }
+    
+    // Fix imbalanced brackets
+    while (bracketBalance > 0) {
+      cleaned += ']';
+      bracketBalance--;
+    }
+    
+    // Fix imbalanced curly braces
+    while (curlyBalance > 0) {
+      cleaned += '}';
+      curlyBalance--;
+    }
+    
+    // Remove any trailing garbage after final closing brace
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (lastBrace > 0) {
+      cleaned = cleaned.substring(0, lastBrace + 1);
+    }
+    
+    console.log("Cleaned JSON length:", cleaned.length);
+    return cleaned;
+    
+  } catch (e) {
+    console.error("Error in JSON cleaning process:", e);
+    return str; // Return original if cleaning fails
+  }
 };
 
-// Validate analysis data structure
+// Structure validation functions
+const validateField = (data: any, field: string, type: string): boolean => {
+  if (data[field] === undefined) {
+    console.error(`Missing field: ${field}`);
+    return false;
+  }
+  
+  if (type === 'array' && !Array.isArray(data[field])) {
+    console.error(`Field ${field} should be an array`);
+    return false;
+  }
+  
+  if (type === 'object' && (typeof data[field] !== 'object' || Array.isArray(data[field]))) {
+    console.error(`Field ${field} should be an object`);
+    return false;
+  }
+  
+  if (type === 'string' && typeof data[field] !== 'string') {
+    console.error(`Field ${field} should be a string`);
+    return false;
+  }
+  
+  if (type === 'number' && typeof data[field] !== 'number') {
+    console.error(`Field ${field} should be a number`);
+    return false;
+  }
+  
+  return true;
+};
+
+// Complete structure validation
 const validateAnalysisData = (data: any): boolean => {
+  if (!data) {
+    console.error("Data is null or undefined");
+    return false;
+  }
+  
   const requiredFields = [
-    'id', 'overview', 'uniquenessMarkers', 'coreProfiling',
-    'traits', 'cognitiveProfile', 'emotionalInsights', 
-    'interpersonalDynamics', 'growthPotential'
+    { name: 'id', type: 'string' },
+    { name: 'overview', type: 'string' },
+    { name: 'uniquenessMarkers', type: 'array' },
+    { name: 'coreProfiling', type: 'object' },
+    { name: 'traits', type: 'array' },
+    { name: 'cognitiveProfile', type: 'object' },
+    { name: 'emotionalInsights', type: 'object' }, 
+    { name: 'interpersonalDynamics', type: 'object' },
+    { name: 'growthPotential', type: 'object' }
   ];
   
-  return requiredFields.every(field => {
-    const hasField = data?.[field] !== undefined;
-    if (!hasField) {
-      console.error(`Missing required field: ${field}`);
+  let isValid = true;
+  
+  for (const field of requiredFields) {
+    if (!validateField(data, field.name, field.type)) {
+      isValid = false;
     }
-    return hasField;
-  });
+  }
+  
+  return isValid;
 };
 
 serve(async (req) => {
@@ -74,14 +198,15 @@ serve(async (req) => {
     console.log(`Using seed: ${seed} for analysis generation`);
 
     const systemPrompt = `You are an expert personality profiler that generates analysis in precise JSON format.
-    Important JSON formatting rules:
-    1. All strings must use double quotes
-    2. No trailing commas
-    3. All numbers should be unquoted
-    4. Property names must be valid JSON keys
-    5. Arrays and objects must be properly closed
-    6. Validate JSON structure before responding
-    7. Keep responses concise and focused`;
+    Format your response as valid JSON with the following requirements:
+    1. All string values must be enclosed in double quotes
+    2. Property names must be valid JSON keys without extra quotes
+    3. No trailing commas in objects or arrays
+    4. Numbers should not be quoted (e.g., use 5, not "5")
+    5. Arrays and objects must be properly closed with ] and }
+    6. String values can't contain unescaped quotes - use \\" for quotes inside strings
+    7. Avoid creating deeply nested structures beyond what's requested
+    8. Always check your output to ensure it's valid JSON before returning`;
 
     // Request with strict JSON formatting
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -99,7 +224,7 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: `Generate a personality analysis in the following exact JSON format with these specific types:
+            content: `Generate a personality analysis in the following specific JSON format:
 {
   "id": "string (UUID)",
   "overview": "string",
@@ -147,18 +272,19 @@ serve(async (req) => {
 Based on these responses:
 ${Object.entries(responses).map(([id, response]) => `${id}: "${response}"`).join('\n')}
 
-Use seed ${seed} for consistency.`
+Use seed ${seed} for consistency. 
+IMPORTANT: Your response must be a valid, parseable JSON object. Do not include anything outside of the JSON structure.`
           }
         ],
-        temperature: 0.5,
-        frequency_penalty: 0.3,
-        presence_penalty: 0.2,
-        response_format: { type: "json_object" },
+        temperature: 0.4, // Lower temperature for more consistent output
+        frequency_penalty: 0.2,
+        presence_penalty: 0.1,
+        response_format: { type: "json_object" }, // Force JSON response format
         max_tokens: 4000,
       }),
     });
 
-    // Enhanced response handling and validation
+    // Enhanced response handling and validation with multiple fallback strategies
     let analysisData;
     try {
       const data = await response.json();
@@ -172,23 +298,48 @@ Use seed ${seed} for consistency.`
       let analysisText = data.choices[0].message.content;
       console.log("Cleaning and validating response text");
       
-      // Clean and repair the JSON string
-      analysisText = cleanJsonString(analysisText);
-      
-      // Parse and validate the JSON structure
+      // Initial attempt: direct parse
       try {
         analysisData = JSON.parse(analysisText);
+        console.log("JSON parsed successfully on first attempt");
+      } catch (initialParseError) {
+        // First fallback: clean and repair the JSON string
+        console.log("Initial parse failed, attempting to clean JSON");
+        const cleanedText = cleanJsonString(analysisText);
         
-        if (!validateAnalysisData(analysisData)) {
-          throw new Error("Invalid analysis data structure");
+        try {
+          // Try to parse the cleaned JSON
+          analysisData = JSON.parse(cleanedText);
+          console.log("JSON parsed successfully after cleaning");
+        } catch (parseError) {
+          console.error("Error parsing cleaned JSON:", parseError);
+          console.error("Problematic JSON:", cleanedText);
+          
+          // Last resort: Try to extract partial data
+          try {
+            // Try to extract a valid JSON subset using regex
+            const jsonMatch = cleanedText.match(/\{(?:[^{}]|(\{(?:[^{}]|{[^{}]*})*}))*\}/);
+            if (jsonMatch) {
+              const potentialJson = jsonMatch[0];
+              console.log("Attempting to parse JSON subset");
+              analysisData = JSON.parse(potentialJson);
+              console.log("Partial JSON recovery successful");
+            } else {
+              throw new Error("Could not extract valid JSON subset");
+            }
+          } catch (fallbackError) {
+            console.error("All parsing attempts failed:", fallbackError);
+            throw new Error(`Failed to parse analysis result: ${parseError.message}`);
+          }
         }
-
-        console.log("Successfully parsed and validated analysis data");
-      } catch (parseError) {
-        console.error("Error parsing OpenAI response:", parseError);
-        console.error("Problematic JSON:", analysisText);
-        throw new Error(`Failed to parse analysis result: ${parseError.message}`);
       }
+      
+      // Validate the structure of the analysis data
+      if (!validateAnalysisData(analysisData)) {
+        throw new Error("Invalid analysis data structure");
+      }
+
+      console.log("Successfully parsed and validated analysis data");
       
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
