@@ -125,30 +125,35 @@ export const saveAnalysisToDatabase = async (
   userId: string
 ) => {
   try {
-    // Check if an analysis already exists to avoid duplicates
-    const { data: existingAnalysis } = await supabase
+    const { data, error } = await supabase
       .from('concise_analyses')
-      .select('id')
-      .eq('assessment_id', assessmentId)
-      .eq('user_id', userId)
-      .maybeSingle();
-      
-    if (existingAnalysis) {
-      console.log(`[saveAnalysisToDatabase] Analysis already exists for assessment ${assessmentId}, skipping save`);
-      return;
-    }
-      
-    const { error: saveError } = await supabase
-      .from('concise_analyses')
-      .insert({
+      .upsert({
         assessment_id: assessmentId,
         user_id: userId,
         analysis_data: analysis as any
-      });
+      }, {
+        onConflict: 'user_id,assessment_id',
+        ignoreDuplicates: true
+      })
+      .select()
+      .single();
       
-    if (saveError) throw saveError;
-    console.log("[saveAnalysisToDatabase] Analysis saved successfully");
+    if (error) {
+      // Only log duplicates but don't treat them as errors
+      if (error.code === '23505') {
+        console.log("[saveAnalysisToDatabase] Analysis already exists, using existing");
+        return;
+      }
+      throw error;
+    }
+    
+    console.log("[saveAnalysisToDatabase] Analysis saved/updated successfully");
   } catch (err: any) {
+    // If it's a unique constraint violation, just log it
+    if (err.code === '23505') {
+      console.log("[saveAnalysisToDatabase] Analysis already exists, using existing");
+      return;
+    }
     console.error("[saveAnalysisToDatabase] Error:", err);
     toast.error("Analysis generated but couldn't be saved for future use");
     throw err;

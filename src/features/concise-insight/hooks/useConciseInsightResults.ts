@@ -55,12 +55,12 @@ export const useConciseInsightResults = (analysisId?: string) => {
         }
       }
 
-      // If not a UUID, treat as assessment ID
+      // If not a UUID, try to find existing analysis first
       result = await fetchAnalysisByAssessmentId(analysisId, user.id);
       
       // If not found by assessment ID, generate new analysis
       if (!result && !signal?.aborted) {
-        console.log(`[useConciseInsightResults] Generating new analysis for assessment: ${analysisId}`);
+        console.log(`[useConciseInsightResults] No existing analysis found, generating new for assessment: ${analysisId}`);
         
         try {
           // Add a timeout promise to handle edge function timeouts
@@ -77,11 +77,14 @@ export const useConciseInsightResults = (analysisId?: string) => {
           // Save the newly generated analysis
           try {
             await saveAnalysisToDatabase(result, analysisId, user.id);
+            toast.success("Analysis generated successfully!");
           } catch (err: any) {
-            if (err.message?.includes('unique_user_assessment_analysis')) {
-              // Race condition - another process saved it first, fetch it
+            // If we get a duplicate error, fetch the existing analysis
+            if (err.code === '23505' || err.message?.includes('unique_user_assessment_analysis')) {
               result = await fetchAnalysisByAssessmentId(analysisId, user.id);
-              toast.info("Using existing analysis");
+              if (result) {
+                toast.info("Using existing analysis");
+              }
             } else {
               throw err;
             }
@@ -97,7 +100,7 @@ export const useConciseInsightResults = (analysisId?: string) => {
             const backoffDelay = Math.pow(2, retryAttempt) * 1000;
             console.log(`[useConciseInsightResults] Retrying in ${backoffDelay/1000} seconds (attempt ${retryAttempt + 1}/${MAX_RETRIES})`);
             
-            toast.loading(`Edge function error, retrying in ${backoffDelay/1000} seconds...`, {
+            toast.loading(`Analysis in progress, retrying in ${backoffDelay/1000} seconds...`, {
               duration: backoffDelay + 1000
             });
             
@@ -108,12 +111,11 @@ export const useConciseInsightResults = (analysisId?: string) => {
               }
             }, backoffDelay);
             
-            // Don't continue with error handling
             return;
-          } else {
-            // Max retries reached, throw error to be handled below
-            throw genErr;
           }
+          
+          // Max retries reached, throw error to be handled below
+          throw genErr;
         }
       }
 
