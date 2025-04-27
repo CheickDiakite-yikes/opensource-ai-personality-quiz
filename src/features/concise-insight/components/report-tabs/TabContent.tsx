@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ConciseAnalysisResult } from '../../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,8 +75,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>How you process information and make decisions</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.cognitiveStyle ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.cognitiveStyle }} />
+              {analysis.cognitiveProfile?.style ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.cognitiveProfile.style }} />
               ) : (
                 <p className="text-muted-foreground">No cognitive style data available for this analysis.</p>
               )}
@@ -88,8 +89,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>Your approach to problem-solving and decisions</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.decisionMaking ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.decisionMaking }} />
+              {analysis.cognitiveProfile?.decisionMakingProcess ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.cognitiveProfile.decisionMakingProcess }} />
               ) : (
                 <p className="text-muted-foreground">No decision making data available for this analysis.</p>
               )}
@@ -107,8 +108,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>How you experience and process emotions</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.emotionalArchitecture ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.emotionalArchitecture }} />
+              {analysis.emotionalInsights?.description ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.emotionalInsights.description }} />
               ) : (
                 <p className="text-muted-foreground">No emotional architecture data available for this analysis.</p>
               )}
@@ -121,8 +122,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>How you typically respond to stress and pressure</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.stressResponse ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.stressResponse }} />
+              {analysis.emotionalInsights?.stressResponse ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.emotionalInsights.stressResponse }} />
               ) : (
                 <p className="text-muted-foreground">No stress response data available for this analysis.</p>
               )}
@@ -140,8 +141,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>How you engage with others and navigate social situations</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.socialInteractionStyle ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.socialInteractionStyle }} />
+              {analysis.interpersonalDynamics?.relationshipPattern ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.interpersonalDynamics.relationshipPattern }} />
               ) : (
                 <p className="text-muted-foreground">No social interaction data available for this analysis.</p>
               )}
@@ -154,8 +155,8 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               <CardDescription>Your preferred methods of expression and communication</CardDescription>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              {analysis.communicationStyle ? (
-                <div dangerouslySetInnerHTML={{ __html: analysis.communicationStyle }} />
+              {analysis.interpersonalDynamics?.communicationStyle ? (
+                <div dangerouslySetInnerHTML={{ __html: analysis.interpersonalDynamics.communicationStyle }} />
               ) : (
                 <p className="text-muted-foreground">No communication style data available for this analysis.</p>
               )}
@@ -191,8 +192,17 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
               </CardHeader>
               <CardContent>
                 <ul className="list-disc pl-6 space-y-2">
-                  {analysis.growthPotential.personalizedRecommendations.map((rec, index) => (
-                    <li key={index}>{rec}</li>
+                  {Array.isArray(analysis.growthPotential.personalizedRecommendations) && 
+                   analysis.growthPotential.personalizedRecommendations.map((rec, index) => (
+                    <li key={index}>
+                      {typeof rec === 'string' ? rec : (
+                        <div>
+                          <strong>{rec.area}</strong>: {rec.action} 
+                          {rec.why && <span className="block text-sm text-muted-foreground mt-1">Why: {rec.why}</span>}
+                          {rec.resources && <span className="block text-sm text-muted-foreground">Resources: {rec.resources}</span>}
+                        </div>
+                      )}
+                    </li>
                   ))}
                 </ul>
               </CardContent>
@@ -259,3 +269,4 @@ export const TabContent: React.FC<TabContentProps> = ({ tabValue, analysis }) =>
       );
   }
 };
+

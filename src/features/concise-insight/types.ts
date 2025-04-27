@@ -1,4 +1,5 @@
 
+
 // Define the types for the Concise Insight feature
 export type ConciseInsightCategory = 
   | "core_traits" 
@@ -98,3 +99,4 @@ export interface ConciseAnalysisResult {
     };
   };
 }
+
