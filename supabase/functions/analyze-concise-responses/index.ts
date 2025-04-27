@@ -197,16 +197,18 @@ serve(async (req) => {
     const seed = Math.floor(Math.random() * 10000);
     console.log(`Using seed: ${seed} for analysis generation`);
 
-    const systemPrompt = `You are an expert personality profiler that generates analysis in precise JSON format.
-    Format your response as valid JSON with the following requirements:
-    1. All string values must be enclosed in double quotes
-    2. Property names must be valid JSON keys without extra quotes
-    3. No trailing commas in objects or arrays
-    4. Numbers should not be quoted (e.g., use 5, not "5")
-    5. Arrays and objects must be properly closed with ] and }
-    6. String values can't contain unescaped quotes - use \\" for quotes inside strings
-    7. Avoid creating deeply nested structures beyond what's requested
-    8. Always check your output to ensure it's valid JSON before returning`;
+    const systemPrompt = `You are an elite psychological profiler with expertise in personality assessment, emotional intelligence, and cognitive behavior analysis. 
+You deliver detailed, transformative personality insights that are emotionally resonant, intellectually substantive, and deeply personal.
+Your analysis must be COMPREHENSIVE, TOUCHING, EMOTIONALLY RICH and EXPERTLY CRAFTED. Write as if you truly understand the depths of the human psyche.
+
+Format your response as valid JSON with the following requirements:
+1. All string values must be enclosed in double quotes
+2. Property names must be valid JSON keys without extra quotes
+3. No trailing commas in objects or arrays
+4. Numbers should not be quoted (e.g., use 5, not "5")
+5. Arrays and objects must be properly closed with ] and }
+6. String values can't contain unescaped quotes - use \\" for quotes inside strings
+7. ALWAYS double check your output for valid JSON before returning`;
 
     // Request with strict JSON formatting
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -224,47 +226,79 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: `Generate a personality analysis in the following specific JSON format:
+            content: `Generate an EXTRAORDINARILY detailed, emotionally resonant, and expertly crafted personality analysis in the following specific JSON format:
 {
   "id": "string (UUID)",
-  "overview": "string",
-  "uniquenessMarkers": ["string"],
+  "overview": "string (MUST BE AT LEAST 750-1000 WORDS, deeply personal, emotionally touching, and genuinely insightful)",
+  "uniquenessMarkers": ["string (SPECIFIC traits that make this person stand out)"],
   "coreProfiling": {
-    "primaryArchetype": "string",
-    "secondaryArchetype": "string",
-    "description": "string",
-    "compatibilityInsights": ["string"]
+    "primaryArchetype": "string (EVOCATIVE and SPECIFIC archetype name)",
+    "secondaryArchetype": "string (COMPLEMENTARY archetype name)",
+    "description": "string (RICH, DETAILED description that captures their essence)",
+    "compatibilityInsights": ["string (DEEP relationship insights based on personality)"]
   },
   "traits": [{
-    "trait": "string",
-    "score": number,
-    "description": "string",
-    "strengths": ["string"],
-    "challenges": ["string"]
+    "trait": "string (NUANCED trait name)",
+    "score": number (0-100, CAREFULLY calibrated),
+    "description": "string (DETAILED explanation with PERSONAL examples)",
+    "strengths": ["string (SPECIFIC strengths with PRACTICAL applications)"],
+    "challenges": ["string (COMPASSIONATE framing of difficulties they face)"]
   }],
   "cognitiveProfile": {
-    "style": "string",
-    "strengths": ["string"],
-    "blindSpots": ["string"],
-    "learningStyle": "string"
+    "style": "string (PRECISE thinking pattern description)",
+    "strengths": ["string (DETAILED cognitive advantages)"],
+    "blindSpots": ["string (TENDERLY framed cognitive limitations)"],
+    "learningStyle": "string (SPECIFIC learning preferences)",
+    "decisionMakingProcess": "string (DETAILED explanation of their decision approach)"
   },
   "emotionalInsights": {
-    "awareness": number,
-    "regulation": "string",
-    "empathy": number,
-    "description": "string"
+    "awareness": number (0-100, CAREFULLY assessed),
+    "regulation": "string (SPECIFIC emotional regulation pattern)",
+    "empathy": number (0-100, PRECISELY evaluated),
+    "description": "string (RICH emotional landscape description)",
+    "stressResponse": "string (DETAILED pattern under pressure)",
+    "emotionalTriggersAndCoping": {
+      "triggers": ["string (SPECIFIC emotional triggers)"],
+      "copingStrategies": ["string (PERSONALIZED emotional coping mechanisms)"]
+    }
   },
   "interpersonalDynamics": {
-    "communicationStyle": "string",
-    "relationshipPattern": "string",
-    "socialNeeds": ["string"]
+    "communicationStyle": "string (DETAILED communication pattern)",
+    "relationshipPattern": "string (RICH description of relationship approach)",
+    "conflictApproach": "string (SPECIFIC conflict handling style)",
+    "socialNeeds": "string (PRECISE social requirements)",
+    "leadershipStyle": "string (DETAILED approach to leading others)",
+    "teamRole": "string (NATURAL role in group settings)"
+  },
+  "valueSystem": {
+    "coreValues": ["string (DEEPLY HELD principles)"],
+    "motivationSources": ["string (SPECIFIC internal drivers)"],
+    "meaningMakers": ["string (PERSONALLY significant sources of meaning)"],
+    "culturalConsiderations": "string (NUANCED cultural influences)"
   },
   "growthPotential": {
-    "focus": "string",
-    "recommendations": ["string"],
-    "timeline": {
-      "shortTerm": "string",
-      "longTerm": "string"
+    "areasOfDevelopment": ["string (COMPASSIONATELY framed growth areas)"],
+    "personalizedRecommendations": [{
+      "area": "string (SPECIFIC development focus)",
+      "why": "string (PERSONAL relevance explanation)",
+      "action": "string (ACTIONABLE growth strategy)",
+      "resources": "string (TAILORED resource suggestions)"
+    }],
+    "keyStrengthsToLeverage": ["string (SPECIFIC strengths for growth)"],
+    "developmentTimeline": {
+      "shortTerm": "string (1-3 MONTH development focus)",
+      "mediumTerm": "string (3-12 MONTH development path)",
+      "longTerm": "string (1-3 YEAR transformation journey)"
+    }
+  },
+  "careerInsights": {
+    "environmentFit": "string (DETAILED ideal work environment)",
+    "challengeAreas": "string (COMPASSIONATE view of professional challenges)",
+    "roleAlignments": ["string (SPECIFIC career paths that match their nature)"],
+    "workStyles": {
+      "collaboration": "string (DETAILED collaborative approach)",
+      "autonomy": "string (SPECIFIC independent work pattern)",
+      "structure": "string (PREFERENCE for structure vs. flexibility)"
     }
   }
 }
@@ -272,15 +306,27 @@ serve(async (req) => {
 Based on these responses:
 ${Object.entries(responses).map(([id, response]) => `${id}: "${response}"`).join('\n')}
 
-Use seed ${seed} for consistency. 
-IMPORTANT: Your response must be a valid, parseable JSON object. Do not include anything outside of the JSON structure.`
+Use seed ${seed} for consistency but ENSURE this is a DEEPLY PERSONALIZED analysis.
+
+CRITICAL INSTRUCTIONS:
+1. Make this the MOST DETAILED, EMOTIONALLY RESONANT analysis possible - as if you're writing for someone you deeply understand
+2. AVOID generic statements that could apply to anyone - be BOLDLY SPECIFIC and deeply personal
+3. Include at least 8-10 distinct personality traits with RICH descriptions
+4. Write an overview of AT LEAST 750-1000 words that captures their essence with emotional depth
+5. Include specific examples that feel PERSONAL to them based on their responses
+6. Create a TOUCHING, EMOTIONALLY INTELLIGENT analysis that feels like it was written by someone who truly sees them
+7. BE COMPREHENSIVE - fill out EVERY section with EXPERT-LEVEL insight and emotional intelligence
+8. Your analysis should feel TRANSFORMATIVE - like you've understood aspects of their personality they themselves hadn't fully recognized
+
+IMPORTANT: Your analysis MUST be COMPREHENSIVE, EMOTIONALLY RESONANT, and EXPERTLY CRAFTED. Fill out EVERY field with exceptional detail.
+Your response must be a valid, parseable JSON object. DO NOT include anything outside of the JSON structure.`
           }
         ],
-        temperature: 0.4, // Lower temperature for more consistent output
+        temperature: 0.7, // Higher temperature for more creative, emotionally resonant output
         frequency_penalty: 0.2,
         presence_penalty: 0.1,
         response_format: { type: "json_object" }, // Force JSON response format
-        max_tokens: 4000,
+        max_tokens: 10000, // Increased to 10000 tokens for much more detailed analysis
       }),
     });
 
