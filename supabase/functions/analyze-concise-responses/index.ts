@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.8.0';
@@ -23,7 +22,6 @@ serve(async (req) => {
   try {
     console.log("Analyze concise responses function called");
     
-    // Get the request payload
     const payload: RequestPayload = await req.json();
     const { assessmentId, responses, userId } = payload;
     console.log(`Processing ${Object.keys(responses).length} responses for assessment ID: ${assessmentId}`);
@@ -31,7 +29,7 @@ serve(async (req) => {
     if (!responses || Object.keys(responses).length === 0) {
       throw new Error("No responses provided");
     }
-    
+
     // Set up Supabase client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -44,12 +42,11 @@ serve(async (req) => {
       throw new Error("OpenAI API key not configured");
     }
 
-    // Create a prompt for the AI analysis
-    const seed = Math.floor(Math.random() * 10000); // Random seed for consistency in repeated runs
-    const prompt = generateEnhancedAnalysisPrompt(responses, seed);
-    console.log(`Generated prompt with ${prompt.length} characters, seed: ${seed}`);
-    
-    // Call OpenAI API with enhanced parameters
+    // Enhanced seed mechanism for consistent yet personalized results
+    const seed = Math.floor(Math.random() * 10000);
+    console.log(`Using seed: ${seed} for analysis generation`);
+
+    // Enhanced prompt with strict JSON formatting instructions
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -57,100 +54,114 @@ serve(async (req) => {
         Authorization: `Bearer ${openAIApiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Using the more capable model for deeper analysis
+        model: "gpt-4o", // Using more capable model for nuanced analysis
         messages: [
           {
             role: "system",
-            content: "You are an expert psychological profiler with deep expertise in cognitive psychology, personality theory, emotional intelligence, and human development. Your analyses are insightful, nuanced, and personally meaningful. You excel at identifying unique combinations of traits and patterns that make each individual distinctive. Focus on creating highly personalized, evidence-based insights that avoid stereotypes and demonstrate deep understanding of the complexities of human personality. Return only valid JSON without any markdown formatting."
+            content: `You are an expert psychological profiler specializing in identifying UNIQUE and DISTINCTIVE personality patterns. Your analyses are deeply personalized, evidence-based, and focused on what makes each individual special. You excel at:
+            1. Identifying unexpected trait combinations
+            2. Spotting meaningful contradictions in responses
+            3. Recognizing rare personality patterns
+            4. Creating highly specific, personalized insights
+            
+            CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks. Every field must be properly quoted and formatted.`
           },
           {
             role: "user",
-            content: prompt
+            content: generateEnhancedAnalysisPrompt(responses, seed)
           }
         ],
-        temperature: 0.7, // Increased temperature for more creative and diverse outputs
-        frequency_penalty: 0.3, // Added to reduce repetition in language
-        presence_penalty: 0.2, // Added to encourage exploration of different topics/traits
+        temperature: 0.6, // Balanced between creativity and consistency
+        frequency_penalty: 0.3,
+        presence_penalty: 0.2,
         max_tokens: 4000,
       }),
     });
 
-    // Parse the OpenAI API response
-    const data = await response.json();
-    console.log("OpenAI response received");
-    
-    if (!data.choices || data.choices.length === 0) {
-      console.error("Invalid OpenAI API response:", data);
-      throw new Error("Failed to generate analysis");
-    }
-    
-    let analysisText = data.choices[0].message.content;
-    
+    // Enhanced response handling and validation
+    let analysisData;
     try {
-      // Clean the response text by removing any markdown code block indicators
-      analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const data = await response.json();
+      console.log("OpenAI response received");
       
-      console.log("Cleaned analysis text for parsing");
-      
-      // Parse the JSON response from OpenAI
-      const analysisData = JSON.parse(analysisText);
-      console.log("Successfully parsed analysis JSON");
-      
-      // Enhanced validation for new structure
-      if (!analysisData.id || !analysisData.overview || 
-          !analysisData.coreProfiling || !analysisData.traits || 
-          !analysisData.cognitiveProfile || !analysisData.emotionalInsights || 
-          !analysisData.interpersonalDynamics || !analysisData.growthPotential) {
-        throw new Error("Analysis data incomplete or missing required sections");
+      if (!data.choices || data.choices.length === 0) {
+        console.error("Invalid OpenAI API response:", data);
+        throw new Error("Failed to generate analysis");
       }
       
-      // Add metadata and ensure valid user ID
-      const finalAnalysis = {
-        ...analysisData,
-        userId: userId || analysisData.id,
-        createdAt: new Date().toISOString()
-      };
+      let analysisText = data.choices[0].message.content;
+      console.log("Cleaning and validating response text");
       
-      // Only save to database if we have a valid user ID
-      if (userId) {
-        // Save to database
-        const { error } = await supabaseAdmin
-          .from('concise_analyses')
-          .upsert({
-            assessment_id: assessmentId,
-            user_id: userId,
-            analysis_data: finalAnalysis
-          });
-        
-        if (error) {
-          console.error("Error saving analysis to database:", error);
-        } else {
-          console.log("Analysis saved to database");
-        }
-      } else {
-        console.log("No valid user ID provided, skipping database save");
+      // Clean the response text
+      analysisText = analysisText
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/\\"/g, '"')
+        .replace(/\t/g, ' ')
+        .trim();
+      
+      // Parse and validate the JSON structure
+      analysisData = JSON.parse(analysisText);
+      
+      // Validate required fields
+      const requiredFields = [
+        'id', 'overview', 'uniquenessMarkers', 'coreProfiling',
+        'traits', 'cognitiveProfile', 'emotionalInsights',
+        'interpersonalDynamics', 'growthPotential'
+      ];
+      
+      const missingFields = requiredFields.filter(field => !analysisData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Analysis data missing required fields: ${missingFields.join(', ')}`);
       }
-      
-      return new Response(JSON.stringify(finalAnalysis), {
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        }
-      });
       
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
-      console.log("Raw response:", analysisText);
       throw new Error("Failed to parse analysis result");
     }
+
+    // Add metadata
+    const finalAnalysis = {
+      ...analysisData,
+      userId: userId || analysisData.id,
+      createdAt: new Date().toISOString()
+    };
+
+    // Save to database if we have a valid user ID
+    if (userId) {
+      const { error: saveError } = await supabaseAdmin
+        .from('concise_analyses')
+        .upsert({
+          assessment_id: assessmentId,
+          user_id: userId,
+          analysis_data: finalAnalysis
+        });
+      
+      if (saveError) {
+        console.error("Error saving analysis:", saveError);
+        throw saveError;
+      }
+      
+      console.log("Analysis saved successfully");
+    }
+
+    return new Response(JSON.stringify(finalAnalysis), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
     
   } catch (error) {
     console.error("Error in analyze-concise-responses function:", error);
     
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: "An error occurred while generating your analysis. Please try again."
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
 
@@ -285,213 +296,99 @@ const getQuestionDescription = (questionId: string): string => {
   return questionDescriptions[questionId] || questionId;
 };
 
-// Helper function to generate the enhanced analysis prompt
 function generateEnhancedAnalysisPrompt(responses: Record<string, string>, seed: number): string {
-  // Convert responses to more readable format with enhanced descriptions
-  const optionMappings: Record<string, Record<string, number>> = {
-    "core-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "core-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "core-3": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "core-4": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "core-5": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "emotional-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "emotional-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "emotional-3": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "emotional-4": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "emotional-5": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "cognitive-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "cognitive-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "cognitive-3": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "cognitive-4": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "cognitive-5": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "social-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "social-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "social-3": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "social-4": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "social-5": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "values-1": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "values-2": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "values-3": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "values-4": { "a": 1, "b": 2, "c": 3, "d": 4 },
-    "values-5": { "a": 1, "b": 2, "c": 3, "d": 4 }
-  };
-  
   // Format responses with enhanced weights and descriptions
   const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
     const questionDesc = getQuestionDescription(questionId);
-    const optionNumber = optionMappings[questionId]?.[answer] || answer;
     const dynamicWeight = getQuestionWeight(questionId, responses);
-    return `${questionDesc}: Option ${optionNumber} (Weight: ${dynamicWeight.toFixed(1)})`;
+    return `${questionDesc}: ${answer} (Weight: ${dynamicWeight.toFixed(1)})`;
   }).join("\n");
   
-  // Identify pattern connections and contradictions
-  interface CategoryScore {
-    total: number;
-    count: number;
-    responses: number[];
-  }
-  
-  // Calculate category scores for pattern detection
-  const categoryScores: Record<string, CategoryScore> = {
-    "core": {total: 0, count: 0, responses: []},
-    "emotional": {total: 0, count: 0, responses: []},
-    "cognitive": {total: 0, count: 0, responses: []},
-    "social": {total: 0, count: 0, responses: []},
-    "values": {total: 0, count: 0, responses: []}
-  };
-  
-  Object.entries(responses).forEach(([questionId, answer]) => {
-    const category = questionId.split('-')[0];
-    const optionNumber = optionMappings[questionId]?.[answer] || parseInt(answer);
-    const weight = getQuestionWeight(questionId, responses);
-    
-    if (categoryScores[category]) {
-      categoryScores[category].total += optionNumber * weight;
-      categoryScores[category].count += weight;
-      categoryScores[category].responses.push(optionNumber);
-    }
-  });
-
-  // Find unusual patterns
-  const patternFindings: string[] = [];
-  
-  // Look for contradictions within categories
-  Object.entries(categoryScores).forEach(([category, data]) => {
-    if (data.responses.length < 2) return;
-    
-    // Check for high variance in responses (contradictory answers in same category)
-    const mean = data.responses.reduce((sum, val) => sum + val, 0) / data.responses.length;
-    const variance = data.responses.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.responses.length;
-    
-    if (variance > 1.2) {
-      patternFindings.push(`High variance in ${category} responses (${variance.toFixed(2)}) suggests complex or potentially contradictory patterns`);
-    }
-  });
-  
-  // Cross-category comparisons for interesting combinations
-  if (categoryScores.cognitive.count > 0 && categoryScores.emotional.count > 0) {
-    const cognitiveAvg = categoryScores.cognitive.total / categoryScores.cognitive.count;
-    const emotionalAvg = categoryScores.emotional.total / categoryScores.emotional.count;
-    
-    const diff = Math.abs(cognitiveAvg - emotionalAvg);
-    if (diff > 1.0) {
-      patternFindings.push(`Notable difference (${diff.toFixed(2)}) between cognitive and emotional domains may indicate distinctive cognitive-emotional processing style`);
-    }
-  }
-
-  if (categoryScores.core.count > 0 && categoryScores.values.count > 0) {
-    const coreAvg = categoryScores.core.total / categoryScores.core.count;
-    const valuesAvg = categoryScores.values.total / categoryScores.values.count;
-    
-    const diff = Math.abs(coreAvg - valuesAvg);
-    if (diff > 1.0) {
-      patternFindings.push(`Significant difference (${diff.toFixed(2)}) between core traits and values systems may suggest evolving or aspirational identity`);
-    }
-  }
-  
-  // Format category averages for more context
-  const categoryAverages = Object.entries(categoryScores).map(([category, {total, count}]) => {
-    return `${category.charAt(0).toUpperCase() + category.slice(1)} average: ${count > 0 ? (total/count).toFixed(2) : 'N/A'}`;
-  }).join(", ");
-  
-  // Add patterns found
-  const patternAnalysis = patternFindings.length > 0 
-    ? "Distinctive patterns detected:\n" + patternFindings.join("\n")
-    : "No strong distinctive patterns detected in response distribution";
-  
   return `
-Analyze the following 25 personality assessment responses and create a HIGHLY PERSONALIZED, evidence-based personality profile that highlights what makes this individual UNIQUE and DISTINCTIVE. These questions cover core traits, emotional intelligence, cognitive patterns, social dynamics, and values/motivations.
+Create a HIGHLY PERSONALIZED psychological profile that emphasizes what makes this individual UNIQUE and DISTINCTIVE. Focus on identifying unexpected patterns, meaningful contradictions, and rare trait combinations in their responses.
 
 RESPONSE DATA:
 ${formattedResponses}
 
-RESPONSE PATTERNS:
-${categoryAverages}
+CRITICAL INSTRUCTIONS:
+1. Focus on what makes this person UNIQUE - avoid generic statements
+2. Identify unexpected combinations of traits
+3. Highlight meaningful contradictions in their responses
+4. Create specific, evidence-based insights
+5. Use the seed value ${seed} for consistency
+6. Return PURE JSON without markdown formatting
 
-PATTERN ANALYSIS:
-${patternAnalysis}
-
-INSTRUCTIONS:
-Create a detailed personality analysis in pure JSON format (no markdown code blocks) with the following enhanced structure. Focus on UNIQUENESS and DISTINCT PERSONALITY ELEMENTS throughout the analysis:
-
+Required JSON Structure:
 {
-  "id": "${crypto.randomUUID()}",
-  "userId": "system-generated",
-  "overview": "A 2-3 paragraph overview of the individual's psychological profile that highlights what makes them UNIQUE. Identify distinctive patterns, unexpected trait combinations, and particularly notable aspects of their personality. Focus on what differentiates this person rather than general statements.",
-  "uniquenessMarkers": [
-    "3-5 specific traits, patterns, or characteristics that make this person distinctive",
-    "Focus on unexpected combinations and contradictions that reveal complex personality architecture"
-  ],
+  "id": "UUID string",
+  "overview": "2-3 paragraphs highlighting UNIQUE traits",
+  "uniquenessMarkers": ["3-5 specific traits/patterns that make this person distinctive"],
   "coreProfiling": {
-    "primaryArchetype": "A distinctive and specific archetype that reflects their unique pattern - avoid generic terms like 'Analytical Strategist' - instead use more specific descriptors like 'Adaptive Systems Architect' or 'Empathic Problem Detective'",
-    "secondaryArchetype": "A complementary or contrasting influence specific to this individual",
-    "description": "A paragraph explaining how these archetypes combine in a UNIQUE way for this person with specific behavioral examples",
-    "compatibilityInsights": ["3-4 types of people they likely work well with", "2-3 types of people they might find challenging"]
+    "primaryArchetype": "Unique archetype name",
+    "secondaryArchetype": "Complementary archetype",
+    "description": "How these combine uniquely",
+    "compatibilityInsights": ["Compatible types", "Challenging types"]
   },
-  "traits": [
-    {
-      "trait": "A specific personality trait (5-7 traits total)",
-      "score": A number between 1-10 indicating strength of this trait,
-      "description": "Brief description of how this trait manifests in UNIQUE ways with specific behavioral examples",
-      "strengths": ["3-4 strengths associated with this trait"],
-      "challenges": ["2-3 challenges or growth areas associated with this trait"],
-      "developmentStrategies": ["2 specific, actionable strategies tailored to leverage or develop this trait"]
-    }
-  ],
+  "traits": [{
+    "trait": "Specific trait name",
+    "score": number (1-10),
+    "description": "How this trait manifests uniquely",
+    "strengths": ["3-4 specific strengths"],
+    "challenges": ["2-3 specific challenges"],
+    "developmentStrategies": ["2-3 personalized strategies"]
+  }],
   "cognitiveProfile": {
-    "style": "A description of their cognitive/thinking style that highlights UNIQUE aspects",
+    "style": "Description of their cognitive style highlighting unique aspects",
     "strengths": ["3-4 cognitive strengths with specific examples"],
-    "blindSpots": ["2-3 cognitive blind spots or challenges with specific examples"],
-    "description": "A paragraph explaining their cognitive patterns with emphasis on DISTINCTIVE elements",
-    "learningStyle": "Their preferred approach to learning new information with personalized examples",
-    "decisionMakingProcess": "How they typically approach important decisions with personalized examples"
+    "blindSpots": ["2-3 cognitive blind spots with specific examples"],
+    "description": "Paragraph explaining their cognitive patterns with emphasis on distinctive elements",
+    "learningStyle": "Preferred learning approach with personalized examples",
+    "decisionMakingProcess": "Approach to important decisions with personalized examples"
   },
   "emotionalInsights": {
-    "awareness": "Description of their emotional self-awareness with personalized examples",
-    "regulation": "Description of their emotional regulation approach with personalized examples",
-    "empathy": A number between 1-10 indicating empathic capacity,
-    "description": "A paragraph about their emotional landscape emphasizing DISTINCTIVE patterns",
-    "stressResponse": "How they typically respond under significant stress with personalized examples",
+    "awareness": "Description of emotional self-awareness with personalized examples",
+    "regulation": "Description of emotional regulation approach with personalized examples",
+    "empathy": number (1-10) indicating empathic capacity,
+    "description": "Paragraph about their emotional landscape emphasizing distinctive patterns",
+    "stressResponse": "Typical response under stress with personalized examples",
     "emotionalTriggersAndCoping": {
-      "triggers": ["2-3 situations that might trigger emotional reactions for this specific individual"],
-      "copingStrategies": ["2-3 effective coping strategies tailored for this individual"]
+      "triggers": ["2-3 situations that trigger emotional reactions"],
+      "copingStrategies": ["2-3 effective coping strategies"]
     }
   },
   "interpersonalDynamics": {
-    "communicationStyle": "Their primary communication style with personalized examples",
-    "relationshipPattern": "Their typical approach to relationships with personalized examples",
-    "conflictApproach": "Their typical approach to handling conflict with personalized examples",
-    "socialNeeds": "Description of their social needs with personalized examples",
-    "leadershipStyle": "Their natural approach to leadership roles with personalized examples",
-    "teamRole": "Their most effective role in collaborative settings with personalized examples"
+    "communicationStyle": "Primary communication style with personalized examples",
+    "relationshipPattern": "Typical approach to relationships with personalized examples",
+    "conflictApproach": "Typical approach to handling conflict with personalized examples",
+    "socialNeeds": "Description of social needs with personalized examples",
+    "leadershipStyle": "Natural approach to leadership roles with personalized examples",
+    "teamRole": "Most effective role in collaborative settings with personalized examples"
   },
   "valueSystem": {
-    "coreValues": ["3-5 fundamental values that guide their decisions"],
-    "motivationSources": ["2-3 primary sources of motivation specific to this individual"],
-    "meaningMakers": ["2-3 things that provide a sense of purpose for this specific individual"],
-    "culturalConsiderations": "How their values might manifest across different cultural contexts"
+    "coreValues": ["3-5 fundamental values that guide decisions"],
+    "motivationSources": ["2-3 primary sources of motivation"],
+    "meaningMakers": ["2-3 things that provide a sense of purpose"],
+    "culturalConsiderations": "How values might manifest across different cultural contexts"
   },
   "growthPotential": {
-    "areasOfDevelopment": ["3-4 SPECIFIC primary areas for growth and development"],
-    "personalizedRecommendations": [
-      {
-        "area": "Name of development area specific to this individual",
-        "why": "Brief explanation of why this matters for them specifically",
-        "action": "A specific, personalized action they can take",
-        "resources": "Suggested resource (book, practice, etc.) tailored to them"
-      }
-    ],
+    "areasOfDevelopment": ["3-4 specific areas for growth"],
+    "personalizedRecommendations": [{
+      "area": "Name of development area",
+      "why": "Brief explanation of why this matters",
+      "action": "Specific, personalized action",
+      "resources": "Suggested resource tailored to them"
+    }],
     "keyStrengthsToLeverage": ["3 key strengths they can leverage for growth"],
     "developmentTimeline": {
-      "shortTerm": "Focus for next 30 days specific to them",
-      "mediumTerm": "Focus for next 3-6 months specific to them",
-      "longTerm": "Focus for ongoing development specific to them"
+      "shortTerm": "Focus for next 30 days",
+      "mediumTerm": "Focus for next 3-6 months",
+      "longTerm": "Focus for ongoing development"
     }
   },
   "careerInsights": {
-    "environmentFit": "Description of work environments where they're likely to thrive with specific examples",
-    "challengeAreas": "Types of work situations that might be more difficult with specific examples",
-    "roleAlignments": ["5-7 specific career fields or roles that might align well with their profile"],
+    "environmentFit": "Description of work environments where they're likely to thrive",
+    "challengeAreas": "Types of work situations that might be more difficult",
+    "roleAlignments": ["5-7 specific career fields or roles that might align well"],
     "workStyles": {
       "collaboration": "How they tend to collaborate with others",
       "autonomy": "Their need for independence and self-direction",
@@ -501,16 +398,10 @@ Create a detailed personality analysis in pure JSON format (no markdown code blo
 }
 
 IMPORTANT:
-- Create a TRULY UNIQUE profile for this individual - avoid generic statements at all costs
-- Highlight DISTINCTIVE combinations of traits that make this person different from others
-- Identify any paradoxical or contradictory elements that add complexity and depth to their profile
-- Focus on SPECIFIC behaviors and examples rather than generic descriptions
-- For any scores (trait scores, empathy score), use realistic values based on response patterns
-- Look for meaningful correlations between different response areas
-- Provide personalized, practical recommendations that acknowledge their unique profile
-- Use the seed value ${seed} to ensure consistency if the analysis is regenerated
-- Return valid JSON without any markdown code block formatting (no \`\`\`json tags)
-- Ensure all JSON is properly formatted with no errors
+- Ensure ALL JSON fields are properly quoted
+- Use double quotes for ALL strings
+- No trailing commas
+- No comments or markup
+- Validate JSON structure before returning
 `;
 }
-
