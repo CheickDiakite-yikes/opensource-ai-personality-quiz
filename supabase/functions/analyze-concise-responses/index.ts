@@ -335,6 +335,72 @@ const validateAndRepairAnalysisData = (data: any): any => {
     data.overview = "This personality analysis highlights a multifaceted individual with a unique combination of traits, cognitive patterns, and emotional responses. The profile reveals a blend of analytical abilities and interpersonal skills that create a distinctive approach to life's challenges. Throughout the analysis, we explore various dimensions of personality, revealing both strengths to leverage and growth opportunities to explore. The insights provided offer a framework for understanding personal patterns and potential development pathways.";
   }
   
+    // Convert numeric awareness to descriptive format if needed
+    if (typeof data.emotionalInsights?.awareness === 'number') {
+      const score = data.emotionalInsights.awareness;
+      let description = "";
+      
+      if (score >= 90) description = "Exceptional awareness with extraordinary depth";
+      else if (score >= 80) description = "Advanced awareness with strong insight";
+      else if (score >= 70) description = "Good awareness with clear understanding";
+      else if (score >= 60) description = "Developing awareness with growing insight";
+      else if (score >= 50) description = "Moderate awareness with potential";
+      else description = "Emerging awareness with room for growth";
+      
+      data.emotionalInsights.awareness = `${score}/100 - ${description}`;
+      console.log(`Emotional awareness score: ${score}/100`);
+    }
+    
+    // Convert numeric empathy to descriptive format if needed
+    if (typeof data.emotionalInsights?.empathy === 'number') {
+      const score = data.emotionalInsights.empathy;
+      let description = "";
+      
+      if (score >= 90) description = "Exceptional empathic capacity";
+      else if (score >= 80) description = "Strong empathic awareness";
+      else if (score >= 70) description = "Solid empathic understanding";
+      else if (score >= 60) description = "Growing empathic sensitivity";
+      else if (score >= 50) description = "Developing empathic awareness";
+      else description = "Basic empathic recognition";
+      
+      data.emotionalInsights.empathy = `${score}/100 - ${description}`;
+      console.log(`Empathy score: ${score}/100`);
+    }
+  
+    // Ensure traits array exists and has detailed entries with varied scores
+    if (!data.traits || !Array.isArray(data.traits) || data.traits.length === 0) {
+      console.log("No traits found, generating default traits with varied scores");
+      data.traits = [
+        {
+          trait: "Adaptability",
+          score: Math.floor(Math.random() * 30) + 60, // Score between 60-90
+          description: "You show remarkable flexibility in changing circumstances, adjusting your approach based on new information and shifting contexts.",
+          strengths: [
+            "Quick to adjust to new situations without unnecessary resistance",
+            "Open to different perspectives that might challenge existing views"
+          ],
+          challenges: [
+            "May sometimes struggle with maintaining consistency across changing environments",
+            "Could benefit from establishing more stable routines in some areas"
+          ]
+        }
+      ];
+    } else {
+      // Log trait scores for monitoring
+      data.traits.forEach((trait: any) => {
+        if (typeof trait.score === 'number') {
+          console.log(`Trait ${trait.trait} score: ${trait.score}/100`);
+        }
+      });
+    }
+  
+    // Log all numeric scores for monitoring
+    console.log("Score distribution in analysis:", {
+      traits: data.traits?.map((t: any) => ({ trait: t.trait, score: t.score })),
+      emotionalAwareness: data.emotionalInsights?.awareness,
+      empathy: data.emotionalInsights?.empathy
+    });
+  
   return data;
 };
 
@@ -365,20 +431,22 @@ serve(async (req) => {
       throw new Error("OpenAI API key not configured");
     }
 
-    // Enhanced seed mechanism for consistent yet personalized results
-    const seed = Math.floor(Math.random() * 10000);
+    // Enhanced seed mechanism for more variation
+    const seed = Date.now() % 10000;
     console.log(`Using seed: ${seed} for analysis generation`);
 
     const systemPrompt = `You are an elite psychological profiler with expertise in personality assessment, emotional intelligence, and cognitive behavior analysis. 
 You deliver detailed, transformative personality insights that are emotionally resonant, intellectually substantive, and deeply personal.
-Your analysis must be COMPREHENSIVE, TOUCHING, EMOTIONALLY RICH and EXPERTLY CRAFTED. Write as if you truly understand the depths of the human psyche.
 
-IMPORTANTLY: All scores and metrics must include both numeric values AND descriptive context. For example:
-- Instead of just "85", write "85/100 - Exceptional awareness: You have profound insight into your emotions"
-- Instead of just "Analytical Thinker", write "Analytical Thinker: You approach problems methodically, breaking down complex issues"
-- All descriptions must be at least 40-50 words to provide sufficient context
+IMPORTANTLY: Scores must be varied and reflect the actual responses:
+- Use the full range from 40-95 for scoring
+- Avoid defaulting to common scores like 75 or 85
+- Consider response patterns to determine accurate scores
+- Each trait should have its own unique score based on specific indicators
+- Justify high scores (90+) with specific evidence
+- Document low scores (below 60) with clear areas for improvement
 
-YOUR OUTPUT MUST BE VALID JSON with ALL of these exact fields:
+YOUR OUTPUT MUST BE VALID JSON with these fields:
 {
   "id": "string (UUID)",
   "overview": "string (detailed personality overview, at least 250 words)",
@@ -477,7 +545,7 @@ Each field is REQUIRED and the format must be EXACTLY as shown above. Do NOT add
 ENSURE that all text fields contain sufficiently detailed descriptions (at least 30-50 words for major descriptions).
 ALWAYS include context for numeric values (e.g., "85/100 - Exceptional: You demonstrate...").`;
 
-    // Request with parameters for reliable, detailed JSON
+    // Request with adjusted parameters for more variation
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -493,30 +561,20 @@ ALWAYS include context for numeric values (e.g., "85/100 - Exceptional: You demo
           },
           {
             role: "user",
-            content: `Generate a detailed, emotionally resonant, and expertly crafted personality analysis based on these responses:
+            content: `Generate a detailed personality analysis based on these ${Object.keys(responses).length} responses. Use seed ${seed} for consistency but ensure scores are varied and justified based on the responses:
 ${Object.entries(responses).map(([id, response]) => `${id}: "${response}"`).join('\n')}
 
-Use seed ${seed} for consistency but ensure this is a deeply personalized analysis that captures the essence of the individual.
-
-IMPORTANT FORMATTING REQUIREMENTS:
-1. Your analysis must include ALL fields in the exact format specified.
-2. All numeric scores MUST include descriptive context (e.g., "82/100 - Strong: You demonstrate...")
-3. Descriptions must be detailed (minimum 30-50 words for major descriptions)
-4. All traits must have at least 2 strengths and 2 challenges
-5. All recommendations must be specific and actionable
-6. Your response must be valid, parseable JSON without any text outside of the JSON structure
-
-Focus especially on:
-1. Creating a detailed overview (at least 250 words)
-2. Including at least 5-7 distinct personality traits with scores AND explanations
-3. Making specific, personalized observations rather than generic statements
-4. Ensuring every required field is properly formatted with sufficient detail`
+REMEMBER:
+1. Scores should vary between 40-95 based on actual responses
+2. Avoid clustering around common values like 75 or 85
+3. Each trait needs unique scoring with clear justification
+4. Document score distribution in the description fields`
           }
         ],
-        temperature: 0.6, // More controlled temperature for rich yet consistent responses
+        temperature: 0.8, // Increased for more variation
         frequency_penalty: 0.2,
-        presence_penalty: 0.2,
-        response_format: { type: "json_object" }, // Force JSON response format
+        presence_penalty: 0.3,
+        response_format: { type: "json_object" },
         max_tokens: 6000,
       }),
     });
