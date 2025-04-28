@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, HeartHandshake, Users, Lightbulb } from 'lucide-react';
+import { Brain, HeartHandshake, Users, Lightbulb, Info } from 'lucide-react';
 import { ConciseAnalysisResult } from '../../types';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TabContentProps {
   tabValue: string;
@@ -198,31 +198,31 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
             
             <div>
               <h3 className="font-medium mb-2">Empathic Capacity</h3>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <div className="relative">
-                    <div className="w-full bg-muted rounded-full h-2.5 mb-1">
-                      <div 
-                        className="bg-primary h-2.5 rounded-full" 
-                        style={{ width: `${analysis.emotionalInsights.empathy * 10}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span>Self-focused</span>
-                      <span>Balanced</span>
-                      <span>Other-focused</span>
-                    </div>
+              <div>
+                <div className="w-full bg-muted rounded-full h-2.5 mb-1">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${analysis.emotionalInsights.empathy * 10}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex justify-between text-xs w-full">
+                    <span>Self-focused</span>
+                    <span>Balanced</span>
+                    <span>Other-focused</span>
                   </div>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold">Empathy Score: {analysis.emotionalInsights.empathy}/10</h4>
-                    <p className="text-sm text-muted-foreground">
-                      This score represents your capacity to understand and share the feelings of others. A higher score (7-10) indicates strong other-focused empathy, while a lower score (1-4) suggests a more self-focused perspective. A balanced score (5-6) shows a healthy mix of both self-awareness and understanding of others.
-                    </p>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[300px]">
+                        <p className="text-sm">Score: {analysis.emotionalInsights.empathy}/10. This score represents your capacity to understand and share the feelings of others. A higher score (7-10) indicates strong other-focused empathy, while a lower score (1-4) suggests a more self-focused perspective. A balanced score (5-6) shows a healthy mix of both.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
             </div>
             
             {analysis.emotionalInsights.stressResponse && (
