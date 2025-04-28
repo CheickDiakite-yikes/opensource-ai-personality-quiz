@@ -46,78 +46,43 @@ export const fetchAnalysisByAssessmentId = async (assessmentId: string, userId: 
   
   if (!matchingAnalyses?.length) return null;
   
-  console.log(`[fetchAnalysisByAssessmentId] Found existing analysis for assessment: ${assessmentId}`);
   return matchingAnalyses[0].analysis_data as unknown as ConciseAnalysisResult;
 };
 
 export const generateNewAnalysis = async (assessmentId: string, userId: string) => {
-  try {
-    // First check if the assessment exists
-    const { data: assessment, error: responseError } = await supabase
-      .from('concise_assessments')
-      .select('*')
-      .eq('id', assessmentId)
-      .eq('user_id', userId)
-      .single();
-      
-    if (responseError) {
-      console.error("[generateNewAnalysis] Error fetching assessment:", responseError);
-      throw responseError;
-    }
+  const { data: assessment, error: responseError } = await supabase
+    .from('concise_assessments')
+    .select('*')
+    .eq('id', assessmentId)
+    .eq('user_id', userId)
+    .single();
     
-    if (!assessment) {
-      throw new Error("Assessment not found");
-    }
-    
-    console.log(`[generateNewAnalysis] Starting analysis generation for assessment: ${assessmentId}`);
-    console.log(`[generateNewAnalysis] Found ${Object.keys(assessment.responses).length} responses to analyze`);
-    
-    // Implement a timeout for the edge function call
-    const timeoutDuration = 120000; // 2 minutes
-    
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Analysis generation timed out after ${timeoutDuration/1000} seconds`));
-      }, timeoutDuration);
-    });
-    
-    const functionPromise = supabase.functions.invoke(
-      'analyze-concise-responses',
-      {
-        body: { 
-          assessmentId,
-          responses: assessment.responses,
-          userId
-        }
-      }
-    );
-    
-    // Race between the actual function call and the timeout
-    const result = await Promise.race([functionPromise, timeoutPromise]);
-    
-    if (!result?.data) {
-      console.error("[generateNewAnalysis] Edge function returned no data:", result);
-      throw new Error("Edge function returned empty response");
-    }
-    
-    console.log(`[generateNewAnalysis] Successfully generated analysis for assessment: ${assessmentId}`);
-    return result.data as ConciseAnalysisResult;
-  } catch (error: any) {
-    // Enhanced error logging with more context
-    console.error("[generateNewAnalysis] Error:", error);
-    
-    // Check if it's an edge function error and extract more details
-    if (error?.message?.includes('FunctionsHttpError')) {
-      console.error("[generateNewAnalysis] Edge function error details:", {
-        message: error.message,
-        context: error.context || {},
-        name: error.name,
-      });
-      throw new Error(`Edge function error: ${error.message}`);
-    }
-    
-    throw error;
+  if (responseError) {
+    console.error("[generateNewAnalysis] Error:", responseError);
+    throw responseError;
   }
+  
+  if (!assessment) {
+    throw new Error("Assessment not found");
+  }
+  
+  const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
+    'analyze-concise-responses',
+    {
+      body: { 
+        assessmentId,
+        responses: assessment.responses,
+        userId
+      }
+    }
+  );
+  
+  if (analysisError) {
+    console.error("[generateNewAnalysis] Error:", analysisError);
+    throw analysisError;
+  }
+  
+  return analysisResult as ConciseAnalysisResult;
 };
 
 export const saveAnalysisToDatabase = async (
@@ -126,35 +91,17 @@ export const saveAnalysisToDatabase = async (
   userId: string
 ) => {
   try {
-    const { data, error } = await supabase
+    const { error: saveError } = await supabase
       .from('concise_analyses')
-      .upsert({
+      .insert({
         assessment_id: assessmentId,
         user_id: userId,
         analysis_data: analysis as any
-      }, {
-        onConflict: 'user_id,assessment_id',
-        ignoreDuplicates: true
-      })
-      .select()
-      .single();
+      });
       
-    if (error) {
-      // Only log duplicates but don't treat them as errors
-      if (error.code === '23505') {
-        console.log("[saveAnalysisToDatabase] Analysis already exists, using existing");
-        return;
-      }
-      throw error;
-    }
-    
-    console.log("[saveAnalysisToDatabase] Analysis saved/updated successfully");
+    if (saveError) throw saveError;
+    console.log("[saveAnalysisToDatabase] Analysis saved successfully");
   } catch (err: any) {
-    // If it's a unique constraint violation, just log it
-    if (err.code === '23505') {
-      console.log("[saveAnalysisToDatabase] Analysis already exists, using existing");
-      return;
-    }
     console.error("[saveAnalysisToDatabase] Error:", err);
     toast.error("Analysis generated but couldn't be saved for future use");
     throw err;

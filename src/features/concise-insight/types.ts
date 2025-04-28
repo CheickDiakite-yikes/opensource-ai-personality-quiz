@@ -1,5 +1,4 @@
 
-
 // Define the types for the Concise Insight feature
 export type ConciseInsightCategory = 
   | "core_traits" 
@@ -23,7 +22,7 @@ export interface ConciseAnalysisResult {
   createdAt: string;
   userId: string;
   overview: string;
-  uniquenessMarkers: string[]; // Now required field for displaying distinctive traits
+  uniquenessMarkers?: string[]; // New field for displaying distinctive traits
   coreProfiling: {
     primaryArchetype: string;
     secondaryArchetype: string;
@@ -42,16 +41,14 @@ export interface ConciseAnalysisResult {
     style: string;
     strengths: string[];
     blindSpots: string[];
-    description?: string;
+    description: string;
     learningStyle?: string;
     decisionMakingProcess?: string;
   };
   emotionalInsights: {
-    // Now can be either a score with description string or just a number
-    awareness: string | number;
+    awareness: string;
     regulation: string;
-    // Now can be either a score with description string or just a number
-    empathy: string | number;
+    empathy: number;
     description: string;
     stressResponse?: string;
     emotionalTriggersAndCoping?: {
@@ -70,8 +67,8 @@ export interface ConciseAnalysisResult {
   valueSystem?: {
     coreValues: string[];
     motivationSources: string[];
-    meaningMakers?: string[];
-    culturalConsiderations?: string;
+    meaningMakers: string[];
+    culturalConsiderations: string;
   };
   growthPotential: {
     areasOfDevelopment: string[];
@@ -88,7 +85,7 @@ export interface ConciseAnalysisResult {
       longTerm: string;
     };
   };
-  careerInsights?: string[] | {
+  careerInsights: string[] | {
     environmentFit?: string;
     challengeAreas?: string;
     roleAlignments: string[];
@@ -99,4 +96,3 @@ export interface ConciseAnalysisResult {
     };
   };
 }
-
