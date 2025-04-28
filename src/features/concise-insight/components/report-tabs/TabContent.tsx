@@ -187,7 +187,19 @@ export const TabContent = ({ tabValue, analysis }: TabContentProps) => {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-medium mb-2">Emotional Awareness</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-medium">Emotional Awareness</h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[300px]">
+                        <p className="text-sm">Score: {analysis.emotionalInsights.awareness}/10. A higher score (7-10) indicates exceptional emotional self-awareness and understanding, while a lower score (1-4) suggests opportunities for developing greater emotional recognition. A balanced score (5-6) shows good emotional awareness with room for growth.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-muted-foreground">{analysis.emotionalInsights.awareness}</p>
               </div>
               <div>
