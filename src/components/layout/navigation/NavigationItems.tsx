@@ -21,8 +21,8 @@ export const useNavigationItems = () => {
     { name: "Who Am I?", path: "/assessment", icon: Brain, requiresAuth: true },
     { name: "WAI Report", path: "/report", icon: ClipboardList, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
-    { name: "Concise Insight", path: "/concise-insight", icon: Zap, requiresAuth: true },
-    { name: "Concise Report", path: "/concise-report", icon: FileText, requiresAuth: true },
+    { name: "Free Assessment", path: "/concise-insight", icon: Zap, requiresAuth: true },
+    { name: "Free Report", path: "/concise-report", icon: FileText, requiresAuth: true },
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
   ];
 
