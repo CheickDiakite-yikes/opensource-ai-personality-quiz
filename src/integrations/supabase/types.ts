@@ -141,6 +141,69 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_credits: {
+        Row: {
+          bonus_credits: number
+          bundle_purchases: number
+          created_at: string
+          credits_remaining: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bonus_credits?: number
+          bundle_purchases?: number
+          created_at?: string
+          credits_remaining?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bonus_credits?: number
+          bundle_purchases?: number
+          created_at?: string
+          credits_remaining?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assessment_purchases: {
+        Row: {
+          amount: number
+          credits: number
+          id: string
+          payment_session_id: string | null
+          purchase_date: string
+          purchase_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          credits?: number
+          id?: string
+          payment_session_id?: string | null
+          purchase_date?: string
+          purchase_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          credits?: number
+          id?: string
+          payment_session_id?: string | null
+          purchase_date?: string
+          purchase_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           completed_at: string

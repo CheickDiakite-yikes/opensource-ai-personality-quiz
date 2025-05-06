@@ -5,7 +5,7 @@ import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { v4 as uuidv4 } from "uuid";
+import { useAssessmentCredits } from "@/hooks/useAssessmentCredits";
 
 const ASSESSMENT_STORAGE_KEY = "assessment_progress";
 
@@ -16,6 +16,7 @@ export const useAssessmentSubmission = (
   const { analyzeResponses, isAnalyzing, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hasCredits, useCredit } = useAssessmentCredits();
   
   const saveResponsesDirectlyToSupabase = async (responses: AssessmentResponse[]) => {
     if (!user) {
@@ -64,6 +65,15 @@ export const useAssessmentSubmission = (
     saveCurrentResponse();
     
     try {
+      // Check if user has credits
+      if (!hasCredits) {
+        toast.error("You don't have any assessment credits", {
+          description: "Please purchase credits to continue"
+        });
+        navigate("/assessment-intro");
+        return;
+      }
+      
       toast.info("Analyzing your responses...", {
         duration: 15000,
         id: "analyzing-toast"
@@ -106,6 +116,9 @@ export const useAssessmentSubmission = (
         }
         
         console.log("Analysis completed successfully with ID:", analysis.id);
+        
+        // Deduct one credit after successful analysis
+        await useCredit();
       } catch (error) {
         console.error("Analysis failed:", error);
         
@@ -121,6 +134,9 @@ export const useAssessmentSubmission = (
         if (!analysisHistory.error && analysisHistory.data && analysisHistory.data.length > 0) {
           console.log("Found fallback analysis from database:", analysisHistory.data[0].id);
           analysis = analysisHistory.data[0];
+          
+          // Deduct one credit after using fallback
+          await useCredit();
         } else {
           toast.error("Analysis failed", {
             id: "analyzing-toast",
