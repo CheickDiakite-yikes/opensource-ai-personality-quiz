@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,6 +9,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentDebugDialog } from "./PaymentDebugDialog";
+
+// Import the Supabase URL directly from the client for consistency
+import { SUPABASE_URL } from "@/integrations/supabase/client";
 
 interface CreditsData {
   id: string;
@@ -126,6 +130,9 @@ const AssessmentIntroPage: React.FC = () => {
         console.log("Attempt 1: Using Supabase functions.invoke");
         setProcessMessage(`Connecting to payment service (attempt 1)...`);
         
+        // Log Supabase URL for debugging
+        console.log("Using Supabase URL:", SUPABASE_URL);
+        
         const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
           body: { paymentType },
           headers: { 
@@ -137,6 +144,7 @@ const AssessmentIntroPage: React.FC = () => {
         clearTimeout(timeoutId);
         
         if (error) {
+          console.error("Supabase function error:", error);
           throw new Error(`Supabase function error: ${error.message}`);
         }
         
@@ -171,16 +179,20 @@ const AssessmentIntroPage: React.FC = () => {
         });
         
         try {
-          // Second attempt - Use manual fetching
+          // Second attempt - Use manual fetching with direct URL
           console.log("Attempt 2: Using direct fetch approach");
           setProcessMessage(`Connecting to payment service (attempt 2)...`);
           
-          // Construct the full URL to the edge function manually
-          const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-assessment-payment`;
+          // Use the imported SUPABASE_URL constant directly instead of environment variables
+          const functionUrl = `${SUPABASE_URL}/functions/v1/create-assessment-payment`;
+          console.log("Direct function URL:", functionUrl);
           
           // Get auth token for authorization
           const { data: { session } } = await supabase.auth.getSession();
           const authToken = session?.access_token || '';
+          
+          // Enhanced error logging for fetch operations
+          console.log("Starting direct fetch with auth token length:", authToken ? authToken.length : 0);
           
           const response = await fetch(functionUrl, {
             method: 'POST',
@@ -194,10 +206,17 @@ const AssessmentIntroPage: React.FC = () => {
           });
           
           if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            const errorText = await response.text();
+            console.error("HTTP error response:", {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorText
+            });
+            throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
           }
           
           const data = await response.json();
+          console.log("Direct fetch response:", data);
           
           if (data.error) {
             throw new Error(`Payment function error: ${data.error}`);
@@ -215,9 +234,20 @@ const AssessmentIntroPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Exception in payment:", err);
-      setPaymentError(`Payment error: ${err.message}`);
+      let errorMessage = err.message || "Unknown error";
+      
+      // Provide more specific error messages for common issues
+      if (errorMessage.includes("NetworkError") || errorMessage.includes("Failed to fetch")) {
+        errorMessage = "Network connection error. Please check your internet connection and try again.";
+      } else if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
+        errorMessage = "Request timed out. The payment service is taking too long to respond.";
+      } else if (errorMessage.includes("token") || errorMessage.includes("auth")) {
+        errorMessage = "Authentication error. Please try signing out and back in.";
+      }
+      
+      setPaymentError(`Payment error: ${errorMessage}`);
       toast.error("An unexpected error occurred", {
-        description: err.message || "Please try again or contact support."
+        description: errorMessage || "Please try again or contact support."
       });
       
       // Reset processing state immediately on error
@@ -407,7 +437,7 @@ const AssessmentIntroPage: React.FC = () => {
               <p>Retry Count: {retryCount}</p>
               <p>Page URL: {window.location.href}</p>
               <p>Time: {new Date().toISOString()}</p>
-              <p>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set'}</p>
+              <p>Supabase URL: {SUPABASE_URL ? 'Set' : 'Not set'}</p>
               <p>Edge Function: create-assessment-payment</p>
             </div>
           </details>
