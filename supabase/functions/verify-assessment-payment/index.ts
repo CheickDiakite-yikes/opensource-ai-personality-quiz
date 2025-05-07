@@ -19,14 +19,16 @@ serve(async (req) => {
   
   try {
     console.log("Parsing request body");
-    const { sessionId } = await req.json();
+    const { sessionId, debug = false } = await req.json();
     
-    if (!sessionId) {
+    if (!sessionId && !debug) {
       console.log("No sessionId provided in request");
       throw new Error("Missing session ID");
     }
     
-    console.log(`Verifying payment for session: ${sessionId}`);
+    if (sessionId) {
+      console.log(`Verifying payment for session: ${sessionId}`);
+    }
     
     // Check for required environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -42,6 +44,50 @@ serve(async (req) => {
     }
     
     console.log("Environment variables verified");
+    
+    // Debug mode - just test Stripe key
+    if (debug) {
+      console.log("Running in debug mode");
+      if (!stripeKey.startsWith('sk_')) {
+        console.error("Invalid key format: Stripe key should start with 'sk_'");
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: "Invalid Stripe key format: Secret key must start with 'sk_'"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      try {
+        const stripe = new Stripe(stripeKey, {
+          apiVersion: "2023-10-16", 
+        });
+        
+        // Test with a simple call
+        await stripe.balance.retrieve();
+        
+        const keyType = stripeKey.startsWith('sk_test') ? 'test' : 'live';
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            message: `Stripe key is valid (${keyType.toUpperCase()} mode)`,
+            keyType: keyType
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: `Stripe error: ${error.message}` 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
     console.log(`Stripe key format check: starts with ${stripeKey.substring(0, 3)}, length: ${stripeKey.length}`);
     
     if (!stripeKey.startsWith('sk_')) {

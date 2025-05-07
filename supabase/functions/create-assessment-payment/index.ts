@@ -19,8 +19,10 @@ serve(async (req) => {
   
   try {
     console.log("Parsing request body");
-    const { purchaseType = "single" } = await req.json();
-    console.log(`Purchase type: ${purchaseType}`);
+    const requestBody = await req.json();
+    const { purchaseType = "single", debug = false, checkWebhook = false } = requestBody;
+    
+    console.log(`Request type: ${debug ? 'debug' : purchaseType}`);
     
     // Check for required environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -36,6 +38,75 @@ serve(async (req) => {
     }
     
     console.log("Environment variables verified");
+    
+    // Debug mode: just check if the Stripe key is valid and return info
+    if (debug) {
+      console.log("Running in debug mode to check Stripe key validity");
+      console.log(`Stripe key format check: starts with ${stripeKey.substring(0, 3)}, length: ${stripeKey.length}`);
+      
+      if (!stripeKey.startsWith('sk_')) {
+        console.error("Invalid key format: Stripe key should start with 'sk_'");
+        return new Response(
+          JSON.stringify({ 
+            message: "Invalid Stripe key format: Secret key must start with 'sk_'",
+            keyType: null 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Initialize Stripe with the key to test connection
+      try {
+        console.log("Testing Stripe key validity with API call");
+        const stripe = new Stripe(stripeKey, {
+          apiVersion: "2023-10-16",
+        });
+        
+        // Test the key with a simple API call
+        await stripe.balance.retrieve();
+        
+        // Determine if we're in test or live mode
+        const keyType = stripeKey.startsWith('sk_test') ? 'test' : 'live';
+        console.log(`Stripe key valid (${keyType} mode)`);
+        
+        return new Response(
+          JSON.stringify({ 
+            message: `Stripe key is valid (${keyType.toUpperCase()} mode)`,
+            keyType: keyType
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (stripeError) {
+        console.error("Stripe key validation failed:", stripeError);
+        
+        // Check for specific error types
+        if (stripeError.type === 'StripeAuthenticationError') {
+          return new Response(
+            JSON.stringify({ message: "Invalid Stripe API key: Authentication failed", keyType: null }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ message: `Stripe error: ${stripeError.message}`, keyType: null }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    // Webhook check mode
+    if (checkWebhook) {
+      console.log("Checking webhook configuration");
+      return new Response(
+        JSON.stringify({ 
+          webhookStatus: "Webhook endpoint check not implemented yet. Please configure manually in Stripe dashboard."
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Normal payment flow continues from here
+    console.log(`Processing ${purchaseType} payment request`);
     console.log(`Stripe key format check: starts with ${stripeKey.substring(0, 3)}, length: ${stripeKey.length}`);
     
     if (!stripeKey.startsWith('sk_')) {
