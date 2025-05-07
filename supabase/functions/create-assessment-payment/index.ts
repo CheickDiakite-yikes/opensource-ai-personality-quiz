@@ -54,7 +54,7 @@ serve(async (req) => {
       logStep("Missing Stripe secret key");
       throw new Error("STRIPE_SECRET_KEY is not set in environment");
     }
-    logStep("Stripe key found (hidden for security)");
+    logStep("Stripe key found", { keyPreview: stripeKey.substring(0, 7) + '...' }); // Show just the beginning of the key for diagnostics
     
     // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -94,10 +94,12 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Initialize Stripe
+    let stripe;
     try {
       logStep("Initializing Stripe");
-      var stripe = new Stripe(stripeKey, {
+      stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16",
+        typescript: true,
       });
       logStep("Stripe initialized successfully");
     } catch (stripeInitError) {
@@ -150,12 +152,19 @@ serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
 
-    // Create Stripe Checkout Session
+    // Create Stripe Checkout Session with timeout and error handling
     try {
       const origin = req.headers.get("origin") || "http://localhost:5173";
-      logStep("Creating Stripe checkout session", { origin, successRedirect: `${origin}/assessment-payment-success?session_id=${paymentSessionId}` });
       
-      const session = await stripe.checkout.sessions.create({
+      logStep("Creating Stripe checkout session", { 
+        origin,
+        successRedirect: `${origin}/assessment-payment-success?session_id=${paymentSessionId}`,
+        cancelRedirect: `${origin}/assessment`,
+        mode: "payment"
+      });
+      
+      // Create a promise with timeout for the Stripe API call
+      const stripeSessionPromise = stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
           {
@@ -180,8 +189,16 @@ serve(async (req) => {
           credits: credits.toString()
         }
       });
+      
+      // Set a timeout for the Stripe API call (10 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout while creating Stripe checkout session")), 10000);
+      });
+      
+      // Race the Stripe API call against the timeout
+      const session = await Promise.race([stripeSessionPromise, timeoutPromise]) as Stripe.Response<Stripe.Checkout.Session>;
 
-      logStep("Stripe session created", { 
+      logStep("Stripe session created successfully", { 
         sessionId: session.id,
         url: session.url?.substring(0, 30) + "...", // Only log partial URL for security
         paymentSessionId: paymentSessionId
@@ -202,7 +219,8 @@ serve(async (req) => {
       logStep("Stripe error creating checkout session", { 
         error: stripeError.message,
         type: stripeError.type,
-        code: stripeError.code
+        code: stripeError.code,
+        stack: stripeError.stack
       });
       
       // Update the purchase record to failed

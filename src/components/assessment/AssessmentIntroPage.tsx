@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -64,7 +63,7 @@ const AssessmentIntroPage: React.FC = () => {
   const startAssessment = () => {
     // If user has credits, navigate to assessment
     if (credits && credits.credits_remaining > 0) {
-      navigate("/assessment");
+      navigate("/assessment-quiz");
     } else {
       toast.error("You need to purchase credits to take the assessment.");
     }
@@ -76,27 +75,35 @@ const AssessmentIntroPage: React.FC = () => {
     setPaymentError(null);
   };
   
-  // Add a timeout to reset processing state if it takes too long
+  // Add multiple timeouts to reset processing state if it takes too long
   useEffect(() => {
-    let timeoutId: number | undefined;
+    const timeouts: number[] = [];
     
     if (isProcessing) {
       // Auto-reset after 30 seconds if still processing
-      timeoutId = window.setTimeout(() => {
-        console.log("Payment processing timeout - resetting state");
+      timeouts.push(window.setTimeout(() => {
+        console.log("Payment processing timeout (30s) - resetting state");
         setIsProcessing(false);
         setProcessMessage("");
         setPaymentError("Payment processing timed out. Please try again.");
         toast.error("Payment processing is taking too long", {
           description: "Please try again or use a different payment method"
         });
-      }, 30000);
+      }, 30000));
+      
+      // Show message after 10 seconds
+      timeouts.push(window.setTimeout(() => {
+        if (isProcessing) {
+          console.log("Payment processing still in progress (10s) - showing info message");
+          toast.info("Still processing your payment", {
+            description: "This is taking longer than expected, but please wait..."
+          });
+        }
+      }, 10000));
     }
     
     return () => {
-      if (timeoutId) {
-        window.clearTimeout(timeoutId);
-      }
+      timeouts.forEach(id => window.clearTimeout(id));
     };
   }, [isProcessing]);
   
@@ -105,13 +112,25 @@ const AssessmentIntroPage: React.FC = () => {
     setIsProcessing(true);
     setProcessMessage(`Preparing ${paymentType} payment...`);
     
+    let paymentSessionId: string | null = null;
+    
     try {
       console.log(`Initiating ${paymentType} payment...`);
+      
+      // Set a timeout for the function call
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
       const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
         body: { paymentType },
-        // Add timeout to avoid indefinite waiting
-        headers: { "Request-Timeout": "15000" }
+        // Add additional headers to help with debugging
+        headers: { 
+          "Payment-Type": paymentType,
+          "Client-Timestamp": new Date().toISOString()
+        }
       });
+      
+      clearTimeout(timeoutId);
       
       if (error) {
         console.error("Payment initiation error:", error);
@@ -125,6 +144,8 @@ const AssessmentIntroPage: React.FC = () => {
       if (!data) {
         throw new Error("No response data received from payment service");
       }
+      
+      console.log("Payment initiation response:", data);
       
       if (data.error) {
         console.error("Payment function error:", data.error);
@@ -140,13 +161,39 @@ const AssessmentIntroPage: React.FC = () => {
         setProcessMessage("Redirecting to payment page...");
         // Save the session ID in local storage for verification later
         if (data.paymentSessionId) {
+          paymentSessionId = data.paymentSessionId;
           localStorage.setItem("pendingPaymentSessionId", data.paymentSessionId);
         }
         
-        // Short delay before redirecting to ensure state is updated
+        // Redirect to Stripe and ensure browser doesn't block it
+        const stripeUrl = data.url;
+        
+        // Create and click a link to avoid popup blockers
+        const link = document.createElement('a');
+        link.href = stripeUrl;
+        link.target = '_self';
+        link.rel = 'noopener noreferrer';
+        link.click();
+        
+        // Also try direct redirect as fallback after a short delay
         setTimeout(() => {
-          window.location.href = data.url;
-        }, 500);
+          // Check if we're still on the same page
+          if (document.visibilityState === 'visible') {
+            console.log("Fallback redirect triggered");
+            window.location.href = stripeUrl;
+          }
+        }, 1000);
+        
+        // Keep the processing state active for 5 seconds in case the redirect takes time
+        setTimeout(() => {
+          // Only reset if we haven't navigated away
+          if (document.visibilityState === 'visible' && 
+              localStorage.getItem("pendingPaymentSessionId") === paymentSessionId) {
+            console.log("Still on same page after redirect attempt - resetting state");
+            setIsProcessing(false);
+            setPaymentError("Failed to redirect to payment page. Please try again.");
+          }
+        }, 5000);
       } else {
         throw new Error("No payment URL returned");
       }
@@ -156,15 +203,9 @@ const AssessmentIntroPage: React.FC = () => {
       toast.error("An unexpected error occurred", {
         description: err.message || "Please try again or contact support."
       });
-    } finally {
-      // Only reset processing state if we haven't redirected
-      // We do this with a short timeout to give the redirect a chance to happen
-      setTimeout(() => {
-        if (document.visibilityState === 'visible') {
-          setIsProcessing(false);
-          setProcessMessage("");
-        }
-      }, 2000);
+      
+      // Reset processing state immediately on error
+      setIsProcessing(false);
     }
   };
   
@@ -265,17 +306,18 @@ const AssessmentIntroPage: React.FC = () => {
       <div className="container max-w-4xl py-12 flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <p className="text-center text-muted-foreground">{processMessage || "Processing..."}</p>
+        <div className="mt-2 text-sm text-center text-muted-foreground">
+          <p>If this takes longer than expected, you can try again</p>
+        </div>
         
-        {/* Add retry button that appears after 10 seconds */}
-        <div className="mt-8">
+        {/* Retry button that appears immediately */}
+        <div className="mt-6">
           <Button 
             variant="outline"
             onClick={handleRetryPayment}
-            className="animate-fade-in opacity-0"
-            style={{ animationDelay: '10s', animationFillMode: 'forwards' }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
+            Retry Payment
           </Button>
         </div>
       </div>
@@ -298,6 +340,18 @@ const AssessmentIntroPage: React.FC = () => {
               Return Home
             </Button>
           </div>
+          
+          {/* Debug information in collapsible section */}
+          <details className="mt-8 text-left text-xs">
+            <summary className="cursor-pointer text-muted-foreground">Debug Info</summary>
+            <div className="p-2 mt-2 bg-muted/50 rounded text-muted-foreground">
+              <p>User ID: {user?.id || 'Not logged in'}</p>
+              <p>Browser: {navigator.userAgent}</p>
+              <p>Retry Count: {retryCount}</p>
+              <p>Page URL: {window.location.href}</p>
+              <p>Time: {new Date().toISOString()}</p>
+            </div>
+          </details>
         </div>
       </div>
     );
