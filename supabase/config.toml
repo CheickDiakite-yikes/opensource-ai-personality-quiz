@@ -10,3 +10,7 @@ verify_jwt = true
 verify_jwt = false
 [functions.delete-concise-analysis]
 verify_jwt = true
+[functions.create-assessment-payment]
+verify_jwt = true
+[functions.verify-assessment-payment]
+verify_jwt = true

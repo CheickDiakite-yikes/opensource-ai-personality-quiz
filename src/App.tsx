@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -14,6 +15,7 @@ const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
+const AssessmentIntroPage = lazy(() => import("@/pages/AssessmentIntroPage"));
 
 // New Concise Insight pages
 const ConciseInsight = lazy(() => import("@/pages/ConciseInsight"));
@@ -84,6 +86,13 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <AssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="start-assessment" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <AssessmentIntroPage />
               </Suspense>
             </PrivateRoute>
           } />
