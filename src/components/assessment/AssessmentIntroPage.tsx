@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -76,7 +75,6 @@ const AssessmentIntroPage: React.FC = () => {
     setPaymentError(null);
   };
   
-  // Add multiple timeouts to reset processing state if it takes too long
   useEffect(() => {
     const timeouts: number[] = [];
     
@@ -178,7 +176,7 @@ const AssessmentIntroPage: React.FC = () => {
           setProcessMessage(`Connecting to payment service (attempt 2)...`);
           
           // Construct the full URL to the edge function manually
-          const functionUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/create-assessment-payment`;
+          const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-assessment-payment`;
           
           // Get auth token for authorization
           const { data: { session } } = await supabase.auth.getSession();
@@ -227,7 +225,6 @@ const AssessmentIntroPage: React.FC = () => {
     }
   };
   
-  // Helper function to handle payment redirection logic
   const handlePaymentRedirect = (data: any) => {
     console.log("Redirecting to payment:", data);
     setProcessMessage("Redirecting to payment page...");
@@ -277,7 +274,6 @@ const AssessmentIntroPage: React.FC = () => {
     toast.info("Retrying payment initialization...");
   };
   
-  // Check for a returning payment session
   useEffect(() => {
     const checkPaymentStatus = async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -411,7 +407,7 @@ const AssessmentIntroPage: React.FC = () => {
               <p>Retry Count: {retryCount}</p>
               <p>Page URL: {window.location.href}</p>
               <p>Time: {new Date().toISOString()}</p>
-              <p>Supabase URL: {process.env.VITE_SUPABASE_URL ? 'Set' : 'Not set'}</p>
+              <p>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set'}</p>
               <p>Edge Function: create-assessment-payment</p>
             </div>
           </details>
