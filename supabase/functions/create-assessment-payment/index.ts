@@ -9,46 +9,77 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("create-assessment-payment function started");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
+    console.log("Parsing request body");
     const { purchaseType = "single" } = await req.json();
+    console.log(`Purchase type: ${purchaseType}`);
     
     // Check for required environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     
+    if (!supabaseUrl) console.log("Missing SUPABASE_URL");
+    if (!supabaseServiceKey) console.log("Missing SUPABASE_SERVICE_ROLE_KEY");
+    if (!stripeKey) console.log("Missing STRIPE_SECRET_KEY");
+    
     if (!supabaseUrl || !supabaseServiceKey || !stripeKey) {
       throw new Error("Missing required environment variables");
     }
+    
+    console.log("Environment variables verified");
 
     // Initialize Supabase client with service role key for database operations
     const supabaseServer = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
     
+    console.log("Supabase server client initialized");
+    
     // Initialize Supabase client with user's JWT for user identification
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.log("No Authorization header found");
       throw new Error("Missing Authorization header");
     }
     
     // Get authenticated user
     const token = authHeader.replace("Bearer ", "");
+    console.log("Getting user from auth token");
     const { data: { user }, error: userError } = await supabaseServer.auth.getUser(token);
     
-    if (userError || !user) {
+    if (userError) {
+      console.error("User auth error:", userError);
+      throw new Error("Unauthorized: " + userError.message);
+    }
+    
+    if (!user) {
+      console.log("No user found with token");
       throw new Error("Unauthorized");
     }
     
-    // Set up Stripe
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
-    });
+    console.log(`User authenticated: ${user.id}`);
+    
+    // Set up Stripe with proper error handling
+    console.log("Initializing Stripe client");
+    let stripe;
+    try {
+      stripe = new Stripe(stripeKey, {
+        apiVersion: "2023-10-16",
+      });
+      console.log("Stripe client initialized successfully");
+    } catch (stripeInitError) {
+      console.error("Error initializing Stripe:", stripeInitError);
+      throw new Error("Failed to initialize payment provider: " + stripeInitError.message);
+    }
     
     // Set up pricing based on purchase type
     let amount = 299; // $2.99 for single purchase
@@ -61,47 +92,71 @@ serve(async (req) => {
       name = "Bundle: 3 Assessment Credits";
     }
     
-    // Create a Stripe Checkout session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: name,
-              description: purchaseType === "bundle" 
-                ? "Bundle of 3 Who Am I? assessment credits" 
-                : "Single Who Am I? assessment credit",
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/assessment-payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/assessment-intro`,
-    });
+    console.log(`Setting up pricing: ${amount} cents for ${credits} credits`);
     
-    // Record the pending purchase in our database
-    const { error: insertError } = await supabaseServer
-      .from("assessment_purchases")
-      .insert({
-        user_id: user.id,
-        amount: amount / 100, // Convert cents to dollars for storage
-        payment_session_id: session.id,
-        credits: credits,
-        purchase_type: purchaseType,
-        status: "pending"
+    // Get origin for URLs
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+    console.log(`Using origin for URLs: ${origin}`);
+    
+    // Create a Stripe Checkout session with detailed error handling
+    let session;
+    try {
+      console.log("Creating Stripe checkout session");
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: name,
+                description: purchaseType === "bundle" 
+                  ? "Bundle of 3 Who Am I? assessment credits" 
+                  : "Single Who Am I? assessment credit",
+              },
+              unit_amount: amount,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${origin}/assessment-payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/assessment-intro`,
       });
       
-    if (insertError) {
-      console.error("Error recording purchase:", insertError);
-      // Continue anyway as we don't want to block the payment flow
+      console.log(`Stripe session created with ID: ${session.id}`);
+    } catch (checkoutError) {
+      console.error("Stripe checkout creation error:", checkoutError);
+      throw new Error("Failed to create checkout session: " + checkoutError.message);
+    }
+    
+    // Record the pending purchase in our database
+    try {
+      console.log("Recording purchase in database");
+      const { error: insertError } = await supabaseServer
+        .from("assessment_purchases")
+        .insert({
+          user_id: user.id,
+          amount: amount / 100, // Convert cents to dollars for storage
+          payment_session_id: session.id,
+          credits: credits,
+          purchase_type: purchaseType,
+          status: "pending"
+        });
+        
+      if (insertError) {
+        console.error("Error recording purchase:", insertError);
+        // Continue anyway as we don't want to block the payment flow
+      } else {
+        console.log("Purchase recorded successfully");
+      }
+    } catch (dbError) {
+      console.error("Database error when recording purchase:", dbError);
+      // Continue with checkout even if recording fails
     }
     
     // Return checkout URL to client
+    console.log("Returning checkout URL to client");
     return new Response(
       JSON.stringify({ 
         url: session.url,

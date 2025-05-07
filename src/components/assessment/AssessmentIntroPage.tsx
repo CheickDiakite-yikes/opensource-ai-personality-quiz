@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAssessmentCredits } from "@/hooks/useAssessmentCredits";
-import { Check, ShieldCheck, Brain, Gem, Sparkles } from "lucide-react";
+import { Check, ShieldCheck, Brain, Gem, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,6 +15,7 @@ const AssessmentIntroPage: React.FC = () => {
   const navigate = useNavigate();
   const { credits, hasCredits, loading: creditsLoading, fetchCredits } = useAssessmentCredits();
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   
   useEffect(() => {
     // Refresh credits when page loads
@@ -40,26 +41,41 @@ const AssessmentIntroPage: React.FC = () => {
     
     try {
       setIsPurchasing(true);
-      toast.loading("Setting up payment...");
+      setPurchaseError(null);
+      
+      const toastId = toast.loading("Setting up payment...");
+      
+      console.log("Invoking create-assessment-payment function");
       
       const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
         body: { purchaseType }
       });
       
       if (error) {
+        console.error("Error invoking create-assessment-payment:", error);
         throw new Error(error.message);
       }
       
-      if (data.url) {
-        window.location.href = data.url;
+      console.log("Received response from create-assessment-payment:", data);
+      
+      toast.dismiss(toastId);
+      
+      if (data?.url) {
+        console.log("Redirecting to Stripe checkout:", data.url);
+        // Add a small delay to ensure toast is shown
+        setTimeout(() => {
+          window.location.href = data.url;
+        }, 500);
       } else {
-        throw new Error("No checkout URL returned");
+        throw new Error("No checkout URL returned from payment service");
       }
       
     } catch (error) {
       console.error("Error initiating payment:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setPurchaseError(errorMessage);
       toast.error("Failed to initiate payment", {
-        description: "Please try again or contact support"
+        description: `Please try again or contact support. Error: ${errorMessage}`
       });
     } finally {
       setIsPurchasing(false);
@@ -86,6 +102,25 @@ const AssessmentIntroPage: React.FC = () => {
           Discover deep insights about your personality traits, emotional intelligence, cognitive patterns and more
         </p>
       </motion.div>
+      
+      {purchaseError && (
+        <div className="mb-6 p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+          <div className="flex gap-2 items-center">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <h3 className="font-medium text-destructive">Payment Error</h3>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">{purchaseError}</p>
+          <div className="mt-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPurchaseError(null)}
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="bg-gradient-to-br from-background to-muted/50">
@@ -185,7 +220,7 @@ const AssessmentIntroPage: React.FC = () => {
                   disabled={isPurchasing}
                   variant="outline"
                 >
-                  Purchase Single Credit
+                  {isPurchasing ? "Processing..." : "Purchase Single Credit"}
                 </Button>
               </CardContent>
             </Card>
@@ -218,7 +253,7 @@ const AssessmentIntroPage: React.FC = () => {
                   className="w-full"
                   disabled={isPurchasing}
                 >
-                  Purchase Bundle (Best Value)
+                  {isPurchasing ? "Processing..." : "Purchase Bundle (Best Value)"}
                 </Button>
               </CardContent>
             </Card>
