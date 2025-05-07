@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -10,8 +9,6 @@ const HomePage = lazy(() => import("@/pages/HomePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const AssessmentPage = lazy(() => import("@/components/assessment/AssessmentPage"));
-const AssessmentIntroPage = lazy(() => import("@/components/assessment/AssessmentIntroPage"));
-const AssessmentPaymentSuccessPage = lazy(() => import("@/components/assessment/AssessmentPaymentSuccessPage"));
 const ReportPage = lazy(() => import("@/components/report/ReportPage"));
 const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
@@ -83,20 +80,6 @@ function App() {
           } />
           
           {/* Protected Routes */}
-          <Route path="assessment-intro" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <AssessmentIntroPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
-          <Route path="assessment-payment-success" element={
-            <PrivateRoute>
-              <Suspense fallback={<PageLoader />}>
-                <AssessmentPaymentSuccessPage />
-              </Suspense>
-            </PrivateRoute>
-          } />
           <Route path="assessment" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>

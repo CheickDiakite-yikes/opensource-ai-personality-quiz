@@ -18,7 +18,7 @@ export const useNavigationItems = () => {
 
   // Navigation items used in both sidebar and mobile menu
   const navigationItems: NavigationItem[] = [
-    { name: "Who Am I?", path: "/assessment-intro", icon: Brain, requiresAuth: true },
+    { name: "Who Am I?", path: "/assessment", icon: Brain, requiresAuth: true },
     { name: "WAI Report", path: "/report", icon: ClipboardList, requiresAuth: true },
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
     { name: "Free Assessment", path: "/concise-insight", icon: Zap, requiresAuth: true },
