@@ -13,6 +13,10 @@ export const useNavigationItems = () => {
   const location = useLocation();
   
   const isActive = (path: string) => {
+    // Consider the assessment and assessment-quiz routes the same for navigation
+    if (path === "/assessment" && location.pathname === "/assessment-quiz") {
+      return true;
+    }
     return location.pathname === path || location.pathname.startsWith(path);
   };
 

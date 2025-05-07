@@ -1,5 +1,6 @@
 
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AssessmentQuestion } from "@/utils/types";
 import { useResponseManagement } from "./hooks/useResponseManagement";
 import { useAssessmentStorage } from "./hooks/useAssessmentStorage";
@@ -8,8 +9,10 @@ import { useAssessmentNavigation } from "./hooks/useAssessmentNavigation";
 import { useAssessmentSubmission } from "./hooks/useAssessmentSubmission";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAssessmentState = (allQuestions: AssessmentQuestion[]) => {
+  const navigate = useNavigate();
   const {
     currentQuestionIndex,
     setCurrentQuestionIndex,
@@ -55,6 +58,45 @@ export const useAssessmentState = (allQuestions: AssessmentQuestion[]) => {
     setCurrentQuestionIndex,
     allQuestions
   );
+
+  // Check if the user has assessment credits
+  useEffect(() => {
+    const checkUserCredits = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("assessment_credits")
+          .select("credits_remaining")
+          .eq("user_id", user.id)
+          .single();
+          
+        if (error) {
+          console.error("Error checking credits:", error);
+          return;
+        }
+        
+        // If user has no credits, redirect to assessment intro
+        if (!data || data.credits_remaining <= 0) {
+          console.log("User has no credits, redirecting to assessment intro page...");
+          
+          // Only redirect if we're on the assessment quiz page
+          if (window.location.pathname === "/assessment-quiz") {
+            navigate("/assessment");
+            toast.info("You need credits to access the assessment", {
+              description: "Purchase credits to continue."
+            });
+          }
+        } else {
+          console.log(`User has ${data.credits_remaining} credits available.`);
+        }
+      } catch (err) {
+        console.error("Error in credit checking:", err);
+      }
+    };
+    
+    checkUserCredits();
+  }, [user, navigate]);
   
   // Handle restoring the current response when loaded from storage
   useEffect(() => {

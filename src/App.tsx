@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -9,11 +10,13 @@ const HomePage = lazy(() => import("@/pages/HomePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const AssessmentPage = lazy(() => import("@/components/assessment/AssessmentPage"));
+const AssessmentIntroPage = lazy(() => import("@/components/assessment/AssessmentIntroPage"));
 const ReportPage = lazy(() => import("@/components/report/ReportPage"));
 const TrackerPage = lazy(() => import("@/components/tracker/TrackerPage"));
 const ProfilePage = lazy(() => import("@/components/profile/ProfilePage"));
 const TraitsPage = lazy(() => import("@/components/traits/TraitsPage"));
 const SharedProfile = lazy(() => import("@/pages/SharedProfile"));
+const AssessmentPaymentSuccess = lazy(() => import("@/pages/AssessmentPaymentSuccess"));
 
 // New Concise Insight pages
 const ConciseInsight = lazy(() => import("@/pages/ConciseInsight"));
@@ -83,7 +86,21 @@ function App() {
           <Route path="assessment" element={
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
+                <AssessmentIntroPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="assessment-quiz" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
                 <AssessmentPage />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          <Route path="assessment-payment-success" element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <AssessmentPaymentSuccess />
               </Suspense>
             </PrivateRoute>
           } />
