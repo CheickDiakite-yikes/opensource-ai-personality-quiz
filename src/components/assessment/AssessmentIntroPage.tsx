@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -7,11 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { PaymentDebugDialog } from "./PaymentDebugDialog";
-
-// Import the Supabase URL directly from the client for consistency
-import { SUPABASE_URL } from "@/integrations/supabase/client";
 
 interface CreditsData {
   id: string;
@@ -183,7 +179,7 @@ const AssessmentIntroPage: React.FC = () => {
           console.log("Attempt 2: Using direct fetch approach");
           setProcessMessage(`Connecting to payment service (attempt 2)...`);
           
-          // Use the imported SUPABASE_URL constant directly instead of environment variables
+          // Use the imported SUPABASE_URL constant directly
           const functionUrl = `${SUPABASE_URL}/functions/v1/create-assessment-payment`;
           console.log("Direct function URL:", functionUrl);
           
