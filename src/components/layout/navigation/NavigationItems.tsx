@@ -1,5 +1,5 @@
 
-import { User, Brain, BarChart, ClipboardList, FileText, Zap, MessageSquare } from "lucide-react";
+import { User, Brain, BarChart, ClipboardList, FileText, Zap } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export interface NavigationItem {
@@ -23,7 +23,6 @@ export const useNavigationItems = () => {
     { name: "Tracker", path: "/tracker", icon: BarChart, requiresAuth: true },
     { name: "Free Assessment", path: "/concise-insight", icon: Zap, requiresAuth: true },
     { name: "Free Report", path: "/concise-report", icon: FileText, requiresAuth: true },
-    { name: "Take Assessment", path: "/start-assessment", icon: MessageSquare, requiresAuth: true },
     { name: "Profile", path: "/profile", icon: User, requiresAuth: true },
   ];
 
