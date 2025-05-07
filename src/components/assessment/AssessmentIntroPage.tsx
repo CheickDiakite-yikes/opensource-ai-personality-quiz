@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Brain, CreditCard, Package, Sparkles, FileCheck, AlertTriangle, Loader2 } from "lucide-react";
+import { Brain, CreditCard, Package, Sparkles, FileCheck, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -27,6 +27,8 @@ const AssessmentIntroPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processMessage, setProcessMessage] = useState("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const fetchCredits = async () => {
     setIsLoading(true);
@@ -68,18 +70,68 @@ const AssessmentIntroPage: React.FC = () => {
     }
   };
   
+  const resetPaymentState = () => {
+    setIsProcessing(false);
+    setProcessMessage("");
+    setPaymentError(null);
+  };
+  
+  // Add a timeout to reset processing state if it takes too long
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    
+    if (isProcessing) {
+      // Auto-reset after 30 seconds if still processing
+      timeoutId = window.setTimeout(() => {
+        console.log("Payment processing timeout - resetting state");
+        setIsProcessing(false);
+        setProcessMessage("");
+        setPaymentError("Payment processing timed out. Please try again.");
+        toast.error("Payment processing is taking too long", {
+          description: "Please try again or use a different payment method"
+        });
+      }, 30000);
+    }
+    
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isProcessing]);
+  
   const initiatePayment = async (paymentType: 'single' | 'bundle') => {
+    resetPaymentState();
     setIsProcessing(true);
     setProcessMessage(`Preparing ${paymentType} payment...`);
     
     try {
+      console.log(`Initiating ${paymentType} payment...`);
       const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
-        body: { paymentType }
+        body: { paymentType },
+        // Add timeout to avoid indefinite waiting
+        headers: { "Request-Timeout": "15000" }
       });
       
       if (error) {
         console.error("Payment initiation error:", error);
-        toast.error("Failed to initiate payment. Please try again.");
+        setPaymentError(`Failed to initiate payment: ${error.message}`);
+        toast.error("Failed to initiate payment.", {
+          description: error.message || "Please try again or contact support."
+        });
+        return;
+      }
+      
+      if (!data) {
+        throw new Error("No response data received from payment service");
+      }
+      
+      if (data.error) {
+        console.error("Payment function error:", data.error);
+        setPaymentError(`Payment error: ${data.error}`);
+        toast.error("Payment error", {
+          description: data.error || "Please try again or contact support."
+        });
         return;
       }
       
@@ -90,17 +142,37 @@ const AssessmentIntroPage: React.FC = () => {
         if (data.paymentSessionId) {
           localStorage.setItem("pendingPaymentSessionId", data.paymentSessionId);
         }
-        window.location.href = data.url;
+        
+        // Short delay before redirecting to ensure state is updated
+        setTimeout(() => {
+          window.location.href = data.url;
+        }, 500);
       } else {
         throw new Error("No payment URL returned");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Exception in payment:", err);
-      toast.error("An unexpected error occurred. Please try again.");
+      setPaymentError(`Payment error: ${err.message}`);
+      toast.error("An unexpected error occurred", {
+        description: err.message || "Please try again or contact support."
+      });
     } finally {
-      setIsProcessing(false);
-      setProcessMessage("");
+      // Only reset processing state if we haven't redirected
+      // We do this with a short timeout to give the redirect a chance to happen
+      setTimeout(() => {
+        if (document.visibilityState === 'visible') {
+          setIsProcessing(false);
+          setProcessMessage("");
+        }
+      }, 2000);
     }
+  };
+  
+  // Handle manual retry
+  const handleRetryPayment = () => {
+    resetPaymentState();
+    setRetryCount(retryCount + 1);
+    toast.info("Retrying payment initialization...");
   };
   
   // Check for a returning payment session
@@ -117,13 +189,24 @@ const AssessmentIntroPage: React.FC = () => {
         setProcessMessage("Verifying your payment...");
         
         try {
+          console.log("Verifying payment for session:", sessionId);
           const { data, error } = await supabase.functions.invoke("verify-assessment-payment", {
             body: { paymentSessionId: sessionId }
           });
           
           if (error) {
             console.error("Payment verification error:", error);
-            toast.error("Failed to verify payment. Please contact support.");
+            toast.error("Failed to verify payment", {
+              description: "Please contact support if your credits don't appear."
+            });
+            return;
+          }
+          
+          if (data?.error) {
+            console.error("Payment verification function error:", data.error);
+            toast.error("Payment verification failed", {
+              description: data.error || "Please contact support if your credits don't appear."
+            });
             return;
           }
           
@@ -134,9 +217,11 @@ const AssessmentIntroPage: React.FC = () => {
           } else {
             toast.error(data?.message || "Payment verification failed. Please try again.");
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Exception in payment verification:", err);
-          toast.error("An unexpected error occurred verifying your payment.");
+          toast.error("An unexpected error occurred verifying your payment", {
+            description: err.message || "Please contact support if your credits don't appear."
+          });
         } finally {
           setIsProcessing(false);
           setProcessMessage("");
@@ -147,8 +232,15 @@ const AssessmentIntroPage: React.FC = () => {
       // Check for any pending payments that might have been interrupted
       const pendingSessionId = localStorage.getItem("pendingPaymentSessionId");
       if (pendingSessionId) {
-        // TODO: In a more robust implementation, we could check the status of this pending payment
+        console.log("Found pending payment session:", pendingSessionId);
+        // Remove the pending payment session ID
         localStorage.removeItem("pendingPaymentSessionId");
+        
+        // If we were redirected back without a session_id in the URL, 
+        // the payment was likely cancelled or failed
+        toast.info("Previous payment session detected", {
+          description: "The payment may have been cancelled or interrupted."
+        });
       }
     };
     
@@ -173,6 +265,40 @@ const AssessmentIntroPage: React.FC = () => {
       <div className="container max-w-4xl py-12 flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <p className="text-center text-muted-foreground">{processMessage || "Processing..."}</p>
+        
+        {/* Add retry button that appears after 10 seconds */}
+        <div className="mt-8">
+          <Button 
+            variant="outline"
+            onClick={handleRetryPayment}
+            className="animate-fade-in opacity-0"
+            style={{ animationDelay: '10s', animationFillMode: 'forwards' }}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Conditional rendering for error state
+  if (paymentError) {
+    return (
+      <div className="container max-w-4xl py-12 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-destructive/10 p-6 rounded-lg text-center max-w-lg mx-auto">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-xl font-bold mb-2">Payment Error</h3>
+          <p className="text-muted-foreground mb-6">{paymentError}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button variant="outline" onClick={() => resetPaymentState()}>
+              Try Again
+            </Button>
+            <Button onClick={() => navigate("/")}>
+              Return Home
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

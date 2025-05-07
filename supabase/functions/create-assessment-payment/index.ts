@@ -24,38 +24,69 @@ serve(async (req) => {
     logStep("Function started");
     
     // Parse request body
-    const { paymentType } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+      logStep("Request body parsed", body);
+    } catch (parseError) {
+      logStep("Error parsing request body", { error: parseError.message });
+      throw new Error(`Invalid request format: ${parseError.message}`);
+    }
+    
+    const { paymentType } = body;
+    
+    if (!paymentType) {
+      logStep("Missing payment type");
+      throw new Error("Payment type is required");
+    }
     logStep("Payment type received", { paymentType });
 
     // Valid payment types
     const validPaymentTypes = ["single", "bundle"];
     if (!validPaymentTypes.includes(paymentType)) {
+      logStep("Invalid payment type", { paymentType, validTypes: validPaymentTypes });
       throw new Error(`Invalid payment type: ${paymentType}. Must be one of: ${validPaymentTypes.join(", ")}`);
     }
 
     // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
+      logStep("Missing Stripe secret key");
       throw new Error("STRIPE_SECRET_KEY is not set in environment");
     }
+    logStep("Stripe key found (hidden for security)");
     
     // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      logStep("Missing Supabase credentials", { 
+        hasUrl: !!supabaseUrl, 
+        hasServiceKey: !!supabaseServiceKey 
+      });
+      throw new Error("Supabase credentials are not properly configured");
+    }
+    
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
+    logStep("Supabase admin client initialized");
 
     // Create Supabase client using the token for auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      logStep("Missing Authorization header");
       throw new Error("Authorization header is missing");
     }
     
     const token = authHeader.replace("Bearer ", "");
+    logStep("Authenticating user with token");
+    
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !userData.user) {
+      logStep("Authentication failed", { error: userError?.message || "User not found" });
       throw new Error(userError ? `Authentication error: ${userError.message}` : "User not found");
     }
     
@@ -63,9 +94,16 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Initialize Stripe
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
-    });
+    try {
+      logStep("Initializing Stripe");
+      var stripe = new Stripe(stripeKey, {
+        apiVersion: "2023-10-16",
+      });
+      logStep("Stripe initialized successfully");
+    } catch (stripeInitError) {
+      logStep("Stripe initialization failed", { error: stripeInitError.message });
+      throw new Error(`Failed to initialize Stripe: ${stripeInitError.message}`);
+    }
 
     // Determine product details based on payment type
     let amount: number;
@@ -86,74 +124,106 @@ serve(async (req) => {
 
     // Generate a unique reference ID for this transaction
     const paymentSessionId = crypto.randomUUID();
+    logStep("Generated payment session ID", { paymentSessionId });
 
     // Record the pending purchase in the database
-    const { error: insertError } = await supabaseAdmin
-      .from("assessment_purchases")
-      .insert({
-        user_id: user.id,
-        amount: amount / 100, // Convert cents to dollars for DB storage
-        credits: credits,
-        purchase_type: paymentType,
-        payment_session_id: paymentSessionId,
-        status: "pending"
-      });
+    try {
+      logStep("Recording purchase in database");
+      const { error: insertError } = await supabaseAdmin
+        .from("assessment_purchases")
+        .insert({
+          user_id: user.id,
+          amount: amount / 100, // Convert cents to dollars for DB storage
+          credits: credits,
+          purchase_type: paymentType,
+          payment_session_id: paymentSessionId,
+          status: "pending"
+        });
 
-    if (insertError) {
-      throw new Error(`Error recording purchase: ${insertError.message}`);
+      if (insertError) {
+        logStep("Error recording purchase", { error: insertError.message });
+        throw new Error(`Error recording purchase: ${insertError.message}`);
+      }
+      logStep("Purchase recorded in database", { paymentSessionId });
+    } catch (dbError) {
+      logStep("Database operation failed", { error: dbError.message });
+      throw new Error(`Database error: ${dbError.message}`);
     }
 
-    logStep("Purchase recorded in database", { paymentSessionId });
-
     // Create Stripe Checkout Session
-    const origin = req.headers.get("origin") || "http://localhost:5173";
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Who Am I? Assessment - ${description}`,
-              description: `Purchase ${credits} assessment credit${credits > 1 ? 's' : ''}`,
+    try {
+      const origin = req.headers.get("origin") || "http://localhost:5173";
+      logStep("Creating Stripe checkout session", { origin, successRedirect: `${origin}/assessment-payment-success?session_id=${paymentSessionId}` });
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Who Am I? Assessment - ${description}`,
+                description: `Purchase ${credits} assessment credit${credits > 1 ? 's' : ''}`,
+              },
+              unit_amount: amount,
             },
-            unit_amount: amount,
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/assessment-payment-success?session_id=${paymentSessionId}`,
-      cancel_url: `${origin}/assessment`,
-      client_reference_id: paymentSessionId,
-      metadata: {
-        userId: user.id,
-        paymentType: paymentType,
-        credits: credits.toString()
-      }
-    });
+        ],
+        mode: "payment",
+        success_url: `${origin}/assessment-payment-success?session_id=${paymentSessionId}`,
+        cancel_url: `${origin}/assessment`,
+        client_reference_id: paymentSessionId,
+        metadata: {
+          userId: user.id,
+          paymentType: paymentType,
+          credits: credits.toString()
+        }
+      });
 
-    logStep("Stripe session created", { 
-      sessionId: session.id,
-      url: session.url,
-      paymentSessionId: paymentSessionId
-    });
-
-    // Return the Stripe checkout URL to redirect the user
-    return new Response(
-      JSON.stringify({
-        url: session.url,
+      logStep("Stripe session created", { 
+        sessionId: session.id,
+        url: session.url?.substring(0, 30) + "...", // Only log partial URL for security
         paymentSessionId: paymentSessionId
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
+      });
+
+      // Return the Stripe checkout URL to redirect the user
+      return new Response(
+        JSON.stringify({
+          url: session.url,
+          paymentSessionId: paymentSessionId
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200
+        }
+      );
+    } catch (stripeError) {
+      logStep("Stripe error creating checkout session", { 
+        error: stripeError.message,
+        type: stripeError.type,
+        code: stripeError.code
+      });
+      
+      // Update the purchase record to failed
+      try {
+        await supabaseAdmin
+          .from("assessment_purchases")
+          .update({ status: "failed", error_message: stripeError.message })
+          .eq("payment_session_id", paymentSessionId);
+      } catch (updateError) {
+        logStep("Failed to update purchase record after Stripe error", { error: updateError.message });
       }
-    );
+      
+      throw new Error(`Stripe error: ${stripeError.message}`);
+    }
   } catch (error) {
-    logStep("ERROR", { message: error.message });
+    logStep("ERROR", { message: error.message, stack: error.stack });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        errorCode: error.code || "unknown_error"
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400
