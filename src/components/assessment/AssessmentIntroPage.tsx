@@ -53,7 +53,7 @@ const AssessmentIntroPage: React.FC = () => {
       
       if (error) {
         console.error("Error invoking create-assessment-payment:", error);
-        throw new Error(error.message);
+        throw new Error(error.message || "Error invoking payment function");
       }
       
       console.log("Received response from create-assessment-payment:", data);
@@ -62,10 +62,12 @@ const AssessmentIntroPage: React.FC = () => {
       
       if (data?.url) {
         console.log("Redirecting to Stripe checkout:", data.url);
+        toast.success("Redirecting to checkout...");
+        
         // Add a small delay to ensure toast is shown
         setTimeout(() => {
           window.location.href = data.url;
-        }, 500);
+        }, 1000);
       } else {
         throw new Error("No checkout URL returned from payment service");
       }
@@ -73,7 +75,14 @@ const AssessmentIntroPage: React.FC = () => {
     } catch (error) {
       console.error("Error initiating payment:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      setPurchaseError(errorMessage);
+      
+      // Check for specific Stripe key error
+      if (errorMessage.includes("Invalid Stripe key format") || errorMessage.includes("Invalid API Key")) {
+        setPurchaseError("Payment configuration error: Invalid Stripe API key. Please contact support.");
+      } else {
+        setPurchaseError(errorMessage);
+      }
+      
       toast.error("Failed to initiate payment", {
         description: `Please try again or contact support. Error: ${errorMessage}`
       });

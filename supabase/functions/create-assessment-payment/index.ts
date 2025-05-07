@@ -36,6 +36,7 @@ serve(async (req) => {
     }
     
     console.log("Environment variables verified");
+    console.log(`Stripe key starts with: ${stripeKey.substring(0, 3)}...`); // Partial logging for security
 
     // Initialize Supabase client with service role key for database operations
     const supabaseServer = createClient(supabaseUrl, supabaseServiceKey, {
@@ -72,6 +73,12 @@ serve(async (req) => {
     console.log("Initializing Stripe client");
     let stripe;
     try {
+      // IMPORTANT: The prefix should be 'sk_' for secret keys, not 'rk_'
+      if (stripeKey.startsWith('rk_')) {
+        console.error("Invalid key format: Stripe key should start with 'sk_', not 'rk_'");
+        throw new Error("Invalid Stripe key format");
+      }
+      
       stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16",
       });
@@ -127,7 +134,10 @@ serve(async (req) => {
       console.log(`Stripe session created with ID: ${session.id}`);
     } catch (checkoutError) {
       console.error("Stripe checkout creation error:", checkoutError);
-      throw new Error("Failed to create checkout session: " + checkoutError.message);
+      const errorMessage = checkoutError instanceof Error 
+        ? checkoutError.message 
+        : JSON.stringify(checkoutError);
+      throw new Error("Failed to create checkout session: " + errorMessage);
     }
     
     // Record the pending purchase in our database
