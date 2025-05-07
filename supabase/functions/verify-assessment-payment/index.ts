@@ -42,7 +42,12 @@ serve(async (req) => {
     }
     
     console.log("Environment variables verified");
-    console.log(`Stripe key starts with: ${stripeKey.substring(0, 3)}...`); // Partial logging for security
+    console.log(`Stripe key format check: starts with ${stripeKey.substring(0, 3)}, length: ${stripeKey.length}`);
+    
+    if (!stripeKey.startsWith('sk_')) {
+      console.error("Invalid key format: Stripe key should start with 'sk_'");
+      throw new Error("Invalid Stripe key format: Secret key must start with 'sk_'");
+    }
     
     // Initialize Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -55,15 +60,20 @@ serve(async (req) => {
     console.log("Initializing Stripe client");
     let stripe;
     try {
-      // IMPORTANT: The prefix should be 'sk_' for secret keys, not 'rk_'
-      if (stripeKey.startsWith('rk_')) {
-        console.error("Invalid key format: Stripe key should start with 'sk_', not 'rk_'");
-        throw new Error("Invalid Stripe key format");
-      }
-    
       stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16", 
       });
+      
+      // Test the Stripe connection with a simple API call
+      console.log("Testing Stripe connection");
+      await stripe.paymentMethods.list({ customer: "nonexistent_customer", type: "card", limit: 1 }).catch(error => {
+        // This will fail, but we just want to check if the API key works
+        if (error.type === 'StripeAuthenticationError') {
+          console.error("Stripe authentication error - invalid API key");
+          throw new Error("Invalid Stripe API key: Authentication failed");
+        }
+      });
+      
       console.log("Stripe client initialized successfully");
     } catch (stripeInitError) {
       console.error("Error initializing Stripe:", stripeInitError);
@@ -78,6 +88,14 @@ serve(async (req) => {
       console.log(`Retrieved session with payment status: ${session.payment_status}`);
     } catch (retrieveError) {
       console.error("Error retrieving Stripe session:", retrieveError);
+      
+      // Check for specific error types
+      if (retrieveError.type === 'StripeAuthenticationError') {
+        throw new Error("Invalid Stripe API key: Authentication failed");
+      } else if (retrieveError.type === 'StripeInvalidRequestError') {
+        throw new Error(`Invalid session ID: ${retrieveError.message}`);
+      }
+      
       throw new Error(`Failed to retrieve payment session: ${retrieveError.message}`);
     }
     

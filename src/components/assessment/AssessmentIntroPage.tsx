@@ -9,6 +9,7 @@ import { useAssessmentCredits } from "@/hooks/useAssessmentCredits";
 import { Check, ShieldCheck, Brain, Gem, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import PaymentDebugDialog from "./PaymentDebugDialog";
 
 const AssessmentIntroPage: React.FC = () => {
   const { user } = useAuth();
@@ -64,10 +65,17 @@ const AssessmentIntroPage: React.FC = () => {
         console.log("Redirecting to Stripe checkout:", data.url);
         toast.success("Redirecting to checkout...");
         
+        // Display a toast with information about the test mode
+        if (data.url.includes('checkout.stripe.com/test')) {
+          toast.info("Using Stripe in test mode", {
+            description: "To test, use card number 4242 4242 4242 4242 with any future date and CVC"
+          });
+        }
+        
         // Add a small delay to ensure toast is shown
         setTimeout(() => {
           window.location.href = data.url;
-        }, 1000);
+        }, 1500);
       } else {
         throw new Error("No checkout URL returned from payment service");
       }
@@ -77,15 +85,22 @@ const AssessmentIntroPage: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
       // Check for specific Stripe key error
-      if (errorMessage.includes("Invalid Stripe key format") || errorMessage.includes("Invalid API Key")) {
-        setPurchaseError("Payment configuration error: Invalid Stripe API key. Please contact support.");
+      if (errorMessage.includes("Invalid Stripe key format") || errorMessage.includes("Invalid API Key") || errorMessage.includes("Authentication failed")) {
+        const adminMessage = "Payment configuration error: Invalid Stripe API key. Please contact support.";
+        console.error(adminMessage);
+        setPurchaseError(adminMessage);
+        
+        // Show more details in the toast for admin debugging
+        toast.error("Stripe API key issue", {
+          description: "The Stripe secret key is invalid or incorrectly formatted. It must be a valid secret key starting with 'sk_'."
+        });
       } else {
         setPurchaseError(errorMessage);
+        
+        toast.error("Failed to initiate payment", {
+          description: `Please try again or contact support. Error: ${errorMessage}`
+        });
       }
-      
-      toast.error("Failed to initiate payment", {
-        description: `Please try again or contact support. Error: ${errorMessage}`
-      });
     } finally {
       setIsPurchasing(false);
     }
@@ -269,6 +284,9 @@ const AssessmentIntroPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Debug dialog for administrators */}
+      <PaymentDebugDialog />
     </div>
   );
 };
