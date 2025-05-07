@@ -14,6 +14,17 @@ export const useAssessmentSubmission = (
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Helper function to convert responses to a JSON-compatible format
+  const toJsonCompatible = (responses: AssessmentResponse[]): any => {
+    return responses.map(response => ({
+      questionId: response.questionId,
+      selectedOption: response.selectedOption || null,
+      customResponse: response.customResponse || null,
+      category: response.category,
+      timestamp: response.timestamp.toISOString(),
+    }));
+  };
+
   const handleSubmitAssessment = async () => {
     try {
       saveCurrentResponse();
@@ -47,12 +58,15 @@ export const useAssessmentSubmission = (
         throw new Error("User not authenticated");
       }
 
+      // Convert responses to JSON-compatible format
+      const jsonResponses = toJsonCompatible(responses);
+
       // Save assessment responses to database
       const assessmentId = crypto.randomUUID();
       const { error: assessmentError } = await supabase.from("assessments").insert({
         id: assessmentId,
         user_id: user.id,
-        responses: responses,
+        responses: jsonResponses,
       });
 
       if (assessmentError) {
