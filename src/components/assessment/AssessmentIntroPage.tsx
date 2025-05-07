@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -121,81 +122,98 @@ const AssessmentIntroPage: React.FC = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
-        body: { paymentType },
-        // Add additional headers to help with debugging
-        headers: { 
-          "Payment-Type": paymentType,
-          "Client-Timestamp": new Date().toISOString()
-        }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (error) {
-        console.error("Payment initiation error:", error);
-        setPaymentError(`Failed to initiate payment: ${error.message}`);
-        toast.error("Failed to initiate payment.", {
-          description: error.message || "Please try again or contact support."
+      // Enhanced error handling with fallback logic
+      try {
+        // First attempt - Use Supabase edge function invoke
+        console.log("Attempt 1: Using Supabase functions.invoke");
+        setProcessMessage(`Connecting to payment service (attempt 1)...`);
+        
+        const { data, error } = await supabase.functions.invoke("create-assessment-payment", {
+          body: { paymentType },
+          headers: { 
+            "Payment-Type": paymentType,
+            "Client-Timestamp": new Date().toISOString()
+          }
         });
-        return;
-      }
-      
-      if (!data) {
-        throw new Error("No response data received from payment service");
-      }
-      
-      console.log("Payment initiation response:", data);
-      
-      if (data.error) {
-        console.error("Payment function error:", data.error);
-        setPaymentError(`Payment error: ${data.error}`);
-        toast.error("Payment error", {
-          description: data.error || "Please try again or contact support."
-        });
-        return;
-      }
-      
-      if (data?.url) {
-        console.log("Redirecting to payment:", data);
-        setProcessMessage("Redirecting to payment page...");
-        // Save the session ID in local storage for verification later
-        if (data.paymentSessionId) {
-          paymentSessionId = data.paymentSessionId;
-          localStorage.setItem("pendingPaymentSessionId", data.paymentSessionId);
+        
+        clearTimeout(timeoutId);
+        
+        if (error) {
+          throw new Error(`Supabase function error: ${error.message}`);
         }
         
-        // Redirect to Stripe and ensure browser doesn't block it
-        const stripeUrl = data.url;
+        if (!data) {
+          throw new Error("No response data received from payment service");
+        }
         
-        // Create and click a link to avoid popup blockers
-        const link = document.createElement('a');
-        link.href = stripeUrl;
-        link.target = '_self';
-        link.rel = 'noopener noreferrer';
-        link.click();
+        console.log("Payment initiation response:", data);
         
-        // Also try direct redirect as fallback after a short delay
-        setTimeout(() => {
-          // Check if we're still on the same page
-          if (document.visibilityState === 'visible') {
-            console.log("Fallback redirect triggered");
-            window.location.href = stripeUrl;
+        if (data.error) {
+          throw new Error(`Payment function error: ${data.error}`);
+        }
+        
+        if (data?.url) {
+          handlePaymentRedirect(data);
+        } else {
+          throw new Error("No payment URL returned");
+        }
+      } catch (primaryError) {
+        console.error("Primary payment method failed:", primaryError);
+        
+        // Log detailed error information for debugging
+        console.error("Primary payment failure details:", {
+          message: primaryError.message,
+          stack: primaryError.stack,
+          name: primaryError.name,
+          timestamp: new Date().toISOString()
+        });
+        
+        toast.error("Payment service connection failed", {
+          description: "Trying alternate payment method..."
+        });
+        
+        try {
+          // Second attempt - Use manual fetching
+          console.log("Attempt 2: Using direct fetch approach");
+          setProcessMessage(`Connecting to payment service (attempt 2)...`);
+          
+          // Construct the full URL to the edge function manually
+          const functionUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/create-assessment-payment`;
+          
+          // Get auth token for authorization
+          const { data: { session } } = await supabase.auth.getSession();
+          const authToken = session?.access_token || '';
+          
+          const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+              'Payment-Type': paymentType,
+              'Client-Timestamp': new Date().toISOString()
+            },
+            body: JSON.stringify({ paymentType }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
           }
-        }, 1000);
-        
-        // Keep the processing state active for 5 seconds in case the redirect takes time
-        setTimeout(() => {
-          // Only reset if we haven't navigated away
-          if (document.visibilityState === 'visible' && 
-              localStorage.getItem("pendingPaymentSessionId") === paymentSessionId) {
-            console.log("Still on same page after redirect attempt - resetting state");
-            setIsProcessing(false);
-            setPaymentError("Failed to redirect to payment page. Please try again.");
+          
+          const data = await response.json();
+          
+          if (data.error) {
+            throw new Error(`Payment function error: ${data.error}`);
           }
-        }, 5000);
-      } else {
-        throw new Error("No payment URL returned");
+          
+          if (data?.url) {
+            handlePaymentRedirect(data);
+          } else {
+            throw new Error("No payment URL returned");
+          }
+        } catch (secondaryError) {
+          console.error("Secondary payment method failed:", secondaryError);
+          throw new Error(`Payment service unavailable. ${primaryError.message}. Backup also failed: ${secondaryError.message}`);
+        }
       }
     } catch (err: any) {
       console.error("Exception in payment:", err);
@@ -207,6 +225,49 @@ const AssessmentIntroPage: React.FC = () => {
       // Reset processing state immediately on error
       setIsProcessing(false);
     }
+  };
+  
+  // Helper function to handle payment redirection logic
+  const handlePaymentRedirect = (data: any) => {
+    console.log("Redirecting to payment:", data);
+    setProcessMessage("Redirecting to payment page...");
+    
+    // Save the session ID in local storage for verification later
+    if (data.paymentSessionId) {
+      localStorage.setItem("pendingPaymentSessionId", data.paymentSessionId);
+    }
+    
+    // Multiple redirect attempts for better reliability
+    const stripeUrl = data.url;
+    
+    // Create and click a link to avoid popup blockers
+    const link = document.createElement('a');
+    link.href = stripeUrl;
+    link.target = '_self';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Fallback direct redirect after a short delay
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        console.log("Fallback redirect triggered");
+        window.location.href = stripeUrl;
+      }
+    }, 1000);
+    
+    // Last resort - reset state if we haven't navigated away after 5 seconds
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        console.log("Still on same page after redirect attempts - resetting state");
+        setIsProcessing(false);
+        setPaymentError("Failed to redirect to payment page. Please try again.");
+        toast.error("Failed to open payment page", {
+          description: "Please try again or use a different browser"
+        });
+      }
+    }, 5000);
   };
   
   // Handle manual retry
@@ -341,7 +402,7 @@ const AssessmentIntroPage: React.FC = () => {
             </Button>
           </div>
           
-          {/* Debug information in collapsible section */}
+          {/* Enhanced debug information in collapsible section */}
           <details className="mt-8 text-left text-xs">
             <summary className="cursor-pointer text-muted-foreground">Debug Info</summary>
             <div className="p-2 mt-2 bg-muted/50 rounded text-muted-foreground">
@@ -350,6 +411,8 @@ const AssessmentIntroPage: React.FC = () => {
               <p>Retry Count: {retryCount}</p>
               <p>Page URL: {window.location.href}</p>
               <p>Time: {new Date().toISOString()}</p>
+              <p>Supabase URL: {process.env.VITE_SUPABASE_URL ? 'Set' : 'Not set'}</p>
+              <p>Edge Function: create-assessment-payment</p>
             </div>
           </details>
         </div>

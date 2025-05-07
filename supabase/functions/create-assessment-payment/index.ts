@@ -54,7 +54,14 @@ serve(async (req) => {
       logStep("Missing Stripe secret key");
       throw new Error("STRIPE_SECRET_KEY is not set in environment");
     }
-    logStep("Stripe key found", { keyPreview: stripeKey.substring(0, 7) + '...' }); // Show just the beginning of the key for diagnostics
+    
+    // Verify stripe key format
+    if (!stripeKey.startsWith('sk_')) {
+      logStep("Invalid Stripe key format", { keyPreview: stripeKey.substring(0, 5) + '...' });
+      throw new Error("STRIPE_SECRET_KEY has invalid format. Should start with sk_");
+    }
+    
+    logStep("Stripe key found and validated", { keyLength: stripeKey.length }); 
     
     // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
