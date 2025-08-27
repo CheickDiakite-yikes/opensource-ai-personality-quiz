@@ -141,19 +141,12 @@ export const deleteAnalysisFromDatabase = async (analysisId: string): Promise<bo
       
       // Second attempt: Use the edge function we created for this purpose
       try {
-        const response = await fetch(`https://fhmvdprcmhkolyzuecrr.supabase.co/functions/v1/delete-concise-analysis`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('supabase-auth-token')}`
-          },
-          body: JSON.stringify({ analysisId })
+        const { data, error } = await supabase.functions.invoke('delete-concise-analysis', {
+          body: { analysisId }
         });
         
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-          console.error("[deleteAnalysisFromDatabase] Edge function deletion failed:", result);
+        if (error || !data?.success) {
+          console.error("[deleteAnalysisFromDatabase] Edge function deletion failed:", error || data);
           toast.error("Failed to delete analysis after multiple attempts");
           return false;
         }

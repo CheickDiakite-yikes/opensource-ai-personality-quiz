@@ -252,7 +252,7 @@ const SharedProfile: React.FC = () => {
         </motion.div>
         
         {/* Debug info visible only in development mode */}
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.DEV && (
           <div className="text-xs text-muted-foreground border-t pt-2 mt-4">
             <p>Debug: Profile ID: {id}</p>
             <p>Debug: Load Attempts: {loadAttempts}</p>
