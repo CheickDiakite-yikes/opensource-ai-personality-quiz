@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
@@ -175,11 +176,13 @@ const ProfilePage: React.FC = () => {
       )}
       
       <div className={`space-y-4 ${isMobile ? '' : 'space-y-6 md:space-y-8'}`}>
-        <ProfileHeader analysis={stableAnalysis} />
+        <ProfileHeader analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <IntelligenceProfileCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <TraitsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <InsightsCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
         <GrowthPathwayCard analysis={stableAnalysis} itemVariants={{visible: {opacity: 1}}} />
+        
+        {/* ShareProfile component has been removed */}
       </div>
     </div>
   );

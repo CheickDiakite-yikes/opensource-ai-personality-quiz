@@ -1,125 +1,178 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AssessmentResponse } from "@/utils/types";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { AssessmentResponse } from "@/utils/types";
+import { v4 as uuidv4 } from "uuid";
+
+const ASSESSMENT_STORAGE_KEY = "assessment_progress";
 
 export const useAssessmentSubmission = (
   responses: AssessmentResponse[],
   saveCurrentResponse: () => void
 ) => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { analyzeResponses, isAnalyzing, refreshAnalysis } = useAIAnalysis();
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Helper function to convert responses to a JSON-compatible format
-  const toJsonCompatible = (responses: AssessmentResponse[]): any => {
-    return responses.map(response => ({
-      questionId: response.questionId,
-      selectedOption: response.selectedOption || null,
-      customResponse: response.customResponse || null,
-      category: response.category,
-      timestamp: response.timestamp.toISOString(),
-    }));
-  };
-
-  const handleSubmitAssessment = async () => {
+  
+  const saveResponsesDirectlyToSupabase = async (responses: AssessmentResponse[]) => {
+    if (!user) {
+      console.log("No user logged in, skipping direct Supabase save");
+      return null;
+    }
+    
     try {
-      saveCurrentResponse();
-      setIsAnalyzing(true);
-
-      // First, check if the user has credits
-      const { data: creditsData, error: creditsError } = await supabase
-        .from("assessment_credits")
-        .select("credits_remaining")
-        .eq("user_id", user?.id)
-        .single();
-
-      if (creditsError) {
-        console.error("Error checking credits:", creditsError);
-        toast.error("Failed to check your assessment credits. Please try again.");
-        setIsAnalyzing(false);
-        return;
-      }
-
-      if (!creditsData || creditsData.credits_remaining <= 0) {
-        toast.error("You don't have enough credits to submit this assessment.");
-        navigate("/assessment"); // Redirect to assessment intro page
-        setIsAnalyzing(false);
-        return;
-      }
-
-      // User has credits, proceed with assessment submission
-      console.log("Submitting assessment with responses:", responses);
-
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
+      // Generate a simple ID for assessment - text format now works with our updated table
+      const assessmentId = `assessment-${Date.now()}`;
+      
       // Convert responses to JSON-compatible format
-      const jsonResponses = toJsonCompatible(responses);
-
-      // Save assessment responses to database
-      const assessmentId = crypto.randomUUID();
-      const { error: assessmentError } = await supabase.from("assessments").insert({
-        id: assessmentId,
-        user_id: user.id,
-        responses: jsonResponses,
-      });
-
-      if (assessmentError) {
-        throw new Error(`Error saving assessment: ${assessmentError.message}`);
-      }
-
-      // Deduct a credit from user's account
-      const { error: updateCreditsError } = await supabase
-        .from("assessment_credits")
-        .update({
-          credits_remaining: creditsData.credits_remaining - 1,
-          updated_at: new Date().toISOString(),
+      const jsonResponses = JSON.parse(JSON.stringify(responses));
+      
+      console.log(`Attempting to save assessment with ID: ${assessmentId} and ${responses.length} responses`);
+      
+      // Insert into assessments table
+      const { data, error } = await supabase
+        .from('assessments')
+        .insert({
+          id: assessmentId,
+          user_id: user.id,
+          responses: jsonResponses
         })
-        .eq("user_id", user.id);
-
-      if (updateCreditsError) {
-        console.error("Error updating credits:", updateCreditsError);
-        // Continue processing even if credit update fails
-        // We should implement a more robust error handling in production
+        .select('id')
+        .single();
+        
+      if (error) {
+        console.error("Failed to save assessment to Supabase:", error);
+        toast.error("Failed to save your assessment", {
+          description: "Your results will still be analyzed but may not be saved to your account"
+        });
+        return null;
       }
-
-      // Make API call to analyze responses
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
-        "analyze-responses",
-        {
-          body: {
-            assessmentId,
-            userId: user.id,
-            responses,
-          },
-        }
-      );
-
-      if (analysisError) {
-        throw new Error(`Analysis error: ${analysisError.message}`);
-      }
-
-      // Clear local storage
-      localStorage.removeItem("assessment_progress");
-
-      // Navigate to the results page
-      navigate(`/report/${assessmentId}`);
-      toast.success("Your assessment has been submitted successfully!");
+      
+      console.log("Successfully saved assessment to Supabase with ID:", assessmentId);
+      return assessmentId;
     } catch (error) {
-      console.error("Assessment submission error:", error);
-      toast.error("There was an error submitting your assessment. Please try again.");
-    } finally {
-      setIsAnalyzing(false);
+      console.error("Exception saving assessment to Supabase:", error);
+      return null;
+    }
+  };
+  
+  const handleSubmitAssessment = async () => {
+    // Save the final response
+    saveCurrentResponse();
+    
+    try {
+      toast.info("Analyzing your responses...", {
+        duration: 15000,
+        id: "analyzing-toast"
+      });
+      
+      // Validate that we have sufficient responses
+      if (responses.length < 5) {
+        console.error("Not enough responses to analyze:", responses.length);
+        toast.error("Not enough responses to analyze", {
+          description: "Please answer more questions"
+        });
+        return;
+      }
+      
+      console.log(`Submitting assessment with ${responses.length} responses`);
+      
+      // First, save responses directly to Supabase
+      const savedAssessmentId = await saveResponsesDirectlyToSupabase(responses);
+      
+      if (savedAssessmentId) {
+        console.log("Assessment saved with ID:", savedAssessmentId);
+      } else {
+        console.warn("Could not save assessment directly, continuing with analysis only");
+      }
+      
+      toast.loading("Analysis in progress. This may take a few minutes as our AI generates comprehensive insights for you.", {
+        id: "analyzing-toast",
+        duration: 60000
+      });
+      
+      // Send responses to AI for analysis
+      let analysis = null;
+      
+      try {
+        analysis = await analyzeResponses(responses);
+        
+        if (!analysis || !analysis.id) {
+          console.error("Invalid analysis result:", analysis);
+          throw new Error("Invalid analysis result");
+        }
+        
+        console.log("Analysis completed successfully with ID:", analysis.id);
+      } catch (error) {
+        console.error("Analysis failed:", error);
+        
+        // Attempt to refresh and get the latest analysis as fallback
+        await refreshAnalysis();
+        
+        const analysisHistory = await supabase
+          .from('analyses')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (!analysisHistory.error && analysisHistory.data && analysisHistory.data.length > 0) {
+          console.log("Found fallback analysis from database:", analysisHistory.data[0].id);
+          analysis = analysisHistory.data[0];
+        } else {
+          toast.error("Analysis failed", {
+            id: "analyzing-toast",
+            description: "Please try again or check your connection",
+            duration: 8000
+          });
+          return;
+        }
+      }
+      
+      if (!analysis) {
+        toast.error("Analysis failed", {
+          id: "analyzing-toast",
+          description: "Unable to generate your personality profile",
+          duration: 8000
+        });
+        return;
+      }
+      
+      // Clear saved progress after successful submission
+      localStorage.removeItem(ASSESSMENT_STORAGE_KEY);
+      console.log("Cleared assessment progress from localStorage");
+      
+      // Force refresh the analysis data
+      await refreshAnalysis();
+      
+      // Add a short delay to ensure analysis is available
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update the toast to show success
+      toast.success("Analysis completed successfully!", {
+        id: "analyzing-toast",
+        duration: 5000
+      });
+      
+      // Navigate to the report page with the ID
+      console.log("Navigating to report page with ID:", analysis.id);
+      navigate(`/report/${analysis.id}`, { 
+        state: { fromAssessment: true }
+      });
+    } catch (error) {
+      console.error("Error submitting assessment:", error);
+      toast.error("Something went wrong during analysis", {
+        id: "analyzing-toast",
+        description: error instanceof Error ? error.message : "Please try again",
+        duration: 8000
+      });
     }
   };
 
   return {
-    isAnalyzing,
     handleSubmitAssessment,
+    isAnalyzing
   };
 };
