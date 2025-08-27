@@ -1,4 +1,4 @@
-# Who Am I? - AI-Powered Personality Assessment Platform 🧠✨
+# Open Source AI Personality Quiz 🧠✨
 
 > Discover your true self through comprehensive AI-driven personality analysis and insights
 
@@ -9,7 +9,7 @@
 
 ## 🎯 Overview
 
-**Who Am I?** is a modern, AI-powered personality assessment platform that helps users discover their authentic selves through scientifically-informed personality analysis. Using advanced AI technology, the platform analyzes user responses to provide deep insights into personality traits, emotional intelligence, cognitive patterns, and personal growth opportunities.
+**Open Source AI Personality Quiz** is a modern, AI-powered personality assessment platform that helps users discover their authentic selves through scientifically-informed personality analysis. Using advanced AI technology, the platform analyzes user responses to provide deep insights into personality traits, emotional intelligence, cognitive patterns, and personal growth opportunities.
 
 ### ✨ Key Features
 
@@ -64,8 +64,8 @@ Before running this project, ensure you have:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/who-am-i.git
-   cd who-am-i
+   git clone https://github.com/yourusername/opensource-ai-personality-quiz.git
+   cd opensource-ai-personality-quiz
    ```
 
 2. **Install dependencies**
@@ -296,8 +296,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/who-am-i/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/who-am-i/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/opensource-ai-personality-quiz/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/opensource-ai-personality-quiz/discussions)
 - **Email**: support@yourapp.com
 
 ## 🌟 Star History
@@ -306,4 +306,4 @@ If you find this project helpful, please consider giving it a star ⭐
 
 ---
 
-**Built with ❤️ by the Who Am I team**
+**Built with ❤️ by the Open Source AI Personality Quiz team**
